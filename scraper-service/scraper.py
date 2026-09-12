@@ -20,13 +20,23 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 log = logging.getLogger("carretes-scraper")
 
 # ─── Config Supabase ──────────────────────────────────────────────────────────
-SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://hgwljbtqdserkdhulbts.supabase.co").rstrip("/")
-SUPABASE_KEY = (
-    os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
-    or os.environ.get("SUPABASE_KEY")
-    or os.environ.get("SUPABASE_ANON_KEY")
-    or "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhnd2xqYnRxZHNlcmtkaHVsYnRzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4OTE4MDQyOSwiZXhwIjoyMTA0NzU2NDI5fQ.nl7dHwd3NoteIFvji_HflnMXbfWW3BP5JNIM_R4rmEU"
+DEFAULT_SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhnd2xqYnRxZHNlcmtkaHVsYnRzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4OTE4MDQyOSwiZXhwIjoyMTA0NzU2NDI5fQ.nl7dHwd3NoteIFvji_HflnMXbfWW3BP5JNIM_R4rmEU"
+
+def clean_env(name: str) -> str:
+    """Lee variable de entorno y limpia comillas, espacios y prefijo Bearer."""
+    val = os.environ.get(name, "").strip().strip("\"'").strip()
+    return re.sub(r"^Bearer\s+", "", val, flags=re.IGNORECASE).strip()
+
+_raw_url = clean_env("SUPABASE_URL")
+SUPABASE_URL = (_raw_url if _raw_url.startswith("http") else "https://hgwljbtqdserkdhulbts.supabase.co").rstrip("/")
+
+_key = (
+    clean_env("SUPABASE_SERVICE_ROLE_KEY")
+    or clean_env("SUPABASE_KEY")
+    or clean_env("SUPABASE_ANON_KEY")
+    or clean_env("NEXT_PUBLIC_SUPABASE_ANON_KEY")
 )
+SUPABASE_KEY = _key if len(_key) > 40 else DEFAULT_SUPABASE_KEY
 
 # ─── Config Instagram ─────────────────────────────────────────────────────────
 IG_USERNAME = os.environ.get("IG_USERNAME", "").strip()
@@ -69,6 +79,8 @@ MAX_POSTS_PER_VENUE = 5
 
 # ─── Supabase ─────────────────────────────────────────────────────────────────
 def test_supabase() -> bool:
+    log.info(f"Supabase URL: {SUPABASE_URL}")
+    log.info(f"Supabase Key: longitud={len(SUPABASE_KEY)}, inicio={SUPABASE_KEY[:12]}...")
     url = f"{SUPABASE_URL}/rest/v1/events?select=count"
     headers = {"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"}
     try:
