@@ -1,81 +1,89 @@
 #!/usr/bin/env python3
 """
-Carretes Valpo - Instagram Scraper
-Extrae eventos reales desde Instagram y los guarda en Supabase.
-Si no encuentra nada, no guarda nada. Sin datos por defecto.
+Carretes Valpo - Scraper con Instaloader
+========================================
+Extrae posts reales de Instagram usando Instaloader (open source, v4.13+).
+- Login via usuario/contraseña con sesión persistida en disco
+- Scrapea hashtags de eventos + cuentas de venues de Valparaíso
+- Guarda en Supabase solo lo que encuentra realmente
+- Sin datos inventados, sin fallbacks, sin mocks
 """
 
-import os, re, time, logging, json, urllib.request, urllib.error
+import os, re, time, logging, json, urllib.request, itertools
 from datetime import datetime, timezone
-from typing import List, Dict
-from instagrapi import Client
-from instagrapi.exceptions import RateLimitError, ChallengeRequired, BadPassword, TwoFactorRequired
+from typing import List, Dict, Optional
+from pathlib import Path
+
+import instaloader
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger("carretes-scraper")
 
-# ─── Configuración Supabase ───────────────────────────────────────────────────
-DEFAULT_SUPABASE_URL = "https://hgwljbtqdserkdhulbts.supabase.co"
-DEFAULT_SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhnd2xqYnRxZHNlcmtkaHVsYnRzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4OTE4MDQyOSwiZXhwIjoyMTA0NzU2NDI5fQ.nl7dHwd3NoteIFvji_HflnMXbfWW3BP5JNIM_R4rmEU"
+# ─── Config Supabase ──────────────────────────────────────────────────────────
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://hgwljbtqdserkdhulbts.supabase.co").rstrip("/")
+SUPABASE_KEY = (
+    os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+    or os.environ.get("SUPABASE_KEY")
+    or os.environ.get("SUPABASE_ANON_KEY")
+    or "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhnd2xqYnRxZHNlcmtkaHVsYnRzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4OTE4MDQyOSwiZXhwIjoyMTA0NzU2NDI5fQ.nl7dHwd3NoteIFvji_HflnMXbfWW3BP5JNIM_R4rmEU"
+)
 
-def clean_value(val):
-    if not val:
-        return ""
-    v = val.strip().strip("\"'").strip()
-    return re.sub(r"^Bearer\s+", "", v, flags=re.IGNORECASE).strip()
+# ─── Config Instagram ─────────────────────────────────────────────────────────
+IG_USERNAME = os.environ.get("IG_USERNAME", "").strip()
+IG_PASSWORD = os.environ.get("IG_PASSWORD", "").strip()
 
-raw_url = clean_value(os.environ.get("SUPABASE_URL", "")).rstrip("/")
-SUPABASE_URL = raw_url if raw_url.startswith("http") else DEFAULT_SUPABASE_URL
+# Ruta donde se persiste la sesión para no re-loguear cada vez
+SESSION_FILE = Path("/tmp/instaloader_session") if os.path.exists("/tmp") else Path("./instaloader_session")
 
-detected_key = ""
-for var_name in ["SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_KEY", "SUPABASE_ANON_KEY", "NEXT_PUBLIC_SUPABASE_ANON_KEY"]:
-    val = clean_value(os.environ.get(var_name))
-    if val and not val.startswith("your-") and len(val) > 40:
-        detected_key = val
-        break
-SUPABASE_KEY = detected_key if detected_key else DEFAULT_SUPABASE_KEY
-
-IG_USERNAME = clean_value(os.environ.get("IG_USERNAME", ""))
-IG_PASSWORD = clean_value(os.environ.get("IG_PASSWORD", ""))
-IG_SESSIONID = clean_value(os.environ.get("IG_SESSIONID", ""))
-
-# Hashtags a rastrear para encontrar eventos reales
+# Hashtags de eventos en Valparaíso y V Región
 HASHTAGS = [
     "carretesvalpo",
     "carretesvalparaiso",
     "fiestasvalparaiso",
     "carretesviña",
     "fiestasviña",
-    "carretesreñaca",
-    "carretequilpue",
-    "fiestasquintaregion",
     "undervalpo",
+    "carretequilpue",
 ]
 
-# Palabras clave que indican que un post es sobre un evento
+# Cuentas de venues reales de Valparaíso a monitorear
+VENUE_ACCOUNTS = [
+    "el.huevo",
+    "trotamundosvalpo",
+    "clubtrotaquilpue",
+    "club_segundo_piso",
+    "mascara_valparaiso",
+    "paganocl",
+]
+
+# Palabras que indican que un post es sobre un evento/carrete
 EVENT_KEYWORDS = [
     "carrete", "fiesta", "evento", "techno", "entrada", "viernes", "sábado",
-    "sabado", "tonight", "club", "dj", "set", "rave", "boliche", "antro",
-    "concierto", "live", "show", "presentación",
+    "sabado", "tonight", "club", "dj set", "rave", "boliche", "concierto",
+    "live", "show", "presentación", "tocata", "baile",
 ]
 
-# ─── Supabase helpers ─────────────────────────────────────────────────────────
-def test_supabase_connection() -> bool:
+MAX_POSTS_PER_HASHTAG = 10
+MAX_POSTS_PER_VENUE = 5
+
+
+# ─── Supabase ─────────────────────────────────────────────────────────────────
+def test_supabase() -> bool:
     url = f"{SUPABASE_URL}/rest/v1/events?select=count"
     headers = {"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"}
     try:
-        req = urllib.request.Request(url, headers=headers, method="GET")
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            log.info(f"Conexión con Supabase exitosa! Status: {resp.status}")
+        req = urllib.request.Request(url, headers=headers)
+        with urllib.request.urlopen(req, timeout=10) as r:
+            log.info(f"Supabase OK — status {r.status}")
             return True
     except Exception as e:
-        log.error(f"Error conectando a Supabase: {e}")
+        log.error(f"Supabase error: {e}")
         return False
 
 
-def save_event_to_supabase(event_dict: dict) -> bool:
+def save_to_supabase(event: dict) -> bool:
     url = f"{SUPABASE_URL}/rest/v1/events?on_conflict=instagram_id"
-    payload = json.dumps(event_dict).encode("utf-8")
+    payload = json.dumps(event).encode()
     headers = {
         "apikey": SUPABASE_KEY,
         "Authorization": f"Bearer {SUPABASE_KEY}",
@@ -84,179 +92,202 @@ def save_event_to_supabase(event_dict: dict) -> bool:
     }
     try:
         req = urllib.request.Request(url, data=payload, headers=headers, method="POST")
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            return resp.status in (200, 201)
+        with urllib.request.urlopen(req, timeout=10) as r:
+            return r.status in (200, 201)
     except Exception as e:
-        log.error(f"Error guardando evento {event_dict.get('instagram_id')}: {e}")
+        log.error(f"Error guardando {event.get('instagram_id')}: {e}")
         return False
 
 
-# ─── Instagram scraping ───────────────────────────────────────────────────────
-def build_client() -> Client:
-    cl = Client()
-    cl.delay_range = [2, 5]
-    return cl
+# ─── Instaloader helpers ──────────────────────────────────────────────────────
+def build_loader() -> instaloader.Instaloader:
+    """Crea instancia de Instaloader sin descargar archivos innecesarios."""
+    return instaloader.Instaloader(
+        download_pictures=False,
+        download_videos=False,
+        download_video_thumbnails=False,
+        download_geotags=False,
+        download_comments=False,
+        save_metadata=False,
+        compress_json=False,
+        quiet=True,
+    )
 
 
-def login(cl: Client) -> bool:
-    """Intenta iniciar sesión por cualquier método disponible."""
-    # 1. Session ID cookie
-    if IG_SESSIONID:
+def login(L: instaloader.Instaloader) -> bool:
+    """
+    Inicia sesión intentando primero cargar una sesión guardada.
+    Si no existe o expiró, hace login con usuario/contraseña y persiste la sesión.
+    """
+    if not IG_USERNAME or not IG_PASSWORD:
+        log.error("IG_USERNAME o IG_PASSWORD no configurados en variables de entorno.")
+        return False
+
+    # Intentar cargar sesión guardada (evita re-login innecesario)
+    if SESSION_FILE.exists():
         try:
-            cl.login_by_sessionid(IG_SESSIONID)
-            log.info("Sesión iniciada via sessionid")
+            L.load_session_from_file(IG_USERNAME, str(SESSION_FILE))
+            # Verificar que la sesión sigue activa
+            _ = instaloader.Profile.from_username(L.context, IG_USERNAME)
+            log.info(f"Sesión cargada desde archivo para @{IG_USERNAME}")
             return True
         except Exception as e:
-            log.warning(f"sessionid falló: {e}")
+            log.warning(f"Sesión guardada inválida o expirada: {e}. Re-logueando...")
 
-    # 2. Usuario + contraseña
-    if IG_USERNAME and IG_PASSWORD:
-        try:
-            cl.login(IG_USERNAME, IG_PASSWORD)
-            log.info(f"Sesión iniciada como {IG_USERNAME}")
-            return True
-        except (BadPassword, TwoFactorRequired, ChallengeRequired) as e:
-            log.error(f"Login fallido: {e}")
-        except Exception as e:
-            log.warning(f"Login error: {e}")
+    # Login con usuario/contraseña
+    try:
+        L.login(IG_USERNAME, IG_PASSWORD)
+        L.save_session_to_file(str(SESSION_FILE))
+        log.info(f"Login exitoso como @{IG_USERNAME}. Sesión guardada.")
+        return True
+    except instaloader.exceptions.BadCredentialsException:
+        log.error("Usuario o contraseña incorrectos.")
+    except instaloader.exceptions.TwoFactorAuthRequiredException:
+        log.error("Esta cuenta tiene 2FA. Desactívalo o usa una cuenta sin 2FA.")
+    except Exception as e:
+        log.error(f"Error en login: {e}")
 
-    log.error("No se pudo iniciar sesión en Instagram. Configura IG_SESSIONID o IG_USERNAME/IG_PASSWORD.")
     return False
 
 
-def is_event_post(caption: str) -> bool:
-    text = caption.lower()
+def post_to_dict(post: instaloader.Post, source: str) -> Optional[Dict]:
+    """Convierte un Post de Instaloader a dict para Supabase."""
+    caption = post.caption or ""
+    title = caption.split("\n")[0][:120].strip()
+    if not title:
+        title = f"Post de @{post.owner_username}"
+
+    # URL de imagen: preferir display_url (thumbnail pública)
+    image_url = None
+    try:
+        image_url = post.url  # URL de la imagen/thumbnail
+    except Exception:
+        pass
+
+    return {
+        "instagram_id": str(post.shortcode),  # shortcode es más estable que mediaid
+        "title": title,
+        "description": caption[:1000],
+        "date_text": post.date_local.strftime("%Y-%m-%d") if post.date_local else datetime.now().strftime("%Y-%m-%d"),
+        "location": "Valparaíso",
+        "image_url": image_url,
+        "instagram_url": f"https://www.instagram.com/p/{post.shortcode}/",
+        "username": post.owner_username,
+        "likes": post.likes,
+        "scraped_at": datetime.now(timezone.utc).isoformat(),
+        "source": source,
+        "is_active": True,
+    }
+
+
+def is_event_related(caption: str) -> bool:
+    text = (caption or "").lower()
     return any(kw in text for kw in EVENT_KEYWORDS)
 
 
-def scrape_hashtags(cl: Client) -> List[Dict]:
-    """Extrae posts reales de hashtags de eventos en Valparaíso."""
+# ─── Scraping functions ───────────────────────────────────────────────────────
+def scrape_hashtags(L: instaloader.Instaloader) -> List[Dict]:
     results = []
     for tag in HASHTAGS:
         try:
-            log.info(f"Rastreando #{tag}...")
-            items, _ = cl.hashtag_medias_v1_chunk(tag, max_amount=8, tab_key="top")
-            for it in items:
-                caption = it.caption_text or ""
-                if not is_event_post(caption):
+            log.info(f"  Scrapeando #{tag}...")
+            hashtag = instaloader.Hashtag.from_name(L.context, tag)
+            count = 0
+            for post in hashtag.get_posts():
+                if count >= MAX_POSTS_PER_HASHTAG:
+                    break
+                if not is_event_related(post.caption):
+                    count += 1
                     continue
-                title = caption.split("\n")[0][:120].strip()
-                if not title:
-                    title = f"Evento #{tag}"
-                results.append({
-                    "instagram_id": str(it.pk),
-                    "title": title,
-                    "description": caption[:1000],
-                    "date_text": datetime.now().strftime("%Y-%m-%d"),
-                    "location": "Valparaíso",
-                    "image_url": str(it.thumbnail_url) if it.thumbnail_url else None,
-                    "instagram_url": f"https://www.instagram.com/p/{it.code}/",
-                    "username": it.user.username,
-                    "likes": it.like_count or 0,
-                    "scraped_at": datetime.now(timezone.utc).isoformat(),
-                    "source": "instagram_hashtag",
-                    "is_active": True,
-                })
-            time.sleep(2)
-        except RateLimitError:
-            log.warning(f"Rate limit en #{tag}. Esperando 60s...")
+                d = post_to_dict(post, f"hashtag_{tag}")
+                if d:
+                    results.append(d)
+                count += 1
+                time.sleep(1.5)  # respetar rate limits
+            log.info(f"    → {len([r for r in results if f'hashtag_{tag}' in r.get('source','')])} posts relevantes")
+            time.sleep(3)
+        except instaloader.exceptions.QueryReturnedNotFoundException:
+            log.warning(f"  Hashtag #{tag} no encontrado.")
+        except instaloader.exceptions.TooManyRequestsException:
+            log.warning(f"  Rate limit en #{tag}. Esperando 60s...")
             time.sleep(60)
         except Exception as e:
-            log.warning(f"Error en #{tag}: {e}")
-            time.sleep(3)
+            log.warning(f"  Error en #{tag}: {e}")
+            time.sleep(5)
     return results
 
 
-def scrape_venue_accounts(cl: Client) -> List[Dict]:
-    """
-    Extrae posts recientes de cuentas de locales reales en Valparaíso.
-    Solo incluye cuentas que efectivamente existan y tengan posts públicos.
-    """
-    # Handles de locales de Valparaíso y V Región que se pueden verificar
-    venue_handles = [
-        "el.huevo",
-        "trotamundosvalpo",
-        "clubtrotaquilpue",
-        "club_segundo_piso",
-        "mascara_valparaiso",
-        "paganocl",
-    ]
-
+def scrape_venues(L: instaloader.Instaloader) -> List[Dict]:
     results = []
-    for handle in venue_handles:
+    for handle in VENUE_ACCOUNTS:
         try:
-            log.info(f"Revisando perfil @{handle}...")
-            user_id = cl.user_id_from_username(handle)
-            medias = cl.user_medias(user_id, amount=3)
-            for media in medias:
-                caption = media.caption_text or ""
-                title = caption.split("\n")[0][:120].strip()
-                if not title:
-                    title = f"Evento en @{handle}"
-                results.append({
-                    "instagram_id": str(media.pk),
-                    "title": title,
-                    "description": caption[:1000],
-                    "date_text": media.taken_at.strftime("%Y-%m-%d") if media.taken_at else datetime.now().strftime("%Y-%m-%d"),
-                    "location": "Valparaíso",
-                    "image_url": str(media.thumbnail_url) if media.thumbnail_url else None,
-                    "instagram_url": f"https://www.instagram.com/p/{media.code}/",
-                    "username": handle,
-                    "likes": media.like_count or 0,
-                    "scraped_at": datetime.now(timezone.utc).isoformat(),
-                    "source": "instagram_venue",
-                    "is_active": True,
-                })
-            time.sleep(3)
+            log.info(f"  Scrapeando @{handle}...")
+            profile = instaloader.Profile.from_username(L.context, handle)
+            count = 0
+            for post in profile.get_posts():
+                if count >= MAX_POSTS_PER_VENUE:
+                    break
+                d = post_to_dict(post, "venue_profile")
+                if d:
+                    results.append(d)
+                count += 1
+                time.sleep(2)
+            log.info(f"    → {count} posts de @{handle}")
+            time.sleep(5)
+        except instaloader.exceptions.ProfileNotExistsException:
+            log.warning(f"  Perfil @{handle} no existe o es privado.")
+        except instaloader.exceptions.TooManyRequestsException:
+            log.warning(f"  Rate limit en @{handle}. Esperando 60s...")
+            time.sleep(60)
         except Exception as e:
-            log.warning(f"No se pudo obtener posts de @{handle}: {e}")
-            time.sleep(2)
-
+            log.warning(f"  Error en @{handle}: {e}")
+            time.sleep(5)
     return results
 
 
-# ─── Entry point ──────────────────────────────────────────────────────────────
+# ─── Main ─────────────────────────────────────────────────────────────────────
 def main():
-    log.info("=== Carretes Scraper iniciando ===")
-    log.info(f"Supabase URL: {SUPABASE_URL}")
+    log.info("=== Carretes Scraper (Instaloader) iniciando ===")
+    log.info(f"Supabase: {SUPABASE_URL}")
 
-    if not test_supabase_connection():
-        log.error("Abortando: sin conexión a Supabase.")
+    if not test_supabase():
+        log.error("Sin conexión a Supabase. Abortando.")
         return
 
-    cl = build_client()
-    if not login(cl):
-        log.error("Abortando: sin sesión de Instagram.")
+    L = build_loader()
+
+    if not login(L):
+        log.error("Sin sesión de Instagram. Abortando.")
         return
 
     all_events: List[Dict] = []
 
-    # Extraer de hashtags
-    hashtag_events = scrape_hashtags(cl)
-    log.info(f"Encontrados {len(hashtag_events)} posts en hashtags.")
+    log.info("Scrapeando hashtags de eventos...")
+    hashtag_events = scrape_hashtags(L)
+    log.info(f"Hashtags: {len(hashtag_events)} posts con keywords de evento")
     all_events.extend(hashtag_events)
 
-    # Extraer de cuentas de venues
-    venue_events = scrape_venue_accounts(cl)
-    log.info(f"Encontrados {len(venue_events)} posts en cuentas de venues.")
+    log.info("Scrapeando cuentas de venues...")
+    venue_events = scrape_venues(L)
+    log.info(f"Venues: {len(venue_events)} posts")
     all_events.extend(venue_events)
 
     if not all_events:
-        log.info("No se encontraron eventos. Supabase no se modifica.")
+        log.info("No se encontraron posts. Supabase no se modifica.")
         return
 
     # Deduplicar por instagram_id
     seen = set()
-    unique_events = []
+    unique = []
     for ev in all_events:
         if ev["instagram_id"] not in seen:
             seen.add(ev["instagram_id"])
-            unique_events.append(ev)
+            unique.append(ev)
 
-    log.info(f"Total eventos únicos a guardar: {len(unique_events)}")
-    saved = sum(1 for ev in unique_events if save_event_to_supabase(ev))
-    log.info(f"Guardados en Supabase: {saved}/{len(unique_events)}")
-    log.info("=== Ciclo de scraping completado ===")
+    log.info(f"Total únicos a guardar: {len(unique)}")
+    saved = sum(1 for ev in unique if save_to_supabase(ev))
+    log.info(f"Guardados en Supabase: {saved}/{len(unique)}")
+    log.info("=== Scraping completado ===")
 
 
 if __name__ == "__main__":
