@@ -37,9 +37,9 @@ function normalizeOrganizer(value: unknown): string {
 
 export async function POST(request: Request) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const serverKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  if (!supabaseUrl || !serviceRoleKey) {
+  if (!supabaseUrl || !serverKey) {
     return NextResponse.json(
       { success: false, error: 'Publicación temporalmente no disponible' },
       { status: 503 },
@@ -104,7 +104,7 @@ export async function POST(request: Request) {
       is_active: true,
     };
 
-    const supabase = createClient(supabaseUrl, serviceRoleKey, {
+    const supabase = createClient(supabaseUrl, serverKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
 
