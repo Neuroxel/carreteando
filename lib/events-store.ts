@@ -123,7 +123,7 @@ export function dbRowToEvento(row: any): Evento {
   const isManual = source === 'manual';
 
   return {
-    id: String(row.id || row.instagram_id),
+    id: String(row.instagram_id || row.id),
     nombre: title,
     descripcion: description,
     fecha: String(row.date_text || toChileDateString(row.scraped_at || new Date())),
