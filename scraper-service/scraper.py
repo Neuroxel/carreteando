@@ -50,7 +50,7 @@ SUPABASE_KEY = _key if len(_key) > 40 else DEFAULT_SUPABASE_KEY
 
 # ─── Config Apify ─────────────────────────────────────────────────────────────
 APIFY_TOKEN = _clean("APIFY_TOKEN")
-APIFY_ACTOR = "apify~instagram-profile-scraper"
+APIFY_ACTOR = "apify~instagram-scraper"
 
 # ─── Circuitos de Monitoreo: Masivos, Under, Raves y Casonas ─────────────────
 VENUE_INFO = {
@@ -143,13 +143,22 @@ def _apify_request(method: str, path: str, body: Optional[dict] = None) -> Optio
 
 def run_apify_batch(usernames: List[str]) -> List[dict]:
     """
-    Ejecuta un lote de perfiles a través del actor de Apify con proxies residenciales.
+    Ejecuta un lote de cuentas a través del actor instagram-scraper de Apify.
+    Recibe usernames y los convierte a directUrls de perfil.
+    Devuelve posts planos (cada item ES un post con caption, likesCount, etc.).
     """
-    log.info(f"🕷️ Araña lanzando rastreo para {len(usernames)} perfiles...")
+    direct_urls = [f"https://www.instagram.com/{u.lstrip('@')}/" for u in usernames]
+    log.info(f"🕷️ Araña lanzando rastreo para {len(direct_urls)} perfiles...")
+
     run = _apify_request(
         "POST",
         f"acts/{APIFY_ACTOR}/runs?token={APIFY_TOKEN}",
-        {"usernames": usernames},
+        {
+            "directUrls": direct_urls,
+            "resultsType": "posts",       # extraer publicaciones, no solo perfil
+            "resultsLimit": 12,            # últimos 12 posts por cuenta
+            "addParentData": False,
+        },
     )
     if not run or "data" not in run:
         log.error("No se pudo iniciar el actor de Apify.")
@@ -159,6 +168,7 @@ def run_apify_batch(usernames: List[str]) -> List[dict]:
     dataset_id = run["data"]["defaultDatasetId"]
     log.info(f"Rastreo iniciado en Apify. Run ID: {run_id}")
 
+    status = ""
     for attempt in range(40):
         time.sleep(7)
         status_resp = _apify_request("GET", f"actor-runs/{run_id}?token={APIFY_TOKEN}")
@@ -177,7 +187,7 @@ def run_apify_batch(usernames: List[str]) -> List[dict]:
         return []
 
     items = items_resp if isinstance(items_resp, list) else items_resp.get("items", [])
-    log.info(f"Apify extrajo datos de {len(items)} cuentas.")
+    log.info(f"Apify extrajo {len(items)} posts en total.")
     return items
 
 
@@ -325,28 +335,20 @@ def main():
     if discovered:
         log.info(f"🕸️ Nodos under descubiertos para futuro rastreo: {discovered}")
 
-    # Extraer publicaciones
+    # instagram-scraper devuelve posts planos directamente (no anidados en latestPosts)
     posts = []
     for item in all_raw_items:
-        username = item.get("username", "")
-        meta = VENUE_INFO.get(username.lower(), {})
+        username = (item.get("ownerUsername") or item.get("username") or "").lower().lstrip("@")
+        meta = VENUE_INFO.get(username, {})
         venue_name = meta.get("name", f"@{username}")
         venue_loc = meta.get("location", "Valparaíso")
         venue_tier = meta.get("tier", "mainstream")
 
-        if "latestPosts" in item and item["latestPosts"]:
-            for post in item["latestPosts"]:
-                post["ownerUsername"] = username
-                post["venueName"] = venue_name
-                post["venueLocation"] = venue_loc
-                post["venueTier"] = venue_tier
-                posts.append(post)
-        elif item.get("shortCode") or item.get("id"):
-            item["ownerUsername"] = username or item.get("ownerUsername", "")
-            item["venueName"] = venue_name
-            item["venueLocation"] = venue_loc
-            item["venueTier"] = venue_tier
-            posts.append(item)
+        item["ownerUsername"] = username
+        item["venueName"] = venue_name
+        item["venueLocation"] = venue_loc
+        item["venueTier"] = venue_tier
+        posts.append(item)
 
     log.info(f"Publicaciones totales extraídas: {len(posts)}")
 
