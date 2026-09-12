@@ -89,7 +89,7 @@ function SearchPageContent() {
         <div style={{ marginTop: '20px' }}>
           <CategoryFilter
             selected={selectedCategory}
-            onChange={setSelectedCategory}
+            onSelect={setSelectedCategory}
             counts={categoryCounts}
           />
         </div>
@@ -97,7 +97,7 @@ function SearchPageContent() {
         <div style={{ marginTop: '16px' }}>
           <DateFilter
             selected={selectedDate}
-            onChange={setSelectedDate}
+            onSelect={setSelectedDate}
             todayCount={todayCount}
             futureCount={futureCount}
           />
