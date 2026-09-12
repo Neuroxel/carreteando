@@ -1,0 +1,7 @@
+[build]
+builder = "dockerfile"
+
+[deploy]
+startCommand = "python scraper.py && cron -f"
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3
