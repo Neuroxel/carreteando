@@ -1,10 +1,87 @@
-import { Evento, EventoFormData, FiltrosEvento } from './types';
+import { Evento, EventoFormData, FiltrosEvento, Categoria } from './types';
 import { supabase } from './supabase';
 
 const RSVPS_KEY = 'carretes_valpo_rsvps_v1';
 
+// Detector inteligente de joyitas y categorías para la araña
+function detectCategoryAndJoyita(title: string, desc: string, username: string, source: string) {
+  const text = `${title} ${desc} ${username} ${source}`.toLowerCase();
+
+  const isJoyita =
+    source === 'joyita_under' ||
+    text.includes('spot secreto') ||
+    text.includes('ubicación por dm') ||
+    text.includes('por interno') ||
+    text.includes('aporte voluntario') ||
+    text.includes('al sobre') ||
+    text.includes('galpón') ||
+    text.includes('casona') ||
+    text.includes('fonda dark') ||
+    text.includes('post punk') ||
+    text.includes('darkwave') ||
+    text.includes('ebm') ||
+    text.includes('industrial') ||
+    text.includes('hard techno') ||
+    text.includes('clandestin') ||
+    text.includes('warhola') ||
+    text.includes('insomnia') ||
+    text.includes('cine foro') ||
+    text.includes('autónom') ||
+    text.includes('autogest') ||
+    text.includes('tributo') ||
+    text.includes('parque cultural');
+
+  let categoria: Categoria = 'under';
+  if (
+    text.includes('techno') ||
+    text.includes('rave') ||
+    text.includes('house') ||
+    text.includes('electronic') ||
+    text.includes('djs') ||
+    text.includes('live set') ||
+    text.includes('acid')
+  ) {
+    categoria = 'electronica';
+  } else if (
+    text.includes('rock') ||
+    text.includes('punk') ||
+    text.includes('post-punk') ||
+    text.includes('post punk') ||
+    text.includes('metal') ||
+    text.includes('tocata') ||
+    text.includes('tributo') ||
+    text.includes('banda') ||
+    text.includes('en vivo')
+  ) {
+    categoria = 'rock';
+  } else if (text.includes('cumbia') || text.includes('salsa') || text.includes('cueca') || text.includes('pachanga')) {
+    categoria = 'cumbia';
+  } else if (text.includes('reggaeton') || text.includes('perreo') || text.includes('bellakeo') || text.includes('urbano')) {
+    categoria = 'reggaeton';
+  } else if (text.includes('universitari') || text.includes('mechoneo') || text.includes('pucv') || text.includes('uv') || text.includes('usm') || text.includes('upla')) {
+    categoria = 'universitario';
+  } else if (isJoyita || text.includes('under') || text.includes('queer') || text.includes('drag')) {
+    categoria = 'under';
+  }
+
+  const tags: string[] = ['instagram'];
+  if (isJoyita) tags.push('💎 joyita oculta');
+  if (categoria === 'electronica') tags.push('techno / rave');
+  if (categoria === 'rock') tags.push('tocata viva');
+  if (text.includes('gratis') || text.includes('liberada') || text.includes('al sobre')) tags.push('aporte voluntario');
+
+  return { categoria, isJoyita, tags };
+}
+
 // Adaptador: Convierte fila de DB (events) a tipo Evento de la app
 function dbRowToEvento(row: any): Evento {
+  const { categoria, isJoyita, tags } = detectCategoryAndJoyita(
+    row.title || '',
+    row.description || '',
+    row.username || '',
+    row.source || ''
+  );
+
   return {
     id: String(row.id || row.instagram_id),
     nombre: row.title || 'Evento sin nombre',
@@ -15,18 +92,18 @@ function dbRowToEvento(row: any): Evento {
     ciudad: row.location || 'Valparaíso',
     sector: null,
     precio: 0,
-    precio_texto: 'Ver detalles en Instagram',
-    categoria: 'under',
+    precio_texto: isJoyita ? 'Aporte Voluntario / Info por DM' : 'Ver detalles en Instagram',
+    categoria,
     imagen_url: row.image_url || null,
     fuente: 'instagram',
     fuente_url: row.instagram_url || null,
     organizador: row.username ? (row.username.startsWith('@') ? row.username : `@${row.username}`) : null,
     organizador_url: row.username ? `https://www.instagram.com/${row.username.replace('@', '')}/` : null,
     verificado: false,
-    destacado: false,
+    destacado: isJoyita || (row.likes && row.likes > 400),
     activo: row.is_active !== false,
     asistentes_interesados: row.likes || 1,
-    tags: ['carrete', 'instagram', row.location || 'valpo'],
+    tags,
     created_at: row.scraped_at || new Date().toISOString(),
   };
 }

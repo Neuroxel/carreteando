@@ -83,7 +83,17 @@ export default function EventCard({ evento, onRsvpChange }: EventCardProps) {
   const catMeta = CATEGORIAS.find((c) => c.value === evento.categoria);
 
   return (
-    <div className="event-card group">
+    <div
+      className="event-card group"
+      style={
+        evento.tags?.includes('💎 joyita oculta')
+          ? {
+              border: '1px solid rgba(236, 72, 153, 0.45)',
+              boxShadow: '0 4px 24px -6px rgba(236, 72, 153, 0.3)',
+            }
+          : undefined
+      }
+    >
       {/* Link envoltorio a la página de detalle */}
       <Link href={`/evento/${evento.id}`} style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', height: '100%' }}>
         {/* Imagen / Flyer */}
@@ -111,6 +121,29 @@ export default function EventCard({ evento, onRsvpChange }: EventCardProps) {
               <span>{catMeta?.emoji}</span>
               <span>{catMeta?.label || evento.categoria}</span>
             </span>
+
+            {/* Badge Joyita Oculta */}
+            {evento.tags?.includes('💎 joyita oculta') && (
+              <span
+                style={{
+                  fontSize: '10px',
+                  fontWeight: 800,
+                  background: 'linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%)',
+                  color: '#fff',
+                  padding: '3px 8px',
+                  borderRadius: 'var(--radius-full)',
+                  boxShadow: '0 0 10px rgba(236,72,153,0.5)',
+                  border: '1px solid rgba(255,255,255,0.4)',
+                  letterSpacing: '0.05em',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '3px',
+                }}
+              >
+                <span>💎</span>
+                <span>JOYITA</span>
+              </span>
+            )}
 
             {/* Fecha destacada */}
             <span

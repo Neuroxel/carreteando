@@ -73,12 +73,12 @@ export const CATEGORIAS: {
   badgeClass: string;
   desc: string;
 }[] = [
-  { value: 'universitario', label: 'Universitarios', emoji: '🎓', badgeClass: 'badge-universitario', desc: 'Mechoneos, tomas, PUCV, UV, USM, UPLA' },
-  { value: 'under', label: 'Under & Fiestas Ocultas', emoji: '🌙', badgeClass: 'badge-under', desc: 'Galpones, bodegas, casas, raves secretas' },
+  { value: 'under', label: 'Joyitas & Under', emoji: '💎', badgeClass: 'badge-under', desc: 'Spots secretos, raves clandestinas, tocatas punk y arte under' },
   { value: 'electronica', label: 'Electrónica & Techno', emoji: '🎧', badgeClass: 'badge-electronica', desc: 'Techno, House, Psy, D&B y sets extendidos' },
+  { value: 'rock', label: 'Rock & Tocatas', emoji: '🎸', badgeClass: 'badge-rock', desc: 'Bandas en vivo, punk, post-punk e indie' },
+  { value: 'universitario', label: 'Universitarios', emoji: '🎓', badgeClass: 'badge-universitario', desc: 'Mechoneos, tomas, PUCV, UV, USM, UPLA' },
   { value: 'cumbia', label: 'Cumbia & Pachanga', emoji: '🪗', badgeClass: 'badge-cumbia', desc: 'Salsa, cumbia porteña, fiesta costera' },
   { value: 'reggaeton', label: 'Reggaetón & Perreo', emoji: '🔥', badgeClass: 'badge-reggaeton', desc: 'Bellakeo, old school, trap y discotecas' },
-  { value: 'rock', label: 'Rock & Tocatas', emoji: '🎸', badgeClass: 'badge-rock', desc: 'Bandas en vivo, punk, post-punk e indie' },
   { value: 'otro', label: 'Otros Eventos', emoji: '🎉', badgeClass: 'badge-otro', desc: 'Ferias nocturnas, acústicos y arte' },
 ];
 

@@ -160,12 +160,14 @@ export default function HomePage() {
               <div className="hero-stat-label">Carretes Activos</div>
             </div>
             <div>
-              <div className="hero-stat-value">8+</div>
-              <div className="hero-stat-label">Cuentas IG Monitoreadas</div>
+              <div className="hero-stat-value">25+</div>
+              <div className="hero-stat-label">Circuitos & Colectivos</div>
             </div>
             <div>
-              <div className="hero-stat-value">100%</div>
-              <div className="hero-stat-label">Libre y Gratuito</div>
+              <div className="hero-stat-value" style={{ color: '#ec4899' }}>
+                💎 {categoryCounts['under'] || 0}
+              </div>
+              <div className="hero-stat-label">Joyitas & Under</div>
             </div>
             <div>
               <div className="hero-stat-value">V Región</div>
@@ -189,18 +191,19 @@ export default function HomePage() {
               justifyContent: 'space-between',
               gap: '16px',
               flexWrap: 'wrap',
-              background: 'linear-gradient(90deg, rgba(124,58,237,0.15) 0%, rgba(236,72,153,0.12) 100%)',
-              borderColor: 'rgba(124,58,237,0.3)',
+              background: 'linear-gradient(90deg, rgba(124,58,237,0.18) 0%, rgba(236,72,153,0.18) 100%)',
+              borderColor: 'rgba(236,72,153,0.35)',
+              boxShadow: '0 0 25px -5px rgba(236,72,153,0.2)',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
               <div
                 style={{
-                  width: '40px',
-                  height: '40px',
+                  width: '42px',
+                  height: '42px',
                   borderRadius: '50%',
-                  background: 'rgba(236,72,153,0.2)',
-                  border: '1px solid rgba(236,72,153,0.4)',
+                  background: 'rgba(236,72,153,0.25)',
+                  border: '1px solid rgba(236,72,153,0.5)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -212,23 +215,23 @@ export default function HomePage() {
               </div>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontWeight: 700, fontSize: '15px' }}>Radar Instagram en Tiempo Real</span>
+                  <span style={{ fontWeight: 700, fontSize: '15px' }}>🕷️ Araña Rastreadora de Joyitas & Under</span>
                   <span
                     style={{
                       fontSize: '10px',
-                      background: '#10b981',
-                      color: '#000',
+                      background: 'linear-gradient(135deg, #ec4899, #8b5cf6)',
+                      color: '#fff',
                       fontWeight: 800,
-                      padding: '2px 6px',
+                      padding: '2px 8px',
                       borderRadius: '8px',
-                      letterSpacing: '0.04em',
+                      letterSpacing: '0.05em',
                     }}
                   >
-                    ACTIVO
+                    MODO AGRESIVO
                   </span>
                 </div>
                 <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '2px 0 0' }}>
-                  Escaneando flyers y stories de @el.huevo, @trotamundosvalpo, @club_segundo_piso, @mascara_valparaiso y más.
+                  Rastreando 25+ circuitos alternativos: raves clandestinas, tocatas punk, darkwave, casonas y spots secretos del Gran Valparaíso.
                 </p>
               </div>
             </div>
