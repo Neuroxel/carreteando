@@ -12,7 +12,7 @@ const APIFY_RESULTS_LIMIT = Math.max(1, Math.min(12, Number(process.env.APIFY_RE
 const APIFY_NEWER_THAN = process.env.APIFY_NEWER_THAN || '3 days';
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const SUPABASE_KEY = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 const VENUE_INFO: Record<string, { name: string; location: string; tier: string }> = {
   'el.huevo': { name: 'El Huevo Valparaíso', location: 'Valparaíso (Blanco 1386)', tier: 'mainstream' },
@@ -219,7 +219,7 @@ export async function GET(request: Request) {
 
   if (!APIFY_TOKEN || !SUPABASE_URL || !SUPABASE_KEY) {
     return NextResponse.json(
-      { error: 'Faltan APIFY_API_TOKEN, NEXT_PUBLIC_SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY' },
+      { error: 'Faltan APIFY_API_TOKEN, NEXT_PUBLIC_SUPABASE_URL o SUPABASE_SECRET_KEY/SUPABASE_SERVICE_ROLE_KEY' },
       { status: 500 },
     );
   }
