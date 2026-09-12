@@ -283,46 +283,35 @@ def scrape_venues(L: instaloader.Instaloader) -> List[Dict]:
 
 # ─── Main ─────────────────────────────────────────────────────────────────────
 def main():
-    log.info("=== Carretes Scraper (Instaloader) iniciando ===")
+    log.info("=== Carretes Scraper (modo público, sin login) ===")
     log.info(f"Supabase: {SUPABASE_URL}")
 
     if not test_supabase():
         log.error("Sin conexión a Supabase. Abortando.")
         return
 
+    # Sin login — solo perfiles públicos. Sin cookie, sin usuario, sin checkpoint.
     L = build_loader()
+    log.info("Leyendo perfiles públicos de venues (sin autenticación)...")
 
-    if not login(L):
-        log.error("Sin sesión de Instagram. Abortando.")
-        return
-
-    all_events: List[Dict] = []
-
-    log.info("Scrapeando hashtags de eventos...")
-    hashtag_events = scrape_hashtags(L)
-    log.info(f"Hashtags: {len(hashtag_events)} posts con keywords de evento")
-    all_events.extend(hashtag_events)
-
-    log.info("Scrapeando cuentas de venues...")
     venue_events = scrape_venues(L)
-    log.info(f"Venues: {len(venue_events)} posts")
-    all_events.extend(venue_events)
+    log.info(f"Posts extraídos: {len(venue_events)}")
 
-    if not all_events:
+    if not venue_events:
         log.info("No se encontraron posts. Supabase no se modifica.")
         return
 
     # Deduplicar por instagram_id
-    seen = set()
+    seen: set = set()
     unique = []
-    for ev in all_events:
+    for ev in venue_events:
         if ev["instagram_id"] not in seen:
             seen.add(ev["instagram_id"])
             unique.append(ev)
 
-    log.info(f"Total únicos a guardar: {len(unique)}")
+    log.info(f"Guardando {len(unique)} eventos únicos en Supabase...")
     saved = sum(1 for ev in unique if save_to_supabase(ev))
-    log.info(f"Guardados en Supabase: {saved}/{len(unique)}")
+    log.info(f"Guardados: {saved}/{len(unique)}")
     log.info("=== Scraping completado ===")
 
 
