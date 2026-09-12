@@ -1,11 +1,7 @@
 import { Evento, EventoFormData, FiltrosEvento } from './types';
-import { EVENTOS_INICIALES } from './data/mockEvents';
 import { supabase } from './supabase';
 
-const STORAGE_KEY = 'carretes_valpo_eventos_v1';
 const RSVPS_KEY = 'carretes_valpo_rsvps_v1';
-
-let memoryEvents: Evento[] = [...EVENTOS_INICIALES];
 
 // Adaptador: Convierte fila de DB (events) a tipo Evento de la app
 function dbRowToEvento(row: any): Evento {
@@ -19,13 +15,13 @@ function dbRowToEvento(row: any): Evento {
     ciudad: row.location || 'Valparaíso',
     sector: null,
     precio: 0,
-    precio_texto: 'Ver detalles en post',
+    precio_texto: 'Ver detalles en Instagram',
     categoria: 'under',
-    imagen_url: row.image_url || 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=1200&q=80',
+    imagen_url: row.image_url || null,
     fuente: 'instagram',
     fuente_url: row.instagram_url || null,
-    organizador: row.username ? (row.username.startsWith('@') ? row.username : `@${row.username}`) : '@valpocarretes',
-    organizador_url: row.username ? `https://instagram.com/${row.username.replace('@', '')}` : null,
+    organizador: row.username ? (row.username.startsWith('@') ? row.username : `@${row.username}`) : null,
+    organizador_url: row.username ? `https://www.instagram.com/${row.username.replace('@', '')}/` : null,
     verificado: false,
     destacado: false,
     activo: row.is_active !== false,
@@ -35,25 +31,31 @@ function dbRowToEvento(row: any): Evento {
   };
 }
 
+const STORAGE_KEY = 'carretes_valpo_eventos_v1';
+let memoryEvents: Evento[] = [];
+
 export function getStoredEvents(): Evento[] {
   if (typeof window === 'undefined') {
     return memoryEvents;
   }
-
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(EVENTOS_INICIALES));
-      return EVENTOS_INICIALES;
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        memoryEvents = parsed;
+        return parsed;
+      }
     }
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : EVENTOS_INICIALES;
-  } catch {
-    return EVENTOS_INICIALES;
-  }
+  } catch {}
+  return memoryEvents;
 }
 
-// Fetch asíncrono desde Supabase con fallback a localStorage/memoria
+export function getEventById(id: string): Evento | undefined {
+  return getStoredEvents().find((e) => e.id === id || e.fuente_url?.includes(id));
+}
+
+// Fetch desde Supabase — si no hay datos o falla, retorna []
 export async function fetchEventsFromSupabase(): Promise<Evento[]> {
   if (!supabase) {
     return getStoredEvents();
@@ -66,23 +68,24 @@ export async function fetchEventsFromSupabase(): Promise<Evento[]> {
       .eq('is_active', true)
       .order('scraped_at', { ascending: false });
 
-    if (error || !data || data.length === 0) {
+    if (error) {
+      console.error('Error fetching from Supabase:', error.message);
       return getStoredEvents();
     }
 
-    const fetchedEvents = data.map(dbRowToEvento);
-    
-    // Unir con los locales/mock sin duplicar
-    const existingIds = new Set(fetchedEvents.map((e) => e.id));
-    const combined = [...fetchedEvents, ...EVENTOS_INICIALES.filter((m) => !existingIds.has(m.id))];
-
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(combined));
-      window.dispatchEvent(new Event('carretes_storage_updated'));
+    if (!data || data.length === 0) {
+      return getStoredEvents();
     }
 
-    memoryEvents = combined;
-    return combined;
+    const mapped = data.map(dbRowToEvento);
+    memoryEvents = mapped;
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(mapped));
+        window.dispatchEvent(new Event('carretes_storage_updated'));
+      } catch {}
+    }
+    return mapped;
   } catch (err) {
     console.error('Error fetching events from Supabase:', err);
     return getStoredEvents();
@@ -102,13 +105,11 @@ export function saveEvent(formData: EventoFormData): Evento {
     precio: typeof formData.precio === 'number' ? formData.precio : 0,
     precio_texto: formData.precio_texto?.trim() || (formData.precio === 0 ? 'Entrada Liberada' : `$${Number(formData.precio).toLocaleString('es-CL')}`),
     categoria: formData.categoria,
-    imagen_url:
-      formData.imagen_url?.trim() ||
-      'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=1200&q=80',
+    imagen_url: formData.imagen_url?.trim() || null,
     fuente: 'manual',
     fuente_url: formData.fuente_url?.trim() || null,
     organizador: formData.organizador.trim().startsWith('@') ? formData.organizador.trim() : `@${formData.organizador.trim()}`,
-    organizador_url: formData.organizador_url || (formData.organizador.startsWith('@') ? `https://instagram.com/${formData.organizador.replace('@', '')}` : null),
+    organizador_url: formData.organizador_url || (formData.organizador.startsWith('@') ? `https://www.instagram.com/${formData.organizador.replace('@', '')}/` : null),
     verificado: false,
     destacado: false,
     activo: true,
@@ -118,19 +119,15 @@ export function saveEvent(formData: EventoFormData): Evento {
   };
 
   memoryEvents.unshift(newEvent);
-
   if (typeof window !== 'undefined') {
     try {
       const current = getStoredEvents();
-      const updated = [newEvent, ...current];
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify([newEvent, ...current]));
       window.dispatchEvent(new Event('carretes_storage_updated'));
-    } catch (err) {
-      console.error('Error saving event to localStorage:', err);
-    }
+    } catch {}
   }
 
-  // Si Supabase está disponible, guardar también en la nube
+  // Guardar en Supabase si está disponible
   if (supabase) {
     supabase.from('events').insert({
       instagram_id: newEvent.id,
@@ -152,11 +149,6 @@ export function saveEvent(formData: EventoFormData): Evento {
   return newEvent;
 }
 
-export function getEventById(id: string): Evento | undefined {
-  const events = getStoredEvents();
-  return events.find((e) => e.id === id);
-}
-
 export function toggleRsvp(eventId: string): { interested: boolean; count: number } {
   if (typeof window === 'undefined') return { interested: false, count: 0 };
 
@@ -168,18 +160,7 @@ export function toggleRsvp(eventId: string): { interested: boolean; count: numbe
     const newRsvps = isAlready ? rsvps.filter((id) => id !== eventId) : [...rsvps, eventId];
     localStorage.setItem(RSVPS_KEY, JSON.stringify(newRsvps));
 
-    const events = getStoredEvents();
-    const target = events.find((e) => e.id === eventId);
-    let newCount = target?.asistentes_interesados || 0;
-
-    if (target) {
-      newCount = isAlready ? Math.max(0, newCount - 1) : newCount + 1;
-      target.asistentes_interesados = newCount;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
-      window.dispatchEvent(new Event('carretes_storage_updated'));
-    }
-
-    return { interested: !isAlready, count: newCount };
+    return { interested: !isAlready, count: 0 };
   } catch {
     return { interested: false, count: 0 };
   }
@@ -243,7 +224,6 @@ export function filterEvents(events: Evento[], filters: FiltrosEvento): Evento[]
         const sun = new Date(fri);
         sun.setDate(fri.getDate() + 2);
 
-        const friStr = fri.toISOString().split('T')[0];
         const sunStr = sun.toISOString().split('T')[0];
 
         if (evtDate < todayStr || evtDate > sunStr) return false;

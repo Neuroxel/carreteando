@@ -16,7 +16,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { Evento, Categoria, CIUDADES, CATEGORIAS } from '../lib/types';
-import { getStoredEvents, filterEvents, fetchEventsFromSupabase } from '../lib/events-store';
+import { filterEvents, fetchEventsFromSupabase } from '../lib/events-store';
 import EventCard from '../components/EventCard';
 import SearchBar from '../components/SearchBar';
 import CategoryFilter from '../components/CategoryFilter';
@@ -30,26 +30,19 @@ export default function HomePage() {
   const [selectedDate, setSelectedDate] = useState<'todos' | 'hoy' | 'finde' | 'semana'>('todos');
   const [selectedPrice, setSelectedPrice] = useState<'todos' | 'gratis' | 'pago'>('todos');
   const [mounted, setMounted] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  // Cargar eventos del store y de Supabase
+  // Cargar SOLO desde Supabase — sin datos por defecto ni fallbacks
   const loadEvents = async () => {
-    setEvents(getStoredEvents());
+    setLoading(true);
     const cloudEvents = await fetchEventsFromSupabase();
     setEvents(cloudEvents);
+    setLoading(false);
   };
 
   useEffect(() => {
     setMounted(true);
     loadEvents();
-
-    const handleStorageUpdate = () => {
-      loadEvents();
-    };
-
-    window.addEventListener('carretes_storage_updated', handleStorageUpdate);
-    return () => {
-      window.removeEventListener('carretes_storage_updated', handleStorageUpdate);
-    };
   }, []);
 
   // Filtrado reactivo en tiempo real
@@ -235,7 +228,7 @@ export default function HomePage() {
                   </span>
                 </div>
                 <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '2px 0 0' }}>
-                  Escaneando flyers y stories de @elhuevovalpo, @terrazabellavista_valpo, @mascaraclub_oficial, centros de alumnos y más.
+                  Escaneando flyers y stories de @el.huevo, @trotamundosvalpo, @club_segundo_piso, @mascara_valparaiso y más.
                 </p>
               </div>
             </div>
@@ -375,7 +368,28 @@ export default function HomePage() {
           </div>
 
           {/* Grid de Eventos */}
-          {filteredEvents.length > 0 ? (
+          {loading ? (
+            <div className="empty-state glass-card">
+              <div className="empty-state-icon" style={{ fontSize: '40px', marginBottom: '12px' }}>⏳</div>
+              <h3>Cargando cartelera...</h3>
+              <p style={{ maxWidth: '360px', margin: '0 auto' }}>
+                Consultando eventos reales extraídos desde Instagram.
+              </p>
+            </div>
+          ) : events.length === 0 ? (
+            <div className="empty-state glass-card">
+              <div className="empty-state-icon" style={{ fontSize: '40px', marginBottom: '12px' }}>📡</div>
+              <h3>Sin eventos por ahora</h3>
+              <p style={{ maxWidth: '400px', margin: '0 auto 16px' }}>
+                El scraper aún no ha encontrado eventos publicados en Instagram para la V Región.
+                Los datos aparecerán aquí automáticamente cuando haya flyers o publicaciones nuevas.
+              </p>
+              <Link href="/publicar" className="btn btn-primary">
+                <PlusCircle size={14} />
+                <span>Publicar un evento manualmente</span>
+              </Link>
+            </div>
+          ) : filteredEvents.length > 0 ? (
             <div className="event-grid stagger">
               {filteredEvents.map((evt) => (
                 <EventCard key={evt.id} evento={evt} onRsvpChange={loadEvents} />
@@ -384,9 +398,9 @@ export default function HomePage() {
           ) : (
             <div className="empty-state glass-card">
               <div className="empty-state-icon">🔍</div>
-              <h3>No encontramos carretes con estos filtros</h3>
+              <h3>No hay carretes con estos filtros</h3>
               <p style={{ maxWidth: '400px', margin: '0 auto 16px' }}>
-                Prueba buscando con otros términos o cambia la comuna y fecha para ver qué más hay en la zona.
+                Prueba cambiando la ciudad, fecha o categoría para ver más opciones.
               </p>
               <button
                 onClick={() => {
@@ -398,10 +412,11 @@ export default function HomePage() {
                 }}
                 className="btn btn-outline"
               >
-                Restablecer Filtros
+                Limpiar filtros
               </button>
             </div>
           )}
+
         </div>
       </section>
 
