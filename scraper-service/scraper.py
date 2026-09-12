@@ -13,6 +13,7 @@ import os, re, time, logging, json, urllib.request, itertools
 from datetime import datetime, timezone
 from typing import List, Dict, Optional
 from pathlib import Path
+from urllib.parse import unquote
 
 import instaloader
 
@@ -39,8 +40,12 @@ _key = (
 SUPABASE_KEY = _key if len(_key) > 40 else DEFAULT_SUPABASE_KEY
 
 # ─── Config Instagram ─────────────────────────────────────────────────────────
-IG_USERNAME = os.environ.get("IG_USERNAME", "").strip()
-IG_PASSWORD = os.environ.get("IG_PASSWORD", "").strip()
+IG_USERNAME  = clean_env("IG_USERNAME")
+IG_PASSWORD  = clean_env("IG_PASSWORD")
+# Cookie de sesión (URL-encoded o raw) — se decodifica automáticamente
+_raw_sid = clean_env("IG_SESSIONID")
+IG_SESSIONID = unquote(_raw_sid) if _raw_sid else ""
+
 
 # Ruta donde se persiste la sesión para no re-loguear cada vez
 SESSION_FILE = Path("/tmp/instaloader_session") if os.path.exists("/tmp") else Path("./instaloader_session")
@@ -128,37 +133,56 @@ def build_loader() -> instaloader.Instaloader:
 
 def login(L: instaloader.Instaloader) -> bool:
     """
-    Inicia sesión intentando primero cargar una sesión guardada.
-    Si no existe o expiró, hace login con usuario/contraseña y persiste la sesión.
+    Orden de intentos:
+    1. Cookie sessionid (IG_SESSIONID) — mas confiable, evita checkpoints
+    2. Sesion guardada en disco — reutiliza logins previos
+    3. Usuario + contrasena — fallback, puede pedir checkpoint desde IPs nuevos
     """
-    if not IG_USERNAME or not IG_PASSWORD:
-        log.error("IG_USERNAME o IG_PASSWORD no configurados en variables de entorno.")
-        return False
 
-    # Intentar cargar sesión guardada (evita re-login innecesario)
-    if SESSION_FILE.exists():
+    # 1. Cargar via cookie sessionid
+    if IG_SESSIONID:
         try:
-            L.load_session_from_file(IG_USERNAME, str(SESSION_FILE))
-            # Verificar que la sesión sigue activa
-            _ = instaloader.Profile.from_username(L.context, IG_USERNAME)
-            log.info(f"Sesión cargada desde archivo para @{IG_USERNAME}")
+            log.info(f"Intentando login con sessionid cookie (len={len(IG_SESSIONID)})...")
+            # Injectar cookie directamente en la sesion de requests
+            L.context._session.cookies.set(
+                "sessionid", IG_SESSIONID, domain=".instagram.com", path="/"
+            )
+            if IG_USERNAME:
+                L.context.username = IG_USERNAME
+            # Verificar que la sesion es valida haciendo una peticion real
+            test_profile = IG_USERNAME or "instagram"
+            instaloader.Profile.from_username(L.context, test_profile)
+            log.info(f"Login exitoso via sessionid cookie")
             return True
         except Exception as e:
-            log.warning(f"Sesión guardada inválida o expirada: {e}. Re-logueando...")
+            log.warning(f"Sessionid invalida o expirada: {e}")
 
-    # Login con usuario/contraseña
-    try:
-        L.login(IG_USERNAME, IG_PASSWORD)
-        L.save_session_to_file(str(SESSION_FILE))
-        log.info(f"Login exitoso como @{IG_USERNAME}. Sesión guardada.")
-        return True
-    except instaloader.exceptions.BadCredentialsException:
-        log.error("Usuario o contraseña incorrectos.")
-    except instaloader.exceptions.TwoFactorAuthRequiredException:
-        log.error("Esta cuenta tiene 2FA. Desactívalo o usa una cuenta sin 2FA.")
-    except Exception as e:
-        log.error(f"Error en login: {e}")
+    # 2. Sesion guardada en disco
+    if IG_USERNAME and SESSION_FILE.exists():
+        try:
+            L.load_session_from_file(IG_USERNAME, str(SESSION_FILE))
+            instaloader.Profile.from_username(L.context, IG_USERNAME)
+            log.info(f"Sesion cargada desde disco para @{IG_USERNAME}")
+            return True
+        except Exception as e:
+            log.warning(f"Sesion en disco invalida: {e}")
 
+    # 3. Login con usuario/contrasena (puede pedir checkpoint desde IPs nuevas)
+    if IG_USERNAME and IG_PASSWORD:
+        try:
+            log.info(f"Login con usuario/contrasena para @{IG_USERNAME}...")
+            L.login(IG_USERNAME, IG_PASSWORD)
+            L.save_session_to_file(str(SESSION_FILE))
+            log.info(f"Login exitoso como @{IG_USERNAME}. Sesion guardada en disco.")
+            return True
+        except instaloader.exceptions.BadCredentialsException:
+            log.error("Credenciales incorrectas.")
+        except instaloader.exceptions.TwoFactorAuthRequiredException:
+            log.error("2FA activo. Desactivalo en la cuenta de Instagram.")
+        except Exception as e:
+            log.error(f"Error en login: {e}")
+
+    log.error("No se pudo iniciar sesion por ningun metodo.")
     return False
 
 
