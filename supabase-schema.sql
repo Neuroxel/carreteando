@@ -1,4 +1,6 @@
--- Tabla principal de eventos
+-- Carretes V Región — esquema MVP
+-- Ejecutar este archivo/migración en Supabase antes de publicar el MVP.
+
 CREATE TABLE IF NOT EXISTS events (
   id              BIGSERIAL PRIMARY KEY,
   instagram_id    TEXT UNIQUE NOT NULL,
@@ -15,26 +17,31 @@ CREATE TABLE IF NOT EXISTS events (
   is_active       BOOLEAN DEFAULT TRUE
 );
 
--- Indices para búsquedas rápidas
 CREATE INDEX IF NOT EXISTS idx_events_location ON events(location);
 CREATE INDEX IF NOT EXISTS idx_events_scraped_at ON events(scraped_at DESC);
 CREATE INDEX IF NOT EXISTS idx_events_likes ON events(likes DESC);
+CREATE INDEX IF NOT EXISTS idx_events_date_text ON events(date_text);
 
--- RLS: lectura pública, escritura solo service role
 ALTER TABLE events ENABLE ROW LEVEL SECURITY;
 
+-- Elimina políticas antiguas que permitían escrituras públicas.
+DROP POLICY IF EXISTS "Public read" ON events;
+DROP POLICY IF EXISTS "Service insert" ON events;
+DROP POLICY IF EXISTS "Service upsert" ON events;
+
+-- La aplicación pública sólo puede leer eventos activos.
 CREATE POLICY "Public read" ON events
-  FOR SELECT USING (is_active = TRUE);
+  FOR SELECT
+  TO anon, authenticated
+  USING (is_active = TRUE);
 
-CREATE POLICY "Service insert" ON events
-  FOR INSERT WITH CHECK (TRUE);
+-- Defensa adicional: las escrituras públicas quedan revocadas.
+-- El service_role de Supabase opera en endpoints server-side y bypassa RLS.
+REVOKE INSERT, UPDATE, DELETE ON TABLE events FROM anon, authenticated;
+GRANT SELECT ON TABLE events TO anon, authenticated;
 
-CREATE POLICY "Service upsert" ON events
-  FOR UPDATE USING (TRUE);
-
--- Vista útil: eventos recientes ordenados por likes
 CREATE OR REPLACE VIEW recent_events AS
   SELECT * FROM events
   WHERE is_active = TRUE
-    AND scraped_at > NOW() - INTERVAL '7 days'
-  ORDER BY likes DESC, scraped_at DESC;
+    AND scraped_at > NOW() - INTERVAL '14 days'
+  ORDER BY date_text ASC NULLS LAST, scraped_at DESC;
