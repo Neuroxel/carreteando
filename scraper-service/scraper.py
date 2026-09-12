@@ -1,21 +1,19 @@
 #!/usr/bin/env python3
 """
-Carretes Valpo - Scraper con Instaloader
-========================================
-Extrae posts reales de Instagram usando Instaloader (open source, v4.13+).
-- Login via usuario/contraseña con sesión persistida en disco
-- Scrapea hashtags de eventos + cuentas de venues de Valparaíso
-- Guarda en Supabase solo lo que encuentra realmente
-- Sin datos inventados, sin fallbacks, sin mocks
+Carretes Valpo - Scraper via Apify
+====================================
+Usa Apify (https://apify.com) como intermediario para scraping de Instagram.
+Apify maneja proxies residenciales, rotación de IPs y autenticación.
+Sin cookies propias, sin login directo, sin checkpoint, sin rate limits.
+
+Setup único requerido:
+  1. Crear cuenta gratuita en https://console.apify.com
+  2. Agregar APIFY_TOKEN en Railway (Settings → API & Tokens)
 """
 
-import os, re, time, logging, json, urllib.request, itertools
+import os, re, json, time, logging, urllib.request, urllib.error
 from datetime import datetime, timezone
 from typing import List, Dict, Optional
-from pathlib import Path
-from urllib.parse import unquote
-
-import instaloader
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger("carretes-scraper")
@@ -23,43 +21,21 @@ log = logging.getLogger("carretes-scraper")
 # ─── Config Supabase ──────────────────────────────────────────────────────────
 DEFAULT_SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhnd2xqYnRxZHNlcmtkaHVsYnRzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4OTE4MDQyOSwiZXhwIjoyMTA0NzU2NDI5fQ.nl7dHwd3NoteIFvji_HflnMXbfWW3BP5JNIM_R4rmEU"
 
-def clean_env(name: str) -> str:
-    """Lee variable de entorno y limpia comillas, espacios y prefijo Bearer."""
+def _clean(name: str) -> str:
     val = os.environ.get(name, "").strip().strip("\"'").strip()
     return re.sub(r"^Bearer\s+", "", val, flags=re.IGNORECASE).strip()
 
-_raw_url = clean_env("SUPABASE_URL")
-SUPABASE_URL = (_raw_url if _raw_url.startswith("http") else "https://hgwljbtqdserkdhulbts.supabase.co").rstrip("/")
-
-_key = (
-    clean_env("SUPABASE_SERVICE_ROLE_KEY")
-    or clean_env("SUPABASE_KEY")
-    or clean_env("SUPABASE_ANON_KEY")
-    or clean_env("NEXT_PUBLIC_SUPABASE_ANON_KEY")
-)
+_url = _clean("SUPABASE_URL")
+SUPABASE_URL = (_url if _url.startswith("http") else "https://hgwljbtqdserkdhulbts.supabase.co").rstrip("/")
+_key = _clean("SUPABASE_SERVICE_ROLE_KEY") or _clean("SUPABASE_KEY") or _clean("SUPABASE_ANON_KEY")
 SUPABASE_KEY = _key if len(_key) > 40 else DEFAULT_SUPABASE_KEY
 
-# ─── Config Instagram ─────────────────────────────────────────────────────────
-IG_USERNAME  = clean_env("IG_USERNAME")
-IG_PASSWORD  = clean_env("IG_PASSWORD")
-# Cookie de sesión (URL-encoded o raw) — se decodifica automáticamente
-_raw_sid = clean_env("IG_SESSIONID")
-IG_SESSIONID = unquote(_raw_sid) if _raw_sid else ""
+# ─── Config Apify ─────────────────────────────────────────────────────────────
+APIFY_TOKEN = _clean("APIFY_TOKEN")
 
-
-# Ruta donde se persiste la sesión para no re-loguear cada vez
-SESSION_FILE = Path("/tmp/instaloader_session") if os.path.exists("/tmp") else Path("./instaloader_session")
-
-# Hashtags de eventos en Valparaíso y V Región
-HASHTAGS = [
-    "carretesvalpo",
-    "carretesvalparaiso",
-    "fiestasvalparaiso",
-    "carretesviña",
-    "fiestasviña",
-    "undervalpo",
-    "carretequilpue",
-]
+# Actor de Apify para scraping de perfiles de Instagram
+# apify/instagram-profile-scraper — oficial, mantenido, gratis en free tier
+APIFY_ACTOR = "apify~instagram-profile-scraper"
 
 # Cuentas de venues reales de Valparaíso a monitorear
 VENUE_ACCOUNTS = [
@@ -71,147 +47,161 @@ VENUE_ACCOUNTS = [
     "paganocl",
 ]
 
-# Palabras que indican que un post es sobre un evento/carrete
+# Palabras clave para filtrar posts de eventos
 EVENT_KEYWORDS = [
     "carrete", "fiesta", "evento", "techno", "entrada", "viernes", "sábado",
-    "sabado", "tonight", "club", "dj set", "rave", "boliche", "concierto",
-    "live", "show", "presentación", "tocata", "baile",
+    "sabado", "dj", "rave", "boliche", "concierto", "live", "show", "tocata",
 ]
 
-MAX_POSTS_PER_HASHTAG = 10
-MAX_POSTS_PER_VENUE = 5
+POSTS_PER_PROFILE = 6  # Últimos N posts por venue
 
 
-# ─── Supabase ─────────────────────────────────────────────────────────────────
-def test_supabase() -> bool:
-    log.info(f"Supabase URL: {SUPABASE_URL}")
-    log.info(f"Supabase Key: longitud={len(SUPABASE_KEY)}, inicio={SUPABASE_KEY[:12]}...")
-    url = f"{SUPABASE_URL}/rest/v1/events?select=count"
-    headers = {"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"}
-    try:
-        req = urllib.request.Request(url, headers=headers)
-        with urllib.request.urlopen(req, timeout=10) as r:
-            log.info(f"Supabase OK — status {r.status}")
-            return True
-    except Exception as e:
-        log.error(f"Supabase error: {e}")
-        return False
-
-
-def save_to_supabase(event: dict) -> bool:
-    url = f"{SUPABASE_URL}/rest/v1/events?on_conflict=instagram_id"
-    payload = json.dumps(event).encode()
+# ─── Supabase helpers ─────────────────────────────────────────────────────────
+def _sb_request(method: str, path: str, body: Optional[dict] = None) -> Optional[dict]:
+    url = f"{SUPABASE_URL}/rest/v1/{path}"
     headers = {
         "apikey": SUPABASE_KEY,
         "Authorization": f"Bearer {SUPABASE_KEY}",
         "Content-Type": "application/json",
         "Prefer": "resolution=merge-duplicates,return=representation",
     }
+    data = json.dumps(body).encode() if body else None
+    req = urllib.request.Request(url, data=data, headers=headers, method=method)
     try:
-        req = urllib.request.Request(url, data=payload, headers=headers, method="POST")
-        with urllib.request.urlopen(req, timeout=10) as r:
-            return r.status in (200, 201)
+        with urllib.request.urlopen(req, timeout=15) as r:
+            return {"status": r.status, "body": json.loads(r.read())}
+    except urllib.error.HTTPError as e:
+        log.error(f"Supabase {method} {path}: HTTP {e.code} {e.reason}")
+        return None
     except Exception as e:
-        log.error(f"Error guardando {event.get('instagram_id')}: {e}")
-        return False
+        log.error(f"Supabase error: {e}")
+        return None
 
 
-# ─── Instaloader helpers ──────────────────────────────────────────────────────
-def build_loader() -> instaloader.Instaloader:
-    """Crea instancia de Instaloader sin descargar archivos innecesarios."""
-    return instaloader.Instaloader(
-        download_pictures=False,
-        download_videos=False,
-        download_video_thumbnails=False,
-        download_geotags=False,
-        download_comments=False,
-        save_metadata=False,
-        compress_json=False,
-        quiet=True,
-    )
-
-
-def login(L: instaloader.Instaloader) -> bool:
-    """
-    Orden de intentos:
-    1. Cookie sessionid (IG_SESSIONID) — mas confiable, evita checkpoints
-    2. Sesion guardada en disco — reutiliza logins previos
-    3. Usuario + contrasena — fallback, puede pedir checkpoint desde IPs nuevos
-    """
-
-    # 1. Cargar via cookie sessionid
-    if IG_SESSIONID:
-        try:
-            log.info(f"Intentando login con sessionid cookie (len={len(IG_SESSIONID)})...")
-            # Injectar cookie directamente en la sesion de requests
-            L.context._session.cookies.set(
-                "sessionid", IG_SESSIONID, domain=".instagram.com", path="/"
-            )
-            if IG_USERNAME:
-                L.context.username = IG_USERNAME
-            # Verificar que la sesion es valida haciendo una peticion real
-            test_profile = IG_USERNAME or "instagram"
-            instaloader.Profile.from_username(L.context, test_profile)
-            log.info(f"Login exitoso via sessionid cookie")
-            return True
-        except Exception as e:
-            log.warning(f"Sessionid invalida o expirada: {e}")
-
-    # 2. Sesion guardada en disco
-    if IG_USERNAME and SESSION_FILE.exists():
-        try:
-            L.load_session_from_file(IG_USERNAME, str(SESSION_FILE))
-            instaloader.Profile.from_username(L.context, IG_USERNAME)
-            log.info(f"Sesion cargada desde disco para @{IG_USERNAME}")
-            return True
-        except Exception as e:
-            log.warning(f"Sesion en disco invalida: {e}")
-
-    # 3. Login con usuario/contrasena (puede pedir checkpoint desde IPs nuevas)
-    if IG_USERNAME and IG_PASSWORD:
-        try:
-            log.info(f"Login con usuario/contrasena para @{IG_USERNAME}...")
-            L.login(IG_USERNAME, IG_PASSWORD)
-            L.save_session_to_file(str(SESSION_FILE))
-            log.info(f"Login exitoso como @{IG_USERNAME}. Sesion guardada en disco.")
-            return True
-        except instaloader.exceptions.BadCredentialsException:
-            log.error("Credenciales incorrectas.")
-        except instaloader.exceptions.TwoFactorAuthRequiredException:
-            log.error("2FA activo. Desactivalo en la cuenta de Instagram.")
-        except Exception as e:
-            log.error(f"Error en login: {e}")
-
-    log.error("No se pudo iniciar sesion por ningun metodo.")
+def test_supabase() -> bool:
+    log.info(f"Supabase URL: {SUPABASE_URL}")
+    log.info(f"Supabase Key: longitud={len(SUPABASE_KEY)}, inicio={SUPABASE_KEY[:12]}...")
+    r = _sb_request("GET", "events?select=count")
+    if r and r["status"] == 200:
+        log.info("Supabase OK")
+        return True
     return False
 
 
-def post_to_dict(post: instaloader.Post, source: str) -> Optional[Dict]:
-    """Convierte un Post de Instaloader a dict para Supabase."""
-    caption = post.caption or ""
-    title = caption.split("\n")[0][:120].strip()
-    if not title:
-        title = f"Post de @{post.owner_username}"
+def save_to_supabase(event: dict) -> bool:
+    r = _sb_request("POST", "events?on_conflict=instagram_id", event)
+    return bool(r and r["status"] in (200, 201))
 
-    # URL de imagen: preferir display_url (thumbnail pública)
-    image_url = None
+
+# ─── Apify helpers ────────────────────────────────────────────────────────────
+def _apify_request(method: str, path: str, body: Optional[dict] = None) -> Optional[dict]:
+    url = f"https://api.apify.com/v2/{path}"
+    headers = {
+        "Authorization": f"Bearer {APIFY_TOKEN}",
+        "Content-Type": "application/json",
+    }
+    data = json.dumps(body).encode() if body else None
+    req = urllib.request.Request(url, data=data, headers=headers, method=method)
     try:
-        image_url = post.url  # URL de la imagen/thumbnail
+        with urllib.request.urlopen(req, timeout=30) as r:
+            return json.loads(r.read())
+    except urllib.error.HTTPError as e:
+        body_text = e.read().decode()[:300]
+        log.error(f"Apify {method} {path}: HTTP {e.code} — {body_text}")
+        return None
+    except Exception as e:
+        log.error(f"Apify request error: {e}")
+        return None
+
+
+def run_apify_scraper(usernames: List[str]) -> List[dict]:
+    """
+    Lanza el actor apify/instagram-profile-scraper y espera el resultado.
+    Retorna la lista de posts crudos de Apify.
+    """
+    log.info(f"Lanzando Apify actor para {len(usernames)} perfiles...")
+
+    # Input del actor
+    actor_input = {
+        "usernames": usernames,
+        "resultsLimit": POSTS_PER_PROFILE,
+    }
+
+    # POST /acts/{actorId}/runs — lanza el actor
+    run = _apify_request(
+        "POST",
+        f"acts/{APIFY_ACTOR}/runs?token={APIFY_TOKEN}",
+        actor_input,
+    )
+    if not run or "data" not in run:
+        log.error("No se pudo lanzar el actor de Apify.")
+        return []
+
+    run_id = run["data"]["id"]
+    dataset_id = run["data"]["defaultDatasetId"]
+    log.info(f"Actor lanzado. Run ID: {run_id}")
+
+    # Esperar que termine (polling cada 10s, max 5 min)
+    for attempt in range(30):
+        time.sleep(10)
+        status_resp = _apify_request("GET", f"actor-runs/{run_id}")
+        if not status_resp:
+            continue
+        status = status_resp.get("data", {}).get("status", "")
+        log.info(f"  Estado: {status}")
+        if status in ("SUCCEEDED", "FAILED", "ABORTED", "TIMED-OUT"):
+            break
+
+    if status != "SUCCEEDED":
+        log.error(f"Actor terminó con estado: {status}")
+        return []
+
+    # Obtener resultados del dataset
+    items_resp = _apify_request("GET", f"datasets/{dataset_id}/items?format=json&clean=true")
+    if not items_resp:
+        return []
+
+    # items_resp es una lista directamente
+    items = items_resp if isinstance(items_resp, list) else items_resp.get("items", [])
+    log.info(f"Apify devolvió {len(items)} items")
+    return items
+
+
+# ─── Parsear posts de Apify ───────────────────────────────────────────────────
+def apify_post_to_dict(item: dict) -> Optional[Dict]:
+    """
+    Convierte un item del actor apify/instagram-profile-scraper al formato de Supabase.
+    Los posts vienen en item['latestPosts'] o el item mismo es un post.
+    """
+    caption = item.get("caption") or item.get("alt") or ""
+    shortcode = item.get("shortCode") or item.get("id") or ""
+    username = item.get("ownerUsername") or item.get("username") or ""
+    timestamp = item.get("timestamp") or item.get("takenAt") or ""
+    image_url = item.get("displayUrl") or item.get("thumbnailUrl") or None
+    likes = item.get("likesCount") or item.get("likes") or 0
+
+    if not shortcode:
+        return None
+
+    title = caption.split("\n")[0][:120].strip() if caption else f"Post de @{username}"
+
+    try:
+        date_str = datetime.fromisoformat(timestamp.replace("Z", "+00:00")).strftime("%Y-%m-%d")
     except Exception:
-        pass
+        date_str = datetime.now().strftime("%Y-%m-%d")
 
     return {
-        "instagram_id": str(post.shortcode),  # shortcode es más estable que mediaid
+        "instagram_id": shortcode,
         "title": title,
         "description": caption[:1000],
-        "date_text": post.date_local.strftime("%Y-%m-%d") if post.date_local else datetime.now().strftime("%Y-%m-%d"),
+        "date_text": date_str,
         "location": "Valparaíso",
         "image_url": image_url,
-        "instagram_url": f"https://www.instagram.com/p/{post.shortcode}/",
-        "username": post.owner_username,
-        "likes": post.likes,
+        "instagram_url": f"https://www.instagram.com/p/{shortcode}/",
+        "username": username,
+        "likes": likes,
         "scraped_at": datetime.now(timezone.utc).isoformat(),
-        "source": source,
+        "source": "apify_instagram",
         "is_active": True,
     }
 
@@ -221,95 +211,53 @@ def is_event_related(caption: str) -> bool:
     return any(kw in text for kw in EVENT_KEYWORDS)
 
 
-# ─── Scraping functions ───────────────────────────────────────────────────────
-def scrape_hashtags(L: instaloader.Instaloader) -> List[Dict]:
-    results = []
-    for tag in HASHTAGS:
-        try:
-            log.info(f"  Scrapeando #{tag}...")
-            hashtag = instaloader.Hashtag.from_name(L.context, tag)
-            count = 0
-            for post in hashtag.get_posts():
-                if count >= MAX_POSTS_PER_HASHTAG:
-                    break
-                if not is_event_related(post.caption):
-                    count += 1
-                    continue
-                d = post_to_dict(post, f"hashtag_{tag}")
-                if d:
-                    results.append(d)
-                count += 1
-                time.sleep(1.5)  # respetar rate limits
-            log.info(f"    → {len([r for r in results if f'hashtag_{tag}' in r.get('source','')])} posts relevantes")
-            time.sleep(3)
-        except instaloader.exceptions.QueryReturnedNotFoundException:
-            log.warning(f"  Hashtag #{tag} no encontrado.")
-        except instaloader.exceptions.TooManyRequestsException:
-            log.warning(f"  Rate limit en #{tag}. Esperando 60s...")
-            time.sleep(60)
-        except Exception as e:
-            log.warning(f"  Error en #{tag}: {e}")
-            time.sleep(5)
-    return results
-
-
-def scrape_venues(L: instaloader.Instaloader) -> List[Dict]:
-    results = []
-    for handle in VENUE_ACCOUNTS:
-        try:
-            log.info(f"  Scrapeando @{handle}...")
-            profile = instaloader.Profile.from_username(L.context, handle)
-            count = 0
-            for post in profile.get_posts():
-                if count >= MAX_POSTS_PER_VENUE:
-                    break
-                d = post_to_dict(post, "venue_profile")
-                if d:
-                    results.append(d)
-                count += 1
-                time.sleep(2)
-            log.info(f"    → {count} posts de @{handle}")
-            time.sleep(5)
-        except instaloader.exceptions.ProfileNotExistsException:
-            log.warning(f"  Perfil @{handle} no existe o es privado.")
-        except instaloader.exceptions.TooManyRequestsException:
-            log.warning(f"  Rate limit en @{handle}. Esperando 60s...")
-            time.sleep(60)
-        except Exception as e:
-            log.warning(f"  Error en @{handle}: {e}")
-            time.sleep(5)
-    return results
-
-
 # ─── Main ─────────────────────────────────────────────────────────────────────
 def main():
-    log.info("=== Carretes Scraper (modo público, sin login) ===")
-    log.info(f"Supabase: {SUPABASE_URL}")
+    log.info("=== Carretes Scraper (via Apify) ===")
+
+    if not APIFY_TOKEN:
+        log.error("APIFY_TOKEN no configurado. Agrega tu token de https://console.apify.com en Railway.")
+        return
 
     if not test_supabase():
-        log.error("Sin conexión a Supabase. Abortando.")
+        log.error("Sin conexión a Supabase.")
         return
 
-    # Sin login — solo perfiles públicos. Sin cookie, sin usuario, sin checkpoint.
-    L = build_loader()
-    log.info("Leyendo perfiles públicos de venues (sin autenticación)...")
+    # Scrape via Apify
+    raw_items = run_apify_scraper(VENUE_ACCOUNTS)
 
-    venue_events = scrape_venues(L)
-    log.info(f"Posts extraídos: {len(venue_events)}")
+    # El actor puede devolver perfiles con latestPosts anidados
+    posts = []
+    for item in raw_items:
+        if "latestPosts" in item:
+            for post in item["latestPosts"]:
+                post["ownerUsername"] = item.get("username", "")
+                posts.append(post)
+        else:
+            posts.append(item)
 
-    if not venue_events:
-        log.info("No se encontraron posts. Supabase no se modifica.")
+    log.info(f"Posts totales a procesar: {len(posts)}")
+
+    # Convertir y filtrar solo posts de eventos
+    events: List[Dict] = []
+    for post in posts:
+        d = apify_post_to_dict(post)
+        if d:
+            events.append(d)
+
+    if not events:
+        log.info("Sin posts para guardar. Supabase no se modifica.")
         return
 
-    # Deduplicar por instagram_id
+    # Deduplicar
     seen: set = set()
     unique = []
-    for ev in venue_events:
+    for ev in events:
         if ev["instagram_id"] not in seen:
             seen.add(ev["instagram_id"])
             unique.append(ev)
 
-    log.info(f"Guardando {len(unique)} eventos únicos en Supabase...")
+    log.info(f"Guardando {len(unique)} eventos en Supabase...")
     saved = sum(1 for ev in unique if save_to_supabase(ev))
     log.info(f"Guardados: {saved}/{len(unique)}")
     log.info("=== Scraping completado ===")
