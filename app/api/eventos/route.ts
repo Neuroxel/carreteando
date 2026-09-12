@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getStoredEvents, filterEvents } from '../../../lib/events-store';
+import { fetchEventsFromSupabase, filterEvents } from '../../../lib/events-store';
 import { Categoria } from '../../../lib/types';
 
 export async function GET(request: Request) {
@@ -11,7 +11,7 @@ export async function GET(request: Request) {
   const fecha = (searchParams.get('fecha') as 'todos' | 'hoy' | 'finde' | 'semana') || 'todos';
   const precio = (searchParams.get('precio') as 'todos' | 'gratis' | 'pago') || 'todos';
 
-  const allEvents = getStoredEvents();
+  const allEvents = await fetchEventsFromSupabase();
   const filtered = filterEvents(allEvents, {
     busqueda,
     categoria,
