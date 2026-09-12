@@ -8,7 +8,7 @@ export async function GET(request: Request) {
   const busqueda = searchParams.get('q') || undefined;
   const categoria = (searchParams.get('categoria') as Categoria) || 'todos';
   const ciudad = searchParams.get('ciudad') || 'todos';
-  const fecha = (searchParams.get('fecha') as 'todos' | 'hoy' | 'finde' | 'semana') || 'todos';
+  const fecha = (searchParams.get('fecha') as 'todos' | 'hoy' | 'finde' | 'futuro' | 'semana') || 'todos';
   const precio = (searchParams.get('precio') as 'todos' | 'gratis' | 'pago') || 'todos';
 
   const allEvents = await fetchEventsFromSupabase();

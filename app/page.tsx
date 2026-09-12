@@ -16,7 +16,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { Evento, Categoria, CIUDADES, CATEGORIAS } from '../lib/types';
-import { filterEvents, fetchEventsFromSupabase } from '../lib/events-store';
+import { filterEvents, fetchEventsFromSupabase, getChileTodayStr } from '../lib/events-store';
 import EventCard from '../components/EventCard';
 import SearchBar from '../components/SearchBar';
 import CategoryFilter from '../components/CategoryFilter';
@@ -27,7 +27,7 @@ export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<Categoria | 'todos'>('todos');
   const [selectedCity, setSelectedCity] = useState<string | 'todos'>('todos');
-  const [selectedDate, setSelectedDate] = useState<'todos' | 'hoy' | 'finde' | 'semana'>('todos');
+  const [selectedDate, setSelectedDate] = useState<'todos' | 'hoy' | 'finde' | 'futuro' | 'semana'>('futuro');
   const [selectedPrice, setSelectedPrice] = useState<'todos' | 'gratis' | 'pago'>('todos');
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -44,6 +44,16 @@ export default function HomePage() {
     setMounted(true);
     loadEvents();
   }, []);
+
+  const todayStr = useMemo(() => getChileTodayStr(), []);
+
+  const todayCount = useMemo(() => {
+    return events.filter((e) => e.fecha === todayStr).length;
+  }, [events, todayStr]);
+
+  const futureCount = useMemo(() => {
+    return events.filter((e) => e.fecha >= todayStr).length;
+  }, [events, todayStr]);
 
   // Filtrado reactivo en tiempo real
   const filteredEvents = useMemo(() => {
@@ -153,15 +163,98 @@ export default function HomePage() {
             ))}
           </div>
 
+          {/* Botones de acción rápida para fechas */}
+          <div
+            className="animate-fade-in-up"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              marginTop: '14px',
+              flexWrap: 'wrap',
+              animationDelay: '0.22s',
+            }}
+          >
+            <button
+              onClick={() => {
+                setSelectedDate('hoy');
+                document.getElementById('eventos-feed')?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              style={{
+                fontSize: '12px',
+                padding: '6px 14px',
+                borderRadius: 'var(--radius-full)',
+                background: selectedDate === 'hoy' ? 'linear-gradient(135deg, #f97316, #ec4899)' : 'rgba(249, 115, 22, 0.15)',
+                border: selectedDate === 'hoy' ? '1px solid #f97316' : '1px solid rgba(249, 115, 22, 0.35)',
+                color: '#fff',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: selectedDate === 'hoy' ? '0 0 16px rgba(249, 115, 22, 0.4)' : 'none',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              <span>🔥 ESTA NOCHE (HOY)</span>
+              {todayCount > 0 && <span style={{ opacity: 0.9 }}>({todayCount})</span>}
+            </button>
+            <button
+              onClick={() => {
+                setSelectedDate('futuro');
+                document.getElementById('eventos-feed')?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              style={{
+                fontSize: '12px',
+                padding: '6px 14px',
+                borderRadius: 'var(--radius-full)',
+                background: selectedDate === 'futuro' ? 'linear-gradient(135deg, #ec4899, #8b5cf6)' : 'rgba(236, 72, 153, 0.15)',
+                border: selectedDate === 'futuro' ? '1px solid #ec4899' : '1px solid rgba(236, 72, 153, 0.35)',
+                color: '#fff',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: selectedDate === 'futuro' ? '0 0 16px rgba(236, 72, 153, 0.4)' : 'none',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              <span>🚀 PRÓXIMOS & FUTURO</span>
+              {futureCount > 0 && <span style={{ opacity: 0.9 }}>({futureCount})</span>}
+            </button>
+            <button
+              onClick={() => setSelectedDate('finde')}
+              style={{
+                fontSize: '12px',
+                padding: '6px 14px',
+                borderRadius: 'var(--radius-full)',
+                background: selectedDate === 'finde' ? 'var(--gradient-brand)' : 'rgba(124, 58, 237, 0.15)',
+                border: selectedDate === 'finde' ? '1px solid #8b5cf6' : '1px solid rgba(124, 58, 237, 0.35)',
+                color: '#fff',
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              <span>⚡ Este Finde</span>
+            </button>
+          </div>
+
           {/* Stats Bar */}
           <div className="hero-stats">
             <div>
-              <div className="hero-stat-value">{events.length}</div>
-              <div className="hero-stat-label">Carretes Activos</div>
+              <div className="hero-stat-value" style={{ color: '#f97316' }}>
+                🔥 {todayCount}
+              </div>
+              <div className="hero-stat-label">Esta Noche (Hoy)</div>
             </div>
             <div>
-              <div className="hero-stat-value">25+</div>
-              <div className="hero-stat-label">Circuitos & Colectivos</div>
+              <div className="hero-stat-value" style={{ color: '#a78bfa' }}>
+                🚀 {futureCount}
+              </div>
+              <div className="hero-stat-label">Próximos & Finde</div>
             </div>
             <div>
               <div className="hero-stat-value" style={{ color: '#ec4899' }}>
@@ -170,8 +263,8 @@ export default function HomePage() {
               <div className="hero-stat-label">Joyitas & Under</div>
             </div>
             <div>
-              <div className="hero-stat-value">V Región</div>
-              <div className="hero-stat-label">Valpo · Viña · Quilpué</div>
+              <div className="hero-stat-value">25+</div>
+              <div className="hero-stat-label">Circuitos IG en Vivo</div>
             </div>
           </div>
         </div>
@@ -253,7 +346,7 @@ export default function HomePage() {
       {/* ============================================
           MAIN FEED & FILTERS
           ============================================ */}
-      <section style={{ padding: '16px 0 60px' }}>
+      <section id="eventos-feed" style={{ padding: '16px 0 60px' }}>
         <div className="container">
           {/* Header de sección con filtros de fecha y precio */}
           <div
@@ -288,7 +381,12 @@ export default function HomePage() {
             </div>
 
             {/* Selector de Fechas */}
-            <DateFilter selected={selectedDate} onSelect={setSelectedDate} />
+            <DateFilter
+              selected={selectedDate}
+              onSelect={setSelectedDate}
+              todayCount={todayCount}
+              futureCount={futureCount}
+            />
           </div>
 
           {/* Filtros de Categoría */}

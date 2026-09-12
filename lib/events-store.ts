@@ -108,7 +108,19 @@ function dbRowToEvento(row: any): Evento {
   };
 }
 
-const STORAGE_KEY = 'carretes_valpo_eventos_v1';
+export function getChileTodayStr(): string {
+  try {
+    return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Santiago' }).format(new Date());
+  } catch {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+}
+
+const STORAGE_KEY = 'carretes_valpo_eventos_v2_clean';
 let memoryEvents: Evento[] = [];
 
 export function getStoredEvents(): Evento[] {
@@ -120,8 +132,9 @@ export function getStoredEvents(): Evento[] {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        memoryEvents = parsed;
-        return parsed;
+        const clean = parsed.filter((e) => e && e.fecha && e.fecha >= '2026-09-01');
+        memoryEvents = clean;
+        return clean;
       }
     }
   } catch {}
@@ -254,10 +267,13 @@ export function getUserRsvps(): string[] {
 }
 
 export function filterEvents(events: Evento[], filters: FiltrosEvento): Evento[] {
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = getChileTodayStr();
 
-  return events.filter((evt) => {
+  const filtered = events.filter((evt) => {
     if (!evt.activo) return false;
+
+    // Descartar automáticamente contenido anterior a septiembre 2026 (elimina 2019, 2020, etc.)
+    if (!evt.fecha || evt.fecha < '2026-09-01') return false;
 
     if (filters.busqueda && filters.busqueda.trim() !== '') {
       const q = filters.busqueda.toLowerCase().trim();
@@ -289,21 +305,26 @@ export function filterEvents(events: Evento[], filters: FiltrosEvento): Evento[]
     if (filters.fecha && filters.fecha !== 'todos') {
       const evtDate = evt.fecha;
       const today = new Date();
-      const currentDayOfWeek = today.getDay();
+      const currentDayOfWeek = today.getDay(); // 0=domingo, 5=viernes, 6=sábado
 
       if (filters.fecha === 'hoy') {
         if (evtDate !== todayStr) return false;
+      } else if (filters.fecha === 'futuro') {
+        // Todos los eventos desde hoy en adelante (hoy, mañana, fiestas patrias 18-19-20)
+        if (evtDate < todayStr) return false;
       } else if (filters.fecha === 'finde') {
-        const diffToFri = (5 - currentDayOfWeek + 7) % 7;
+        // Fin de semana actual (Viernes a Domingo)
         const fri = new Date(today);
-        fri.setDate(today.getDate() + diffToFri);
+        const daysFromFri = (currentDayOfWeek === 0 ? 2 : currentDayOfWeek - 5);
+        fri.setDate(today.getDate() - daysFromFri);
 
         const sun = new Date(fri);
         sun.setDate(fri.getDate() + 2);
 
+        const friStr = fri.toISOString().split('T')[0];
         const sunStr = sun.toISOString().split('T')[0];
 
-        if (evtDate < todayStr || evtDate > sunStr) return false;
+        if (evtDate < friStr || evtDate > sunStr) return false;
       } else if (filters.fecha === 'semana') {
         const nextWeek = new Date(today);
         nextWeek.setDate(today.getDate() + 7);
@@ -314,5 +335,22 @@ export function filterEvents(events: Evento[], filters: FiltrosEvento): Evento[]
     }
 
     return true;
+  });
+
+  // Ordenar inteligentemente: Hoy y Futuro van PRIMERO (cronológico), eventos pasados al final
+  return filtered.sort((a, b) => {
+    const aIsFuture = (a.fecha || '') >= todayStr;
+    const bIsFuture = (b.fecha || '') >= todayStr;
+
+    if (aIsFuture && !bIsFuture) return -1;
+    if (!aIsFuture && bIsFuture) return 1;
+
+    if (aIsFuture && bIsFuture) {
+      // Orden cronológico ascendente (los de hoy primero, luego mañana, luego el 18)
+      return (a.fecha || '').localeCompare(b.fecha || '');
+    }
+
+    // Pasados: más recientes primero
+    return (b.fecha || '').localeCompare(a.fecha || '');
   });
 }

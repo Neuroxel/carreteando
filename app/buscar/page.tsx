@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Search, Filter, MapPin, Calendar, ArrowLeft } from 'lucide-react';
 import { Evento, Categoria, CIUDADES, CATEGORIAS } from '../../lib/types';
-import { getStoredEvents, filterEvents } from '../../lib/events-store';
+import { getStoredEvents, filterEvents, fetchEventsFromSupabase, getChileTodayStr } from '../../lib/events-store';
 import EventCard from '../../components/EventCard';
 import SearchBar from '../../components/SearchBar';
 import CategoryFilter from '../../components/CategoryFilter';
@@ -15,7 +15,7 @@ function SearchPageContent() {
   const searchParams = useSearchParams();
 
   const initialCat = (searchParams.get('categoria') as Categoria) || 'todos';
-  const initialFecha = (searchParams.get('fecha') as 'todos' | 'hoy' | 'finde' | 'semana') || 'todos';
+  const initialFecha = (searchParams.get('fecha') as 'todos' | 'hoy' | 'finde' | 'futuro' | 'semana') || 'futuro';
   const initialQ = searchParams.get('q') || '';
   const initialCity = searchParams.get('ciudad') || 'todos';
 
@@ -23,16 +23,21 @@ function SearchPageContent() {
   const [searchQuery, setSearchQuery] = useState(initialQ);
   const [selectedCategory, setSelectedCategory] = useState<Categoria | 'todos'>(initialCat);
   const [selectedCity, setSelectedCity] = useState<string | 'todos'>(initialCity);
-  const [selectedDate, setSelectedDate] = useState<'todos' | 'hoy' | 'finde' | 'semana'>(initialFecha);
+  const [selectedDate, setSelectedDate] = useState<'todos' | 'hoy' | 'finde' | 'futuro' | 'semana'>(initialFecha);
   const [selectedPrice, setSelectedPrice] = useState<'todos' | 'gratis' | 'pago'>('todos');
 
-  const loadEvents = () => {
-    setEvents(getStoredEvents());
+  const loadEvents = async () => {
+    const cloudEvents = await fetchEventsFromSupabase();
+    setEvents(cloudEvents);
   };
 
   useEffect(() => {
     loadEvents();
   }, []);
+
+  const todayStr = useMemo(() => getChileTodayStr(), []);
+  const todayCount = useMemo(() => events.filter((e) => e.fecha === todayStr).length, [events, todayStr]);
+  const futureCount = useMemo(() => events.filter((e) => e.fecha >= todayStr).length, [events, todayStr]);
 
   const filteredEvents = useMemo(() => {
     return filterEvents(events, {
@@ -89,7 +94,12 @@ function SearchPageContent() {
         <div className="glass-card" style={{ padding: '20px', marginBottom: '32px' }}>
           {/* Fila 1: Fechas y Comunas */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap', marginBottom: '16px' }}>
-            <DateFilter selected={selectedDate} onSelect={setSelectedDate} />
+            <DateFilter
+              selected={selectedDate}
+              onSelect={setSelectedDate}
+              todayCount={todayCount}
+              futureCount={futureCount}
+            />
 
             {/* Selector de Comuna */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
