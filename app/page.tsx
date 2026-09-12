@@ -16,7 +16,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { Evento, Categoria, CIUDADES, CATEGORIAS } from '../lib/types';
-import { getStoredEvents, filterEvents } from '../lib/events-store';
+import { getStoredEvents, filterEvents, fetchEventsFromSupabase } from '../lib/events-store';
 import EventCard from '../components/EventCard';
 import SearchBar from '../components/SearchBar';
 import CategoryFilter from '../components/CategoryFilter';
@@ -31,9 +31,11 @@ export default function HomePage() {
   const [selectedPrice, setSelectedPrice] = useState<'todos' | 'gratis' | 'pago'>('todos');
   const [mounted, setMounted] = useState(false);
 
-  // Cargar eventos del store
-  const loadEvents = () => {
+  // Cargar eventos del store y de Supabase
+  const loadEvents = async () => {
     setEvents(getStoredEvents());
+    const cloudEvents = await fetchEventsFromSupabase();
+    setEvents(cloudEvents);
   };
 
   useEffect(() => {
