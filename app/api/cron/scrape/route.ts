@@ -35,12 +35,47 @@ const VENUE_INFO: Record<string, { name: string; location: string; tier: string 
   'parqueculturaldevalparaiso': { name: 'Parque Cultural ex Cárcel', location: 'Cárcel 471, Valparaíso', tier: 'cultura' },
 };
 
+type JsonRecord = Record<string, unknown>;
+
 interface ApifyRun {
   id: string;
   defaultDatasetId: string;
 }
 
-async function apifyRequest(path: string, init?: RequestInit) {
+interface EventRow {
+  instagram_id: string;
+  title: string;
+  description: string;
+  date_text: string;
+  location: string;
+  image_url: string | null;
+  instagram_url: string;
+  username: string;
+  likes: number;
+  scraped_at: string;
+  source: string;
+  is_active: boolean;
+}
+
+function asRecord(value: unknown): JsonRecord | null {
+  return value !== null && typeof value === 'object' && !Array.isArray(value)
+    ? (value as JsonRecord)
+    : null;
+}
+
+function field(record: JsonRecord | null, key: string): unknown {
+  return record?.[key];
+}
+
+function firstValue(record: JsonRecord, keys: string[]): unknown {
+  for (const key of keys) {
+    const value = record[key];
+    if (value !== undefined && value !== null && value !== '') return value;
+  }
+  return null;
+}
+
+async function apifyRequest(path: string, init?: RequestInit): Promise<unknown> {
   if (!APIFY_TOKEN) throw new Error('APIFY_API_TOKEN no configurado');
 
   const response = await fetch(`https://api.apify.com/v2/${path}`, {
@@ -61,8 +96,8 @@ async function apifyRequest(path: string, init?: RequestInit) {
   return response.json();
 }
 
-async function runApify(urls: string[]): Promise<any[]> {
-  const started = await apifyRequest(`acts/${APIFY_ACTOR}/runs`, {
+async function runApify(urls: string[]): Promise<JsonRecord[]> {
+  const started = asRecord(await apifyRequest(`acts/${APIFY_ACTOR}/runs`, {
     method: 'POST',
     body: JSON.stringify({
       directUrls: urls,
@@ -71,16 +106,23 @@ async function runApify(urls: string[]): Promise<any[]> {
       onlyPostsNewerThan: APIFY_NEWER_THAN,
       addParentData: true,
     }),
-  });
+  }));
 
-  const run = started?.data as ApifyRun | undefined;
-  if (!run?.id || !run.defaultDatasetId) throw new Error('Apify no devolvió run/dataset válidos');
+  const runData = asRecord(field(started, 'data'));
+  const run: ApifyRun | null =
+    typeof runData?.id === 'string' && typeof runData?.defaultDatasetId === 'string'
+      ? { id: runData.id, defaultDatasetId: runData.defaultDatasetId }
+      : null;
+
+  if (!run) throw new Error('Apify no devolvió run/dataset válidos');
 
   let completed = false;
   for (let attempt = 0; attempt < 40; attempt += 1) {
     await new Promise((resolve) => setTimeout(resolve, 7000));
-    const statusPayload = await apifyRequest(`actor-runs/${run.id}`);
-    const status = statusPayload?.data?.status as string | undefined;
+    const statusPayload = asRecord(await apifyRequest(`actor-runs/${run.id}`));
+    const statusData = asRecord(field(statusPayload, 'data'));
+    const statusValue = field(statusData, 'status');
+    const status = typeof statusValue === 'string' ? statusValue : undefined;
 
     if (status === 'SUCCEEDED') {
       completed = true;
@@ -94,26 +136,32 @@ async function runApify(urls: string[]): Promise<any[]> {
   if (!completed) throw new Error('Apify excedió el tiempo de espera del cron');
 
   const items = await apifyRequest(`datasets/${run.defaultDatasetId}/items?format=json&clean=true`);
-  return Array.isArray(items) ? items : [];
+  if (!Array.isArray(items)) return [];
+  return items.map(asRecord).filter((item): item is JsonRecord => item !== null);
 }
 
-function getUsername(item: any): string {
-  return String(
-    item?.ownerUsername ||
-      item?.username ||
-      item?.owner?.username ||
-      item?.parentData?.username ||
-      '',
-  )
-    .toLowerCase()
-    .replace(/^@/, '');
+function getUsername(item: JsonRecord): string {
+  const owner = asRecord(item.owner);
+  const parentData = asRecord(item.parentData);
+  const value =
+    firstValue(item, ['ownerUsername', 'username']) ||
+    field(owner, 'username') ||
+    field(parentData, 'username') ||
+    '';
+
+  return String(value).toLowerCase().replace(/^@/, '');
 }
 
-function getPublishedAt(item: any): string | number | null {
-  return item?.timestamp || item?.takenAt || item?.takenAtIso || item?.publishedAt || null;
+function getPublishedAt(item: JsonRecord): string | number | null {
+  const value = firstValue(item, ['timestamp', 'takenAt', 'takenAtIso', 'publishedAt']);
+  return typeof value === 'string' || typeof value === 'number' ? value : null;
 }
 
-function postToRow(item: any) {
+function optionalString(value: unknown): string | null {
+  return typeof value === 'string' && value.trim() ? value : null;
+}
+
+function postToRow(item: JsonRecord): EventRow | null {
   const username = getUsername(item);
   const meta = VENUE_INFO[username] || {
     name: username ? `@${username}` : 'Evento V Región',
@@ -121,12 +169,12 @@ function postToRow(item: any) {
     tier: 'mainstream',
   };
 
-  const caption = String(item?.caption || item?.alt || '').trim();
-  const shortcode = String(item?.shortCode || item?.id || '').trim();
+  const caption = String(firstValue(item, ['caption', 'alt']) || '').trim();
+  const shortcode = String(firstValue(item, ['shortCode', 'id']) || '').trim();
   if (!shortcode || !caption) return null;
 
   const eventDate = extractEventDate(caption, getPublishedAt(item));
-  if (!isLikelyEventPost(caption, eventDate)) return null;
+  if (!eventDate || !isLikelyEventPost(caption, eventDate)) return null;
 
   const isJoyita =
     meta.tier === 'joyita' ||
@@ -135,16 +183,20 @@ function postToRow(item: any) {
   let title = firstMeaningfulLine(caption, `Evento en ${meta.name}`);
   if (isJoyita && !/^[💎🔥🔊]/.test(title)) title = `💎 ${title}`;
 
+  const likesRaw = firstValue(item, ['likesCount', 'likes']);
+  const likes = Number(likesRaw || 0);
+
   return {
     instagram_id: shortcode,
     title,
     description: caption.slice(0, 4000),
     date_text: eventDate,
     location: meta.location,
-    image_url: item?.displayUrl || item?.thumbnailUrl || item?.imageUrl || null,
+    image_url:
+      optionalString(firstValue(item, ['displayUrl', 'thumbnailUrl', 'imageUrl'])) || null,
     instagram_url: `https://www.instagram.com/p/${shortcode}/`,
     username,
-    likes: Number(item?.likesCount || item?.likes || 0),
+    likes: Number.isFinite(likes) ? likes : 0,
     scraped_at: new Date().toISOString(),
     source: isJoyita ? 'joyita_under' : meta.tier === 'mainstream' ? 'apify_instagram' : 'rave_techno',
     is_active: true,
@@ -181,8 +233,8 @@ export async function GET(request: Request) {
     const urls = accounts.map((username) => `https://www.instagram.com/${username}/`);
     const items = await runApify(urls);
 
-    const rows = items.map(postToRow).filter(Boolean) as Record<string, unknown>[];
-    const unique = Array.from(new Map(rows.map((row: any) => [row.instagram_id, row])).values());
+    const rows = items.map(postToRow).filter((row): row is EventRow => row !== null);
+    const unique = Array.from(new Map(rows.map((row) => [row.instagram_id, row])).values());
 
     if (unique.length > 0) {
       const { error } = await supabase.from('events').upsert(unique, { onConflict: 'instagram_id' });
