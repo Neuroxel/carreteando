@@ -13,11 +13,28 @@ from instagrapi.exceptions import RateLimitError, ChallengeRequired, BadPassword
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger("carretes-scraper")
 
-# Variables limpias de comillas o espacios accidentales
-IG_USERNAME  = os.environ.get("IG_USERNAME", "").strip().strip("\"'")
-IG_PASSWORD  = os.environ.get("IG_PASSWORD", "").strip().strip("\"'")
-SUPABASE_URL = os.environ.get("SUPABASE_URL", "").strip().strip("\"'").rstrip("/")
-SUPABASE_KEY = (os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_KEY") or "").strip().strip("\"'")
+def clean_value(val: Optional[str]) -> str:
+    if not val:
+        return ""
+    v = val.strip().strip("\"'").strip()
+    return re.sub(r"^Bearer\s+", "", v, flags=re.IGNORECASE).strip()
+
+# Obtener SUPABASE_URL
+SUPABASE_URL = clean_value(os.environ.get("SUPABASE_URL", "")).rstrip("/")
+
+# Buscar SUPABASE_KEY en todas las variantes posibles
+SUPABASE_KEY = ""
+KEY_VAR_NAME = ""
+for var_name in ["SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_KEY", "SUPABASE_ANON_KEY", "NEXT_PUBLIC_SUPABASE_ANON_KEY"]:
+    raw = os.environ.get(var_name)
+    cleaned = clean_value(raw)
+    if cleaned:
+        SUPABASE_KEY = cleaned
+        KEY_VAR_NAME = var_name
+        break
+
+IG_USERNAME  = clean_value(os.environ.get("IG_USERNAME", ""))
+IG_PASSWORD  = clean_value(os.environ.get("IG_PASSWORD", ""))
 SESSION_FILE = "/tmp/ig_session.json"
 
 HASHTAGS = [
@@ -45,6 +62,7 @@ LOCATION_ALIASES = {
     "viña": "Vina del Mar", "vina": "Vina del Mar", "reñaca": "Renaca",
     "renaca": "Renaca", "quilpue": "Quilpue", "quilpué": "Quilpue",
 }
+
 
 def save_event_to_supabase(event_dict: dict) -> bool:
     """Guarda o actualiza un evento en Supabase via PostgREST API nativa."""
@@ -74,9 +92,14 @@ def save_event_to_supabase(event_dict: dict) -> bool:
         return False
 
 
-def test_supabase_connection():
+def test_supabase_connection() -> bool:
     """Verifica la conexión a Supabase antes de iniciar el scraper."""
-    log.info(f"Verificando conexion con Supabase en {SUPABASE_URL}...")
+    log.info(f"Supabase URL: {SUPABASE_URL}")
+    if not SUPABASE_KEY:
+        log.error("No se detecto ninguna variable de API Key de Supabase (SUPABASE_SERVICE_ROLE_KEY o SUPABASE_KEY).")
+        return False
+
+    log.info(f"Supabase Key obtenida de: {KEY_VAR_NAME} (longitud: {len(SUPABASE_KEY)}, inicio: {SUPABASE_KEY[:6]}..., fin: ...{SUPABASE_KEY[-4:]})")
     url = f"{SUPABASE_URL}/rest/v1/events?select=count"
     headers = {
         "apikey": SUPABASE_KEY,
@@ -87,6 +110,10 @@ def test_supabase_connection():
         with urllib.request.urlopen(req, timeout=10) as resp:
             log.info(f"Conexión con Supabase verificada exitosamente! Status: {resp.status}")
             return True
+    except urllib.error.HTTPError as e:
+        body = e.read().decode("utf-8", errors="ignore")
+        log.error(f"Fallo al conectar con Supabase: HTTP {e.code} - {body}")
+        return False
     except Exception as e:
         log.error(f"Fallo al conectar con Supabase: {e}")
         return False
@@ -97,6 +124,7 @@ def login(cl: Client) -> bool:
         log.warning("IG_USERNAME o IG_PASSWORD no configurados.")
         return False
 
+    log.info(f"Iniciando sesión con usuario: {IG_USERNAME}")
     if os.path.exists(SESSION_FILE):
         try:
             cl.load_settings(SESSION_FILE)
@@ -174,7 +202,7 @@ def main():
     cl = Client()
     cl.delay_range = [1, 3]
     if not login(cl):
-        log.warning("No se pudo iniciar sesion en Instagram. El servicio esperara al proximo ciclo.")
+        log.warning("No se pudo iniciar sesión en Instagram. El servicio esperará al próximo ciclo.")
         return
 
     all_events = []
