@@ -4,20 +4,20 @@ Carretes Valpo - Instagram Scraper
 Busca posts por hashtag y guarda eventos en Supabase.
 """
 
-import os, re, time, logging
+import os, re, time, logging, json, urllib.request, urllib.error
 from datetime import datetime, timezone
 from typing import Optional
 from instagrapi import Client
-from instagrapi.exceptions import RateLimitError
-from supabase import create_client
+from instagrapi.exceptions import RateLimitError, ChallengeRequired, BadPassword, TwoFactorRequired
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger("carretes-scraper")
 
-IG_USERNAME  = os.environ["IG_USERNAME"]
-IG_PASSWORD  = os.environ["IG_PASSWORD"]
-SUPABASE_URL = os.environ["SUPABASE_URL"]
-SUPABASE_KEY = os.environ["SUPABASE_SERVICE_ROLE_KEY"]
+# Variables limpias de comillas o espacios accidentales
+IG_USERNAME  = os.environ.get("IG_USERNAME", "").strip().strip("\"'")
+IG_PASSWORD  = os.environ.get("IG_PASSWORD", "").strip().strip("\"'")
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "").strip().strip("\"'").rstrip("/")
+SUPABASE_KEY = (os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_KEY") or "").strip().strip("\"'")
 SESSION_FILE = "/tmp/ig_session.json"
 
 HASHTAGS = [
@@ -46,19 +46,80 @@ LOCATION_ALIASES = {
     "renaca": "Renaca", "quilpue": "Quilpue", "quilpué": "Quilpue",
 }
 
+def save_event_to_supabase(event_dict: dict) -> bool:
+    """Guarda o actualiza un evento en Supabase via PostgREST API nativa."""
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        log.error("Faltan SUPABASE_URL o SUPABASE_KEY en variables de entorno.")
+        return False
 
-def login(cl: Client) -> None:
+    url = f"{SUPABASE_URL}/rest/v1/events?on_conflict=instagram_id"
+    payload = json.dumps(event_dict).encode("utf-8")
+    headers = {
+        "apikey": SUPABASE_KEY,
+        "Authorization": f"Bearer {SUPABASE_KEY}",
+        "Content-Type": "application/json",
+        "Prefer": "resolution=merge-duplicates,return=representation",
+    }
+
+    try:
+        req = urllib.request.Request(url, data=payload, headers=headers, method="POST")
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            return resp.status in (200, 201)
+    except urllib.error.HTTPError as e:
+        body = e.read().decode("utf-8", errors="ignore")
+        log.error(f"Error HTTP guardando en Supabase: {e.code} - {body}")
+        return False
+    except Exception as e:
+        log.error(f"Error de conexión con Supabase: {e}")
+        return False
+
+
+def test_supabase_connection():
+    """Verifica la conexión a Supabase antes de iniciar el scraper."""
+    log.info(f"Verificando conexion con Supabase en {SUPABASE_URL}...")
+    url = f"{SUPABASE_URL}/rest/v1/events?select=count"
+    headers = {
+        "apikey": SUPABASE_KEY,
+        "Authorization": f"Bearer {SUPABASE_KEY}",
+    }
+    try:
+        req = urllib.request.Request(url, headers=headers, method="GET")
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            log.info(f"Conexión con Supabase verificada exitosamente! Status: {resp.status}")
+            return True
+    except Exception as e:
+        log.error(f"Fallo al conectar con Supabase: {e}")
+        return False
+
+
+def login(cl: Client) -> bool:
+    if not IG_USERNAME or not IG_PASSWORD:
+        log.warning("IG_USERNAME o IG_PASSWORD no configurados.")
+        return False
+
     if os.path.exists(SESSION_FILE):
         try:
             cl.load_settings(SESSION_FILE)
             cl.login(IG_USERNAME, IG_PASSWORD)
-            log.info("Session loaded from cache.")
-            return
+            log.info("Sesión de Instagram cargada desde caché.")
+            return True
         except Exception:
-            log.warning("Cached session invalid, fresh login...")
-    cl.login(IG_USERNAME, IG_PASSWORD)
-    cl.dump_settings(SESSION_FILE)
-    log.info("Login OK.")
+            log.warning("Sesión cacheada inválida, realizando login fresco...")
+
+    try:
+        cl.login(IG_USERNAME, IG_PASSWORD)
+        cl.dump_settings(SESSION_FILE)
+        log.info("Login en Instagram exitoso.")
+        return True
+    except BadPassword:
+        log.error("Contraseña de Instagram incorrecta.")
+        return False
+    except (TwoFactorRequired, ChallengeRequired) as e:
+        log.error(f"Instagram requiere verificación adicional (2FA o Challenge): {e}")
+        return False
+    except Exception as e:
+        log.error(f"Error durante el login de Instagram: {e}")
+        return False
 
 
 def is_event(caption: str) -> bool:
@@ -108,10 +169,13 @@ def to_event(media) -> Optional[dict]:
 
 def main():
     log.info("=== Carretes Scraper start ===")
-    sb = create_client(SUPABASE_URL, SUPABASE_KEY)
+    test_supabase_connection()
+
     cl = Client()
     cl.delay_range = [1, 3]
-    login(cl)
+    if not login(cl):
+        log.warning("No se pudo iniciar sesion en Instagram. El servicio esperara al proximo ciclo.")
+        return
 
     all_events = []
     for tag in HASHTAGS:
@@ -125,22 +189,19 @@ def main():
                     log.info(f"  + {ev['title'][:60]}")
             time.sleep(3)
         except RateLimitError:
-            log.warning("Rate limited, sleeping 90s...")
+            log.warning("Rate limit alcanzado, esperando 90s...")
             time.sleep(90)
         except Exception as e:
-            log.error(f"Error #{tag}: {e}")
+            log.error(f"Error en hashtag #{tag}: {e}")
 
-    log.info(f"Events found: {len(all_events)}")
+    log.info(f"Eventos encontrados: {len(all_events)}")
 
     saved = 0
     for ev in all_events:
-        try:
-            sb.table("events").upsert(ev, on_conflict="instagram_id").execute()
+        if save_event_to_supabase(ev):
             saved += 1
-        except Exception as e:
-            log.error(f"Save error: {e}")
 
-    log.info(f"Saved to Supabase: {saved}")
+    log.info(f"Eventos guardados/actualizados en Supabase: {saved}")
     log.info("=== Done ===")
 
 
