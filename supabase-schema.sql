@@ -5,13 +5,13 @@ CREATE TABLE IF NOT EXISTS events (
   title           TEXT NOT NULL,
   description     TEXT,
   date_text       TEXT,
-  location        TEXT DEFAULT ''V Region'',
+  location        TEXT DEFAULT 'V Region',
   image_url       TEXT,
   instagram_url   TEXT,
   username        TEXT,
   likes           INTEGER DEFAULT 0,
   scraped_at      TIMESTAMPTZ DEFAULT NOW(),
-  source          TEXT DEFAULT ''instagram_hashtag'',
+  source          TEXT DEFAULT 'instagram_hashtag',
   is_active       BOOLEAN DEFAULT TRUE
 );
 
@@ -36,5 +36,5 @@ CREATE POLICY "Service upsert" ON events
 CREATE OR REPLACE VIEW recent_events AS
   SELECT * FROM events
   WHERE is_active = TRUE
-    AND scraped_at > NOW() - INTERVAL ''7 days''
+    AND scraped_at > NOW() - INTERVAL '7 days'
   ORDER BY likes DESC, scraped_at DESC;
