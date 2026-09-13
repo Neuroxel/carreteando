@@ -1,0 +1,71 @@
+{
+  "type": "offline replay of 13 persisted allowlisted posts; DB timestamps normalized back to ISO; no paid provider rerun",
+  "ingestion_run_id": "64bb15de-e90a-48c4-ba7b-f41b00332b05",
+  "results": [
+    {
+      "post_id": "DdHlPE3FnhM",
+      "previous_outcome": "expired",
+      "replayed_outcome": "parse_failed"
+    },
+    {
+      "post_id": "DctmzN7uDhi",
+      "previous_outcome": "malformed",
+      "replayed_outcome": "malformed"
+    },
+    {
+      "post_id": "DdBdjwwCQSh",
+      "previous_outcome": "malformed",
+      "replayed_outcome": "malformed"
+    },
+    {
+      "post_id": "DdNt3ovmqb9",
+      "previous_outcome": "malformed",
+      "replayed_outcome": "malformed"
+    },
+    {
+      "post_id": "DYORYOEsJa2",
+      "previous_outcome": "malformed",
+      "replayed_outcome": "malformed"
+    },
+    {
+      "post_id": "DdHk63pggxK",
+      "previous_outcome": "parse_failed",
+      "replayed_outcome": "parse_failed"
+    },
+    {
+      "post_id": "DdHpYEgzJtQ",
+      "previous_outcome": "parse_failed",
+      "replayed_outcome": "parse_failed"
+    },
+    {
+      "post_id": "DdIIwevzT06",
+      "previous_outcome": "parse_failed",
+      "replayed_outcome": "parse_failed"
+    },
+    {
+      "post_id": "DbUPWM2FkDH",
+      "previous_outcome": "stale_post",
+      "replayed_outcome": "stale_post"
+    },
+    {
+      "post_id": "Dc68qknAMi_",
+      "previous_outcome": "stale_post",
+      "replayed_outcome": "stale_post"
+    },
+    {
+      "post_id": "DcvwDQ3R4Sp",
+      "previous_outcome": "stale_post",
+      "replayed_outcome": "stale_post"
+    },
+    {
+      "post_id": "DOFAjDujUuI",
+      "previous_outcome": "stale_post",
+      "replayed_outcome": "stale_post"
+    },
+    {
+      "post_id": "DYOXgB_NBCE",
+      "previous_outcome": "stale_post",
+      "replayed_outcome": "stale_post"
+    }
+  ]
+}

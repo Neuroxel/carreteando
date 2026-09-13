@@ -1,8 +1,4 @@
 
-> carreteando@0.1.0 verify
-> npm run test && npm run lint && npm run typecheck && npm run build && npm audit --omit=dev --audit-level=high
-
-
 > carreteando@0.1.0 test
 > node --conditions=react-server --import tsx --test tests/*.test.ts
 
@@ -10,151 +6,151 @@ TAP version 13
 # Subtest: publication awaits private inbox, rejects invalid bodies/origin, and propagates failure without secrets
 ok 1 - publication awaits private inbox, rejects invalid bodies/origin, and propagates failure without secrets
   ---
-  duration_ms: 8.863167
+  duration_ms: 22.508625
   type: 'test'
   ...
 # Subtest: cron fails closed in every environment and cooldown cannot incur Apify cost
 ok 2 - cron fails closed in every environment and cooldown cannot incur Apify cost
   ---
-  duration_ms: 1.07525
+  duration_ms: 4.818916
   type: 'test'
   ...
 # Subtest: public model rejects missing dates and moderation; never uses scraped_at
 ok 3 - public model rejects missing dates and moderation; never uses scraped_at
   ---
-  duration_ms: 4.528541
+  duration_ms: 2.546042
   type: 'test'
   ...
 # Subtest: all filters exclude expired and quarantined events, including weekend Sunday
 ok 4 - all filters exclude expired and quarantined events, including weekend Sunday
   ---
-  duration_ms: 10.455833
+  duration_ms: 8.377708
   type: 'test'
   ...
 # Subtest: missing/invalid publication timestamps never become today
 ok 5 - missing/invalid publication timestamps never become today
   ---
-  duration_ms: 1.414833
+  duration_ms: 2.543041
   type: 'test'
   ...
 # Subtest: explicit dates, weekdays and Chile midnight
 ok 6 - explicit dates, weekdays and Chile midnight
   ---
-  duration_ms: 16.296583
+  duration_ms: 30.602208
   type: 'test'
   ...
 # Subtest: ambiguity, impossible dates and mismatched weekdays are rejected
 ok 7 - ambiguity, impossible dates and mismatched weekdays are rejected
   ---
-  duration_ms: 0.433333
+  duration_ms: 0.523667
   type: 'test'
   ...
 # Subtest: expired month is not silently rolled forward a year
 ok 8 - expired month is not silently rolled forward a year
   ---
-  duration_ms: 0.213458
+  duration_ms: 0.115542
   type: 'test'
   ...
 # Subtest: time extraction does not read decimal prices or numeric dates as hours
 ok 9 - time extraction does not read decimal prices or numeric dates as hours
   ---
-  duration_ms: 0.310334
+  duration_ms: 0.275042
   type: 'test'
   ...
 # Subtest: nightlife is not cultural or generic promotion
 ok 10 - nightlife is not cultural or generic promotion
   ---
-  duration_ms: 1.381958
+  duration_ms: 0.85375
   type: 'test'
   ...
 # Subtest: unknown city remains unknown and Reñaca is more specific than Viña
 ok 11 - unknown city remains unknown and Reñaca is more specific than Viña
   ---
-  duration_ms: 0.51325
+  duration_ms: 0.737291
   type: 'test'
   ...
 # Subtest: price is admission, not drink offers or conditional free access
 ok 12 - price is admission, not drink offers or conditional free access
   ---
-  duration_ms: 3.273625
+  duration_ms: 3.703333
   type: 'test'
   ...
 # Subtest: source freshness distinguishes failure, stalled run and missing evidence
 ok 13 - source freshness distinguishes failure, stalled run and missing evidence
   ---
-  duration_ms: 0.351625
+  duration_ms: 0.858166
   type: 'test'
   ...
 # Subtest: only actual allowlisted owners pass; parent/collaborator do not grant access
 ok 14 - only actual allowlisted owners pass; parent/collaborator do not grant access
   ---
-  duration_ms: 1.524584
+  duration_ms: 1.169375
   type: 'test'
   ...
 # Subtest: candidate is inactive, pending, with no invented verification
 ok 15 - candidate is inactive, pending, with no invented verification
   ---
-  duration_ms: 17.287417
+  duration_ms: 30.327916
   type: 'test'
   ...
 # Subtest: reject expired, ambiguous, external region, and campaign posts
 ok 16 - reject expired, ambiguous, external region, and campaign posts
   ---
-  duration_ms: 3.977833
+  duration_ms: 1.71125
   type: 'test'
   ...
 # Subtest: different posts and venue aliases on same night do not multiply cards
 ok 17 - different posts and venue aliases on same night do not multiply cards
   ---
-  duration_ms: 3.323333
+  duration_ms: 1.077583
   type: 'test'
   ...
 # Subtest: cost limit input cannot become NaN, infinity or an excessive result count
 ok 18 - cost limit input cannot become NaN, infinity or an excessive result count
   ---
-  duration_ms: 0.159709
+  duration_ms: 0.083625
   type: 'test'
   ...
 # Subtest: structured data does not invent prices, availability, time or location; script safe
 ok 19 - structured data does not invent prices, availability, time or location; script safe
   ---
-  duration_ms: 3.496625
+  duration_ms: 3.741625
   type: 'test'
   ...
 # Subtest: successful empty response stays canonical even after a populated request
 ok 20 - successful empty response stays canonical even after a populated request
   ---
-  duration_ms: 40.237625
+  duration_ms: 44.938167
   type: 'test'
   ...
 # Subtest: submissions accept local today with unknown price, ignore client_id
 ok 21 - submissions accept local today with unknown price, ignore client_id
   ---
-  duration_ms: 12.821125
+  duration_ms: 19.542625
   type: 'test'
   ...
 # Subtest: reject malformed, oversized, past, out of region, unsafe URLs and spam
 ok 22 - reject malformed, oversized, past, out of region, unsafe URLs and spam
   ---
-  duration_ms: 1.5875
+  duration_ms: 1.903292
   type: 'test'
   ...
 # Subtest: identity normalizes case and accent
 ok 23 - identity normalizes case and accent
   ---
-  duration_ms: 0.527875
+  duration_ms: 0.335875
   type: 'test'
   ...
 # Subtest: reports require event id and a useful correction
 ok 24 - reports require event id and a useful correction
   ---
-  duration_ms: 0.245792
+  duration_ms: 0.263292
   type: 'test'
   ...
 # Subtest: images and links have separate boundaries
 ok 25 - images and links have separate boundaries
   ---
-  duration_ms: 0.370291
+  duration_ms: 0.286125
   type: 'test'
   ...
 1..25
@@ -165,60 +161,4 @@ ok 25 - images and links have separate boundaries
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 419.301709
-
-> carreteando@0.1.0 lint
-> eslint . --max-warnings=0
-
-
-> carreteando@0.1.0 typecheck
-> tsc --noEmit
-
-
-> carreteando@0.1.0 build
-> next build
-
-   ▲ Next.js 15.5.25
-   - Environments: .env.local
-
-   Creating an optimized production build ...
- ✓ Compiled successfully in 1151ms
-   Linting and checking validity of types ...
-   Collecting page data ...
-   Generating static pages (0/11) ...
-   Generating static pages (2/11) 
-   Generating static pages (5/11) 
-   Generating static pages (8/11) 
- ✓ Generating static pages (11/11)
-   Finalizing page optimization ...
-   Collecting build traces ...
-
-Route (app)                                 Size  First Load JS
-┌ ƒ /                                    1.05 kB         112 kB
-├ ○ /_not-found                            150 B         103 kB
-├ ƒ /api/cron/scrape                       150 B         103 kB
-├ ƒ /api/eventos                           150 B         103 kB
-├ ƒ /api/publicar                          150 B         103 kB
-├ ƒ /api/reportar                          150 B         103 kB
-├ ƒ /buscar                              1.05 kB         112 kB
-├ ○ /como-funciona                         169 B         106 kB
-├ ○ /confianza                             169 B         106 kB
-├ ƒ /evento/[id]                         1.79 kB         113 kB
-├ ƒ /evento/[id]/opengraph-image           150 B         103 kB
-├ ○ /mapa                                  150 B         103 kB
-├ ○ /opengraph-image                       150 B         103 kB
-├ ƒ /publicar                            2.49 kB         108 kB
-├ ○ /radar                                 150 B         103 kB
-├ ○ /robots.txt                            150 B         103 kB
-├ ƒ /sitemap.xml                           150 B         103 kB
-└ ƒ /zonas                                 169 B         106 kB
-+ First Load JS shared by all             103 kB
-  ├ chunks/255-37e0f0325134c4d7.js       46.4 kB
-  ├ chunks/4bd1b696-c023c6e3521b1417.js  54.2 kB
-  └ other shared chunks (total)          1.92 kB
-
-
-○  (Static)   prerendered as static content
-ƒ  (Dynamic)  server-rendered on demand
-
-found 0 vulnerabilities
+# duration_ms 533.065458

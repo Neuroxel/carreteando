@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { getPublicEvents } from '../lib/server-events';
+import { getSourceFreshness } from '../lib/server-freshness';
 import { eventDateLabel, filterEvents } from '../lib/events';
 import { toChileDateString } from '../lib/event-extraction';
 import { parseFilters } from '../lib/filters';
@@ -16,7 +17,7 @@ export default async function Explore({
   const query = new URLSearchParams();
   for (const [k, v] of Object.entries(params)) if (typeof v === 'string') query.set(k, v);
   const filters = parseFilters(query, home ? 'hoy' : 'futuro');
-  const result = await getPublicEvents();
+  const [result, freshness] = await Promise.all([getPublicEvents(), getSourceFreshness()]);
   const today = toChileDateString(result.checkedAt);
   const events = filterEvents(result.events, filters, today);
   const todayCount = filterEvents(result.events, { fecha: 'hoy' }, today).length;
@@ -183,6 +184,15 @@ export default async function Explore({
             </span>
           )}
         </div>
+        {result.status === 'ok' && freshness !== 'fresh' && (
+          <p className="trust-note" role="status">
+            {freshness === 'delayed'
+              ? 'La búsqueda de nuevos planes está atrasada. La cartelera puede estar incompleta; revisa siempre la publicación original.'
+              : freshness === 'updating'
+                ? 'Estamos consultando las fuentes. Los nuevos planes pasan por revisión antes de aparecer.'
+                : 'No pudimos comprobar cuándo se consultaron las fuentes por última vez. La cartelera puede estar incompleta.'}
+          </p>
+        )}
         {result.status === 'error' ? (
           <div className="empty-state error-state" role="alert">
             <span className="empty-symbol" aria-hidden="true">

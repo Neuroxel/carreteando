@@ -77,6 +77,12 @@ export function extractEventDate(
   const published = parseTimestamp(publishedAt);
   const base = published ? toChileDateString(published) : null;
   const year = base ? Number(base.slice(0, 4)) : null;
+  // Weekly roundups can spell the month only once: "jueves 10 de septiembre,
+  // viernes 11, sábado 12". Do not collapse them to the first complete date.
+  const weekdayDays = [
+    ...text.matchAll(new RegExp(`\\b(${Object.keys(WEEKDAYS).join('|')})\\s+(\\d{1,2})\\b`, 'g')),
+  ];
+  if (new Set(weekdayDays.map((m) => `${m[1]}|${Number(m[2])}`)).size > 1) return null;
   if (
     /\b(todos? los|cada)\s+(lunes|martes|miercoles|jueves|viernes|sabados?|domingos?)\b/.test(
       text,

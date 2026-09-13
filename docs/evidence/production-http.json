@@ -1,0 +1,71 @@
+{
+  "timestamp": "2026-09-13T16:12:46.703Z",
+  "commit": "444885b0d398bf402ef0d08772a971f1b68784b9",
+  "checks": [
+    {
+      "path": "/",
+      "status": 200,
+      "brand": true,
+      "emptyState": true,
+      "legacyClaims": false
+    },
+    {
+      "path": "/buscar?fecha=finde",
+      "status": 200
+    },
+    {
+      "path": "/publicar",
+      "status": 200
+    },
+    {
+      "path": "/confianza",
+      "status": 200
+    },
+    {
+      "path": "/como-funciona",
+      "status": 200
+    },
+    {
+      "path": "/zonas",
+      "status": 200
+    },
+    {
+      "path": "/evento/no-existe",
+      "status": 404
+    },
+    {
+      "path": "/opengraph-image",
+      "status": 200
+    },
+    {
+      "path": "/robots.txt",
+      "status": 200
+    },
+    {
+      "path": "/sitemap.xml",
+      "status": 200
+    },
+    {
+      "path": "/api/eventos",
+      "status": 200,
+      "response": {
+        "success": true,
+        "total": 0,
+        "eventos": [],
+        "checked_at": "2026-09-13T16:12:46.151Z"
+      }
+    },
+    {
+      "path": "/api/cron/scrape",
+      "status": 401
+    },
+    {
+      "path": "/radar",
+      "status": 308
+    },
+    {
+      "path": "/mapa",
+      "status": 308
+    }
+  ]
+}

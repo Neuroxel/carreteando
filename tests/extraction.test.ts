@@ -35,6 +35,8 @@ test('ambiguity, impossible dates and mismatched weekdays are rejected', () => {
     'fiesta 19/09 y 20/09',
     'fiesta todos los viernes',
     'fiesta 19 y 20 de septiembre',
+    'jueves 10 de septiembre tributo; viernes 11 rock; sábado 12 cumbia; domingo 13 concierto',
+    'viernes 18 y sábado 19 fiesta',
   ])
     assert.equal(extractEventDate(caption, base), null, caption);
 });

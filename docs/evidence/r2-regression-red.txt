@@ -1,0 +1,180 @@
+
+> carreteando@0.1.0 test
+> node --conditions=react-server --import tsx --test tests/*.test.ts
+
+TAP version 13
+# Subtest: publication awaits private inbox, rejects invalid bodies/origin, and propagates failure without secrets
+ok 1 - publication awaits private inbox, rejects invalid bodies/origin, and propagates failure without secrets
+  ---
+  duration_ms: 8.791333
+  type: 'test'
+  ...
+# Subtest: cron fails closed in every environment and cooldown cannot incur Apify cost
+ok 2 - cron fails closed in every environment and cooldown cannot incur Apify cost
+  ---
+  duration_ms: 1.076542
+  type: 'test'
+  ...
+# Subtest: public model rejects missing dates and moderation; never uses scraped_at
+ok 3 - public model rejects missing dates and moderation; never uses scraped_at
+  ---
+  duration_ms: 3.539125
+  type: 'test'
+  ...
+# Subtest: all filters exclude expired and quarantined events, including weekend Sunday
+ok 4 - all filters exclude expired and quarantined events, including weekend Sunday
+  ---
+  duration_ms: 9.66525
+  type: 'test'
+  ...
+# Subtest: missing/invalid publication timestamps never become today
+ok 5 - missing/invalid publication timestamps never become today
+  ---
+  duration_ms: 1.456667
+  type: 'test'
+  ...
+# Subtest: explicit dates, weekdays and Chile midnight
+ok 6 - explicit dates, weekdays and Chile midnight
+  ---
+  duration_ms: 11.029833
+  type: 'test'
+  ...
+# Subtest: ambiguity, impossible dates and mismatched weekdays are rejected
+not ok 7 - ambiguity, impossible dates and mismatched weekdays are rejected
+  ---
+  duration_ms: 1.1795
+  type: 'test'
+  location: '/Users/manius/Documents/ChatGPT/Carreteando/tests/extraction.test.ts:2:2019'
+  failureType: 'testCodeFailure'
+  error: |-
+    jueves 10 de septiembre tributo; viernes 11 rock; sábado 12 cumbia; domingo 13 concierto
+    + actual - expected
+    
+    + '2026-09-10'
+    - null
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: ~
+  actual: '2026-09-10'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/manius/Documents/ChatGPT/Carreteando/tests/extraction.test.ts:41:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: expired month is not silently rolled forward a year
+ok 8 - expired month is not silently rolled forward a year
+  ---
+  duration_ms: 0.11175
+  type: 'test'
+  ...
+# Subtest: time extraction does not read decimal prices or numeric dates as hours
+ok 9 - time extraction does not read decimal prices or numeric dates as hours
+  ---
+  duration_ms: 0.265584
+  type: 'test'
+  ...
+# Subtest: nightlife is not cultural or generic promotion
+ok 10 - nightlife is not cultural or generic promotion
+  ---
+  duration_ms: 0.473708
+  type: 'test'
+  ...
+# Subtest: unknown city remains unknown and Reñaca is more specific than Viña
+ok 11 - unknown city remains unknown and Reñaca is more specific than Viña
+  ---
+  duration_ms: 0.112083
+  type: 'test'
+  ...
+# Subtest: price is admission, not drink offers or conditional free access
+ok 12 - price is admission, not drink offers or conditional free access
+  ---
+  duration_ms: 2.764125
+  type: 'test'
+  ...
+# Subtest: only actual allowlisted owners pass; parent/collaborator do not grant access
+ok 13 - only actual allowlisted owners pass; parent/collaborator do not grant access
+  ---
+  duration_ms: 0.589375
+  type: 'test'
+  ...
+# Subtest: candidate is inactive, pending, with no invented verification
+ok 14 - candidate is inactive, pending, with no invented verification
+  ---
+  duration_ms: 41.795125
+  type: 'test'
+  ...
+# Subtest: reject expired, ambiguous, external region, and campaign posts
+ok 15 - reject expired, ambiguous, external region, and campaign posts
+  ---
+  duration_ms: 2.889625
+  type: 'test'
+  ...
+# Subtest: different posts and venue aliases on same night do not multiply cards
+ok 16 - different posts and venue aliases on same night do not multiply cards
+  ---
+  duration_ms: 1.702208
+  type: 'test'
+  ...
+# Subtest: cost limit input cannot become NaN, infinity or an excessive result count
+ok 17 - cost limit input cannot become NaN, infinity or an excessive result count
+  ---
+  duration_ms: 0.136208
+  type: 'test'
+  ...
+# Subtest: structured data does not invent prices, availability, time or location; script safe
+ok 18 - structured data does not invent prices, availability, time or location; script safe
+  ---
+  duration_ms: 3.525
+  type: 'test'
+  ...
+# Subtest: successful empty response stays canonical even after a populated request
+ok 19 - successful empty response stays canonical even after a populated request
+  ---
+  duration_ms: 47.28925
+  type: 'test'
+  ...
+# Subtest: submissions accept local today with unknown price, ignore client_id
+ok 20 - submissions accept local today with unknown price, ignore client_id
+  ---
+  duration_ms: 13.172375
+  type: 'test'
+  ...
+# Subtest: reject malformed, oversized, past, out of region, unsafe URLs and spam
+ok 21 - reject malformed, oversized, past, out of region, unsafe URLs and spam
+  ---
+  duration_ms: 2.024042
+  type: 'test'
+  ...
+# Subtest: identity normalizes case and accent
+ok 22 - identity normalizes case and accent
+  ---
+  duration_ms: 0.457292
+  type: 'test'
+  ...
+# Subtest: reports require event id and a useful correction
+ok 23 - reports require event id and a useful correction
+  ---
+  duration_ms: 0.322458
+  type: 'test'
+  ...
+# Subtest: images and links have separate boundaries
+ok 24 - images and links have separate boundaries
+  ---
+  duration_ms: 0.49275
+  type: 'test'
+  ...
+1..24
+# tests 24
+# suites 0
+# pass 23
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 465.022208
