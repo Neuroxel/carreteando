@@ -1,28 +1,18 @@
 import { NextResponse } from 'next/server';
-import { fetchEventsFromSupabase, filterEvents } from '../../../lib/events-store';
-import { Categoria } from '../../../lib/types';
-
+import { getPublicEvents } from '../../../lib/server-events';
+import { filterEvents } from '../../../lib/events';
+import { parseFilters } from '../../../lib/filters';
+export const dynamic = 'force-dynamic';
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-
-  const busqueda = searchParams.get('q') || undefined;
-  const categoria = (searchParams.get('categoria') as Categoria) || 'todos';
-  const ciudad = searchParams.get('ciudad') || 'todos';
-  const fecha = (searchParams.get('fecha') as 'todos' | 'hoy' | 'finde' | 'futuro' | 'semana') || 'todos';
-  const precio = (searchParams.get('precio') as 'todos' | 'gratis' | 'pago') || 'todos';
-
-  const allEvents = await fetchEventsFromSupabase();
-  const filtered = filterEvents(allEvents, {
-    busqueda,
-    categoria,
-    ciudad,
-    fecha,
-    precio,
-  });
-
-  return NextResponse.json({
-    success: true,
-    total: filtered.length,
-    eventos: filtered,
-  });
+  const result = await getPublicEvents();
+  if (result.status === 'error')
+    return NextResponse.json(
+      { success: false, error: 'La cartelera no está disponible temporalmente.' },
+      { status: 503, headers: { 'Cache-Control': 'no-store' } },
+    );
+  const eventos = filterEvents(result.events, parseFilters(new URL(request.url).searchParams));
+  return NextResponse.json(
+    { success: true, total: eventos.length, eventos, checked_at: result.checkedAt },
+    { headers: { 'Cache-Control': 'no-store' } },
+  );
 }

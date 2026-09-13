@@ -1,3 +1,5 @@
+> Documento histórico del checkpoint anterior. Sus instrucciones de claves, publicación y permisos están sustituidas por OPERATIONS.md y las migraciones actuales. No ejecutar esta lista como configuración vigente.
+
 # MVP hardening — 2026-09-12
 
 ## Decisiones canónicas

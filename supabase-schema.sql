@@ -1,3 +1,4 @@
+-- LEGACY BOOTSTRAP ONLY. Do not rerun on a migrated database. Apply all supabase/migrations after bootstrap.
 -- Carretes V Región — esquema MVP
 -- Ejecutar este archivo/migración en Supabase antes de publicar el MVP.
 

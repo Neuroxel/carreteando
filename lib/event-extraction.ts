@@ -13,7 +13,6 @@ const MONTHS: Record<string, number> = {
   noviembre: 11,
   diciembre: 12,
 };
-
 const WEEKDAYS: Record<string, number> = {
   domingo: 0,
   lunes: 1,
@@ -23,222 +22,208 @@ const WEEKDAYS: Record<string, number> = {
   viernes: 5,
   sabado: 6,
 };
-
 export interface PriceInfo {
   price: number;
   known: boolean;
-  text: string | null;
+  text: string;
 }
-
+export const CHILE_TZ = 'America/Santiago';
 export function normalizeText(value: string): string {
   return value
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase();
 }
-
-function isValidDateParts(year: number, month: number, day: number): boolean {
-  const candidate = new Date(Date.UTC(year, month - 1, day, 12));
-  return (
-    candidate.getUTCFullYear() === year &&
-    candidate.getUTCMonth() === month - 1 &&
-    candidate.getUTCDate() === day
-  );
+export function validIsoDate(value: unknown): value is string {
+  if (typeof value !== 'string' || !/^20\d{2}-\d{2}-\d{2}$/.test(value)) return false;
+  const d = new Date(`${value}T12:00:00Z`);
+  return Number.isFinite(d.getTime()) && d.toISOString().slice(0, 10) === value;
 }
-
-function isoDate(year: number, month: number, day: number): string | null {
-  if (!isValidDateParts(year, month, day)) return null;
-  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+export function parseTimestamp(value: unknown): Date | null {
+  if (value instanceof Date) return Number.isFinite(value.getTime()) ? value : null;
+  if (typeof value === 'string' && /^\d{10,13}$/.test(value)) value = Number(value);
+  if (typeof value === 'number') value = value < 10_000_000_000 ? value * 1000 : value;
+  if (typeof value !== 'string' && typeof value !== 'number') return null;
+  if (typeof value === 'string' && !/^\d{4}-\d{2}-\d{2}T.*(?:Z|[+-]\d{2}:?\d{2})$/.test(value))
+    return null;
+  const d = new Date(value);
+  return Number.isFinite(d.getTime()) ? d : null;
 }
-
-function parseInputDate(value?: string | number | null): Date {
-  if (typeof value === 'number' && Number.isFinite(value)) {
-    const milliseconds = value < 10_000_000_000 ? value * 1000 : value;
-    const parsed = new Date(milliseconds);
-    if (!Number.isNaN(parsed.getTime())) return parsed;
-  }
-
-  if (typeof value === 'string' && value.trim()) {
-    const numeric = Number(value);
-    if (/^\d{10,13}$/.test(value.trim()) && Number.isFinite(numeric)) {
-      return parseInputDate(numeric);
-    }
-    const parsed = new Date(value);
-    if (!Number.isNaN(parsed.getTime())) return parsed;
-  }
-
-  return new Date();
+export function toChileDateString(value: string | number | Date | null = new Date()): string {
+  const date = parseTimestamp(value);
+  if (!date) throw new Error('Invalid timestamp');
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: CHILE_TZ,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(date);
 }
-
-export function toChileDateString(value?: string | number | Date | null): string {
-  const date = value instanceof Date ? value : parseInputDate(value as string | number | null | undefined);
-  try {
-    return new Intl.DateTimeFormat('en-CA', {
-      timeZone: 'America/Santiago',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    }).format(date);
-  } catch {
-    return date.toISOString().slice(0, 10);
-  }
+export function addDays(date: string, days: number): string {
+  const d = new Date(`${date}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
 }
-
-function addDaysToIso(dateIso: string, days: number): string {
-  const [year, month, day] = dateIso.split('-').map(Number);
-  const date = new Date(Date.UTC(year, month - 1, day, 12));
-  date.setUTCDate(date.getUTCDate() + days);
-  return date.toISOString().slice(0, 10);
+function iso(year: number, month: number, day: number): string | null {
+  const value = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  return validIsoDate(value) ? value : null;
 }
-
-function resolveYearlessDate(day: number, month: number, baseIso: string): string | null {
-  const [baseYear] = baseIso.split('-').map(Number);
-  let candidate = isoDate(baseYear, month, day);
-  if (!candidate) return null;
-
-  // Si la fecha ya pasó claramente respecto de la publicación, asumir el año siguiente.
-  const staleCutoff = addDaysToIso(baseIso, -30);
-  if (candidate < staleCutoff) {
-    candidate = isoDate(baseYear + 1, month, day);
-  }
-  return candidate;
-}
-
-function resolveDayOnly(day: number, baseIso: string): string | null {
-  const [year, month] = baseIso.split('-').map(Number);
-  const sameMonth = isoDate(year, month, day);
-  if (sameMonth && sameMonth >= addDaysToIso(baseIso, -2)) return sameMonth;
-
-  const nextMonth = month === 12 ? 1 : month + 1;
-  const nextYear = month === 12 ? year + 1 : year;
-  return isoDate(nextYear, nextMonth, day);
-}
-
-function nextWeekday(baseIso: string, targetWeekday: number): string {
-  const [year, month, day] = baseIso.split('-').map(Number);
-  const base = new Date(Date.UTC(year, month - 1, day, 12));
-  const current = base.getUTCDay();
-  let delta = (targetWeekday - current + 7) % 7;
-  // "viernes" publicado un viernes normalmente significa hoy, no dentro de una semana.
-  if (delta === 0) delta = 0;
-  base.setUTCDate(base.getUTCDate() + delta);
-  return base.toISOString().slice(0, 10);
-}
-
-export function extractEventDate(caption: string, publishedAt?: string | number | null): string | null {
+// One post may announce many dates. Such posts need a reviewer, not a guessed first date.
+export function extractEventDate(
+  caption: string,
+  publishedAt?: string | number | null,
+): string | null {
   const text = normalizeText(caption);
-  const baseIso = toChileDateString(publishedAt);
-
-  // 12/09, 12-09, 12.09 y año opcional.
-  const numeric = text.match(/(?:^|\s)([0-3]?\d)[\/.\-]([01]?\d)(?:[\/.\-](20\d{2}|\d{2}))?(?=\s|$|[,;])/);
-  if (numeric) {
-    const day = Number(numeric[1]);
-    const month = Number(numeric[2]);
-    let year = numeric[3] ? Number(numeric[3]) : Number(baseIso.slice(0, 4));
-    if (year < 100) year += 2000;
-    const explicit = isoDate(year, month, day);
-    if (explicit) return explicit;
-  }
-
-  const monthNames = Object.keys(MONTHS).join('|');
-  const spanish = text.match(new RegExp(`(?:^|\\s)([0-3]?\\d)(?:\\s+de)?\\s+(${monthNames})(?:\\s+(?:de\\s+)?(20\\d{2}))?`, 'i'));
-  if (spanish) {
-    const day = Number(spanish[1]);
-    const month = MONTHS[spanish[2]];
-    const explicitYear = spanish[3] ? Number(spanish[3]) : null;
-    return explicitYear ? isoDate(explicitYear, month, day) : resolveYearlessDate(day, month, baseIso);
-  }
-
-  if (/\bmanana\b/.test(text)) return addDaysToIso(baseIso, 1);
-  if (/\b(hoy|esta noche)\b/.test(text)) return baseIso;
-
-  const weekdayNames = Object.keys(WEEKDAYS).join('|');
-  const weekdayWithDay = text.match(new RegExp(`\\b(${weekdayNames})\\s+([0-3]?\\d)(?:\\s+(?:de\\s+)?(${monthNames}))?`, 'i'));
-  if (weekdayWithDay) {
-    const day = Number(weekdayWithDay[2]);
-    if (weekdayWithDay[3]) {
-      return resolveYearlessDate(day, MONTHS[weekdayWithDay[3]], baseIso);
+  const published = parseTimestamp(publishedAt);
+  const base = published ? toChileDateString(published) : null;
+  const year = base ? Number(base.slice(0, 4)) : null;
+  if (
+    /\b(todos? los|cada)\s+(lunes|martes|miercoles|jueves|viernes|sabados?|domingos?)\b/.test(
+      text,
+    ) ||
+    /\b\d{1,2}\s*(?:y|al|&)\s*\d{1,2}\s+(?:de\s+)?(?:enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)/.test(
+      text,
+    )
+  )
+    return null;
+  const dates: string[] = [];
+  const numeric = /(?<![\d/:.])\b(\d{1,2})[/-](\d{1,2})(?:[/-](20\d{2}|\d{2}))?\b/g;
+  const spanish = new RegExp(
+    `\\b(\\d{1,2})(?:\\s+de)?\\s+(${Object.keys(MONTHS).join('|')})(?:\\s+(?:de\\s+)?(20\\d{2}))?\\b`,
+    'g',
+  );
+  const weekdayPrefix = new RegExp(`\\b(${Object.keys(WEEKDAYS).join('|')})\\s*$`);
+  for (const pattern of [numeric, spanish]) {
+    for (const m of text.matchAll(pattern)) {
+      const month = pattern === numeric ? Number(m[2]) : MONTHS[m[2]];
+      const y = m[3] ? Number(m[3]) + (m[3].length === 2 ? 2000 : 0) : year;
+      if (!y) return null;
+      // Only Dec -> Jan is a safe implicit year rollover, anchored to publication.
+      const adjusted = !m[3] && base?.slice(5, 7) === '12' && month === 1 ? y + 1 : y;
+      const candidate = iso(adjusted, month, Number(m[1]));
+      if (!candidate) return null;
+      const prefix = text.slice(Math.max(0, m.index! - 20), m.index);
+      const weekday = prefix.match(weekdayPrefix)?.[1];
+      if (weekday && new Date(`${candidate}T12:00:00Z`).getUTCDay() !== WEEKDAYS[weekday])
+        return null;
+      dates.push(candidate);
     }
-    return resolveDayOnly(day, baseIso);
   }
-
-  const weekdayOnly = text.match(new RegExp(`\\b(?:este\\s+)?(${weekdayNames})\\b`, 'i'));
-  if (weekdayOnly) return nextWeekday(baseIso, WEEKDAYS[weekdayOnly[1]]);
-
-  return null;
+  if (dates.length) return new Set(dates).size === 1 ? dates[0] : null;
+  if (!base) return null;
+  // An unparsed numeric date must never fall through to "hoy" or a weekday.
+  if (/\b\d{1,2}[/.\-]\d{1,2}\b/.test(text)) return null;
+  const withDay = text.match(
+    new RegExp(`\\b(${Object.keys(WEEKDAYS).join('|')})\\s+(\\d{1,2})\\b`),
+  );
+  if (withDay) {
+    const month = Number(base.slice(5, 7)),
+      day = Number(withDay[2]);
+    const candidate = iso(year!, month, day);
+    // No automatic next-month promotion of a stale event.
+    if (candidate && new Date(`${candidate}T12:00:00Z`).getUTCDay() === WEEKDAYS[withDay[1]])
+      return candidate;
+    return null;
+  }
+  if (/\bpasado manana\b/.test(text)) return addDays(base, 2);
+  const hasToday = /\b(hoy|esta noche)\b/.test(text);
+  const hasTomorrow = /\bmanana\b/.test(text) && !/\b(?:de la|por la) manana\b/.test(text);
+  if (hasToday && hasTomorrow) return null;
+  if (hasToday) return base;
+  if (hasTomorrow) return addDays(base, 1);
+  const weekdays = [
+    ...text.matchAll(new RegExp(`\\b(${Object.keys(WEEKDAYS).join('|')})\\b`, 'g')),
+  ].map((m) => WEEKDAYS[m[1]]);
+  if (new Set(weekdays).size !== 1) return null;
+  if (/\b(pasado|anterior)\b/.test(text)) return null;
+  const dow = new Date(`${base}T12:00:00Z`).getUTCDay();
+  return addDays(base, (weekdays[0] - dow + 7) % 7);
 }
-
-export function extractEventTime(textValue: string): string | null {
-  const text = normalizeText(textValue);
-
-  const colon = text.match(/\b(?:desde\s+|a\s+las\s+|inicio\s+|puertas\s+)?([01]?\d|2[0-3])[:.]([0-5]\d)\s*(?:h|hrs?|horas)?\b/);
-  if (colon) return `${String(Number(colon[1])).padStart(2, '0')}:${colon[2]}`;
-
-  const hours = text.match(/\b(?:desde\s+|a\s+las\s+|inicio\s+|puertas\s+)([01]?\d|2[0-3])\s*(?:h|hrs?|horas)\b/);
-  if (hours) return `${String(Number(hours[1])).padStart(2, '0')}:00`;
-
-  return null;
+export function extractEventTime(value: string): string | null {
+  const text = normalizeText(value);
+  const m =
+    text.match(/(?<![\d$])\b([01]?\d|2[0-3]):([0-5]\d)\b/) ||
+    text.match(
+      /\b(?:desde|a las|inicio|puertas(?: abren)?)\s+(?:a las\s+)?([01]?\d|2[0-3])[.]([0-5]\d)\s*(?:hrs?|horas)\b/,
+    );
+  if (m) return `${m[1].padStart(2, '0')}:${m[2]}`;
+  const h = text.match(/\b(?:desde|a las|inicio|puertas)\s+([01]?\d|2[0-3])\s*(?:hrs?|horas)\b/);
+  return h ? `${h[1].padStart(2, '0')}:00` : null;
 }
-
-export function extractPriceInfo(textValue: string): PriceInfo {
-  const text = normalizeText(textValue);
-
-  if (/\b(gratis|gratuito|entrada liberada|liberada hasta|free)\b/.test(text)) {
-    return { price: 0, known: true, text: 'Entrada liberada / gratis' };
+export function extractPriceInfo(value: string): PriceInfo {
+  const text = normalizeText(value);
+  const unknown = { price: 0, known: false, text: 'Precio por confirmar' };
+  const admission = text
+    .split(/[\n;]+/)
+    .filter((line) => /\b(entrada|preventa|puerta|ticket|cover|general)\b/.test(line));
+  const amounts: number[] = [];
+  for (const line of admission) {
+    for (const m of line.matchAll(/\$\s*(\d{1,3}(?:\.\d{3})+|\d{1,6})(?![\d.])/g)) {
+      const prefix = line.slice(Math.max(0, m.index! - 25), m.index);
+      if (/\b(piscola|cerveza|trago|barra|promo|2x)\b/.test(prefix)) continue;
+      const n = Number(m[1].replace(/\./g, ''));
+      if (n >= 0 && n <= 500000) amounts.push(n);
+    }
   }
-
-  const candidates: number[] = [];
-  const currencyRegex = /\$\s*([0-9]{1,3}(?:[.\s][0-9]{3})+|[0-9]{4,6})/g;
-  let match: RegExpExecArray | null;
-  while ((match = currencyRegex.exec(text)) !== null) {
-    const amount = Number(match[1].replace(/[.\s]/g, ''));
-    if (amount >= 500 && amount <= 500_000) candidates.push(amount);
-  }
-
-  if (candidates.length > 0) {
-    const price = Math.min(...candidates);
+  if (amounts.length) {
+    const price = Math.min(...amounts);
     return {
       price,
       known: true,
-      text: `Desde $${price.toLocaleString('es-CL')}`,
+      text: price === 0 ? 'Entrada liberada' : `Desde $${price.toLocaleString('es-CL')}`,
     };
   }
-
-  if (/\b(aporte voluntario|al sobre)\b/.test(text)) {
-    return { price: 0, known: false, text: 'Aporte voluntario' };
+  const free = text.match(
+    /\b(?:entrada|ingreso|acceso)\s+(?:liberad[ao]|gratis|gratuit[ao])\b[^\n.;]*/,
+  )?.[0];
+  if (free) {
+    if (/\b(hasta|lista|con|antes|mujeres|primer[oa]s?|solo|solamente)\b/.test(free))
+      return {
+        ...unknown,
+        text: value.slice(text.indexOf(free), text.indexOf(free) + free.length).slice(0, 160),
+      };
+    return { price: 0, known: true, text: 'Entrada liberada' };
   }
-
-  return { price: 0, known: false, text: 'Precio por confirmar' };
+  if (/\b(aporte voluntario|al sobre)\b/.test(text))
+    return { ...unknown, text: 'Aporte voluntario' };
+  return unknown;
 }
-
-export function inferCity(locationValue: string): string {
-  const text = normalizeText(locationValue || '');
-  if (text.includes('vina del mar') || text.includes('vina')) return 'Viña del Mar';
-  if (text.includes('renaca')) return 'Reñaca';
-  if (text.includes('quilpue')) return 'Quilpué';
-  if (text.includes('villa alemana')) return 'Villa Alemana';
-  if (text.includes('concon')) return 'Concón';
-  return 'Valparaíso';
+export function inferCity(value: string): string {
+  const text = normalizeText(value);
+  if (/\brenaca\b/.test(text)) return 'Reñaca';
+  if (/\b(vina del mar|vina)\b/.test(text)) return 'Viña del Mar';
+  if (/\bquilpue\b/.test(text)) return 'Quilpué';
+  if (/\bvilla alemana\b/.test(text)) return 'Villa Alemana';
+  if (/\bconcon\b/.test(text)) return 'Concón';
+  if (/\b(valparaiso|valpo)\b/.test(text)) return 'Valparaíso';
+  return 'Por confirmar';
 }
-
+export function isCampaignUpdate(caption: string): boolean {
+  return /\b(artista[s]? confirmado[s]?|lineup revelado|line up revelado|recordatorio|ultima llamada|ultimas entradas|final call|ticket update|conoce (?:a|nuestro)|se suma|nuevo artista)\b/.test(
+    normalizeText(caption),
+  );
+}
 export function isLikelyEventPost(caption: string, eventDate: string | null): boolean {
   if (!eventDate) return false;
   const text = normalizeText(caption);
-
-  const positiveSignals = [
-    'fiesta', 'carrete', 'evento', 'rave', 'tocata', 'show', 'en vivo', 'live', 'dj',
-    'lineup', 'prevent', 'entrada', 'puertas', 'club', 'after', 'sesion', 'sesión',
-    'fecha', 'viernes', 'sabado', 'domingo', 'hoy', 'manana', 'esta noche', 'tributo',
-    'concierto', 'festival', 'party', 'b2b', 'techno', 'cumbia', 'reggaeton', 'perreo',
-  ];
-
-  return positiveSignals.some((signal) => text.includes(normalizeText(signal)));
+  if (
+    /\b(gracias por|asi (?:fue|vivimos)|recuerdo[s]?|retrospectiva|cancelad[oa]|suspendid[oa]|reprogramad[oa]|taller|infantil|ninos|familiar|exposicion|teatro|conversatorio|convocatoria|postula)\b/.test(
+      text,
+    ) ||
+    isCampaignUpdate(caption)
+  )
+    return false;
+  return /\b(fiesta[s]?|carrete[s]?|rave[s]?|after[s]?|techno|reggaeton|perreo|mechoneo|tocata[s]?|dj set|party|discoteca|cumbia|concierto|rock en vivo)\b/.test(
+    text,
+  );
 }
-
 export function firstMeaningfulLine(caption: string, fallback: string): string {
-  const line = caption
-    .split('\n')
-    .map((part) => part.trim())
-    .find((part) => part.length >= 4 && !/^#/.test(part));
-  return (line || fallback).replace(/\s+/g, ' ').slice(0, 130);
+  return (
+    caption
+      .split('\n')
+      .map((s) => s.trim())
+      .find((s) => s.length >= 4 && !s.startsWith('#')) || fallback
+  )
+    .replace(/\s+/g, ' ')
+    .slice(0, 130);
 }

@@ -1,59 +1,32 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-
+import { SITE_URL, SITE_DESCRIPTION } from '../lib/site';
 export const metadata: Metadata = {
-  title: 'Carretes V Región — Fiestas, Universitarios & Under en Valparaíso y Viña',
-  description:
-    'El buscador centralizado de carretes, mechoneos universitarios, fiestas under y tocatas en Valparaíso, Viña del Mar, Reñaca y Quilpué. Todo lo que pasa en Instagram, en un solo lugar.',
-  keywords: [
-    'carretes valparaiso',
-    'fiestas vina del mar',
-    'eventos valpo',
-    'mechoneo valparaiso',
-    'carrete universitario valpo',
-    'underground techno valparaiso',
-    'el huevo valparaiso',
-    'subida ecuador carrete',
-    'fiestas reñaca',
-    'trotamundos quilpue',
-  ],
+  metadataBase: new URL(SITE_URL),
+  title: { default: 'Carreteando · ¿Dónde se carretea hoy?', template: '%s · Carreteando' },
+  description: SITE_DESCRIPTION,
   openGraph: {
-    title: 'Carretes V Región — El Buscador Centralizado de Eventos',
-    description:
-      '¿Dónde se carretea hoy en Valpo o Viña? Descubre fiestas universitarias, raves under, cumbia y tocatas centralizadas desde Instagram.',
-    url: 'https://carretes.vercel.app',
-    siteName: 'Carretes V Región',
-    images: [
-      {
-        url: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1200&q=80',
-        width: 1200,
-        height: 630,
-        alt: 'Carretes Valparaíso',
-      },
-    ],
+    title: 'Carreteando · La noche es local',
+    description: SITE_DESCRIPTION,
+    siteName: 'Carreteando',
     locale: 'es_CL',
     type: 'website',
+    images: [{ url: '/opengraph-image', width: 1200, height: 630 }],
   },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Carretes V Región — ¿Dónde se carretea hoy?',
-    description:
-      'Centralizador de carretes universitarios y fiestas under en la V Región de Chile.',
-  },
+  twitter: { card: 'summary_large_image', images: ['/opengraph-image'] },
 };
-
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export const viewport: Viewport = { width: 'device-width', initialScale: 1, themeColor: '#151614' };
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es">
+    <html lang="es-CL">
       <body>
+        <a className="skip-link" href="#contenido">
+          Ir al contenido
+        </a>
         <Navbar />
-        <main style={{ minHeight: 'calc(100vh - 160px)' }}>{children}</main>
+        <main id="contenido">{children}</main>
         <Footer />
       </body>
     </html>

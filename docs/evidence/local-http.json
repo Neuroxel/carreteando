@@ -1,0 +1,60 @@
+[
+  {
+    "path": "/",
+    "status": 200,
+    "bytes": 23405
+  },
+  {
+    "path": "/buscar?fecha=finde",
+    "status": 200,
+    "bytes": 24832
+  },
+  {
+    "path": "/publicar",
+    "status": 200,
+    "bytes": 16420
+  },
+  {
+    "path": "/confianza",
+    "status": 200,
+    "bytes": 16915
+  },
+  {
+    "path": "/como-funciona",
+    "status": 200,
+    "bytes": 14162
+  },
+  {
+    "path": "/zonas",
+    "status": 200,
+    "bytes": 15595
+  },
+  {
+    "path": "/evento/no-existe",
+    "status": 404
+  },
+  {
+    "path": "/opengraph-image",
+    "status": 200,
+    "bytes": 33460
+  },
+  {
+    "path": "/robots.txt",
+    "status": 200,
+    "bytes": 148
+  },
+  {
+    "path": "/sitemap.xml",
+    "status": 200,
+    "bytes": 424
+  },
+  {
+    "path": "/api/eventos",
+    "status": 200,
+    "bytes": 79
+  },
+  {
+    "path": "/api/cron/scrape",
+    "status": 503
+  }
+]

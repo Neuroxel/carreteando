@@ -26,6 +26,9 @@ jobs:
       - name: Audit production dependencies
         run: npm audit --omit=dev --audit-level=high
 
+      - name: Deterministic regression tests
+        run: npm run test
+
       - name: Lint
         run: npm run lint
 

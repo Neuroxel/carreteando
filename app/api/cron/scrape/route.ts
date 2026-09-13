@@ -1,262 +1,258 @@
+import { timingSafeEqual } from 'node:crypto';
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getAdminDb } from '../../../../lib/server-db';
 import {
-  extractEventDate,
-  firstMeaningfulLine,
-  isLikelyEventPost,
-} from '../../../../lib/event-extraction';
-
-const APIFY_TOKEN = process.env.APIFY_API_TOKEN;
-const APIFY_ACTOR = process.env.APIFY_ACTOR || 'apify~instagram-scraper';
-const APIFY_RESULTS_LIMIT = Math.max(1, Math.min(12, Number(process.env.APIFY_RESULTS_LIMIT || 5)));
-const APIFY_NEWER_THAN = process.env.APIFY_NEWER_THAN || '3 days';
-
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SUPABASE_KEY = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-const VENUE_INFO: Record<string, { name: string; location: string; tier: string }> = {
-  'el.huevo': { name: 'El Huevo Valparaíso', location: 'Valparaíso (Blanco 1386)', tier: 'mainstream' },
-  'barelhuevo': { name: 'El Huevo Bar', location: 'Valparaíso (Blanco 1386)', tier: 'mainstream' },
-  'trotamundosvalpo': { name: 'Trotamundos Terraza', location: 'Valparaíso', tier: 'mainstream' },
-  'clubtrotaquilpue': { name: 'Trotamundos Quilpué', location: 'Quilpué', tier: 'mainstream' },
-  'terraza_bellavista_valpo': { name: 'Terraza Bellavista', location: 'Valparaíso (Blanco 1285)', tier: 'mainstream' },
-  'club_segundo_piso': { name: 'Club Segundo Piso', location: 'Valparaíso (Av. Brasil 1395)', tier: 'under' },
-  'mascara_valparaiso': { name: 'Máscara Valparaíso', location: 'Valparaíso (Plaza Aníbal Pinto)', tier: 'under' },
-  'paganocl': { name: 'Pagano Club Lounge', location: 'Valparaíso (Errázuriz 396)', tier: 'under' },
-  'espaciowarhola': { name: 'Espacio Warhola', location: 'Valparaíso (Esmeralda)', tier: 'under' },
-  'sala_rivoli': { name: 'Sala Rívoli', location: 'Valparaíso (Condell)', tier: 'under' },
-  'canchavalpo': { name: 'Cancha Valparaíso', location: 'Valparaíso', tier: 'under' },
-  'barcivico': { name: 'Bar Cívico', location: 'Valparaíso (Blanco)', tier: 'under' },
-  'barlaplaya': { name: 'Bar La Playa', location: 'Valparaíso (Serrano)', tier: 'under' },
-  'valparaiso_techno': { name: 'Valparaíso Techno', location: 'Valparaíso', tier: 'joyita' },
-  'baptism_producciones': { name: 'Baptism Producciones', location: 'Valparaíso', tier: 'joyita' },
-  'distorsionsonora': { name: 'Distorsión Sonora', location: 'Valparaíso', tier: 'joyita' },
-  'insomnia_teatro_condell': { name: 'Teatro Condell Insomnia', location: 'Condell 1585, Valparaíso', tier: 'cultura' },
-  'parqueculturaldevalparaiso': { name: 'Parque Cultural ex Cárcel', location: 'Cárcel 471, Valparaíso', tier: 'cultura' },
-};
-
-type JsonRecord = Record<string, unknown>;
-
-interface ApifyRun {
-  id: string;
-  defaultDatasetId: string;
-}
-
-interface EventRow {
-  instagram_id: string;
-  title: string;
-  description: string;
-  date_text: string;
-  location: string;
-  image_url: string | null;
-  instagram_url: string;
-  username: string;
-  likes: number;
-  scraped_at: string;
-  source: string;
-  is_active: boolean;
-}
-
-function asRecord(value: unknown): JsonRecord | null {
-  return value !== null && typeof value === 'object' && !Array.isArray(value)
-    ? (value as JsonRecord)
-    : null;
-}
-
-function field(record: JsonRecord | null, key: string): unknown {
-  return record?.[key];
-}
-
-function firstValue(record: JsonRecord, keys: string[]): unknown {
-  for (const key of keys) {
-    const value = record[key];
-    if (value !== undefined && value !== null && value !== '') return value;
-  }
-  return null;
-}
-
-async function apifyRequest(path: string, init?: RequestInit): Promise<unknown> {
-  if (!APIFY_TOKEN) throw new Error('APIFY_API_TOKEN no configurado');
-
-  const response = await fetch(`https://api.apify.com/v2/${path}`, {
-    ...init,
-    headers: {
-      Authorization: `Bearer ${APIFY_TOKEN}`,
-      'Content-Type': 'application/json',
-      ...(init?.headers || {}),
-    },
-    cache: 'no-store',
-  });
-
-  if (!response.ok) {
-    const detail = (await response.text()).slice(0, 300);
-    throw new Error(`Apify ${response.status}: ${detail || response.statusText}`);
-  }
-
-  return response.json();
-}
-
-async function runApify(urls: string[]): Promise<JsonRecord[]> {
-  const started = asRecord(await apifyRequest(`acts/${APIFY_ACTOR}/runs`, {
-    method: 'POST',
-    body: JSON.stringify({
-      directUrls: urls,
-      resultsType: 'posts',
-      resultsLimit: APIFY_RESULTS_LIMIT,
-      onlyPostsNewerThan: APIFY_NEWER_THAN,
-      addParentData: true,
-    }),
-  }));
-
-  const runData = asRecord(field(started, 'data'));
-  const run: ApifyRun | null =
-    typeof runData?.id === 'string' && typeof runData?.defaultDatasetId === 'string'
-      ? { id: runData.id, defaultDatasetId: runData.defaultDatasetId }
-      : null;
-
-  if (!run) throw new Error('Apify no devolvió run/dataset válidos');
-
-  let completed = false;
-  for (let attempt = 0; attempt < 40; attempt += 1) {
-    await new Promise((resolve) => setTimeout(resolve, 7000));
-    const statusPayload = asRecord(await apifyRequest(`actor-runs/${run.id}`));
-    const statusData = asRecord(field(statusPayload, 'data'));
-    const statusValue = field(statusData, 'status');
-    const status = typeof statusValue === 'string' ? statusValue : undefined;
-
-    if (status === 'SUCCEEDED') {
-      completed = true;
-      break;
-    }
-    if (status && ['FAILED', 'ABORTED', 'TIMED-OUT'].includes(status)) {
-      throw new Error(`Apify terminó con estado ${status}`);
-    }
-  }
-
-  if (!completed) throw new Error('Apify excedió el tiempo de espera del cron');
-
-  const items = await apifyRequest(`datasets/${run.defaultDatasetId}/items?format=json&clean=true`);
-  if (!Array.isArray(items)) return [];
-  return items.map(asRecord).filter((item): item is JsonRecord => item !== null);
-}
-
-function getUsername(item: JsonRecord): string {
-  const owner = asRecord(item.owner);
-  const parentData = asRecord(item.parentData);
-  const value =
-    firstValue(item, ['ownerUsername', 'username']) ||
-    field(owner, 'username') ||
-    field(parentData, 'username') ||
-    '';
-
-  return String(value).toLowerCase().replace(/^@/, '');
-}
-
-function getPublishedAt(item: JsonRecord): string | number | null {
-  const value = firstValue(item, ['timestamp', 'takenAt', 'takenAtIso', 'publishedAt']);
-  return typeof value === 'string' || typeof value === 'number' ? value : null;
-}
-
-function optionalString(value: unknown): string | null {
-  return typeof value === 'string' && value.trim() ? value : null;
-}
-
-function postToRow(item: JsonRecord): EventRow | null {
-  const username = getUsername(item);
-  const meta = VENUE_INFO[username] || {
-    name: username ? `@${username}` : 'Evento V Región',
-    location: 'Valparaíso',
-    tier: 'mainstream',
-  };
-
-  const caption = String(firstValue(item, ['caption', 'alt']) || '').trim();
-  const shortcode = String(firstValue(item, ['shortCode', 'id']) || '').trim();
-  if (!shortcode || !caption) return null;
-
-  const eventDate = extractEventDate(caption, getPublishedAt(item));
-  if (!eventDate || !isLikelyEventPost(caption, eventDate)) return null;
-
-  const isJoyita =
-    meta.tier === 'joyita' ||
-    /spot secreto|ubicaci[oó]n por dm|por interno|aporte voluntario|al sobre|galp[oó]n|casona|clandestin/i.test(caption);
-
-  let title = firstMeaningfulLine(caption, `Evento en ${meta.name}`);
-  if (isJoyita && !/^[💎🔥🔊]/.test(title)) title = `💎 ${title}`;
-
-  const likesRaw = firstValue(item, ['likesCount', 'likes']);
-  const likes = Number(likesRaw || 0);
-
-  return {
-    instagram_id: shortcode,
-    title,
-    description: caption.slice(0, 4000),
-    date_text: eventDate,
-    location: meta.location,
-    image_url:
-      optionalString(firstValue(item, ['displayUrl', 'thumbnailUrl', 'imageUrl'])) || null,
-    instagram_url: `https://www.instagram.com/p/${shortcode}/`,
-    username,
-    likes: Number.isFinite(likes) ? likes : 0,
-    scraped_at: new Date().toISOString(),
-    source: isJoyita ? 'joyita_under' : meta.tier === 'mainstream' ? 'apify_instagram' : 'rave_techno',
-    is_active: true,
-  };
-}
-
+  boundedResultsLimit,
+  classifyPost,
+  dedupeCandidates,
+  postCode,
+  postOwner,
+  RawPost,
+  SOURCES,
+} from '../../../../lib/ingestion';
+import { parseTimestamp, toChileDateString } from '../../../../lib/event-extraction';
 export const maxDuration = 300;
 export const dynamic = 'force-dynamic';
-
+class IngestionError extends Error {
+  constructor(readonly code: string) {
+    super(code);
+  }
+}
+const record = (v: unknown): RawPost =>
+  v !== null && typeof v === 'object' && !Array.isArray(v) ? (v as RawPost) : {};
+const reply = (body: object, status = 200) =>
+  NextResponse.json(body, { status, headers: { 'Cache-Control': 'no-store' } });
 export async function GET(request: Request) {
-  const auth = request.headers.get('authorization');
-  const cronSecret = process.env.CRON_SECRET;
-
-  if (process.env.NODE_ENV === 'production' && !cronSecret) {
-    return NextResponse.json({ error: 'CRON_SECRET no configurado' }, { status: 500 });
-  }
-  if (cronSecret && auth !== `Bearer ${cronSecret}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  if (!APIFY_TOKEN || !SUPABASE_URL || !SUPABASE_KEY) {
-    return NextResponse.json(
-      { error: 'Faltan APIFY_API_TOKEN, NEXT_PUBLIC_SUPABASE_URL o SUPABASE_SECRET_KEY/SUPABASE_SERVICE_ROLE_KEY' },
-      { status: 500 },
-    );
-  }
-
-  try {
-    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
-
-    const accounts = Object.keys(VENUE_INFO);
-    const urls = accounts.map((username) => `https://www.instagram.com/${username}/`);
-    const items = await runApify(urls);
-
-    const rows = items.map(postToRow).filter((row): row is EventRow => row !== null);
-    const unique = Array.from(new Map(rows.map((row) => [row.instagram_id, row])).values());
-
-    if (unique.length > 0) {
-      const { error } = await supabase.from('events').upsert(unique, { onConflict: 'instagram_id' });
-      if (error) throw new Error(`Supabase upsert: ${error.message}`);
-    }
-
-    return NextResponse.json({
+  const secret = process.env.CRON_SECRET;
+  const auth = request.headers.get('authorization') || '';
+  const expected = `Bearer ${secret}`;
+  if (!secret) return reply({ error: 'Cron no disponible.' }, 503);
+  if (
+    Buffer.byteLength(auth) !== Buffer.byteLength(expected) ||
+    !timingSafeEqual(Buffer.from(auth), Buffer.from(expected))
+  )
+    return reply({ error: 'Unauthorized' }, 401);
+  const db = getAdminDb(),
+    token = process.env.APIFY_API_TOKEN;
+  const missing = ['NEXT_PUBLIC_SUPABASE_URL', 'SUPABASE_SECRET_KEY', 'APIFY_API_TOKEN'].filter(
+    (k) => !process.env[k],
+  );
+  if (!db || !token) return reply({ error: 'Configuración incompleta.', missing }, 503);
+  const actor = process.env.APIFY_ACTOR || 'apify~instagram-scraper';
+  if (!/^[\w~-]+$/.test(actor)) return reply({ error: 'APIFY_ACTOR inválido.' }, 503);
+  const limit = boundedResultsLimit(process.env.APIFY_RESULTS_LIMIT);
+  const { data: runId, error: claimError } = await db.rpc('claim_ingestion_run');
+  if (claimError) return reply({ error: 'No se pudo reservar la ingesta.' }, 503);
+  if (!runId)
+    return reply({
       success: true,
-      accounts_scanned: accounts.length,
-      posts_found: items.length,
-      event_candidates: rows.length,
-      events_saved: unique.length,
-      skipped_non_events: items.length - rows.length,
-      apify_results_limit_per_account: APIFY_RESULTS_LIMIT,
-      apify_newer_than: APIFY_NEWER_THAN,
+      skipped: 'cooldown',
+      message: 'Ya hubo una ingesta en las últimas 6 horas.',
+    });
+  const started = Date.now();
+  let apifyId: string | null = null;
+  let datasetId: string | null = null;
+  let providerCompleted = false;
+  const metrics: Record<string, number | string | null> = {
+    accounts_scanned: Object.keys(SOURCES).length,
+    posts_found: 0,
+    event_candidates: 0,
+    events_saved: 0,
+    public_events_added: 0,
+    duplicates_suppressed: 0,
+    source_rejected: 0,
+    parse_failed: 0,
+    expired: 0,
+    classification_rejected: 0,
+    campaign_suppressed: 0,
+    location_ambiguous: 0,
+    stale_post: 0,
+    malformed: 0,
+    already_processed: 0,
+    results_limit_per_account: limit,
+  };
+  async function apify(path: string, init?: RequestInit): Promise<unknown> {
+    let response: Response;
+    try {
+      response = await fetch(`https://api.apify.com/v2/${path}`, {
+        ...init,
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        cache: 'no-store',
+        signal: AbortSignal.timeout(20000),
+      });
+    } catch {
+      throw new IngestionError('APIFY_NETWORK');
+    }
+    if (!response.ok) throw new IngestionError(`APIFY_HTTP_${response.status}`);
+    return response.json();
+  }
+  try {
+    // Expiry is also enforced on every public read and by RLS; cleanup does not reactivate anything.
+    const expire = await db
+      .from('events')
+      .update({ is_active: false })
+      .eq('is_active', true)
+      .lt('date_text', toChileDateString(new Date()));
+    if (expire.error) throw new IngestionError('DB_EXPIRE');
+    const start = record(
+      await apify(`acts/${actor}/runs?timeout=180&maxItems=40&maxTotalChargeUsd=1`, {
+        method: 'POST',
+        body: JSON.stringify({
+          directUrls: Object.keys(SOURCES).map((h) => `https://www.instagram.com/${h}/`),
+          resultsType: 'posts',
+          resultsLimit: limit,
+          onlyPostsNewerThan: '3 days',
+          addParentData: false,
+        }),
+      }),
+    );
+    const run = record(start.data);
+    apifyId = typeof run.id === 'string' ? run.id : null;
+    datasetId = typeof run.defaultDatasetId === 'string' ? run.defaultDatasetId : null;
+    if (!apifyId || !datasetId) throw new IngestionError('APIFY_INVALID_RUN');
+    const savedRun = await db
+      .from('ingestion_runs')
+      .update({ apify_run_id: apifyId, dataset_id: datasetId })
+      .eq('id', runId);
+    if (savedRun.error) throw new IngestionError('DB_RUN');
+    let finalRun: RawPost = run;
+    while (Date.now() - started < 205000) {
+      const status = String(finalRun.status || '');
+      if (status === 'SUCCEEDED') {
+        providerCompleted = true;
+        break;
+      }
+      if (['FAILED', 'ABORTED', 'TIMED-OUT'].includes(status))
+        throw new IngestionError(`APIFY_${status}`);
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+      finalRun = record(record(await apify(`actor-runs/${apifyId}`)).data);
+    }
+    if (!providerCompleted) throw new IngestionError('APIFY_DEADLINE');
+    const raw = await apify(`datasets/${datasetId}/items?format=json&clean=true&limit=100`);
+    if (!Array.isArray(raw) || raw.length > 100) throw new IngestionError('APIFY_INVALID_DATASET');
+    const items = raw.map(record);
+    metrics.posts_found = items.length;
+    const ids = items.map(postCode).filter((id): id is string => id !== null);
+    const processed = ids.length
+      ? await db.from('ingestion_posts').select('post_id').in('post_id', ids)
+      : { data: [], error: null };
+    if (processed.error) throw new IngestionError('DB_POSTS');
+    const seen = new Set((processed.data || []).map((p) => p.post_id));
+    const now = new Date();
+    const candidates: NonNullable<ReturnType<typeof classifyPost>['row']>[] = [];
+    const evidence: RawPost[] = [];
+    for (const item of items) {
+      const code = postCode(item);
+      const owner = postOwner(item);
+      if (!owner) {
+        metrics.source_rejected = Number(metrics.source_rejected) + 1;
+        continue;
+      }
+      if (code && seen.has(code)) {
+        metrics.already_processed = Number(metrics.already_processed) + 1;
+        continue;
+      }
+      const decision = classifyPost(item, now);
+      if (decision.row) {
+        candidates.push(decision.row);
+        metrics.event_candidates = Number(metrics.event_candidates) + 1;
+      } else metrics[decision.reason] = Number(metrics[decision.reason]) + 1;
+      if (code) {
+        seen.add(code);
+        evidence.push({
+          post_id: code,
+          source_account: owner,
+          source_published_at:
+            parseTimestamp(
+              item.timestamp ?? item.takenAt ?? item.takenAtIso ?? item.publishedAt,
+            )?.toISOString() || null,
+          retrieved_at: now.toISOString(),
+          caption: typeof item.caption === 'string' ? item.caption.slice(0, 10000) : '',
+          source_url: `https://www.instagram.com/p/${code}/`,
+          outcome: decision.reason,
+          run_id: runId,
+        });
+      }
+    }
+    const { unique, duplicates } = dedupeCandidates(candidates);
+    metrics.duplicates_suppressed = duplicates;
+    const existing = unique.length
+      ? await db
+          .from('events')
+          .select('instagram_id,event_key')
+          .or(
+            `instagram_id.in.(${unique.map((r) => r.instagram_id).join(',')}),event_key.in.(${unique.map((r) => `"${r.event_key}"`).join(',')})`,
+          )
+      : { data: [], error: null };
+    if (existing.error) throw new IngestionError('DB_DEDUPE');
+    const knownIds = new Set((existing.data || []).map((r) => r.instagram_id));
+    const knownKeys = new Set((existing.data || []).map((r) => r.event_key));
+    const fresh = unique.filter(
+      (r) => !knownIds.has(r.instagram_id) && !knownKeys.has(r.event_key),
+    );
+    metrics.duplicates_suppressed =
+      Number(metrics.duplicates_suppressed) + unique.length - fresh.length;
+    if (fresh.length) {
+      const saved = await db
+        .from('events')
+        .upsert(
+          fresh.map((r) => ({ ...r, ingestion_run_id: runId })),
+          { onConflict: 'instagram_id', ignoreDuplicates: true },
+        )
+        .select('instagram_id');
+      if (saved.error) throw new IngestionError('DB_CANDIDATES');
+      metrics.events_saved = saved.data?.length || 0;
+    }
+    if (evidence.length) {
+      const saved = await db
+        .from('ingestion_posts')
+        .upsert(evidence, { onConflict: 'post_id', ignoreDuplicates: true });
+      if (saved.error) throw new IngestionError('DB_EVIDENCE');
+    }
+    const cost = typeof finalRun.usageTotalUsd === 'number' ? finalRun.usageTotalUsd : null;
+    metrics.duration_ms = Date.now() - started;
+    metrics.apify_cost_usd = cost;
+    const saved = await db
+      .from('ingestion_runs')
+      .update({
+        status: 'succeeded',
+        completed_at: new Date().toISOString(),
+        metrics,
+        cost_usd: cost,
+      })
+      .eq('id', runId);
+    if (saved.error) throw new IngestionError('DB_FINISH');
+    console.info('[ingestion]', JSON.stringify({ run_id: runId, ...metrics }));
+    return reply({
+      success: true,
+      run_id: runId,
+      ...metrics,
       timestamp: new Date().toISOString(),
+      moderation: 'pending',
     });
   } catch (error) {
-    console.error('[cron/scrape]', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Error desconocido en scraping' },
-      { status: 502 },
+    const code = error instanceof IngestionError ? error.code : 'INGESTION_FAILED';
+    if (apifyId && !providerCompleted)
+      await apify(`actor-runs/${apifyId}/abort`, { method: 'POST' }).catch(() => undefined);
+    metrics.duration_ms = Date.now() - started;
+    await db
+      .from('ingestion_runs')
+      .update({
+        status: 'failed',
+        completed_at: new Date().toISOString(),
+        error_code: code,
+        metrics,
+      })
+      .eq('id', runId);
+    console.error('[ingestion]', JSON.stringify({ run_id: runId, error_code: code }));
+    return reply(
+      {
+        success: false,
+        error: 'No se pudo completar la ingesta.',
+        error_code: code,
+        run_id: runId,
+      },
+      502,
     );
   }
 }
