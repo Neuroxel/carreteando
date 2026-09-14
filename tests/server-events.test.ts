@@ -9,6 +9,10 @@ test('successful empty response stays canonical even after a populated request',
     globalThis.fetch = async () =>
       new Response(
         JSON.stringify([
+          null,
+          42,
+          'corrupted',
+          [],
           {
             instagram_id: 'abc',
             title: 'Plan',

@@ -14,6 +14,9 @@ export type EventRow = Record<string, unknown>;
 const str = (v: unknown): string | null => (typeof v === 'string' && v.trim() ? v.trim() : null);
 export function dbRowToEvento(row: EventRow): Evento | null {
   if (
+    !row ||
+    typeof row !== 'object' ||
+    Array.isArray(row) ||
     row.is_active !== true ||
     row.moderation_status !== 'approved' ||
     !validIsoDate(row.date_text)

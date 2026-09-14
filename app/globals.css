@@ -745,6 +745,15 @@ p {
 .share-control {
   position: relative;
 }
+.detail-info .share-control {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.detail-info .share-status {
+  flex-basis: 100%;
+  max-width: none;
+}
 .share-status {
   font-size: 10px;
   display: block;
@@ -1374,8 +1383,15 @@ textarea::placeholder {
     flex: 1;
     min-width: 140px;
   }
+  .detail-info .actions > .share-control {
+    flex-basis: 100%;
+  }
   .detail-info .share-control .button {
-    width: 100%;
+    flex: 1;
+    min-width: 90px;
+    padding: 12px 8px;
+    gap: 5px;
+    font-size: 12px;
   }
   .detail-info .actions > .button-primary {
     flex-basis: 100%;

@@ -20,6 +20,12 @@ export default function Trust() {
           Encontramos el evento en una cuenta pública y revisamos su información. No significa que
           el organizador lo haya confirmado directamente con Carreteando.
         </dd>
+        <dt>Curaduría · fuente revisada</dt>
+        <dd>
+          Revisamos una ficha pública del recinto o de venta de entradas. La fecha, el lugar y el
+          precio conocido quedan enlazados a esa fuente; no implica una confirmación directa del
+          organizador.
+        </dd>
         <dt>Comunidad · revisado</dt>
         <dd>Alguien envió el dato y pasó por revisión antes de publicarse.</dd>
         <dt>Organizador verificado</dt>
