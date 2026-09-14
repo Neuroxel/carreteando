@@ -10,6 +10,7 @@ const nextConfig = {
       { protocol: 'https', hostname: 'imagenes.passline.com' },
       { protocol: 'https', hostname: 'ticketing-uploads-1.ticketplus.global' },
       { protocol: 'https', hostname: 'events-cdn.vesti.cl' },
+      { protocol: 'https', hostname: 'images.portaldisc.com' },
     ],
   },
   async headers() {
