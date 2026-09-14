@@ -213,12 +213,15 @@ test('a venue is a place, not a date, and never leaks an unapproved row', () => 
   assert.equal(zonas.length, 2);
   assert.ok(zonas.every((z) => z.lugares.length > 0));
 });
-test('one venue cannot take the whole first screen', () => {
-  const ev = (lugar: string, id: string) => ({ lugar, id });
+test('one venue cannot take the whole first screen, and far dates never jump ahead', () => {
+  const ev = (lugar: string, fecha: string) => ({ lugar, fecha, id: `${lugar}-${fecha}` });
   const many = [
-    ...Array.from({ length: 6 }, (_, i) => ev('Teatro Mauri SCD', `m${i}`)),
-    ev('Bar Vienés', 'b1'),
-    ev('Cassot Bar', 'c1'),
+    ev('Teatro Mauri SCD', '2026-09-24'),
+    ev('Teatro Mauri SCD', '2026-09-25'),
+    ev('Teatro Mauri SCD', '2026-09-26'),
+    ev('Teatro Mauri SCD', '2026-10-02'),
+    ev('Bar Vienés', '2026-10-03'),
+    ev('Cassot Bar', '2026-12-17'),
   ];
   const out = diversifyByVenue(many);
   assert.equal(out.length, many.length, 'no se pierde ni se oculta ningún evento');
@@ -227,9 +230,25 @@ test('one venue cannot take the whole first screen', () => {
     new Set(many.map((e) => e.id)),
     'son exactamente los mismos eventos',
   );
-  const firstFour = out.slice(0, 4).map((e) => e.lugar);
-  assert.ok(new Set(firstFour).size >= 3, `esperaba variedad, hubo ${firstFour.join(', ')}`);
+  assert.equal(out[0].fecha, '2026-09-24', 'la primera tarjeta sigue siendo la más próxima');
+  // Even with four of six dates in one room, the opening rows show more than one place.
+  assert.ok(
+    new Set(out.slice(0, 4).map((e) => e.lugar)).size >= 2,
+    `esperaba variedad, hubo ${out
+      .slice(0, 4)
+      .map((e) => e.lugar)
+      .join(', ')}`,
+  );
+  // The December date must not be dragged to the top just to break a run.
+  assert.ok(
+    out.findIndex((e) => e.fecha === '2026-12-17') >= 3,
+    'una fecha lejana se adelantó demasiado',
+  );
   // A single-venue list must survive untouched rather than be reshuffled.
-  const solo = [ev('Trotamundos Valparaíso', 'a'), ev('Trotamundos Valparaíso', 'b')];
+  const solo = [
+    ev('Trotamundos Valparaíso', '2026-09-20'),
+    ev('Trotamundos Valparaíso', '2026-09-21'),
+    ev('Trotamundos Valparaíso', '2026-09-22'),
+  ];
   assert.deepEqual(diversifyByVenue(solo), solo);
 });

@@ -146,26 +146,28 @@ export function eventDateLabel(date: string, today = getChileTodayStr()): string
   }).format(new Date(`${date}T12:00:00Z`));
 }
 
-// A correct list can still read as one venue's microsite. Interleave so the same
-// place does not take the first rows, without hiding any legitimate event.
-export function diversifyByVenue<T extends { lugar?: string | null }>(events: T[], max = 2): T[] {
-  const groups = new Map<string, T[]>();
-  for (const e of events) {
-    const key = e.lugar || '';
-    (groups.get(key) || groups.set(key, []).get(key)!).push(e);
-  }
-  if (groups.size < 2) return events;
-  const queues = [...groups.values()];
+// A correct list can still read as one venue's microsite. Keep the chronological
+// order the product promises and only intervene when the same place is about to
+// take a third row in a row: then look a few rows ahead for a different one.
+// The look-ahead is bounded, so a December date never jumps ahead of September,
+// and nothing is hidden — every event still appears.
+export function diversifyByVenue<T extends { lugar?: string | null }>(
+  events: T[],
+  run = 2,
+  lookahead = 4,
+): T[] {
+  if (events.length < 3) return events;
+  const pending = [...events];
   const out: T[] = [];
-  while (out.length < events.length) {
-    let moved = false;
-    for (const q of queues) {
-      for (let i = 0; i < max && q.length; i++) {
-        out.push(q.shift()!);
-        moved = true;
-      }
+  while (pending.length) {
+    const recent = out.slice(-run).map((e) => e.lugar || '');
+    const inARun = recent.length === run && new Set(recent).size === 1;
+    let pick = 0;
+    if (inARun) {
+      const alt = pending.findIndex((e, i) => i < lookahead && (e.lugar || '') !== recent[0]);
+      if (alt !== -1) pick = alt;
     }
-    if (!moved) break;
+    out.push(pending.splice(pick, 1)[0]);
   }
   return out;
 }
