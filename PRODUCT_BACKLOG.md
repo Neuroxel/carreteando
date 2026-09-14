@@ -1,6 +1,6 @@
 # Carreteando — backlog de producto
 
-Estado al **14 de septiembre de 2026**. Este archivo es la lista canónica: toda idea del encargo
+Estado al **14 de septiembre de 2026**, revisado en fase 6. Este archivo es la lista canónica: toda idea del encargo
 aparece aquí con su estado. Nada se descarta en silencio.
 
 Estados: **HECHO** · **EN CURSO** · **PENDIENTE** · **BLOQUEADO** · **NO AHORA**
@@ -13,19 +13,19 @@ Leyenda de fase: **P0 AHORA** (esta fase) · **P1 SIGUIENTE** · **P2 MÁS ADELA
 
 | # | Ítem | Estado | Criterio de aceptación | Dependencia / riesgo |
 |---|---|---|---|---|
-| 1 | Acceso del propietario a `/admin` | **BLOQUEADO** | El propietario inicia sesión y `review_audit` deja de estar en 0 | Sólo él puede pegar la clave. Se desplegó tolerancia a espacios tras su intento fallido |
+| 1 | Acceso del propietario a `/admin` | **EN CURSO** | El propietario inicia sesión y `review_audit` deja de estar en 0 | **Clave rotada en fase 6**: valor nuevo generado y escrito a la vez en el archivo 0600 y en el secreto de Vercel, así que ambos lados coinciden por construcción. Falta un login humano |
 | 2 | QA de mutaciones del panel | **BLOQUEADO** | Rechazar 3 QA, retirar/reaprobar, conflicto de versión, reimportación que no reactiva, 1 fila de auditoría por decisión | Depende de (1) |
 | 3 | Cobertura del 18 de septiembre | **HECHO** | Fondas verificadas con fuente 2026 en varias comunas, visibles del 17 al 20 | 5 fondas, 17 filas, 4 comunas |
 | 4 | Tipo de evento (fonda/pre/after/live/club) | **HECHO** | Una fonda se lee como fonda, no como género musical | Filtro `?tipo=` operativo |
 | 5 | Superficie estacional Dieciocho | **HECHO** | Aparece y desaparece sola por fecha, sin fijarla a mano | Ventana 14–21 de septiembre |
-| 6 | Redes sociales oficiales por lugar | **EN CURSO** | Cada lugar publicado expone su cuenta oficial cuando existe | 14 de 23 verificados; el resto sigue sin fuente confirmada |
+| 6 | Redes sociales oficiales por lugar | **EN CURSO** | Cada lugar publicado expone su cuenta oficial cuando existe | 16 de 25 verificados. Instagram encabeza las acciones de la ficha |
 | 7 | Reportes en vivo de la comunidad | **HECHO** | Ambiente, gente, fila y estado, con caducidad y tamaño de muestra | Mínimo 2 reportes coincidentes; sin datos observados aún |
 | 8 | Estado del lugar (abierto/cerrado/revisar) | **HECHO** | Un lugar cerrado deja de servirse aunque quede marcado activo | Falta UI de reporte de cierre por el usuario |
-| 9 | Censo profundo de lugares | **EN CURSO** | Registro de alta confianza mucho mayor que 23 | 24 publicados + 14 candidatos; muy por debajo de 50–100 |
-| 10 | Cobertura Quilpué / Villa Alemana | **EN CURSO** | Lugares o eventos reales con fuente propia | Villa Alemana y Concón entran por fondas; Quilpué sigue débil |
+| 9 | Censo profundo de lugares | **EN CURSO** | Registro de alta confianza mucho mayor que 23 | 25 publicados + 18 candidatos + 1 cerrado. Sigue por debajo de 50–100 |
+| 10 | Cobertura Quilpué / Villa Alemana | **EN CURSO** | Lugares o eventos reales con fuente propia | Quilpué suma El Parque y El 26, ambos con Instagram y dirección. Villa Alemana y Concón siguen cubiertos sólo por fondas |
 | 11 | Matriz de cobertura | **HECHO** | El propietario puede responder «por qué está vacía tal comuna» con evidencia | En el informe final |
 | 12 | Arquitectura de frescura por capas | **HECHO (diseño)** | Base de lugar / agenda / estado en vivo con TTL distintos | Ver §Scheduler |
-| 13 | Salud de fuentes | **PENDIENTE** | last_success, items, coste y error por fuente, con desactivación sugerida | Existe `ingestion_runs`; falta vista por fuente |
+| 13 | Salud de fuentes | **PARCIAL** | last_success, items, coste y error por fuente, con desactivación sugerida | Documentado en `SOURCE_REGISTRY.md`; falta el tablero en `/admin` |
 | 14 | QA móvil y seguridad | **HECHO** | Lighthouse, rutas, RLS y CI verdes tras cada cambio | Se mantiene en cada despliegue |
 
 ## P1 — SIGUIENTE
@@ -70,6 +70,27 @@ Leyenda de fase: **P0 AHORA** (esta fase) · **P1 SIGUIENTE** · **P2 MÁS ADELA
 | Ticketera propia | Fuera del foco |
 | Guía de restaurantes, hoteles o turismo diurno | Rompe la cuña: salir de noche |
 | Subir límites de scraping sin diagnóstico | Gasto sin rendimiento demostrado |
+
+---
+
+## Añadido en fase 6
+
+| # | Ítem | Fase | Estado | Criterio de aceptación | Nota |
+|---|---|---|---|---|---|
+| 34 | Arte de tarjeta por tipo de noche | P0 | **HECHO** | Ninguna tarjeta muestra «OTRO»; dos vecinas no se ven iguales | Paleta por tipo + variación por hash dentro del tipo |
+| 35 | El 18 domina la portada en su semana | P0 | **HECHO** | Bloque con cuenta regresiva arriba del tablero, desaparece solo el 22 | Derivado de la fecha |
+| 36 | Rotación de la clave de administración | P0 | **HECHO** | Valor nuevo en Vercel y en el archivo 0600, coincidentes | Hecho por el agente, sin exponer el valor |
+| 37 | Estudio de productos de referencia | P0 | **HECHO** | Patrón por patrón con USAR / ADAPTAR / IGNORAR | `COMPETITIVE_PRODUCT_PATTERNS.md` |
+| 38 | Matriz de cobertura con el porqué | P0 | **HECHO** | Cada comuna vacía explica su causa | `REGIONAL_COVERAGE.md` |
+| 39 | Registro de fuentes con rendimiento | P0 | **HECHO** | Eventos vigentes y coste por fuente | `SOURCE_REGISTRY.md` |
+| 40 | Ficha de organizador | P1 | **PENDIENTE** | Un organizador tiene página propia con su programación | Patrón tomado de Shotgun |
+| 41 | Geocodificación con procedencia | P1 | **PENDIENTE** | Coordenadas obtenidas de proveedor con términos compatibles | Prerrequisito del mapa; **no** se scrapea Maps |
+| 42 | Búsqueda unificada | P1 | **PENDIENTE** | «bar cerro alegre» devuelve lugar, zona y evento | Hoy sólo busca eventos |
+| 43 | Superficie «Ahora» | P1 | **PENDIENTE** | Combina eventos en curso, horarios conocidos y reportes frescos | Bloqueada por horarios de apertura, que casi nadie publica |
+| 44 | Lugares temporales con vigencia | P1 | **PENDIENTE** | `active_from` / `active_until` y retiro automático | Hoy las fondas son eventos con dirección, que ya caducan solos |
+| 45 | Reporte de cierre por el usuario | P1 | **PENDIENTE** | «Este lugar cerró» entra a la cola privada | La columna `status` ya existe |
+| 46 | Tablero de salud de fuentes en `/admin` | P1 | **PENDIENTE** | Responder «por qué está vacía Reñaca» sin SQL | Datos ya disponibles |
+| 47 | Fonda multi-día como entidad | P2 | **NO AHORA** | Una ficha explica el programa y conserva la búsqueda por día | Hoy son filas por día, que es lo que hace funcionar «hoy» y «mañana» |
 
 ---
 
