@@ -19,7 +19,8 @@ export function safeImageUrl(value: unknown): string | null {
     u.hostname === 'images.unsplash.com' ||
     u.hostname === 'imagenes.passline.com' ||
     u.hostname === 'ticketing-uploads-1.ticketplus.global' ||
-    u.hostname === 'events-cdn.vesti.cl'
+    u.hostname === 'events-cdn.vesti.cl' ||
+    u.hostname === 'images.portaldisc.com'
     ? url
     : null;
 }

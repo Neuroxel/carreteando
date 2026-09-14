@@ -22,7 +22,13 @@ export function editorialRows(now = new Date()) {
         Date.parse(e.reviewed_at) <= now.getTime() + 300000 &&
         now.getTime() - Date.parse(e.reviewed_at) < 7 * 86400000 &&
         safeWebUrl(e.source_url) &&
-        ['www.passline.com', 'ticketplus.cl', 'www.vesti.cl', 'vesti.cl'].includes(
+        [
+          'www.passline.com',
+          'ticketplus.cl',
+          'www.vesti.cl',
+          'vesti.cl',
+          'www.portaldisc.com',
+        ].includes(
           new URL(e.source_url).hostname,
         ) &&
         e.title &&

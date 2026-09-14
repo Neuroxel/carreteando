@@ -4,7 +4,8 @@ import { createHmac } from 'node:crypto';
 import { validSession } from '../lib/admin-session';
 import { parseFilters } from '../lib/filters';
 import { editorialRows } from '../lib/editorial-feed';
-import { dbRowToEvento, filterEvents } from '../lib/events';
+import { dbRowToEvento, diversifyByVenue, filterEvents } from '../lib/events';
+import { dbRowToLugar, zonaSlug, zonasDe } from '../lib/venues';
 import { POST as measure } from '../app/api/medir/route';
 import { ReviewInputError, reviewInput } from '../lib/review-input';
 import { toChileDateString } from '../lib/event-extraction';
@@ -175,4 +176,60 @@ test('review actions travel as bound arguments and each rejection names its own 
   assert.equal(unknown.fields.price_clp, null);
   assert.equal(unknown.fields.event_time, null);
   assert.equal(unknown.fields.price_text, 'Precio por confirmar');
+});
+
+test('a venue is a place, not a date, and never leaks an unapproved row', () => {
+  const base = {
+    slug: 'emporio-echaurren',
+    name: 'Emporio Echaurren',
+    city: 'Valparaíso',
+    zone: 'Plan de Valparaíso',
+    address: 'Clave 243',
+    venue_type: 'club',
+    tags: ['soundsystem', 'reggae'],
+    source_type: 'calendario-publico',
+    source_url: 'https://www.portaldisc.com/cartelera/emporioechaurren',
+    is_active: true,
+    moderation_status: 'approved',
+  };
+  const ok = dbRowToLugar(base);
+  assert.equal(ok?.nombre, 'Emporio Echaurren');
+  assert.equal(ok?.tipo_label, 'Club');
+  assert.deepEqual(ok?.tags, ['soundsystem', 'reggae']);
+  // Nothing uncertain becomes public, exactly as events behave.
+  assert.equal(dbRowToLugar({ ...base, moderation_status: 'pending' }), null);
+  assert.equal(dbRowToLugar({ ...base, is_active: false }), null);
+  assert.equal(dbRowToLugar({ ...base, slug: '../escape' }), null);
+  assert.equal(dbRowToLugar({ ...base, city: '' }), null);
+  // An unknown type must not invent one.
+  assert.equal(dbRowToLugar({ ...base, venue_type: 'restaurante' })?.tipo, 'bar');
+  assert.equal(zonaSlug('Cerro Alegre'), 'cerro-alegre');
+  assert.equal(zonaSlug('Viña Centro'), 'vina-centro');
+  const zonas = zonasDe([
+    dbRowToLugar(base)!,
+    dbRowToLugar({ ...base, slug: 'otro', name: 'Otro', zone: 'Cerro Alegre' })!,
+    dbRowToLugar({ ...base, slug: 'tercero', name: 'Tercero', zone: null })!,
+  ]);
+  assert.equal(zonas.length, 2);
+  assert.ok(zonas.every((z) => z.lugares.length > 0));
+});
+test('one venue cannot take the whole first screen', () => {
+  const ev = (lugar: string, id: string) => ({ lugar, id });
+  const many = [
+    ...Array.from({ length: 6 }, (_, i) => ev('Teatro Mauri SCD', `m${i}`)),
+    ev('Bar Vienés', 'b1'),
+    ev('Cassot Bar', 'c1'),
+  ];
+  const out = diversifyByVenue(many);
+  assert.equal(out.length, many.length, 'no se pierde ni se oculta ningún evento');
+  assert.deepEqual(
+    new Set(out.map((e) => e.id)),
+    new Set(many.map((e) => e.id)),
+    'son exactamente los mismos eventos',
+  );
+  const firstFour = out.slice(0, 4).map((e) => e.lugar);
+  assert.ok(new Set(firstFour).size >= 3, `esperaba variedad, hubo ${firstFour.join(', ')}`);
+  // A single-venue list must survive untouched rather than be reshuffled.
+  const solo = [ev('Trotamundos Valparaíso', 'a'), ev('Trotamundos Valparaíso', 'b')];
+  assert.deepEqual(diversifyByVenue(solo), solo);
 });

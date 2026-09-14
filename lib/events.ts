@@ -145,3 +145,27 @@ export function eventDateLabel(date: string, today = getChileTodayStr()): string
     timeZone: 'UTC',
   }).format(new Date(`${date}T12:00:00Z`));
 }
+
+// A correct list can still read as one venue's microsite. Interleave so the same
+// place does not take the first rows, without hiding any legitimate event.
+export function diversifyByVenue<T extends { lugar?: string | null }>(events: T[], max = 2): T[] {
+  const groups = new Map<string, T[]>();
+  for (const e of events) {
+    const key = e.lugar || '';
+    (groups.get(key) || groups.set(key, []).get(key)!).push(e);
+  }
+  if (groups.size < 2) return events;
+  const queues = [...groups.values()];
+  const out: T[] = [];
+  while (out.length < events.length) {
+    let moved = false;
+    for (const q of queues) {
+      for (let i = 0; i < max && q.length; i++) {
+        out.push(q.shift()!);
+        moved = true;
+      }
+    }
+    if (!moved) break;
+  }
+  return out;
+}

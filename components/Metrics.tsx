@@ -7,7 +7,15 @@ export default function Metrics() {
     query = useSearchParams();
   useEffect(() => {
     if (path.startsWith('/admin')) return;
-    track(path.startsWith('/evento/') ? 'event_open' : 'page_view');
+    track(
+      path.startsWith('/evento/')
+        ? 'event_open'
+        : path.startsWith('/lugar/')
+          ? 'venue_open'
+          : path.startsWith('/zonas/')
+            ? 'zone_open'
+            : 'page_view',
+    );
   }, [path]);
   useEffect(() => {
     if ((path === '/' || path === '/buscar') && query.size) track('filter');

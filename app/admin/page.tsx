@@ -1,8 +1,9 @@
 import sources from '../../data/sources.json';
 import { isAdmin } from '../../lib/admin-session';
 import { getAdminDb } from '../../lib/server-db';
-import { login, logout, review, importEditorial } from './actions';
+import { login, logout, review, reviewVenue, importEditorial } from './actions';
 import { CATEGORIAS, CIUDADES } from '../../lib/types';
+import { TIPOS_LUGAR } from '../../lib/venues';
 import { safeWebUrl } from '../../lib/safety';
 import { toChileDateString } from '../../lib/event-extraction';
 export const dynamic = 'force-dynamic';
@@ -161,6 +162,91 @@ function Item({ row, kind, events }: { row: Row; kind: 'event' | 'inbox'; events
     </details>
   );
 }
+
+function VenueItem({ row }: { row: Row }) {
+  const fields: [string, string][] = [
+    ['name', 'Nombre'],
+    ['city', 'Ciudad'],
+    ['zone', 'Zona o barrio'],
+    ['address', 'Dirección'],
+    ['description_short', 'Descripción breve'],
+    ['official_url', 'Sitio oficial'],
+    ['instagram_url', 'Instagram'],
+    ['calendar_url', 'Cartelera del lugar'],
+    ['source_url', 'Fuente revisada'],
+  ];
+  const bind = (action: string) =>
+    reviewVenue.bind(null, string(row.id), Number(row.revision), action);
+  return (
+    <details className="admin-item">
+      <summary>
+        {string(row.name) || 'Lugar sin nombre'}{' '}
+        <span>
+          · {string(row.moderation_status)} {row.is_active === false ? '· privado' : ''}
+        </span>
+      </summary>
+      <p>
+        {string(row.venue_type)} · {string(row.city)}
+        {row.zone ? ` · ${string(row.zone)}` : ''} · Última revisión:{' '}
+        {string(row.last_verified_at) || 'Sin revisión'}
+      </p>
+      <form action={bind('save')}>
+        <div className="admin-fields">
+          {fields.map(([name, label]) =>
+            name === 'city' ? (
+              <label key={name}>
+                {label}
+                <select name="city" defaultValue={string(row.city)}>
+                  <option value="">Selecciona</option>
+                  {CIUDADES.map((c) => (
+                    <option key={c}>{c}</option>
+                  ))}
+                </select>
+              </label>
+            ) : (
+              <label key={name}>
+                {label}
+                <input name={name} defaultValue={string(row[name])} maxLength={400} />
+              </label>
+            ),
+          )}
+          <label>
+            Tipo de lugar
+            <select name="venue_type" defaultValue={string(row.venue_type) || 'bar'}>
+              {TIPOS_LUGAR.map((t) => (
+                <option key={t.value} value={t.value}>
+                  {t.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="admin-wide">
+            <input type="checkbox" name="checked" value="yes" /> Comprobé que el lugar existe hoy,
+            que su fuente es pública y que es vida nocturna.
+          </label>
+        </div>
+        <label>
+          Nota de revisión (mínimo 10 caracteres)
+          <textarea name="note" required minLength={10} maxLength={1000} rows={2} />
+        </label>
+        <div className="actions">
+          <button className="button button-primary" formAction={bind('approve')}>
+            Aprobar y publicar
+          </button>
+          <button className="button button-outline" formAction={bind('save')}>
+            Guardar corrección
+          </button>
+          <button className="button button-outline" formAction={bind('withdraw')}>
+            Retirar
+          </button>
+          <button className="button button-outline" formAction={bind('reject')}>
+            Rechazar
+          </button>
+        </div>
+      </form>
+    </details>
+  );
+}
 export default async function Admin({
   searchParams,
 }: {
@@ -192,7 +278,7 @@ export default async function Admin({
       </section>
     );
   const db = getAdminDb();
-  const [queue, events, audit, metrics] = await Promise.all([
+  const [queue, events, audit, metrics, venues] = await Promise.all([
     db
       ?.from('community_inbox')
       .select('id,kind,payload,status,revision,reviewed_at')
@@ -215,6 +301,12 @@ export default async function Admin({
       .select('day,name,count')
       .order('day', { ascending: false })
       .limit(270),
+    db
+      ?.from('venues')
+      .select('*')
+      .order('moderation_status')
+      .order('name')
+      .limit(400),
   ]);
   const failed = !db || queue?.error || events?.error || audit?.error;
   const list = events?.data || [];
@@ -267,6 +359,36 @@ export default async function Admin({
             <Item key={r.id} row={r} kind="event" events={list} />
           ))}
           <details className="admin-item"><summary>Archivo privado: fechas pasadas o sin confirmar ({older.length})</summary>{older.map(r=><Item key={r.id} row={r} kind="event" events={list}/>)}</details>
+          <h2>
+            Lugares ({venues?.data?.filter((v) => v.moderation_status === 'pending').length || 0}{' '}
+            por revisar de {venues?.data?.length || 0})
+          </h2>
+          <p>
+            Un lugar existe aunque hoy no tenga evento. Aprobar lo hace público; retirar lo deja
+            privado sin borrar su historial.
+          </p>
+          {venues?.error ? (
+            <p role="alert">No pudimos consultar los lugares.</p>
+          ) : (
+            <>
+              {(venues?.data || [])
+                .filter((v) => v.moderation_status === 'pending')
+                .map((v) => (
+                  <VenueItem key={v.id} row={v} />
+                ))}
+              <details className="admin-item">
+                <summary>
+                  Lugares ya publicados (
+                  {(venues?.data || []).filter((v) => v.moderation_status !== 'pending').length})
+                </summary>
+                {(venues?.data || [])
+                  .filter((v) => v.moderation_status !== 'pending')
+                  .map((v) => (
+                    <VenueItem key={v.id} row={v} />
+                  ))}
+              </details>
+            </>
+          )}
           <h2>Cobertura y fuentes</h2>
           <form action={importEditorial}>
             <button className="button button-outline">Importar selección editorial revisada</button>

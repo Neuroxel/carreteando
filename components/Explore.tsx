@@ -1,11 +1,13 @@
 import Link from 'next/link';
 import { getPublicEvents } from '../lib/server-events';
 import { getSourceFreshness } from '../lib/server-freshness';
-import { filterEvents } from '../lib/events';
+import { diversifyByVenue, filterEvents } from '../lib/events';
 import { toChileDateString } from '../lib/event-extraction';
 import { parseFilters } from '../lib/filters';
 import { CATEGORIAS, CIUDADES } from '../lib/types';
 import EventCard from './EventCard';
+import VenueCard from './VenueCard';
+import { getPublicVenues } from '../lib/server-venues';
 const SHORT: Record<string, string> = { Valparaíso: 'Valpo', 'Viña del Mar': 'Viña' };
 export default async function Explore({
   params,
@@ -17,9 +19,20 @@ export default async function Explore({
   const query = new URLSearchParams();
   for (const [k, v] of Object.entries(params)) if (typeof v === 'string') query.set(k, v);
   const filters = parseFilters(query, home ? 'hoy' : 'futuro');
-  const [result, freshness] = await Promise.all([getPublicEvents(), getSourceFreshness()]);
+  const [result, freshness, venues] = await Promise.all([
+    getPublicEvents(),
+    getSourceFreshness(),
+    getPublicVenues(),
+  ]);
   const today = toChileDateString(result.checkedAt);
-  const events = filterEvents(result.events, filters, today);
+  const events = diversifyByVenue(filterEvents(result.events, filters, today));
+  const conteoLugar = new Map<string, number>();
+  for (const e of result.events)
+    if (e.lugar) conteoLugar.set(e.lugar, (conteoLugar.get(e.lugar) || 0) + 1);
+  const lugaresZona =
+    filters.ciudad === 'todos'
+      ? venues.lugares
+      : venues.lugares.filter((l) => l.ciudad === filters.ciudad);
   const suggestions = result.events
     .filter(
       (e, i, all) =>
@@ -216,6 +229,27 @@ export default async function Explore({
             <div className="event-grid">
               {suggestions.map((e, i) => (
                 <EventCard key={e.id} evento={e} today={today} priority={i === 0} />
+              ))}
+            </div>
+          </div>
+        )}
+        {venues.status === 'ok' && lugaresZona.length > 0 && (
+          <div className="alternative-plans">
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">AUNQUE NO HAYA EVENTO</p>
+                <h3>
+                  Lugares para salir
+                  <span className="heading-period">.</span>
+                </h3>
+              </div>
+              <Link className="result-count" href="/lugares">
+                Ver los {venues.lugares.length} ↗
+              </Link>
+            </div>
+            <div className="venue-grid">
+              {lugaresZona.slice(0, 6).map((l) => (
+                <VenueCard key={l.slug} lugar={l} proximos={conteoLugar.get(l.nombre) || 0} />
               ))}
             </div>
           </div>

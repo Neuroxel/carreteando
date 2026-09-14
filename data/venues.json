@@ -1,0 +1,656 @@
+[
+ {
+  "slug": "trotamundos-valparaiso",
+  "name": "Trotamundos Valparaíso",
+  "city": "Valparaíso",
+  "zone": "Plan de Valparaíso",
+  "address": "Blanco 1253",
+  "venue_type": "sala-en-vivo",
+  "tags": [
+   "en-vivo",
+   "rock",
+   "cumbia"
+  ],
+  "description_short": "Sala de conciertos en el plan, con programación frecuente de música en vivo.",
+  "official_url": null,
+  "instagram_url": null,
+  "calendar_url": "https://www.portaldisc.com/cartelera/trotamundosvalparaiso",
+  "source_type": "calendario-publico",
+  "source_url": "https://www.portaldisc.com/cartelera/trotamundosvalparaiso",
+  "last_verified": "2026-09-14",
+  "publish": true
+ },
+ {
+  "slug": "emporio-echaurren",
+  "name": "Emporio Echaurren",
+  "city": "Valparaíso",
+  "zone": "Plan de Valparaíso",
+  "address": "Clave 243",
+  "venue_type": "club",
+  "tags": [
+   "soundsystem",
+   "reggae",
+   "electronica"
+  ],
+  "description_short": "Sala con barras y terraza; programación de soundsystem y música jamaicana hasta la madrugada.",
+  "official_url": null,
+  "instagram_url": null,
+  "calendar_url": "https://www.portaldisc.com/cartelera/emporioechaurren",
+  "source_type": "calendario-publico",
+  "source_url": "https://www.portaldisc.com/cartelera/emporioechaurren",
+  "last_verified": "2026-09-14",
+  "publish": true
+ },
+ {
+  "slug": "club-segundo-piso",
+  "name": "Club Segundo Piso",
+  "city": "Valparaíso",
+  "zone": "El Almendral",
+  "address": "Av. Brasil 1395",
+  "venue_type": "club",
+  "tags": [
+   "fiesta",
+   "alternativo"
+  ],
+  "description_short": null,
+  "official_url": null,
+  "instagram_url": null,
+  "calendar_url": "https://www.portaldisc.com/cartelera/clubsegundopiso",
+  "source_type": "calendario-publico",
+  "source_url": "https://www.portaldisc.com/cartelera/clubsegundopiso",
+  "last_verified": "2026-09-14",
+  "publish": true
+ },
+ {
+  "slug": "espacio-barcelona",
+  "name": "Espacio Barcelona",
+  "city": "Valparaíso",
+  "zone": "El Almendral",
+  "address": "Gral. Cruz 363",
+  "venue_type": "sala-en-vivo",
+  "tags": [
+   "en-vivo",
+   "alternativo"
+  ],
+  "description_short": null,
+  "official_url": null,
+  "instagram_url": null,
+  "calendar_url": "https://www.portaldisc.com/cartelera/espaciobarcelona",
+  "source_type": "calendario-publico",
+  "source_url": "https://www.portaldisc.com/cartelera/espaciobarcelona",
+  "last_verified": "2026-09-14",
+  "publish": true
+ },
+ {
+  "slug": "cassot-bar",
+  "name": "Cassot Bar",
+  "city": "Valparaíso",
+  "zone": "Subida Ecuador",
+  "address": "Avenida Ecuador 110",
+  "venue_type": "bar",
+  "tags": [
+   "bar",
+   "en-vivo"
+  ],
+  "description_short": null,
+  "official_url": null,
+  "instagram_url": null,
+  "calendar_url": "https://www.portaldisc.com/cartelera/cassotbar",
+  "source_type": "calendario-publico",
+  "source_url": "https://www.portaldisc.com/cartelera/cassotbar",
+  "last_verified": "2026-09-14",
+  "publish": true
+ },
+ {
+  "slug": "espantapajaros-karaoke",
+  "name": "Espantapájaros Karaoke",
+  "city": "Valparaíso",
+  "zone": "Subida Ecuador",
+  "address": "Av. Ecuador 257",
+  "venue_type": "karaoke",
+  "tags": [
+   "karaoke",
+   "bar"
+  ],
+  "description_short": null,
+  "official_url": null,
+  "instagram_url": null,
+  "calendar_url": "https://www.portaldisc.com/cartelera/espantapajaroskaraoke",
+  "source_type": "calendario-publico",
+  "source_url": "https://www.portaldisc.com/cartelera/espantapajaroskaraoke",
+  "last_verified": "2026-09-14",
+  "publish": true
+ },
+ {
+  "slug": "la-colombina",
+  "name": "La Colombina",
+  "city": "Valparaíso",
+  "zone": "Cerro Alegre",
+  "address": "Paseo Yugoslavo, pasaje 91",
+  "venue_type": "bar",
+  "tags": [
+   "bar",
+   "en-vivo"
+  ],
+  "description_short": null,
+  "official_url": null,
+  "instagram_url": null,
+  "calendar_url": "https://www.portaldisc.com/cartelera/lacolombina",
+  "source_type": "calendario-publico",
+  "source_url": "https://www.portaldisc.com/cartelera/lacolombina",
+  "last_verified": "2026-09-14",
+  "publish": true
+ },
+ {
+  "slug": "lemutt-bar",
+  "name": "Lemutt Bar",
+  "city": "Valparaíso",
+  "zone": "Plan de Valparaíso",
+  "address": "Gálvez 233",
+  "venue_type": "bar",
+  "tags": [
+   "bar",
+   "en-vivo"
+  ],
+  "description_short": null,
+  "official_url": null,
+  "instagram_url": null,
+  "calendar_url": "https://www.portaldisc.com/cartelera/lemuttbar",
+  "source_type": "calendario-publico",
+  "source_url": "https://www.portaldisc.com/cartelera/lemuttbar",
+  "last_verified": "2026-09-14",
+  "publish": true
+ },
+ {
+  "slug": "los-alquinta-del-puerto",
+  "name": "Los Alquinta del Puerto",
+  "city": "Valparaíso",
+  "zone": "El Almendral",
+  "address": "General Cruz 369",
+  "venue_type": "sala-en-vivo",
+  "tags": [
+   "en-vivo",
+   "fiesta"
+  ],
+  "description_short": null,
+  "official_url": null,
+  "instagram_url": null,
+  "calendar_url": "https://www.portaldisc.com/cartelera/losalquintadelpuerto",
+  "source_type": "calendario-publico",
+  "source_url": "https://www.portaldisc.com/cartelera/losalquintadelpuerto",
+  "last_verified": "2026-09-14",
+  "publish": true
+ },
+ {
+  "slug": "panic-house",
+  "name": "Panic House",
+  "city": "Valparaíso",
+  "zone": "Barrio Puerto",
+  "address": "Cochrane 315",
+  "venue_type": "under",
+  "tags": [
+   "under",
+   "alternativo"
+  ],
+  "description_short": null,
+  "official_url": null,
+  "instagram_url": null,
+  "calendar_url": "https://www.portaldisc.com/cartelera/panichouse",
+  "source_type": "calendario-publico",
+  "source_url": "https://www.portaldisc.com/cartelera/panichouse",
+  "last_verified": "2026-09-14",
+  "publish": true
+ },
+ {
+  "slug": "la-para-kultural",
+  "name": "La Pará Kultural",
+  "city": "Valparaíso",
+  "zone": "Barrio Puerto",
+  "address": "Serrano 452",
+  "venue_type": "under",
+  "tags": [
+   "under",
+   "cultural"
+  ],
+  "description_short": null,
+  "official_url": null,
+  "instagram_url": null,
+  "calendar_url": "https://www.portaldisc.com/cartelera/laparakulturalvalparaiso",
+  "source_type": "calendario-publico",
+  "source_url": "https://www.portaldisc.com/cartelera/laparakulturalvalparaiso",
+  "last_verified": "2026-09-14",
+  "publish": true
+ },
+ {
+  "slug": "multiespacio-condell",
+  "name": "Multiespacio Condell",
+  "city": "Valparaíso",
+  "zone": "Plan de Valparaíso",
+  "address": "Pirámide 557",
+  "venue_type": "sala-en-vivo",
+  "tags": [
+   "en-vivo",
+   "cultural"
+  ],
+  "description_short": null,
+  "official_url": null,
+  "instagram_url": null,
+  "calendar_url": "https://www.portaldisc.com/cartelera/multiespaciocondell",
+  "source_type": "calendario-publico",
+  "source_url": "https://www.portaldisc.com/cartelera/multiespaciocondell",
+  "last_verified": "2026-09-14",
+  "publish": true
+ },
+ {
+  "slug": "club-aleman-valparaiso",
+  "name": "Club Alemán de Valparaíso",
+  "city": "Valparaíso",
+  "zone": "Plan de Valparaíso",
+  "address": "Salvador Donoso 1337",
+  "venue_type": "sala-en-vivo",
+  "tags": [
+   "en-vivo"
+  ],
+  "description_short": null,
+  "official_url": null,
+  "instagram_url": null,
+  "calendar_url": "https://www.portaldisc.com/cartelera/clubalemandevalparaiso",
+  "source_type": "calendario-publico",
+  "source_url": "https://www.portaldisc.com/cartelera/clubalemandevalparaiso",
+  "last_verified": "2026-09-14",
+  "publish": true
+ },
+ {
+  "slug": "teatro-mauri-scd",
+  "name": "Teatro Mauri SCD",
+  "city": "Valparaíso",
+  "zone": "Cerros altos",
+  "address": "Av. Alemania 6985",
+  "venue_type": "sala-en-vivo",
+  "tags": [
+   "en-vivo",
+   "cultural"
+  ],
+  "description_short": "Sala de la SCD en los cerros, con programación estable de música en vivo.",
+  "official_url": null,
+  "instagram_url": null,
+  "calendar_url": "https://www.portaldisc.com/cartelera/teatromauriscd",
+  "source_type": "calendario-publico",
+  "source_url": "https://www.portaldisc.com/cartelera/teatromauriscd",
+  "last_verified": "2026-09-14",
+  "publish": true
+ },
+ {
+  "slug": "parque-cultural-valparaiso",
+  "name": "Parque Cultural de Valparaíso",
+  "city": "Valparaíso",
+  "zone": "Cerro Cárcel",
+  "address": "Cárcel 471",
+  "venue_type": "centro-cultural",
+  "tags": [
+   "cultural",
+   "en-vivo"
+  ],
+  "description_short": null,
+  "official_url": null,
+  "instagram_url": null,
+  "calendar_url": "https://www.portaldisc.com/cartelera/parquecultural",
+  "source_type": "calendario-publico",
+  "source_url": "https://www.portaldisc.com/cartelera/parquecultural",
+  "last_verified": "2026-09-14",
+  "publish": true
+ },
+ {
+  "slug": "casa-de-la-cultura-valparaiso",
+  "name": "Casa de la Cultura de Valparaíso",
+  "city": "Valparaíso",
+  "zone": "Barrio Puerto",
+  "address": "Serrano 567",
+  "venue_type": "centro-cultural",
+  "tags": [
+   "cultural",
+   "en-vivo"
+  ],
+  "description_short": null,
+  "official_url": null,
+  "instagram_url": null,
+  "calendar_url": "https://www.portaldisc.com/cartelera/casadelaculturadevalparaiso",
+  "source_type": "calendario-publico",
+  "source_url": "https://www.portaldisc.com/cartelera/casadelaculturadevalparaiso",
+  "last_verified": "2026-09-14",
+  "publish": true
+ },
+ {
+  "slug": "el-pasaje",
+  "name": "El Pasaje",
+  "city": "Viña del Mar",
+  "zone": "Viña Norte",
+  "address": "9 Norte 907",
+  "venue_type": "sala-en-vivo",
+  "tags": [
+   "en-vivo",
+   "bar"
+  ],
+  "description_short": null,
+  "official_url": null,
+  "instagram_url": null,
+  "calendar_url": "https://www.portaldisc.com/cartelera/elpasaje",
+  "source_type": "calendario-publico",
+  "source_url": "https://www.portaldisc.com/cartelera/elpasaje",
+  "last_verified": "2026-09-14",
+  "publish": true
+ },
+ {
+  "slug": "bar-vienes",
+  "name": "Bar Vienés",
+  "city": "Viña del Mar",
+  "zone": "Viña Centro",
+  "address": "Viana 5",
+  "venue_type": "bar",
+  "tags": [
+   "bar",
+   "en-vivo"
+  ],
+  "description_short": null,
+  "official_url": null,
+  "instagram_url": null,
+  "calendar_url": "https://www.portaldisc.com/cartelera/barvienes",
+  "source_type": "calendario-publico",
+  "source_url": "https://www.portaldisc.com/cartelera/barvienes",
+  "last_verified": "2026-09-14",
+  "publish": true
+ },
+ {
+  "slug": "espacio-musa",
+  "name": "Espacio Musa",
+  "city": "Quilpué",
+  "zone": "Quilpué Centro",
+  "address": "Camilo Henríquez 430",
+  "venue_type": "sala-en-vivo",
+  "tags": [
+   "en-vivo",
+   "cultural"
+  ],
+  "description_short": null,
+  "official_url": null,
+  "instagram_url": null,
+  "calendar_url": "https://www.portaldisc.com/cartelera/espaciomusa",
+  "source_type": "calendario-publico",
+  "source_url": "https://www.portaldisc.com/cartelera/espaciomusa",
+  "last_verified": "2026-09-14",
+  "publish": true
+ },
+ {
+  "slug": "patio-central",
+  "name": "Patio Central",
+  "city": "Viña del Mar",
+  "zone": "Viña Centro",
+  "address": "Von Schroeder 75",
+  "venue_type": "discoteca",
+  "tags": [
+   "fiesta",
+   "discoteca"
+  ],
+  "description_short": null,
+  "official_url": null,
+  "instagram_url": null,
+  "calendar_url": null,
+  "source_type": "fuente-publica",
+  "source_url": "https://vesti.cl/events/la-fonda-patio-sabado-19-de-septiembre-patio-central",
+  "last_verified": "2026-09-14",
+  "publish": true
+ },
+ {
+  "slug": "studio-valparaiso",
+  "name": "Studio Valparaíso",
+  "city": "Valparaíso",
+  "zone": "Plan de Valparaíso",
+  "address": "Bellavista 46",
+  "venue_type": "club",
+  "tags": [
+   "club",
+   "fiesta"
+  ],
+  "description_short": null,
+  "official_url": null,
+  "instagram_url": null,
+  "calendar_url": null,
+  "source_type": "fuente-publica",
+  "source_url": "https://www.vesti.cl/events/noches-m-r-y-the-big-show-en-studio-valparaiso-presentan-the-big-fonda",
+  "last_verified": "2026-09-14",
+  "publish": true
+ },
+ {
+  "slug": "sporting-vina",
+  "name": "Sporting Viña del Mar",
+  "city": "Viña del Mar",
+  "zone": null,
+  "address": "Av. Los Castaños 404",
+  "venue_type": "club-electronico",
+  "tags": [
+   "electronica",
+   "techno"
+  ],
+  "description_short": null,
+  "official_url": null,
+  "instagram_url": null,
+  "calendar_url": null,
+  "source_type": "fuente-publica",
+  "source_url": "https://ticketplus.cl/events/layton-giordani-y-silver-panda/pagina-red-salas",
+  "last_verified": "2026-09-14",
+  "publish": true
+ },
+ {
+  "slug": "sushiweb-quilpue",
+  "name": "SushiWeb",
+  "city": "Quilpué",
+  "zone": "Quilpué Centro",
+  "address": "Vicuña Mackenna 835",
+  "venue_type": "sala-en-vivo",
+  "tags": [
+   "en-vivo",
+   "cumbia"
+  ],
+  "description_short": null,
+  "official_url": null,
+  "instagram_url": null,
+  "calendar_url": null,
+  "source_type": "fuente-publica",
+  "source_url": "https://www.passline.com/eventos/antonio-rios-en-sushiweb",
+  "last_verified": "2026-09-14",
+  "publish": true
+ },
+ {
+  "slug": "teatro-ipa",
+  "name": "Teatro IPA",
+  "city": "Valparaíso",
+  "zone": "Plan de Valparaíso",
+  "address": "Condell 1345",
+  "venue_type": "teatro",
+  "tags": [
+   "cultural"
+  ],
+  "description_short": null,
+  "official_url": null,
+  "instagram_url": null,
+  "calendar_url": "https://www.portaldisc.com/cartelera/teatroipa",
+  "source_type": "calendario-publico",
+  "source_url": "https://www.portaldisc.com/cartelera/teatroipa",
+  "last_verified": "2026-09-14",
+  "publish": false
+ },
+ {
+  "slug": "cine-arte-vina",
+  "name": "Cine Arte Viña del Mar",
+  "city": "Viña del Mar",
+  "zone": "Viña Centro",
+  "address": "Plaza Vergara 142",
+  "venue_type": "teatro",
+  "tags": [
+   "cultural"
+  ],
+  "description_short": null,
+  "official_url": null,
+  "instagram_url": null,
+  "calendar_url": "https://www.portaldisc.com/cartelera/cineartevina",
+  "source_type": "calendario-publico",
+  "source_url": "https://www.portaldisc.com/cartelera/cineartevina",
+  "last_verified": "2026-09-14",
+  "publish": false
+ },
+ {
+  "slug": "teatro-municipal-vina",
+  "name": "Teatro Municipal de Viña del Mar",
+  "city": "Viña del Mar",
+  "zone": "Viña Centro",
+  "address": "Plaza José Francisco Vergara",
+  "venue_type": "teatro",
+  "tags": [
+   "cultural"
+  ],
+  "description_short": null,
+  "official_url": null,
+  "instagram_url": null,
+  "calendar_url": "https://www.portaldisc.com/cartelera/municipal-vinadelmar",
+  "source_type": "calendario-publico",
+  "source_url": "https://www.portaldisc.com/cartelera/municipal-vinadelmar",
+  "last_verified": "2026-09-14",
+  "publish": false
+ },
+ {
+  "slug": "aula-magna-usm",
+  "name": "Teatro Aula Magna USM",
+  "city": "Valparaíso",
+  "zone": null,
+  "address": "Avenida España 1680",
+  "venue_type": "teatro",
+  "tags": [
+   "cultural",
+   "universitario"
+  ],
+  "description_short": null,
+  "official_url": null,
+  "instagram_url": null,
+  "calendar_url": "https://www.portaldisc.com/cartelera/aulamagnausm",
+  "source_type": "calendario-publico",
+  "source_url": "https://www.portaldisc.com/cartelera/aulamagnausm",
+  "last_verified": "2026-09-14",
+  "publish": false
+ },
+ {
+  "slug": "stoney-bar",
+  "name": "Stoney Bar",
+  "city": "Viña del Mar",
+  "zone": null,
+  "address": null,
+  "venue_type": "bar",
+  "tags": [
+   "bar"
+  ],
+  "description_short": null,
+  "official_url": null,
+  "instagram_url": null,
+  "calendar_url": null,
+  "source_type": "ticketera",
+  "source_url": "https://ticketplus.cl/states/region-de-valparaiso",
+  "last_verified": "2026-09-14",
+  "publish": false
+ },
+ {
+  "slug": "brava-bar",
+  "name": "Brava Bar",
+  "city": "Viña del Mar",
+  "zone": null,
+  "address": null,
+  "venue_type": "bar",
+  "tags": [
+   "bar"
+  ],
+  "description_short": null,
+  "official_url": null,
+  "instagram_url": null,
+  "calendar_url": null,
+  "source_type": "ticketera",
+  "source_url": "https://ticketplus.cl/states/region-de-valparaiso",
+  "last_verified": "2026-09-14",
+  "publish": false
+ },
+ {
+  "slug": "patio-785",
+  "name": "Patio 785",
+  "city": "Viña del Mar",
+  "zone": null,
+  "address": null,
+  "venue_type": "bar",
+  "tags": [
+   "bar",
+   "fiesta"
+  ],
+  "description_short": null,
+  "official_url": null,
+  "instagram_url": null,
+  "calendar_url": null,
+  "source_type": "ticketera",
+  "source_url": "https://ticketplus.cl/states/region-de-valparaiso",
+  "last_verified": "2026-09-14",
+  "publish": false
+ },
+ {
+  "slug": "barbones-curauma",
+  "name": "Barbones Curauma",
+  "city": "Valparaíso",
+  "zone": "Curauma",
+  "address": null,
+  "venue_type": "bar",
+  "tags": [
+   "bar",
+   "comedia"
+  ],
+  "description_short": null,
+  "official_url": null,
+  "instagram_url": null,
+  "calendar_url": null,
+  "source_type": "ticketera",
+  "source_url": "https://ticketplus.cl/states/region-de-valparaiso",
+  "last_verified": "2026-09-14",
+  "publish": false
+ },
+ {
+  "slug": "salon-ballroom",
+  "name": "Salón Ballroom",
+  "city": "Viña del Mar",
+  "zone": null,
+  "address": null,
+  "venue_type": "club",
+  "tags": [
+   "fiesta"
+  ],
+  "description_short": null,
+  "official_url": null,
+  "instagram_url": null,
+  "calendar_url": null,
+  "source_type": "ticketera",
+  "source_url": "https://ticketplus.cl/states/region-de-valparaiso",
+  "last_verified": "2026-09-14",
+  "publish": false
+ },
+ {
+  "slug": "teatro-quilpue",
+  "name": "Teatro Quilpué",
+  "city": "Quilpué",
+  "zone": "Quilpué Centro",
+  "address": null,
+  "venue_type": "teatro",
+  "tags": [
+   "cultural"
+  ],
+  "description_short": null,
+  "official_url": null,
+  "instagram_url": null,
+  "calendar_url": null,
+  "source_type": "ticketera",
+  "source_url": "https://ticketplus.cl/states/region-de-valparaiso",
+  "last_verified": "2026-09-14",
+  "publish": false
+ }
+]

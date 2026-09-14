@@ -16,6 +16,7 @@ export default function Footer() {
         <Link href="/como-funciona">Cómo funciona</Link>
         <Link href="/confianza">Fuentes y confianza</Link>
         <Link href="/zonas">Explorar por zona</Link>
+        <Link href="/lugares">Lugares para salir</Link>
         <Link href="/publicar">Proponer un evento</Link>
       </nav>
       <p className="footer-note">

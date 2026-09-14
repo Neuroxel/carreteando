@@ -4,6 +4,8 @@ import { revalidatePath } from 'next/cache';
 import { isAdmin, loginAdmin, logoutAdmin } from '../../lib/admin-session';
 import { getAdminDb } from '../../lib/server-db';
 import { ReviewInputError, reviewInput } from '../../lib/review-input';
+import { CIUDADES } from '../../lib/types';
+import { safeWebUrl } from '../../lib/safety';
 export async function login(form: FormData) {
   const ok = await loginAdmin(String(form.get('token') || ''));
   redirect(ok ? '/admin' : '/admin?status=login-failed');
@@ -53,4 +55,58 @@ export async function importEditorial() {
     : null;
   revalidatePath('/admin');
   redirect(`/admin?status=${saved && !saved.error ? 'imported' : 'failed'}`);
+}
+
+export async function reviewVenue(id: string, revision: number, action: string, form: FormData) {
+  if (!(await isAdmin())) redirect('/admin');
+  let status = 'invalid';
+  try {
+    const note = String(form.get('note') || '').trim();
+    if (
+      !['approve', 'save', 'reject', 'withdraw'].includes(action) ||
+      !Number.isSafeInteger(revision) ||
+      revision < 0
+    )
+      throw new ReviewInputError('invalid');
+    if (note.length < 10 || note.length > 1000) throw new ReviewInputError('invalid-note');
+    const fields: Record<string, unknown> = {};
+    if (action === 'approve' || action === 'save') {
+      if (form.get('checked') !== 'yes') throw new ReviewInputError('invalid-check');
+      for (const k of [
+        'name',
+        'city',
+        'zone',
+        'address',
+        'venue_type',
+        'description_short',
+        'official_url',
+        'instagram_url',
+        'calendar_url',
+        'source_url',
+      ])
+        fields[k] = String(form.get(k) || '').trim();
+      if (
+        String(fields.name).length < 2 ||
+        !CIUDADES.includes(String(fields.city)) ||
+        !safeWebUrl(fields.source_url)
+      )
+        throw new ReviewInputError('invalid-fields');
+      for (const k of ['official_url', 'instagram_url', 'calendar_url'])
+        fields[k] = fields[k] ? safeWebUrl(fields[k]) : null;
+    }
+    const db = getAdminDb();
+    if (!db) throw new ReviewInputError('unavailable');
+    const result = await db.rpc('review_venue', {
+      p_id: id,
+      p_revision: revision,
+      p_action: action,
+      p_note: note,
+      p_fields: fields,
+    });
+    status = result.error ? 'failed' : result.data === 'saved' ? 'saved' : 'conflict';
+  } catch (error) {
+    status = error instanceof ReviewInputError ? error.status : 'failed';
+  }
+  revalidatePath('/admin');
+  redirect(`/admin?status=${status}`);
 }
