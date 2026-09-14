@@ -1,3 +1,9 @@
+# Estado actualizado — 14 septiembre 2026
+
+La evaluación anterior se conserva abajo como historial. Fase 2: revocación legacy verificada, ocho eventos editoriales aprobados y activos; R3 logró un candidato de Instagram que resultó duplicado. La cobertura sigue concentrada en un recinto de Valparaíso, sin continuidad operativa demostrada. Ver [revisión R3](R3_REVIEW.md), [catálogo de fuentes](PHASE2_SOURCES.md) y [operación](OPERATIONS.md). El estado actual es **INTERNAL TEST** hasta asignar responsable de revisión y validar cobertura sostenida para la beta.
+
+---
+
 # Revisión de producción
 
 **Veredicto: NOT READY para apertura pública.** Hay una base de código desplegable y probada, pero faltan cerrar la revocación de credenciales heredadas y demostrar oferta local válida. Una ejecución técnica correcta con cero candidatos no acredita utilidad ni precisión.

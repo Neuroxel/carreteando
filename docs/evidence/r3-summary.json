@@ -1,0 +1,162 @@
+{
+  "id": "0eca04b9-5dc0-4fea-b9e7-2124fdf24dd2",
+  "status": "succeeded",
+  "metrics": {
+    "expired": 2,
+    "malformed": 3,
+    "stale_post": 1,
+    "duration_ms": 32849,
+    "posts_found": 16,
+    "events_saved": 1,
+    "parse_failed": 4,
+    "item_outcomes": [
+      {
+        "owner": null,
+        "post_id": null,
+        "reasons": [
+          "provider_error"
+        ]
+      },
+      {
+        "owner": "mascara_valparaiso",
+        "post_id": "DdIIwevzT06",
+        "reasons": [
+          "parse_failed"
+        ]
+      },
+      {
+        "owner": "mascara_valparaiso",
+        "post_id": "DOFAjDujUuI",
+        "reasons": [
+          "stale_post"
+        ]
+      },
+      {
+        "owner": "mascara_valparaiso",
+        "post_id": "DdHpYEgzJtQ",
+        "reasons": [
+          "parse_failed"
+        ]
+      },
+      {
+        "owner": "mascara_valparaiso",
+        "post_id": "DbUPWM2FkDH",
+        "reasons": [
+          "expired"
+        ]
+      },
+      {
+        "owner": "mascara_valparaiso",
+        "post_id": "DctmzN7uDhi",
+        "reasons": [
+          "malformed"
+        ]
+      },
+      {
+        "owner": "trotamundosvalpo",
+        "post_id": "DcvwDQ3R4Sp",
+        "reasons": [
+          "parse_failed"
+        ]
+      },
+      {
+        "owner": "trotamundosvalpo",
+        "post_id": "DdHlPE3FnhM",
+        "reasons": [
+          "parse_failed"
+        ]
+      },
+      {
+        "owner": "trotalovers",
+        "post_id": "DdPmi5sgzZj",
+        "reasons": [
+          "source_rejected"
+        ]
+      },
+      {
+        "owner": "trotamundosvalpo",
+        "post_id": "DdP8BE2kQDC",
+        "reasons": [
+          "candidate"
+        ]
+      },
+      {
+        "owner": "trotalovers",
+        "post_id": "Dcyt-kThYxS",
+        "reasons": [
+          "source_rejected"
+        ]
+      },
+      {
+        "owner": "el.huevo",
+        "post_id": "DdGmfdDqwUI",
+        "reasons": [
+          "malformed"
+        ]
+      },
+      {
+        "owner": "levelvalparaiso",
+        "post_id": "DcuNhEHI0Yo",
+        "reasons": [
+          "source_rejected"
+        ]
+      },
+      {
+        "owner": "el.huevo",
+        "post_id": "DdBdjwwCQSh",
+        "reasons": [
+          "malformed"
+        ]
+      },
+      {
+        "owner": "el.huevo",
+        "post_id": "Dc4G1AOB0Fy",
+        "reasons": [
+          "expired"
+        ]
+      },
+      {
+        "owner": "notpxndx",
+        "post_id": "Dc9OtNXNBSk",
+        "reasons": [
+          "source_rejected"
+        ]
+      }
+    ],
+    "source_counts": {
+      "el.huevo": 3,
+      "trotamundosvalpo": 3,
+      "mascara_valparaiso": 5
+    },
+    "apify_cost_usd": 0.0297,
+    "source_rejected": 5,
+    "accounts_scanned": 4,
+    "event_candidates": 1,
+    "pipeline_version": "r3",
+    "already_processed": 8,
+    "editorial_inserted": 8,
+    "editorial_reviewed": 8,
+    "location_ambiguous": 0,
+    "campaign_suppressed": 0,
+    "public_events_added": 8,
+    "duplicates_suppressed": 0,
+    "classification_rejected": 0,
+    "results_limit_per_account": 5
+  },
+  "cost_usd": 0.0297,
+  "dataset_id": "sEpN3Nw3JLyXmXsMd",
+  "error_code": null,
+  "started_at": "2026-09-14T04:35:34.200341+00:00",
+  "apify_run_id": "5PztHuFDkCSylctbG",
+  "completed_at": "2026-09-14T04:36:07.157+00:00",
+  "manual_review": {
+    "sample_n": 1,
+    "true_event": 1,
+    "duplicate": 1,
+    "new_unique_public": 0,
+    "date_correct": 1,
+    "location_correct": 1,
+    "duplicate_of": "curated-202609-mirlos",
+    "candidate_id": "DdP8BE2kQDC"
+  }
+}
