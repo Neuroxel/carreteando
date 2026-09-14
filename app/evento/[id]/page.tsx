@@ -59,12 +59,18 @@ export default async function Detail({ params }: Props) {
       </Link>
       <div className="detail-grid">
         <div className="detail-poster">
-          <EventImage src={e.imagen_url} title={e.nombre} category={e.categoria} priority />
+          <EventImage
+            src={e.imagen_url}
+            title={e.nombre}
+            category={e.categoria}
+            tipo={e.tipo}
+            lugar={e.lugar}
+            ciudad={e.ciudad}
+            priority
+          />
         </div>
         <div className="detail-info">
-          <p className="eyebrow">
-            {category} / {e.ciudad}
-          </p>
+          <p className="eyebrow">{category ? `${category} / ${e.ciudad}` : e.ciudad}</p>
           <h1>{e.nombre}</h1>
           <span className="trust-badge">
             {e.verificado

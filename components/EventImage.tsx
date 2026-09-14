@@ -1,18 +1,42 @@
 'use client';
 import Image from 'next/image';
 import { useState } from 'react';
+import { CATEGORIAS, TIPOS_EVENTO, TipoEvento } from '../lib/types';
+// Fifteen identical tiles is not a fallback, it is a placeholder. The art has to
+// carry the kind of night and where it is, so two cards never read the same.
+const VARIANTES = ['art-v1', 'art-v2', 'art-v3', 'art-v4', 'art-v5'];
+function variante(seed: string) {
+  let h = 0;
+  for (const c of seed) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  return VARIANTES[h % VARIANTES.length];
+}
 export default function EventImage({
   src,
   title,
   category,
+  tipo = 'main',
+  lugar,
+  ciudad,
   priority = false,
 }: {
   src?: string | null;
   title: string;
   category: string;
+  tipo?: TipoEvento;
+  lugar?: string | null;
+  ciudad?: string | null;
   priority?: boolean;
 }) {
   const [failed, setFailed] = useState(false);
+  const kind = TIPOS_EVENTO.find((t) => t.value === tipo);
+  const style = CATEGORIAS.find((c) => c.value === category && c.value !== 'otro');
+  // A fonda is a kind of night, not a music genre. Unknown genre stays unsaid.
+  const headline = (kind?.label || style?.label || 'Carrete').toUpperCase();
+  const art = kind
+    ? `art-${kind.value}`
+    : style
+      ? `art-${style.value}`
+      : variante(`${title}${ciudad || ''}`);
   return (
     <div className="event-art">
       {src && !failed ? (
@@ -22,17 +46,15 @@ export default function EventImage({
           fill
           sizes="(max-width: 640px) 100vw, (max-width: 1000px) 50vw, 33vw"
           priority={priority}
+          loading={priority ? undefined : 'lazy'}
           onError={() => setFailed(true)}
           referrerPolicy="no-referrer"
         />
       ) : (
-        <div className={`flyer-fallback art-${category}`}>
-          <span>LA NOCHE ES LOCAL</span>
-          <span className="art-symbol" aria-hidden="true">
-            ✳
-          </span>
-          <strong>{category === 'electronica' ? 'TECHNO' : category.toUpperCase()}</strong>
-          <small>{src ? 'Flyer no disponible' : 'Sin flyer disponible'}</small>
+        <div className={`flyer-fallback ${art}`}>
+          <span>{(ciudad || 'REGIÓN DE VALPARAÍSO').toUpperCase()}</span>
+          <strong>{headline}</strong>
+          <small>{lugar || 'Lugar por confirmar'}</small>
         </div>
       )}
     </div>

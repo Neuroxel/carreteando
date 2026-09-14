@@ -26,6 +26,9 @@ export default function EventCard({
           src={e.imagen_url}
           title={e.nombre}
           category={e.categoria}
+          tipo={e.tipo}
+          lugar={e.lugar}
+          ciudad={e.ciudad}
           priority={priority}
         />
         <span
