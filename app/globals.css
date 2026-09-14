@@ -1890,3 +1890,47 @@ textarea::placeholder {
   flex-wrap: wrap;
   gap: 10px;
 }
+
+/* Reportes en vivo: se leen como un parte de la comunidad, no como un dato duro. */
+.live-box {
+  margin: 38px 0 0;
+  padding-top: 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+}
+.live-box h2 {
+  margin-bottom: 10px;
+}
+.live-summary {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 16px;
+  display: grid;
+  gap: 10px;
+}
+.live-summary li {
+  display: grid;
+  gap: 2px;
+}
+.live-summary strong {
+  font-size: 1.1rem;
+}
+.live-summary span {
+  font-size: 0.82rem;
+  opacity: 0.72;
+}
+.live-form {
+  margin-top: 16px;
+  display: grid;
+  gap: 18px;
+}
+.live-form .actions {
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.live-form button.chip {
+  cursor: pointer;
+}
+.live-form button.chip[disabled] {
+  opacity: 0.5;
+  cursor: progress;
+}

@@ -7,6 +7,8 @@ import { toChileDateString } from '../../../lib/event-extraction';
 import { eventDateLabel } from '../../../lib/events';
 import { FUENTES_LUGAR, zonaSlug } from '../../../lib/venues';
 import ShareButton from '../../../components/ShareButton';
+import LiveReport from '../../../components/LiveReport';
+import { liveFor } from '../../../lib/server-live';
 export const dynamic = 'force-dynamic';
 type Props = { params: Promise<{ slug: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -33,7 +35,7 @@ export default async function VenueDetail({ params }: Props) {
   if (r.status === 'error') throw new Error('VENUE_BACKEND_UNAVAILABLE');
   const l = r.lugares[0];
   if (!l) notFound();
-  const events = await getPublicEvents();
+  const [events, enVivo] = await Promise.all([getPublicEvents(), liveFor('venue', l.slug)]);
   const today = toChileDateString(new Date());
   const agenda = events.events.filter((e) => e.lugar === l.nombre);
   const maps = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
@@ -143,6 +145,7 @@ export default async function VenueDetail({ params }: Props) {
           Todavía no tenemos su cuenta oficial confirmada. Si la conoces, cuéntanos y la sumamos.
         </p>
       )}
+      <LiveReport tipo="venue" id={l.slug} resumen={enVivo} />
       <h2>
         Próximas fechas
         <span className="heading-period">.</span>

@@ -6,6 +6,7 @@ import { parseFilters } from '../lib/filters';
 import { editorialRows } from '../lib/editorial-feed';
 import { dbRowToEvento, diversifyByVenue, esTemporadaDieciocho, filterEvents } from '../lib/events';
 import { dbRowToLugar, zonaSlug, zonasDe } from '../lib/venues';
+import { summarizeLive, validLiveReport } from '../lib/live-reports';
 import { POST as measure } from '../app/api/medir/route';
 import { ReviewInputError, reviewInput } from '../lib/review-input';
 import { toChileDateString } from '../lib/event-extraction';
@@ -283,4 +284,46 @@ test('a fonda reads as a fonda, and the Dieciocho surface opens and closes by da
   assert.equal(esTemporadaDieciocho('2026-09-22'), false);
   assert.equal(esTemporadaDieciocho('2026-09-13'), false);
   assert.equal(esTemporadaDieciocho('2027-03-01'), false);
+});
+
+test('a live status needs agreement and freshness, and never claims to be a measurement', () => {
+  const ahora = Date.parse('2026-09-18T23:30:00-03:00');
+  const hace = (min: number) => new Date(ahora - min * 60000).toISOString();
+  // One voice is an opinion, not a status.
+  assert.deepEqual(
+    summarizeLive([{ kind: 'ambiente', value: 'prendido', created_at: hace(5) }], ahora),
+    [],
+  );
+  const resumen = summarizeLive(
+    [
+      { kind: 'ambiente', value: 'prendido', created_at: hace(10) },
+      { kind: 'ambiente', value: 'prendido', created_at: hace(40) },
+      { kind: 'ambiente', value: 'medio', created_at: hace(50) },
+      { kind: 'fila', value: 'larga', created_at: hace(3) },
+      { kind: 'fila', value: 'larga', created_at: hace(8) },
+    ],
+    ahora,
+  );
+  const ambiente = resumen.find((r) => r.kind === 'ambiente');
+  assert.equal(ambiente?.value, 'prendido', 'gana la mayoría');
+  assert.equal(ambiente?.count, 2);
+  assert.equal(ambiente?.total, 3, 'se muestra el tamaño de la muestra, no sólo la mayoría');
+  assert.equal(ambiente?.minutes, 10, 'la antigüedad es la del reporte más nuevo');
+  assert.equal(resumen.find((r) => r.kind === 'fila')?.valueLabel, 'Larga');
+  // Only declared kinds and values are accepted; nothing invented reaches the page.
+  assert.equal(validLiveReport('ambiente', 'prendido'), true);
+  assert.equal(validLiveReport('ambiente', 'espectacular'), false);
+  assert.equal(validLiveReport('aforo', 'lleno'), false);
+  assert.equal(validLiveReport('fila', 'sin-fila'), true);
+  // Rows whose timestamp is unusable must not produce a bogus "hace NaN min".
+  assert.deepEqual(
+    summarizeLive(
+      [
+        { kind: 'espacio', value: 'lleno', created_at: 'no-es-fecha' },
+        { kind: 'espacio', value: 'lleno', created_at: 'tampoco' },
+      ],
+      ahora,
+    ),
+    [],
+  );
 });

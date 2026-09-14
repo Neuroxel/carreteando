@@ -8,6 +8,8 @@ import { eventJsonLd, safeJsonLd } from '../../../lib/event-seo';
 import EventImage from '../../../components/EventImage';
 import ShareButton from '../../../components/ShareButton';
 import ReportForm from '../../../components/ReportForm';
+import LiveReport from '../../../components/LiveReport';
+import { liveFor } from '../../../lib/server-live';
 import { CATEGORIAS, TIPOS_EVENTO } from '../../../lib/types';
 export const dynamic = 'force-dynamic';
 type Props = { params: Promise<{ id: string }> };
@@ -42,6 +44,8 @@ export default async function Detail({ params }: Props) {
   const e = r.events[0];
   if (!e) notFound();
   const today = toChileDateString(r.checkedAt);
+  // Reporting how a night is going only makes sense on the night itself.
+  const enVivo = e.fecha === today ? await liveFor('event', e.id) : null;
   const category =
     TIPOS_EVENTO.find((t) => t.value === e.tipo)?.label ||
     CATEGORIAS.find((c) => c.value === e.categoria)?.label;
@@ -150,6 +154,7 @@ export default async function Detail({ params }: Props) {
           </p>
         )}
         <Link href="/confianza">Cómo revisamos la información ↗</Link>
+        {enVivo && <LiveReport tipo="event" id={e.id} resumen={enVivo} />}
         <ReportForm id={e.id} />
       </div>
       <script
