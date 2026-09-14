@@ -58,7 +58,13 @@ export function dbRowToEvento(row: EventRow): Evento | null {
     categoria: category,
     imagen_url: safeImageUrl(row.image_url),
     fuente:
-      row.source === 'manual' ? 'manual' : row.source === 'passline' ? 'passline' : 'instagram',
+      row.source === 'manual'
+        ? 'manual'
+        : row.source === 'passline'
+          ? 'passline'
+          : row.source === 'editorial'
+            ? 'editorial'
+            : 'instagram',
     fuente_url: safeWebUrl(row.instagram_url),
     organizador: str(row.username),
     organizador_url:

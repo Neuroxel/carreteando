@@ -1,11 +1,13 @@
 'use client';
 import Link from 'next/link';
+import { track } from '../lib/metrics';
 import { useState } from 'react';
 import { CATEGORIAS, CIUDADES } from '../lib/types';
 export default function SubmissionForm({ today }: { today: string }) {
   const [state, setState] = useState<'idle' | 'sending' | 'done'>('idle');
   const [duplicate, setDuplicate] = useState(false);
   const [error, setError] = useState('');
+  const [started, setStarted] = useState(false);
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError('');
@@ -23,6 +25,7 @@ export default function SubmissionForm({ today }: { today: string }) {
         throw new Error(result.error || 'No se pudo confirmar el envío.');
       setDuplicate(result.status === 'received_before');
       setState('done');
+      if (result.status === 'pending') track('submission_complete');
     } catch (e) {
       setError(
         e instanceof Error && e.name === 'TimeoutError'
@@ -54,7 +57,16 @@ export default function SubmissionForm({ today }: { today: string }) {
       </div>
     );
   return (
-    <form onSubmit={submit} className="event-form">
+    <form
+      onFocus={() => {
+        if (!started) {
+          setStarted(true);
+          track('submission_start');
+        }
+      }}
+      onSubmit={submit}
+      className="event-form"
+    >
       <fieldset disabled={state === 'sending'}>
         <legend className="sr-only">Información del evento</legend>
         <div className="form-section">

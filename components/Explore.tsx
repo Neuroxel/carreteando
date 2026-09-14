@@ -20,6 +20,12 @@ export default async function Explore({
   const [result, freshness] = await Promise.all([getPublicEvents(), getSourceFreshness()]);
   const today = toChileDateString(result.checkedAt);
   const events = filterEvents(result.events, filters, today);
+  const suggestions = result.events
+    .filter(
+      (e, i, all) =>
+        all.findIndex((other) => other.lugar === e.lugar && other.ciudad === e.ciudad) === i,
+    )
+    .slice(0, 3);
   const todayCount = filterEvents(result.events, { fecha: 'hoy' }, today).length;
   const path = home ? '/' : '/buscar';
   function href(key: string, value: string) {
@@ -42,40 +48,11 @@ export default async function Explore({
             <span className="hero-date">/ {dateLabel}</span>
           </p>
           <h1>
-            {home ? (
-              <>
-                ¿Dónde se
-                <br />
-                carretea <em>hoy?</em>
-              </>
-            ) : (
-              <>
-                Tu próxima
-                <br />
-                <em>buena noche.</em>
-              </>
-            )}
+            Tu próxima <em>buena noche.</em>
           </h1>
           <p className="hero-description">
-            Fiestas, tocatas y pistas de baile.
-            <br />
-            Encuentra tu plan. Revisa la fuente. Junta a tu gente.
+            Tocatas, fiestas y pistas de baile en Valpo y alrededores.
           </p>
-          <a href="#cartelera" className="hero-jump">
-            Ver la cartelera <span aria-hidden="true">↓</span>
-          </a>
-        </div>
-        <div className="night-poster" aria-hidden="true">
-          <span className="poster-edition">DE LOS CERROS A LA PISTA</span>
-          <span className="poster-star">✳</span>
-          <strong>
-            LA NOCHE
-            <br />
-            ES LOCAL.
-          </strong>
-          <span className="poster-bottom">
-            33° SUR <span>V REGIÓN ↗</span>
-          </span>
         </div>
       </section>
       <section className="container discovery" id="cartelera" aria-label="Cartelera de eventos">
@@ -115,55 +92,63 @@ export default async function Explore({
             </Link>
           ))}
         </div>
-        <div className="filter-toolbar">
-          <form action={path} className="search-form">
-            <label htmlFor="q" className="sr-only">
-              Buscar evento, lugar o estilo
-            </label>
-            <span aria-hidden="true">⌕</span>
-            <input
-              id="q"
-              name="q"
-              type="search"
-              maxLength={120}
-              defaultValue={filters.busqueda}
-              placeholder="Un evento, un lugar, tu estilo…"
-            />
-            {Object.entries(filters)
-              .filter(([k]) => k !== 'busqueda')
-              .map(([k, v]) => (
-                <input key={k} type="hidden" name={k} value={v} />
-              ))}
-            <button aria-label="Buscar eventos" type="submit">
-              Buscar
-            </button>
-          </form>
-          <Link
-            href={href('precio', filters.precio === 'gratis' ? 'todos' : 'gratis')}
-            className={`chip free-filter ${filters.precio === 'gratis' ? 'selected' : ''}`}
-            aria-current={filters.precio === 'gratis' ? 'true' : undefined}
-          >
-            $ Entrada gratis
-          </Link>
-        </div>
-        <div className="category-filters" aria-label="Filtrar por estilo">
-          <Link
-            href={href('categoria', 'todos')}
-            className={`chip ${filters.categoria === 'todos' ? 'selected' : ''}`}
-          >
-            Todos los estilos
-          </Link>
-          {CATEGORIAS.filter((c) => c.value !== 'otro').map((c) => (
+        <details
+          className="extra-filters"
+          open={Boolean(
+            filters.busqueda || filters.categoria !== 'todos' || filters.precio !== 'todos',
+          )}
+        >
+          <summary>Buscar por nombre, música o precio</summary>
+          <div className="filter-toolbar">
+            <form action={path} className="search-form">
+              <label htmlFor="q" className="sr-only">
+                Buscar evento, lugar o estilo
+              </label>
+              <span aria-hidden="true">⌕</span>
+              <input
+                id="q"
+                name="q"
+                type="search"
+                maxLength={120}
+                defaultValue={filters.busqueda}
+                placeholder="Un evento, un lugar, tu estilo…"
+              />
+              {Object.entries(filters)
+                .filter(([k]) => k !== 'busqueda')
+                .map(([k, v]) => (
+                  <input key={k} type="hidden" name={k} value={v} />
+                ))}
+              <button aria-label="Buscar eventos" type="submit">
+                Buscar
+              </button>
+            </form>
             <Link
-              key={c.value}
-              className={`chip ${filters.categoria === c.value ? 'selected' : ''}`}
-              href={href('categoria', c.value)}
-              aria-current={filters.categoria === c.value ? 'true' : undefined}
+              href={href('precio', filters.precio === 'gratis' ? 'todos' : 'gratis')}
+              className={`chip free-filter ${filters.precio === 'gratis' ? 'selected' : ''}`}
+              aria-current={filters.precio === 'gratis' ? 'true' : undefined}
             >
-              {c.label}
+              $ Entrada gratis
             </Link>
-          ))}
-        </div>
+          </div>
+          <div className="category-filters" aria-label="Filtrar por estilo">
+            <Link
+              href={href('categoria', 'todos')}
+              className={`chip ${filters.categoria === 'todos' ? 'selected' : ''}`}
+            >
+              Todos los estilos
+            </Link>
+            {CATEGORIAS.filter((c) => c.value !== 'otro').map((c) => (
+              <Link
+                key={c.value}
+                className={`chip ${filters.categoria === c.value ? 'selected' : ''}`}
+                href={href('categoria', c.value)}
+                aria-current={filters.categoria === c.value ? 'true' : undefined}
+              >
+                {c.label}
+              </Link>
+            ))}
+          </div>
+        </details>
         <div className="section-heading">
           <div>
             <p className="eyebrow">
@@ -184,15 +169,6 @@ export default async function Explore({
             </span>
           )}
         </div>
-        {result.status === 'ok' && freshness !== 'fresh' && (
-          <p className="trust-note" role="status">
-            {freshness === 'delayed'
-              ? 'La búsqueda de nuevos planes está atrasada. La cartelera puede estar incompleta; revisa siempre la publicación original.'
-              : freshness === 'updating'
-                ? 'Estamos consultando las fuentes. Los nuevos planes pasan por revisión antes de aparecer.'
-                : 'No pudimos comprobar cuándo se consultaron las fuentes por última vez. La cartelera puede estar incompleta.'}
-          </p>
-        )}
         {result.status === 'error' ? (
           <div className="empty-state error-state" role="alert">
             <span className="empty-symbol" aria-hidden="true">
@@ -210,52 +186,56 @@ export default async function Explore({
         ) : events.length === 0 ? (
           <div className="empty-state">
             <div>
-              <span className="eyebrow">LA NOCHE NO TERMINA AQUÍ</span>
               <h3>
                 {result.events.length === 0
                   ? 'Estamos buscando los próximos planes.'
-                  : 'No encontramos planes con estos filtros.'}
+                  : filters.fecha === 'hoy'
+                    ? 'Hoy aún sin planes revisados.'
+                    : 'Sin planes con estos filtros.'}
               </h3>
               <p>
                 {result.events.length === 0
                   ? 'Por ahora no tenemos eventos revisados para mostrar. Preferimos una cartelera vacía a mandarte a un carrete que ya pasó.'
-                  : 'Prueba otra zona, cambia de estilo o mira las próximas noches.'}
+                  : 'Mira las próximas opciones revisadas.'}
               </p>
               <div className="actions">
-                <Link className="button button-primary" href="/buscar?fecha=futuro">
-                  Ver próximas noches <span aria-hidden="true">↗</span>
-                </Link>
-                <Link className="button button-outline" href="/publicar">
-                  Tengo un dato
-                </Link>
+                <Link href="/buscar?fecha=futuro">Ver todas las próximas fechas ↗</Link>
               </div>
             </div>
-            <span className="empty-symbol" aria-hidden="true">
-              ✳
-            </span>
           </div>
         ) : (
           <div className="event-grid">
-            {events.map((e) => (
-              <EventCard key={e.id} evento={e} today={today} />
+            {events.map((e, i) => (
+              <EventCard key={e.id} evento={e} today={today} priority={i === 0} />
             ))}
           </div>
+        )}
+        {result.status === 'ok' && events.length === 0 && result.events.length > 0 && (
+          <div className="alternative-plans">
+            <h3>Otras noches en la región</h3>
+            <div className="event-grid">
+              {suggestions.map((e, i) => (
+                <EventCard key={e.id} evento={e} today={today} priority={i === 0} />
+              ))}
+            </div>
+          </div>
+        )}
+        {result.status === 'ok' && freshness !== 'fresh' && (
+          <p className="trust-note" role="status">
+            {freshness === 'editorial'
+              ? 'Cartelera seleccionada a partir de fuentes públicas. Consulta la fecha de revisión de cada evento; la cobertura aún es parcial.'
+              : freshness === 'delayed'
+                ? 'La búsqueda de nuevos planes está atrasada. La cartelera puede estar incompleta; revisa siempre la publicación original.'
+                : freshness === 'updating'
+                  ? 'Estamos consultando las fuentes. Los nuevos planes pasan por revisión antes de aparecer.'
+                  : 'No pudimos comprobar cuándo se consultaron las fuentes por última vez. La cartelera puede estar incompleta.'}
+          </p>
         )}
         {result.status === 'ok' && result.events.length > 0 && (
           <p className="trust-note">
             La información puede cambiar. Cada plan incluye su fuente y fecha de revisión.{' '}
             <Link href="/confianza">Cómo revisamos los datos ↗</Link>
           </p>
-        )}
-        {result.status === 'ok' && events.length === 0 && result.events.length > 0 && (
-          <div className="alternative-plans">
-            <h3>Otras noches en la región</h3>
-            <div className="event-grid">
-              {result.events.slice(0, 3).map((e) => (
-                <EventCard key={e.id} evento={e} today={today} />
-              ))}
-            </div>
-          </div>
         )}
       </section>
       <section className="container contribution-strip">

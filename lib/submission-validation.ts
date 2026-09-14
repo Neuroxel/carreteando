@@ -74,7 +74,7 @@ export function validateReport(value: unknown) {
   const evento = text(b, 'evento', 120, 1);
   if (!/^[a-zA-Z0-9_-]+$/.test(evento)) throw new ValidationError('Identificador inválido.');
   const motivo = text(b, 'motivo', 40, 1);
-  if (!['fecha', 'lugar', 'precio', 'cancelado', 'duplicado', 'otro'].includes(motivo))
+  if (!['fecha', 'lugar', 'precio', 'cancelado', 'duplicado', 'fuente', 'otro'].includes(motivo))
     throw new ValidationError('Selecciona un motivo.');
   return { evento, motivo, detalle: text(b, 'detalle', 1000, 10) };
 }

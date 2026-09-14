@@ -36,10 +36,12 @@ export async function GET(request: Request) {
     return reply({ error: 'Unauthorized' }, 401);
   const db = getAdminDb(),
     token = process.env.APIFY_API_TOKEN;
+  const paused = process.env.APIFY_PAUSED === 'true';
   const missing = ['NEXT_PUBLIC_SUPABASE_URL', 'SUPABASE_SECRET_KEY', 'APIFY_API_TOKEN'].filter(
     (k) => !process.env[k],
   );
-  if (!db || !token) return reply({ error: 'Configuración incompleta.', missing }, 503);
+  if (!db || (!paused && !token))
+    return reply({ error: 'Configuración incompleta.', missing }, 503);
   const actor = process.env.APIFY_ACTOR || 'apify~instagram-scraper';
   if (!/^[\w~-]+$/.test(actor)) return reply({ error: 'APIFY_ACTOR inválido.' }, 503);
   const limit = boundedResultsLimit(process.env.APIFY_RESULTS_LIMIT);
@@ -56,7 +58,7 @@ export async function GET(request: Request) {
   let datasetId: string | null = null;
   let providerCompleted = false;
   const metrics: Record<string, unknown> = {
-    accounts_scanned: ACTIVE_SOURCES.length,
+    accounts_scanned: paused ? 0 : ACTIVE_SOURCES.length,
     posts_found: 0,
     event_candidates: 0,
     events_saved: 0,
@@ -110,6 +112,21 @@ export async function GET(request: Request) {
       if (imported.error) throw new IngestionError('DB_EDITORIAL');
       metrics.editorial_inserted = imported.data?.length || 0;
       metrics.public_events_added = metrics.editorial_inserted;
+    }
+    if (paused) {
+      metrics.mode = 'editorial_import_only';
+      metrics.apify_cost_usd = 0;
+      const finished = await db
+        .from('ingestion_runs')
+        .update({
+          status: 'succeeded',
+          completed_at: new Date().toISOString(),
+          cost_usd: 0,
+          metrics,
+        })
+        .eq('id', runId);
+      if (finished.error) throw new IngestionError('DB_FINISH');
+      return reply({ success: true, run_id: runId, ...metrics });
     }
     const start = record(
       await apify(`acts/${actor}/runs?timeout=180&maxItems=40&maxTotalChargeUsd=1`, {

@@ -65,7 +65,7 @@ export default async function Detail({ params }: Props) {
               ? 'Organizador verificado'
               : e.fuente === 'manual'
                 ? 'Comunidad · revisado'
-                : e.fuente === 'passline'
+                : e.fuente === 'passline' || e.fuente === 'editorial'
                   ? 'Curaduría · fuente revisada'
                   : 'Detectado · fuente revisada'}
           </span>

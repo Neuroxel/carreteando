@@ -1,4 +1,4 @@
-export type Freshness = 'fresh' | 'updating' | 'delayed' | 'unknown';
+export type Freshness = 'editorial' | 'fresh' | 'updating' | 'delayed' | 'unknown';
 export function sourceFreshness(
   run: { status: string; started_at: string; completed_at: string | null } | null,
   now = Date.now(),

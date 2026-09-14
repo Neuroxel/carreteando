@@ -11,6 +11,7 @@ export function editorialRows(now = new Date()) {
     .filter(
       (e) =>
         e.review_decision === 'approved' &&
+        (e.time === null || /^([01]\d|2[0-3]):[0-5]\d$/.test(e.time)) &&
         validIsoDate(e.date) &&
         e.date >= today &&
         e.date <= addDays(today, 90) &&
@@ -21,12 +22,13 @@ export function editorialRows(now = new Date()) {
         Date.parse(e.reviewed_at) <= now.getTime() + 300000 &&
         now.getTime() - Date.parse(e.reviewed_at) < 7 * 86400000 &&
         safeWebUrl(e.source_url) &&
-        new URL(e.source_url).hostname === 'www.passline.com' &&
+        ['www.passline.com', 'ticketplus.cl', 'www.vesti.cl', 'vesti.cl'].includes(
+          new URL(e.source_url).hostname,
+        ) &&
         e.title &&
         e.venue &&
-        Number.isInteger(e.price_clp) &&
-        e.price_clp >= 0 &&
-        e.price_clp <= 500000,
+        (e.price_clp === null ||
+          (Number.isInteger(e.price_clp) && e.price_clp >= 0 && e.price_clp <= 500000)),
     )
     .map((e) => ({
       instagram_id: e.id,
@@ -44,7 +46,7 @@ export function editorialRows(now = new Date()) {
       instagram_url: e.source_url,
       image_url: safeImageUrl(e.image_url),
       username: e.organizer,
-      source: 'passline',
+      source: new URL(e.source_url).hostname === 'www.passline.com' ? 'passline' : 'editorial',
       source_published_at: null,
       scraped_at: now.toISOString(),
       reviewed_at: e.reviewed_at,

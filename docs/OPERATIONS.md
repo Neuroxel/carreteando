@@ -23,7 +23,7 @@ Usar el dashboard Supabase con una sesión administrativa. Consultar `ingestion_
 
 - **Submission:** contrastar fuente, fecha, scope y duplicados; insertar el evento canónico aprobado y enlazar `event_id` a la propuesta en una transacción. `instagram_id` puede ser `community-<uuid de la propuesta>` (estable). `source='manual'`. No reutilizar un `client_id` externo. Completar los campos estructurados y dejar precio null si es desconocido.
 - **Report:** abrir evento y fuente; corregir/retirar sólo con evidencia, resolver el reporte y guardar nota. Un reporte no altera por sí solo la cartelera.
-- No hay SLA ni notificación automática. Asignar un responsable diario de la bandeja antes de abrir la beta.
+- No hay SLA ni notificación automática. Dirección del propietario en fase 3: la revisión diaria no es requisito de beta. La bandeja permanece privada hasta revisión y la expiración no depende de una persona.
 
 ## Antiabuso y privacidad
 
@@ -58,3 +58,19 @@ Un revert del código mantiene las tablas y evidencia. No revertir a la implemen
 - [Vercel: headers de IP](https://vercel.com/docs/headers/request-headers)
 - [Apify: ejecución de actores y límites](https://docs.apify.com/api/v2/actors-runs-post)
 - [Next.js: metadata](https://nextjs.org/docs/app/api-reference/functions/generate-metadata)
+
+## Fase 3 — operación sin turno diario obligatorio
+
+La aclaración del propietario reemplaza el requisito de asignar un moderador diario antes de beta. La ausencia de revisión durante 24–48 horas es normal: RLS y cada lectura pública excluyen fechas pasadas según Chile; las colas siguen privadas. La expiración es por fecha local, no por hora de término desconocida. Un evento de madrugada no recibe una hora de cierre inventada.
+
+La revisión habitual se realiza en `/admin`: clave aleatoria del propietario, cookie HttpOnly/Secure/SameSite Strict, sesión de dos horas, límites persistentes de inicio de sesión y validación de origen de Server Actions. La clave vive sólo en el servidor; se entrega al propietario en un archivo privado fuera de Git. Rotarla invalida sesiones. No compartirla con terceros; si aparecen más revisores, reemplazar este acceso único por cuentas individuales con MFA.
+
+Cada acción verifica autenticación, valida campos, compara revisión y guarda decisión + auditoría en una transacción. Guardar conserva el estado; publicar requiere aprobación explícita. Reportes se resuelven después de corregir/retirar el evento. Los posibles duplicados aparecen junto al candidato. Conflictos y fallos no se presentan como éxito.
+
+`APIFY_PAUSED=true` suspende la búsqueda paga de las cuatro cuentas de rendimiento insuficiente. El cron sigue expirando y aplicando la selección editorial ya revisada, sin coste Apify. El botón de importación privada no usa Apify y nunca sobrescribe retiros o correcciones existentes. Importar no significa haber vuelto a consultar la fuente. La portada distingue este modo.
+
+Métricas: nueve acciones agregadas por día Chile; sin IDs de usuario, consultas de búsqueda, URLs, referentes ni contenido de formularios. DNT/GPC excluyen la medición. Cuota de 60/15 minutos por HMAC diario y 5000 global; los límites caducan a dos días y los totales a 90 días al ingresar nueva actividad. Contadores de acciones no equivalen a usuarios únicos ni ventas ni mensajes efectivamente enviados. Infraestructura puede conservar sus propios logs.
+
+El registro versionado `data/sources.json` documenta fuentes revisadas, bloqueadas, vencidas o pausadas; tasas sin muestra suficiente son desconocidas. Los conteos en administración son por recinto y no deben sumarse entre dos fuentes del mismo recinto.
+
+La clave inicial está en `docs/private/phase3/admin-access-token.txt` (permisos 0600). No pegarla en documentos compartidos, Git, parámetros URL o capturas. Para entrar, abrir la página privada y pegarla únicamente en su campo de acceso. No hay recuperación por correo ni cuentas de terceros en esta fase.

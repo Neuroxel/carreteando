@@ -8,6 +8,8 @@ const nextConfig = {
       { protocol: 'https', hostname: '**.fbcdn.net' },
       { protocol: 'https', hostname: 'images.unsplash.com' },
       { protocol: 'https', hostname: 'imagenes.passline.com' },
+      { protocol: 'https', hostname: 'ticketing-uploads-1.ticketplus.global' },
+      { protocol: 'https', hostname: 'events-cdn.vesti.cl' },
     ],
   },
   async headers() {

@@ -1,3 +1,5 @@
+import { Suspense } from 'react';
+import Metrics from '../components/Metrics';
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import Navbar from '../components/Navbar';
@@ -28,6 +30,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Navbar />
         <main id="contenido">{children}</main>
         <Footer />
+        <Suspense fallback={null}>
+          <Metrics />
+        </Suspense>
       </body>
     </html>
   );

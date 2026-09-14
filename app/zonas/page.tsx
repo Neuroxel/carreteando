@@ -27,6 +27,16 @@ export default async function Zones() {
           <Link className="zone-card" key={c} href={`/buscar?ciudad=${encodeURIComponent(c)}`}>
             <span className="eyebrow">0{i + 1} / V REGIÓN</span>
             <h2>{c}</h2>
+            <p className="zone-preview">
+              {result.events
+                .filter((e) => e.ciudad === c)
+                .slice(0, 2)
+                .map((e) => `${e.fecha.slice(8)}/${e.fecha.slice(5, 7)} · ${e.nombre} — ${e.lugar}`)
+                .join(' / ') ||
+                (result.status === 'ok'
+                  ? 'Aún no tenemos programación revisada aquí. Puedes proponer un evento con su fuente.'
+                  : 'Disponibilidad sin confirmar.')}
+            </p>
             <span>
               {result.status === 'ok'
                 ? `${result.events.filter((e) => e.ciudad === c).length} planes en cartelera`

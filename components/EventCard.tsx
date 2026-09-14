@@ -3,7 +3,15 @@ import { Evento, CATEGORIAS } from '../lib/types';
 import { eventDateLabel } from '../lib/events';
 import EventImage from './EventImage';
 import ShareButton from './ShareButton';
-export default function EventCard({ evento: e, today }: { evento: Evento; today?: string }) {
+export default function EventCard({
+  evento: e,
+  today,
+  priority = false,
+}: {
+  evento: Evento;
+  today?: string;
+  priority?: boolean;
+}) {
   const category = CATEGORIAS.find((c) => c.value === e.categoria)?.label || 'Otras noches';
   return (
     <article className="event-card">
@@ -12,7 +20,12 @@ export default function EventCard({ evento: e, today }: { evento: Evento; today?
         href={`/evento/${encodeURIComponent(e.id)}`}
         aria-label={`Ver ${e.nombre}`}
       >
-        <EventImage src={e.imagen_url} title={e.nombre} category={e.categoria} />
+        <EventImage
+          src={e.imagen_url}
+          title={e.nombre}
+          category={e.categoria}
+          priority={priority}
+        />
         <span
           className={`date-badge ${eventDateLabel(e.fecha, today) === 'Hoy' ? 'is-today' : ''}`}
         >
@@ -39,12 +52,17 @@ export default function EventCard({ evento: e, today }: { evento: Evento; today?
                 ? 'Organizador verificado'
                 : e.fuente === 'manual'
                   ? 'Comunidad · revisado'
-                  : e.fuente === 'passline'
+                  : e.fuente === 'passline' || e.fuente === 'editorial'
                     ? 'Curaduría · fuente revisada'
                     : 'Detectado · fuente revisada'}
             </span>
           </div>
-          <ShareButton id={e.id} title={e.nombre} compact />
+          <ShareButton
+            id={e.id}
+            title={e.nombre}
+            details={`${eventDateLabel(e.fecha, today)} · ${e.lugar || e.ciudad}`}
+            compact
+          />
         </div>
       </div>
     </article>

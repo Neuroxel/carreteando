@@ -1,4 +1,5 @@
 'use client';
+import { track } from '../lib/metrics';
 import { useState } from 'react';
 import { SITE_URL } from '../lib/site';
 export default function ShareButton({
@@ -16,6 +17,7 @@ export default function ShareButton({
   const [fallback, setFallback] = useState(false);
   const url = `${SITE_URL}/evento/${encodeURIComponent(id)}`;
   async function copy() {
+    track('share');
     try {
       await navigator.clipboard.writeText(url);
       setMessage('Enlace copiado');
@@ -25,6 +27,7 @@ export default function ShareButton({
     }
   }
   async function share() {
+    track('share');
     try {
       if (navigator.share) {
         await navigator.share({ title, text: `${title} · ${details} · ¿Vamos?`, url });
@@ -59,6 +62,7 @@ export default function ShareButton({
           </button>
           <a
             className="button button-outline"
+            onClick={() => track('share')}
             href={`https://wa.me/?text=${encodeURIComponent(`${title} · ${details} ${url}`)}`}
             target="_blank"
             rel="noopener noreferrer"

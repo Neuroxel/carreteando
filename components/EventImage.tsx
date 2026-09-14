@@ -21,7 +21,6 @@ export default function EventImage({
           alt={`Flyer de ${title}`}
           fill
           sizes="(max-width: 640px) 100vw, (max-width: 1000px) 50vw, 33vw"
-          unoptimized
           priority={priority}
           onError={() => setFailed(true)}
           referrerPolicy="no-referrer"

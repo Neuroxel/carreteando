@@ -1,4 +1,5 @@
 'use client';
+import { track } from '../lib/metrics';
 import { useState } from 'react';
 export default function ReportForm({ id }: { id: string }) {
   const [status, setStatus] = useState('');
@@ -33,6 +34,7 @@ export default function ReportForm({ id }: { id: string }) {
               if (!r.ok) throw new Error(b.error || 'No se pudo enviar.');
               setDuplicate(b.status === 'received_before');
               setDone(true);
+              if (b.status !== 'received_before') track('report');
             } catch (e) {
               setStatus(e instanceof Error ? e.message : 'No se pudo enviar.');
             } finally {
@@ -48,6 +50,7 @@ export default function ReportForm({ id }: { id: string }) {
               <option value="precio">Precio</option>
               <option value="cancelado">Cancelación</option>
               <option value="duplicado">Evento duplicado</option>
+              <option value="fuente">Enlace original roto</option>
               <option value="otro">Otro dato</option>
             </select>
           </label>

@@ -9,9 +9,10 @@ export const getSourceFreshness = cache(async (): Promise<Freshness> => {
     if (!db) return 'unknown';
     const { data, error } = await db
       .from('ingestion_runs')
-      .select('status,started_at,completed_at')
+      .select('status,started_at,completed_at,metrics')
       .order('started_at', { ascending: false })
       .limit(1);
+    if (data?.[0]?.metrics?.mode === 'editorial_import_only') return 'editorial';
     return error ? 'unknown' : sourceFreshness(data?.[0] ?? null);
   } catch {
     return 'unknown';

@@ -53,8 +53,8 @@ export default function Trust() {
       </p>
       <h2>Privacidad y aportes</h2>
       <p>
-        No rastreamos asistentes, no publicamos listas de personas y no usamos analítica de
-        comportamiento ni publicidad personalizada. Guardamos el contenido que envías para
+        No rastreamos asistentes, no publicamos listas de personas y no creamos perfiles de
+        comportamiento ni mostramos publicidad personalizada. Guardamos el contenido que envías para
         revisarlo. No incluyas información personal ni ubicaciones privadas.
       </p>
       <p>
@@ -71,6 +71,14 @@ export default function Trust() {
       <Link href="/publicar" className="button button-primary">
         Proponer un evento ↗
       </Link>
+      <h2>Medición sin seguirte</h2>
+      <p>
+        Contamos visitas y acciones —abrir un plan, filtrar, compartir, consultar la fuente, buscar
+        indicaciones y enviar aportes— para saber si la cartelera resulta útil. Guardamos totales
+        diarios hasta 90 días, sin cookies de seguimiento ni perfiles personales. Respetamos las
+        preferencias «No rastrear» y Global Privacy Control. Para limitar abusos usamos
+        temporalmente un código que cambia cada día; no guardamos tu dirección IP en estas métricas.
+      </p>
     </article>
   );
 }

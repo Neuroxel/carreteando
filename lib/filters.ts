@@ -1,5 +1,16 @@
 import { CATEGORIAS, CIUDADES, FiltrosEvento } from './types';
 export function parseFilters(params: URLSearchParams, defaultDate = 'futuro'): FiltrosEvento {
+  params = new URLSearchParams(params);
+  const cityAliases: Record<string, string> = {
+    valparaiso: 'Valparaíso',
+    'vina-del-mar': 'Viña del Mar',
+    renaca: 'Reñaca',
+    quilpue: 'Quilpué',
+    'villa-alemana': 'Villa Alemana',
+    concon: 'Concón',
+  };
+  const city = params.get('ciudad') || '';
+  if (cityAliases[city]) params.set('ciudad', cityAliases[city]);
   const value = (key: string, allowed: string[], fallback: string) => {
     const v = params.get(key);
     return v && allowed.includes(v) ? v : fallback;
