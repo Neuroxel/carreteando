@@ -65,7 +65,9 @@ export default async function Detail({ params }: Props) {
               ? 'Organizador verificado'
               : e.fuente === 'manual'
                 ? 'Comunidad · revisado'
-                : 'Detectado · fuente revisada'}
+                : e.fuente === 'passline'
+                  ? 'Curaduría · fuente revisada'
+                  : 'Detectado · fuente revisada'}
           </span>
           <dl className="event-facts">
             <div>
@@ -106,7 +108,11 @@ export default async function Detail({ params }: Props) {
                 Ver publicación original ↗
               </a>
             )}
-            <ShareButton id={e.id} title={e.nombre} />
+            <ShareButton
+              id={e.id}
+              title={e.nombre}
+              details={`${e.fecha} · ${e.hora || 'Hora por confirmar'} · ${e.lugar || e.ciudad}`}
+            />
             {maps && (
               <a
                 className="button button-outline"

@@ -4,13 +4,16 @@ export default function ReportForm({ id }: { id: string }) {
   const [status, setStatus] = useState('');
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
+  const [duplicate, setDuplicate] = useState(false);
   return (
     <details className="report-box" id="reportar">
       <summary>Reportar información incorrecta</summary>
       <p>Cuéntanos qué cambió y cómo lo podemos comprobar. No incluyas datos personales.</p>
       {done ? (
         <p role="status">
-          Recibimos tu reporte para revisión. Gracias por ayudar a mantener la cartelera.
+          {duplicate
+            ? 'Este reporte ya fue recibido. Se mantiene su revisión anterior.'
+            : 'Recibimos tu reporte para revisión. Gracias por ayudar a mantener la cartelera.'}
         </p>
       ) : (
         <form
@@ -28,6 +31,7 @@ export default function ReportForm({ id }: { id: string }) {
               });
               const b = await r.json();
               if (!r.ok) throw new Error(b.error || 'No se pudo enviar.');
+              setDuplicate(b.status === 'received_before');
               setDone(true);
             } catch (e) {
               setStatus(e instanceof Error ? e.message : 'No se pudo enviar.');

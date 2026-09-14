@@ -5,18 +5,29 @@ export default function ShareButton({
   id,
   title,
   compact = false,
+  details = '',
 }: {
   id: string;
   title: string;
   compact?: boolean;
+  details?: string;
 }) {
   const [message, setMessage] = useState('');
   const [fallback, setFallback] = useState(false);
   const url = `${SITE_URL}/evento/${encodeURIComponent(id)}`;
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(url);
+      setMessage('Enlace copiado');
+    } catch {
+      setFallback(true);
+      setMessage('Copia el enlace para compartir');
+    }
+  }
   async function share() {
     try {
       if (navigator.share) {
-        await navigator.share({ title, text: `${title} · ¿Vamos?`, url });
+        await navigator.share({ title, text: `${title} · ${details} · ¿Vamos?`, url });
         return;
       }
     } catch (error) {
@@ -41,6 +52,21 @@ export default function ShareButton({
         <span aria-hidden="true">↗</span>
         {!compact && ' Compartir'}
       </button>
+      {!compact && (
+        <>
+          <button className="button button-outline" type="button" onClick={copy}>
+            Copiar enlace
+          </button>
+          <a
+            className="button button-outline"
+            href={`https://wa.me/?text=${encodeURIComponent(`${title} · ${details} ${url}`)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            WhatsApp
+          </a>
+        </>
+      )}
       <span className="share-status" role="status">
         {message}
       </span>

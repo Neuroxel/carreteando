@@ -13,6 +13,8 @@ import {
 } from './event-extraction';
 import { detectCategory } from './events';
 import { safeImageUrl } from './safety';
+import { eventKey } from './event-identity';
+import { splitDatedAgenda } from './agenda';
 // Explicit scope inherited from the known venue list; no collaborator, hashtag or parent expansion.
 // Venue/city are source knowledge, not direct organizer confirmation. Every candidate needs review.
 export const SOURCES: Record<string, { venue: string; city: string; identity: string }> = {
@@ -26,8 +28,16 @@ export const SOURCES: Record<string, { venue: string; city: string; identity: st
   clubtrotaquilpue: { venue: 'Trotamundos Quilpué', city: 'Quilpué', identity: 'trota-quilpue' },
   club_segundo_piso: { venue: 'Club Segundo Piso', city: 'Valparaíso', identity: 'segundo-piso' },
   mascara_valparaiso: { venue: 'Máscara', city: 'Valparaíso', identity: 'mascara' },
+  clubdvina: { venue: 'Club D', city: 'Viña del Mar', identity: 'club-d' },
   paganocl: { venue: 'Pagano', city: 'Valparaíso', identity: 'pagano' },
 };
+// R3 trial: avoid redundant aliases and restaurant-only/undetermined sources.
+export const ACTIVE_SOURCES = [
+  'el.huevo',
+  'trotamundosvalpo',
+  'mascara_valparaiso',
+  'clubdvina',
+] as const;
 export type RawPost = Record<string, unknown>;
 export function postOwner(item: RawPost): string | null {
   const owner =
@@ -73,7 +83,7 @@ export function classifyPost(item: RawPost, now = new Date()) {
   if (!published) return reject('parse_failed');
   if (
     published.getTime() > now.getTime() + 5 * 60 * 1000 ||
-    published.getTime() < now.getTime() - 7 * 86400000
+    published.getTime() < now.getTime() - 60 * 86400000
   )
     return reject('stale_post');
   const date = extractEventDate(caption, published.toISOString());
@@ -114,7 +124,11 @@ export function classifyPost(item: RawPost, now = new Date()) {
       moderation_status: 'pending',
       is_active: false,
       organizer_verified: false,
-      event_key: `${meta.identity}|${date}`,
+      event_key: eventKey(
+        meta.identity,
+        date,
+        firstMeaningfulLine(caption, `Noche en ${meta.venue}`),
+      ),
     },
   };
 }
@@ -134,4 +148,21 @@ export function dedupeCandidates<T extends { event_key: string; instagram_id: st
 export function boundedResultsLimit(value: unknown): number {
   const n = Number(value);
   return Number.isFinite(n) && n >= 1 ? Math.min(5, Math.floor(n)) : 3;
+}
+
+export function classifySourceItem(item: RawPost, now = new Date()) {
+  const published = parseTimestamp(
+    item.timestamp ?? item.takenAt ?? item.takenAtIso ?? item.publishedAt,
+  );
+  const caption = typeof item.caption === 'string' ? item.caption : '';
+  const segments = published ? splitDatedAgenda(caption, published.toISOString()) : [];
+  if (!segments.length) return [classifyPost(item, now)];
+  return segments.map((segment, index) => {
+    const decision = classifyPost({ ...item, caption: segment }, now);
+    if (!decision.row) return decision;
+    return {
+      ...decision,
+      row: { ...decision.row, instagram_id: `${decision.row.instagram_id}-s${index + 1}` },
+    };
+  });
 }

@@ -6,6 +6,7 @@ import {
   inferCity,
   normalizeText,
   toChileDateString,
+  parseTimestamp,
   validIsoDate,
 } from './event-extraction';
 import { safeImageUrl, safeWebUrl } from './safety';
@@ -34,7 +35,11 @@ export function dbRowToEvento(row: EventRow): Evento | null {
     nombre: title,
     descripcion: description,
     fecha: row.date_text,
-    hora: str(row.event_time) || extractEventTime(description),
+    hora: Object.hasOwn(row, 'event_time')
+      ? typeof row.event_time === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(row.event_time)
+        ? row.event_time
+        : null
+      : extractEventTime(description),
     lugar: str(row.venue),
     direccion: str(row.address),
     ciudad: str(row.city) || inferCity(str(row.location) || ''),
@@ -49,21 +54,22 @@ export function dbRowToEvento(row: EventRow): Evento | null {
         : extracted.text),
     categoria: category,
     imagen_url: safeImageUrl(row.image_url),
-    fuente: row.source === 'manual' ? 'manual' : 'instagram',
+    fuente:
+      row.source === 'manual' ? 'manual' : row.source === 'passline' ? 'passline' : 'instagram',
     fuente_url: safeWebUrl(row.instagram_url),
     organizador: str(row.username),
     organizador_url:
       typeof row.username === 'string' &&
       /^[a-zA-Z0-9_.]{1,30}$/.test(row.username) &&
-      row.source !== 'manual'
+      row.source === 'apify_instagram'
         ? `https://www.instagram.com/${row.username}/`
         : null,
     verificado: row.organizer_verified === true,
     activo: true,
     tags: [],
     created_at: str(row.scraped_at) || '',
-    ultima_revision: str(row.last_verified_at),
-    publicado_en_fuente: str(row.source_published_at),
+    ultima_revision: parseTimestamp(row.last_verified_at)?.toISOString() || null,
+    publicado_en_fuente: parseTimestamp(row.source_published_at)?.toISOString() || null,
   };
 }
 export function detectCategory(textValue: string): Categoria {

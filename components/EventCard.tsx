@@ -39,7 +39,9 @@ export default function EventCard({ evento: e, today }: { evento: Evento; today?
                 ? 'Organizador verificado'
                 : e.fuente === 'manual'
                   ? 'Comunidad · revisado'
-                  : 'Detectado · fuente revisada'}
+                  : e.fuente === 'passline'
+                    ? 'Curaduría · fuente revisada'
+                    : 'Detectado · fuente revisada'}
             </span>
           </div>
           <ShareButton id={e.id} title={e.nombre} compact />

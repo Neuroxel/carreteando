@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { getPublicEvents } from '../lib/server-events';
 import { getSourceFreshness } from '../lib/server-freshness';
-import { eventDateLabel, filterEvents } from '../lib/events';
+import { filterEvents } from '../lib/events';
 import { toChileDateString } from '../lib/event-extraction';
 import { parseFilters } from '../lib/filters';
 import { CATEGORIAS, CIUDADES } from '../lib/types';
@@ -250,13 +250,11 @@ export default async function Explore({
         {result.status === 'ok' && events.length === 0 && result.events.length > 0 && (
           <div className="alternative-plans">
             <h3>Otras noches en la región</h3>
-            {result.events.slice(0, 3).map((e) => (
-              <Link href={`/evento/${e.id}`} key={e.id}>
-                <span>{eventDateLabel(e.fecha, today)}</span>
-                <strong>{e.nombre}</strong>
-                <span>{e.ciudad} ↗</span>
-              </Link>
-            ))}
+            <div className="event-grid">
+              {result.events.slice(0, 3).map((e) => (
+                <EventCard key={e.id} evento={e} today={today} />
+              ))}
+            </div>
           </div>
         )}
       </section>

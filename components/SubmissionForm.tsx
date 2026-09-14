@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { CATEGORIAS, CIUDADES } from '../lib/types';
 export default function SubmissionForm({ today }: { today: string }) {
   const [state, setState] = useState<'idle' | 'sending' | 'done'>('idle');
+  const [duplicate, setDuplicate] = useState(false);
   const [error, setError] = useState('');
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -18,8 +19,9 @@ export default function SubmissionForm({ today }: { today: string }) {
         signal: AbortSignal.timeout(15000),
       });
       const result = await response.json();
-      if (!response.ok || result.status !== 'pending')
+      if (!response.ok || !['pending', 'received_before'].includes(result.status))
         throw new Error(result.error || 'No se pudo confirmar el envío.');
+      setDuplicate(result.status === 'received_before');
       setState('done');
     } catch (e) {
       setError(
@@ -36,11 +38,14 @@ export default function SubmissionForm({ today }: { today: string }) {
     return (
       <div className="empty-state submission-success" role="status">
         <div>
-          <span className="eyebrow">RECIBIDO · PENDIENTE DE REVISIÓN</span>
+          <span className="eyebrow">
+            {duplicate ? 'PROPUESTA YA RECIBIDA' : 'RECIBIDO · PENDIENTE DE REVISIÓN'}
+          </span>
           <h2>Gracias por pasar el dato.</h2>
           <p>
-            Recibimos tu evento. Lo revisaremos antes de publicarlo. Enviarlo no garantiza su
-            aprobación y todavía no tiene una página pública.
+            {duplicate
+              ? 'Esta propuesta ya fue recibida. Volver a enviarla no cambia el estado de su revisión ni la publica de nuevo.'
+              : 'Recibimos tu evento. Lo revisaremos antes de publicarlo. Enviarlo no garantiza su aprobación y todavía no tiene una página pública.'}
           </p>
           <Link href="/" className="button button-primary">
             Volver a la cartelera

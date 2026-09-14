@@ -46,6 +46,25 @@ test('publication awaits private inbox, rejects invalid bodies/origin, and propa
     assert.equal((await publish(request({ ...valid, nombre: 'x'.repeat(20000) }))).status, 413);
     assert.equal((await publish(request(null))).status, 400);
     assert.equal(calls, 1);
+    assert.equal(
+      (
+        await publish(
+          new Request('https://carreteando.vercel.app/api/publicar', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: '{bad',
+          }),
+        )
+      ).status,
+      400,
+    );
+    globalThis.fetch = async () =>
+      new Response(JSON.stringify('duplicate'), {
+        headers: { 'content-type': 'application/json' },
+      });
+    const duplicate = await publish(request(valid));
+    assert.equal(duplicate.status, 202);
+    assert.equal((await duplicate.json()).status, 'received_before');
     globalThis.fetch = async () =>
       new Response(JSON.stringify('rate_limited'), {
         headers: { 'content-type': 'application/json' },

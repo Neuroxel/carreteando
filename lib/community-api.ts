@@ -73,11 +73,13 @@ export async function receiveCommunity(request: Request, kind: 'submission' | 'r
     return json(
       {
         success: true,
-        status: 'pending',
+        status: data === 'duplicate' ? 'received_before' : 'pending',
         message:
-          kind === 'submission'
-            ? 'Recibimos tu evento. Lo revisaremos antes de publicarlo.'
-            : 'Recibimos tu reporte para revisión.',
+          data === 'duplicate'
+            ? 'Esta solicitud ya fue recibida; se mantiene su revisión anterior.'
+            : kind === 'submission'
+              ? 'Recibimos tu evento. Lo revisaremos antes de publicarlo.'
+              : 'Recibimos tu reporte para revisión.',
       },
       202,
     );

@@ -2,7 +2,7 @@
 
 ## Entornos y secretos
 
-Vercel usa Neuroxel/carreteando main. `SUPABASE_SECRET_KEY` debe ser una clave `sb_secret_...` nueva y sólo server-side. El JWT service_role publicado históricamente se considera comprometido permanentemente. La ausencia de ese JWT en HEAD no prueba su revocación: comprobar el estado de la clave legacy en el dashboard y deshabilitarla mediante el flujo de seguridad autorizado antes de apertura pública.
+Vercel usa Neuroxel/carreteando main. `SUPABASE_SECRET_KEY` debe ser una clave `sb_secret_...` nueva y sólo server-side. El JWT service_role publicado históricamente se considera comprometido permanentemente. Verificado el 14-09-2026 UTC: el JWT histórico devuelve 401 tanto como API key/Bearer como combinado con una clave publicable moderna; claves JWT legacy deshabilitadas y HS256 en Revoked Keys. Esto no demuestra ausencia de uso histórico indebido.
 
 Los secretos nunca se copian a respuestas, logs o Git. Para desarrollo basta clave pública Supabase; sin credenciales administrativas los formularios devuelven 503, sin fingir éxito. El conector de inventario puede devolver vacío aunque get_project por ID funcione. Proyecto Supabase observado: hgwljbtqdserkdhulbts.
 
@@ -11,7 +11,7 @@ Los secretos nunca se copian a respuestas, logs o Git. Para desarrollo basta cla
 Usar el dashboard Supabase con una sesión administrativa. Consultar `ingestion_runs`, `ingestion_posts` y `events` pendientes. No hay panel público de administración.
 
 1. Abrir la publicación original, contrastar fecha del evento (no fecha del post), lugar, ciudad y pertinencia nocturna. Revisar flyer y caption cuando sea posible. Registrar ambigüedad y mantener pendiente si falta evidencia.
-2. Comparar otros posts del mismo recinto/noche: `event_key` agrupa estos candidatos conservadoramente. Dos eventos legítimos en una misma noche requieren separación explícita del revisor; nunca suponer que cada anuncio de artista es un evento nuevo.
+2. Comparar otros posts del mismo recinto/noche: `event_key` usa recinto, fecha e identidad normalizada del título. Dos eventos con títulos distintos en una misma noche permanecen separados. Recordatorios con títulos muy diferentes aún requieren conciliación manual; nunca suponer que cada anuncio de artista es un evento nuevo.
 3. Completar los campos conocidos: `venue`, `city`, `address`, `event_time`, `price_clp`, `price_text`, `category`. No copiar una dirección supuesta ni un precio de bebida. Conservar los posts crudos como evidencia y usar un nombre de evento claro.
 4. En una transacción, actualizar la fila exacta a `moderation_status='approved'`, `is_active=true`, `reviewed_at=now()`, `last_verified_at=now()` únicamente si la fecha sigue vigente. Mantener `organizer_verified=false` salvo evidencia directa del organizador. La revisión humana es una acción real; no registrar `last_verified_at` en un mero fetch.
 5. Para rechazar: `moderation_status='rejected'`, `is_active=false`. Para retirar/cancelar: `is_active=false`, conservar la evidencia. No borrar históricos.
@@ -37,10 +37,12 @@ Definir y ejecutar retención para reportes cerrados, hashes y posts crudos ante
 
 El cron diario está en `vercel.json` (18:00 UTC; su hora local cambia con DST). Autenticación Bearer con CRON_SECRET, incluso en desarrollo. Vercel dashboard → Settings → Cron Jobs → Run permite ejecutarlo sin exponer la credencial. Nunca llamar a una URL que lleve el token como query string.
 
-- Siete cuentas en `lib/ingestion.ts`. Sin parentData ni expansión por colaboradores/hashtags. `APIFY_NEWER_THAN` se ignora intencionalmente; ventana fija de 3 días y rechazo local de posts de más de 7 días. Límite por cuenta 3 por defecto, techo 5.
+- Cuatro cuentas activas en `ACTIVE_SOURCES`: el.huevo, trotamundosvalpo, mascara_valparaiso y clubdvina. El catálogo conserva las anteriores para trazabilidad. Sin parentData ni expansión por colaboradores/hashtags. Ventana del proveedor de 14 días, elegibilidad local hasta 60 días (no implica recuperación de 60 días), fecha del evento explícita y futura. Límite por cuenta 3 por defecto, techo 5.
+- Agendas: máximo seis líneas fechadas de forma independiente; no se heredan precio/hora ni se hace OCR. Todos los candidatos de Instagram quedan pendientes/inactivos.
+- `data/editorial-events.json` es un manifiesto de revisión editorial explícita, basado en fichas públicas contrastadas. No descarga Passline ni elude sus restricciones. Sólo importa aprobaciones de menos de siete días, con evento vigente. Importación insert-only: nunca reactiva una retirada. Cambios posteriores y cancelaciones deben resolverse en la fila canónica, no editando sólo el manifiesto. La antigüedad de siete días limita nuevas importaciones, no sustituye revisión de eventos ya publicados.
 - El proveedor recibe timeout 180 s, maxItems 40 y maxTotalChargeUsd=1. La facturación final depende del actor/proveedor; revisar `cost_usd`, no asumir que el tope solicitado garantiza toda la factura.
 - Reserva persistente de 6 horas desde cualquier intento, incluidos errores. Evita duplicación accidental de cobro. Para recuperar una ejecución fallida, revisar su run/dataset de Apify y el error antes de decidir un nuevo intento; no resetear el cooldown a ciegas.
-- `events_saved` cuenta candidatos insertados, **no eventos aprobados**. `public_events_added` es siempre 0 durante ingesta. Duplicados y posts ya procesados quedan contabilizados; no se reactivan filas históricas por upsert.
+- `events_saved` cuenta candidatos insertados, **no eventos aprobados**. `public_events_added` cuenta únicamente nuevas filas del manifiesto editorial previamente revisado; nunca autoaprueba Instagram. `editorial_inserted` separa ese canal de `events_saved`. La importación editorial ocurre antes de Apify: un run fallido puede haber añadido oferta editorial; revisar métricas antes de concluir que no hubo cambios. Los posts previos se reclasifican conservando su evidencia original y outcomes por ejecución; no se reactivan filas históricas por upsert.
 - `ingestion_posts` guarda caption, autor real, fecha de publicación, fuente y outcome; no guarda seguidores, asistentes ni el objeto completo de Apify.
 - Revisar muestras con etiquetas TRUE EVENT / FALSE POSITIVE / DUPLICATE / WRONG DATE / WRONG LOCATION / AMBIGUOUS. Precisión = verdaderos / candidatos revisados; informar ambiguos y tamaño muestral. Coste por evento válido único público = coste facturado / nuevos eventos revisados y publicados. Con denominador 0 no hay coste unitario finito estimable.
 

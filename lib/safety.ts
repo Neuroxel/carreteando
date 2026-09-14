@@ -16,7 +16,8 @@ export function safeImageUrl(value: unknown): string | null {
   const u = new URL(url);
   if (u.protocol !== 'https:') return null;
   return /(?:^|\.)(?:cdninstagram\.com|fbcdn\.net)$/.test(u.hostname) ||
-    u.hostname === 'images.unsplash.com'
+    u.hostname === 'images.unsplash.com' ||
+    u.hostname === 'imagenes.passline.com'
     ? url
     : null;
 }

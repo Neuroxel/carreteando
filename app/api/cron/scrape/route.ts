@@ -4,12 +4,14 @@ import { getAdminDb } from '../../../../lib/server-db';
 import {
   boundedResultsLimit,
   classifyPost,
+  classifySourceItem,
+  ACTIVE_SOURCES,
   dedupeCandidates,
   postCode,
   postOwner,
   RawPost,
-  SOURCES,
 } from '../../../../lib/ingestion';
+import { editorialRows } from '../../../../lib/editorial-feed';
 import { parseTimestamp, toChileDateString } from '../../../../lib/event-extraction';
 export const maxDuration = 300;
 export const dynamic = 'force-dynamic';
@@ -53,8 +55,8 @@ export async function GET(request: Request) {
   let apifyId: string | null = null;
   let datasetId: string | null = null;
   let providerCompleted = false;
-  const metrics: Record<string, number | string | null> = {
-    accounts_scanned: Object.keys(SOURCES).length,
+  const metrics: Record<string, unknown> = {
+    accounts_scanned: ACTIVE_SOURCES.length,
     posts_found: 0,
     event_candidates: 0,
     events_saved: 0,
@@ -94,14 +96,29 @@ export async function GET(request: Request) {
       .eq('is_active', true)
       .lt('date_text', toChileDateString(new Date()));
     if (expire.error) throw new IngestionError('DB_EXPIRE');
+    const editorial = editorialRows();
+    metrics.editorial_reviewed = editorial.length;
+    metrics.editorial_inserted = 0;
+    if (editorial.length) {
+      const imported = await db
+        .from('events')
+        .upsert(
+          editorial.map((r) => ({ ...r, ingestion_run_id: runId })),
+          { onConflict: 'instagram_id', ignoreDuplicates: true },
+        )
+        .select('instagram_id');
+      if (imported.error) throw new IngestionError('DB_EDITORIAL');
+      metrics.editorial_inserted = imported.data?.length || 0;
+      metrics.public_events_added = metrics.editorial_inserted;
+    }
     const start = record(
       await apify(`acts/${actor}/runs?timeout=180&maxItems=40&maxTotalChargeUsd=1`, {
         method: 'POST',
         body: JSON.stringify({
-          directUrls: Object.keys(SOURCES).map((h) => `https://www.instagram.com/${h}/`),
+          directUrls: ACTIVE_SOURCES.map((h) => `https://www.instagram.com/${h}/`),
           resultsType: 'posts',
           resultsLimit: limit,
-          onlyPostsNewerThan: '3 days',
+          onlyPostsNewerThan: '14 days',
           addParentData: false,
         }),
       }),
@@ -141,22 +158,39 @@ export async function GET(request: Request) {
     const now = new Date();
     const candidates: NonNullable<ReturnType<typeof classifyPost>['row']>[] = [];
     const evidence: RawPost[] = [];
+    const outcomes: { post_id: string | null; owner: string | null; reasons: string[] }[] = [];
+    const sourceCounts: Record<string, number> = {};
+    metrics.pipeline_version = 'r3';
+    metrics.item_outcomes = outcomes;
+    metrics.source_counts = sourceCounts;
     for (const item of items) {
       const code = postCode(item);
       const owner = postOwner(item);
       if (!owner) {
         metrics.source_rejected = Number(metrics.source_rejected) + 1;
+        outcomes.push({
+          post_id: code,
+          owner:
+            typeof item.ownerUsername === 'string' &&
+            /^[a-zA-Z0-9_.]{1,40}$/.test(item.ownerUsername)
+              ? item.ownerUsername
+              : null,
+          reasons: [item.error ? 'provider_error' : 'source_rejected'],
+        });
         continue;
       }
       if (code && seen.has(code)) {
         metrics.already_processed = Number(metrics.already_processed) + 1;
-        continue;
       }
-      const decision = classifyPost(item, now);
-      if (decision.row) {
-        candidates.push(decision.row);
-        metrics.event_candidates = Number(metrics.event_candidates) + 1;
-      } else metrics[decision.reason] = Number(metrics[decision.reason]) + 1;
+      sourceCounts[owner] = (sourceCounts[owner] || 0) + 1;
+      const decisions = classifySourceItem(item, now);
+      outcomes.push({ post_id: code, owner, reasons: decisions.map((d) => d.reason) });
+      for (const decision of decisions) {
+        if (decision.row) {
+          candidates.push(decision.row);
+          metrics.event_candidates = Number(metrics.event_candidates) + 1;
+        } else metrics[decision.reason] = Number(metrics[decision.reason]) + 1;
+      }
       if (code) {
         seen.add(code);
         evidence.push({
@@ -169,7 +203,7 @@ export async function GET(request: Request) {
           retrieved_at: now.toISOString(),
           caption: typeof item.caption === 'string' ? item.caption.slice(0, 10000) : '',
           source_url: `https://www.instagram.com/p/${code}/`,
-          outcome: decision.reason,
+          outcome: decisions.map((d) => d.reason).join(','),
           run_id: runId,
         });
       }
@@ -228,7 +262,7 @@ export async function GET(request: Request) {
       run_id: runId,
       ...metrics,
       timestamp: new Date().toISOString(),
-      moderation: 'pending',
+      moderation: 'Instagram pending; editorial manifest already reviewed',
     });
   } catch (error) {
     const code = error instanceof IngestionError ? error.code : 'INGESTION_FAILED';
