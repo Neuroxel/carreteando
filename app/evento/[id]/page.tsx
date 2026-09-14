@@ -111,7 +111,7 @@ export default async function Detail({ params }: Props) {
             <ShareButton
               id={e.id}
               title={e.nombre}
-              details={`${e.fecha} · ${e.hora || 'Hora por confirmar'} · ${e.lugar || e.ciudad}`}
+              details={`${eventDateLabel(e.fecha, today)} · ${e.hora ? `${e.hora} h` : 'Hora por confirmar'} · ${e.lugar || e.ciudad}`}
             />
             {maps && (
               <a

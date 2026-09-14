@@ -121,7 +121,7 @@ export const CATEGORIAS: {
   },
   {
     value: 'otro',
-    label: 'Otras noches',
+    label: 'Otro estilo',
     emoji: '🎉',
     badgeClass: 'badge-otro',
     desc: 'Ferias nocturnas, acústicos y arte',

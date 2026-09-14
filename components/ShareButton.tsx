@@ -63,7 +63,7 @@ export default function ShareButton({
           <a
             className="button button-outline"
             onClick={() => track('share')}
-            href={`https://wa.me/?text=${encodeURIComponent(`${title} · ${details} ${url}`)}`}
+            href={`https://wa.me/?text=${encodeURIComponent(`${title} · ${details} · Carreteando ${url}`)}`}
             target="_blank"
             rel="noopener noreferrer"
           >

@@ -12,7 +12,7 @@ export default function EventCard({
   today?: string;
   priority?: boolean;
 }) {
-  const category = CATEGORIAS.find((c) => c.value === e.categoria)?.label || 'Otras noches';
+  const category = CATEGORIAS.find((c) => c.value === e.categoria)?.label || 'Otro estilo';
   return (
     <article className="event-card">
       <Link
