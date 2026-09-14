@@ -47,6 +47,18 @@ export default async function Explore({
   const todayCount = filterEvents(result.events, { fecha: 'hoy' }, today).length;
   const dieciocho = esTemporadaDieciocho(today);
   const fondas = result.events.filter((e) => e.tipo === 'fonda');
+  const faltan = Math.round(
+    (Date.parse(`${today.slice(0, 4)}-09-18T12:00:00Z`) - Date.parse(`${today}T12:00:00Z`)) /
+      86400000,
+  );
+  const cuenta =
+    faltan > 1
+      ? `Faltan ${faltan} días`
+      : faltan === 1
+        ? 'Es mañana'
+        : faltan === 0
+          ? 'Es hoy'
+          : 'Sigue el finde largo';
   const path = home ? '/' : '/buscar';
   function href(key: string, value: string) {
     const p = new URLSearchParams(query);
@@ -75,6 +87,30 @@ export default async function Explore({
           </p>
         </div>
       </section>
+      {dieciocho && fondas.length > 0 && (
+        <section className="container season-hero">
+          <p className="eyebrow">🇨🇱 DIECIOCHO · {cuenta.toUpperCase()}</p>
+          <h2>
+            Dónde carretear el 18
+            <span className="heading-period">.</span>
+          </h2>
+          <p>
+            {fondas.length} fechas de fonda revisadas en {new Set(fondas.map((e) => e.ciudad)).size}{' '}
+            comunas, del 17 al 20. Con dirección, precio y fuente.
+          </p>
+          <div className="actions">
+            <Link className="button button-primary" href={`${path}?tipo=fonda&fecha=futuro`}>
+              Ver las fondas ↗
+            </Link>
+            <Link className="button button-outline" href={`${path}?fecha=hoy`}>
+              Qué hay hoy
+            </Link>
+            <Link className="button button-outline" href="/lugares">
+              Lugares para salir
+            </Link>
+          </div>
+        </section>
+      )}
       <section className="container discovery" id="cartelera" aria-label="Cartelera de eventos">
         <div className="date-tabs" aria-label="Filtrar por fecha">
           {[
@@ -92,6 +128,15 @@ export default async function Explore({
               {v === 'hoy' && result.status === 'ok' && <span>{todayCount}</span>}
             </Link>
           ))}
+          {dieciocho && fondas.length > 0 && (
+            <Link
+              className={filters.tipo === 'fonda' ? 'selected' : ''}
+              href={`${path}?tipo=fonda&fecha=futuro#cartelera`}
+              aria-current={filters.tipo === 'fonda' ? 'true' : undefined}
+            >
+              Dieciocho 🇨🇱<span>{fondas.length}</span>
+            </Link>
+          )}
         </div>
         <div className="city-filters" aria-label="Filtrar por zona">
           <Link
@@ -169,25 +214,6 @@ export default async function Explore({
             ))}
           </div>
         </details>
-        {dieciocho && fondas.length > 0 && (
-          <div className="season-strip">
-            <div>
-              <p className="eyebrow">🇨🇱 DIECIOCHO</p>
-              <p>
-                {fondas.length} {fondas.length === 1 ? 'fonda revisada' : 'fondas revisadas'} en{' '}
-                {new Set(fondas.map((e) => e.ciudad)).size} comunas, del 17 al 20 de septiembre.
-              </p>
-            </div>
-            <div className="actions">
-              <Link className="button button-primary" href={`${path}?tipo=fonda&fecha=futuro`}>
-                Ver fondas ↗
-              </Link>
-              <Link className="button button-outline" href={`${path}?fecha=futuro`}>
-                Carretes normales
-              </Link>
-            </div>
-          </div>
-        )}
         <div className="section-heading">
           <div>
             <p className="eyebrow">

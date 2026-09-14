@@ -2018,3 +2018,27 @@ textarea::placeholder {
   opacity: 0.5;
   cursor: progress;
 }
+
+/* El dieciocho manda durante su semana, sin tapar la cartelera normal. */
+.season-hero {
+  margin-bottom: 8px;
+  padding: 26px 22px;
+  border-radius: 6px;
+  border: 1px solid rgba(240, 120, 90, 0.5);
+  background: linear-gradient(135deg, rgba(122, 35, 24, 0.5), rgba(240, 120, 90, 0.12));
+}
+.season-hero .eyebrow {
+  color: #ffd9a8;
+}
+.season-hero h2 {
+  margin: 10px 0 8px;
+  font-size: clamp(1.6rem, 6vw, 2.2rem);
+}
+.season-hero p {
+  margin: 0 0 18px;
+  max-width: 54ch;
+}
+.season-hero .actions {
+  flex-wrap: wrap;
+  gap: 10px;
+}
