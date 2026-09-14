@@ -2042,3 +2042,35 @@ textarea::placeholder {
   flex-wrap: wrap;
   gap: 10px;
 }
+
+/* Dentro de un mismo tipo, la geometría y el matiz cambian por evento. */
+.flyer-fallback.tono-1::after {
+  transform: rotate(-14deg);
+  inset: -30% -20% auto auto;
+  width: 70%;
+}
+.flyer-fallback.tono-2::after {
+  transform: rotate(24deg);
+  inset: auto auto -40% -15%;
+  width: 90%;
+  opacity: 0.13;
+}
+.flyer-fallback.tono-3::after {
+  transform: rotate(-38deg);
+  inset: -10% auto auto -25%;
+  width: 85%;
+  opacity: 0.09;
+}
+.flyer-fallback.tono-4::after {
+  transform: rotate(8deg);
+  inset: -45% -35% auto auto;
+  width: 105%;
+  opacity: 0.15;
+}
+.flyer-fallback.tono-2 strong {
+  align-self: flex-end;
+  text-align: right;
+}
+.flyer-fallback.tono-3 strong {
+  font-size: clamp(26px, 7.5vw, 38px);
+}

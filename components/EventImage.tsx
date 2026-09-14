@@ -5,10 +5,13 @@ import { CATEGORIAS, TIPOS_EVENTO, TipoEvento } from '../lib/types';
 // Fifteen identical tiles is not a fallback, it is a placeholder. The art has to
 // carry the kind of night and where it is, so two cards never read the same.
 const VARIANTES = ['art-v1', 'art-v2', 'art-v3', 'art-v4', 'art-v5'];
-function variante(seed: string) {
+function hash(seed: string) {
   let h = 0;
   for (const c of seed) h = (h * 31 + c.charCodeAt(0)) >>> 0;
-  return VARIANTES[h % VARIANTES.length];
+  return h;
+}
+function variante(seed: string) {
+  return VARIANTES[hash(seed) % VARIANTES.length];
 }
 export default function EventImage({
   src,
@@ -37,6 +40,9 @@ export default function EventImage({
     : style
       ? `art-${style.value}`
       : variante(`${title}${ciudad || ''}`);
+  // Seventeen fondas sharing one palette is the same failure as one green tile.
+  // The family stays, the geometry and tint shift per event.
+  const tono = `tono-${(hash(`${title}${lugar || ''}`) % 4) + 1}`;
   return (
     <div className="event-art">
       {src && !failed ? (
@@ -51,7 +57,7 @@ export default function EventImage({
           referrerPolicy="no-referrer"
         />
       ) : (
-        <div className={`flyer-fallback ${art}`}>
+        <div className={`flyer-fallback ${art} ${tono}`}>
           <span>{(ciudad || 'REGIÓN DE VALPARAÍSO').toUpperCase()}</span>
           <strong>{headline}</strong>
           <small>{lugar || 'Lugar por confirmar'}</small>
