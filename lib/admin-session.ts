@@ -5,7 +5,9 @@ import { getAdminDb } from './server-db';
 const cookieName =
   process.env.NODE_ENV === 'production' ? '__Host-carreteando-admin' : 'carreteando-admin';
 function key() {
-  const value = process.env.ADMIN_ACCESS_TOKEN;
+  // A secret stored with a stray newline used to fail as "clave incorrecta",
+  // which is indistinguishable from a wrong key and impossible to debug.
+  const value = process.env.ADMIN_ACCESS_TOKEN?.trim();
   return value && value.length >= 43 ? value : null;
 }
 export function sameSecret(a: string, b: string) {
@@ -49,7 +51,8 @@ export async function loginAdmin(token: string) {
     p_limit: 5,
     p_global: 100,
   });
-  if (quota.error || quota.data !== true || token.length > 200 || !sameSecret(token, secret))
+  const given = token.trim();
+  if (quota.error || quota.data !== true || given.length > 200 || !sameSecret(given, secret))
     return false;
   const payload = `${Date.now() + 7200000}.${randomBytes(16).toString('hex')}`;
   (await cookies()).set(cookieName, `${payload}.${sign(payload, secret)}`, {
