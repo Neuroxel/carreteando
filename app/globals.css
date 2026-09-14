@@ -1754,3 +1754,4 @@ textarea::placeholder {
     margin-top: 8px;
   }
 }
+.event-card .card-category span { color: #4d5548; }

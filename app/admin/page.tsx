@@ -126,10 +126,7 @@ function Item({ row, kind, events }: { row: Row; kind: 'event' | 'inbox'; events
           la sección de cartelera antes de marcar este reporte resuelto.
         </p>
       )}
-      <form action={review}>
-        <input type="hidden" name="kind" value={kind} />
-        <input type="hidden" name="id" value={string(row.id)} />
-        <input type="hidden" name="revision" value={string(row.revision)} />
+      <form action={review.bind(null, kind, string(row.id), Number(row.revision), 'save')}>
         {!report && <Fields row={payload} />}
         <label>
           Nota de revisión (mínimo 10 caracteres)
@@ -137,26 +134,26 @@ function Item({ row, kind, events }: { row: Row; kind: 'event' | 'inbox'; events
         </label>
         <div className="actions">
           {!report && (
-            <button className="button button-primary" name="action" value="approve">
+            <button className="button button-primary" formAction={review.bind(null, kind, string(row.id), Number(row.revision), 'approve')}>
               Aprobar y publicar
             </button>
           )}
           {kind === 'event' && (
             <>
-              <button className="button button-outline" name="action" value="save">
+              <button className="button button-outline" formAction={review.bind(null, kind, string(row.id), Number(row.revision), 'save')}>
                 Guardar corrección
               </button>
-              <button className="button button-outline" name="action" value="withdraw">
+              <button className="button button-outline" formAction={review.bind(null, kind, string(row.id), Number(row.revision), 'withdraw')}>
                 Retirar de cartelera
               </button>
             </>
           )}
           {report && (
-            <button className="button button-primary" name="action" value="resolve">
+            <button className="button button-primary" formAction={review.bind(null, kind, string(row.id), Number(row.revision), 'resolve')}>
               Marcar resuelto
             </button>
           )}
-          <button className="button button-outline" name="action" value="reject">
+          <button className="button button-outline" formAction={review.bind(null, kind, string(row.id), Number(row.revision), 'reject')}>
             Rechazar
           </button>
         </div>

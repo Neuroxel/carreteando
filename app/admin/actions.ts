@@ -14,16 +14,12 @@ export async function logout() {
   await logoutAdmin();
   redirect('/admin');
 }
-export async function review(form: FormData) {
+export async function review(kind: string, id: string, revision: number, action: string, form: FormData) {
   if (!(await isAdmin())) redirect('/admin');
   const db = getAdminDb();
   let status = 'invalid';
   try {
-    const action = String(form.get('action')),
-      kind = String(form.get('kind')),
-      id = String(form.get('id'));
-    const revision = Number(form.get('revision')),
-      note = String(form.get('note') || '').trim();
+    const note = String(form.get('note') || '').trim();
     if (
       !['event', 'inbox'].includes(kind) ||
       !['approve', 'save', 'reject', 'withdraw', 'resolve'].includes(action) ||

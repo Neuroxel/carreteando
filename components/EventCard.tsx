@@ -18,7 +18,7 @@ export default function EventCard({
       <Link
         className="event-image-link"
         href={`/evento/${encodeURIComponent(e.id)}`}
-        aria-label={`Ver ${e.nombre}`}
+        aria-label={`Ver ${e.nombre} · ${eventDateLabel(e.fecha, today)}`}
       >
         <EventImage
           src={e.imagen_url}
