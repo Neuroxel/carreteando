@@ -1858,3 +1858,31 @@ textarea::placeholder {
     gap: 4px;
   }
 }
+
+/* El dieciocho es temporal: se distingue sin repintar la marca. */
+.card-category.is-fonda {
+  color: var(--accent, #f0785a);
+}
+.season-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 18px;
+  margin: 0 0 22px;
+  padding: 16px 18px;
+  border-radius: 4px;
+  border: 1px solid var(--accent, #f0785a);
+  background: rgba(240, 120, 90, 0.08);
+}
+.season-strip p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+.season-strip .eyebrow {
+  display: block;
+  margin-bottom: 4px;
+}
+.season-strip .actions {
+  margin: 0;
+  gap: 10px;
+}

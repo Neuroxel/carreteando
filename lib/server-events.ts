@@ -7,7 +7,7 @@ export type EventsResult =
   | { status: 'ok'; events: Evento[]; checkedAt: string }
   | { status: 'error'; events: []; checkedAt: string };
 const COLUMNS =
-  'instagram_id,title,description,date_text,location,image_url,instagram_url,username,scraped_at,source,is_active,moderation_status,source_published_at,last_verified_at,city,venue,address,event_time,price_clp,price_text,category,organizer_verified';
+  'instagram_id,title,description,date_text,location,image_url,instagram_url,username,scraped_at,source,is_active,moderation_status,source_published_at,last_verified_at,city,venue,address,event_time,price_clp,price_text,category,organizer_verified,event_type';
 export async function readEvents(id?: string): Promise<EventsResult> {
   const checkedAt = new Date().toISOString();
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;

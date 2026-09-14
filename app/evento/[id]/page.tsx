@@ -8,7 +8,7 @@ import { eventJsonLd, safeJsonLd } from '../../../lib/event-seo';
 import EventImage from '../../../components/EventImage';
 import ShareButton from '../../../components/ShareButton';
 import ReportForm from '../../../components/ReportForm';
-import { CATEGORIAS } from '../../../lib/types';
+import { CATEGORIAS, TIPOS_EVENTO } from '../../../lib/types';
 export const dynamic = 'force-dynamic';
 type Props = { params: Promise<{ id: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -42,7 +42,9 @@ export default async function Detail({ params }: Props) {
   const e = r.events[0];
   if (!e) notFound();
   const today = toChileDateString(r.checkedAt);
-  const category = CATEGORIAS.find((c) => c.value === e.categoria)?.label;
+  const category =
+    TIPOS_EVENTO.find((t) => t.value === e.tipo)?.label ||
+    CATEGORIAS.find((c) => c.value === e.categoria)?.label;
   const maps = e.lugar
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([e.lugar, e.direccion, e.ciudad, 'Chile'].filter(Boolean).join(', '))}`
     : null;

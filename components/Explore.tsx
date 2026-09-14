@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { getPublicEvents } from '../lib/server-events';
 import { getSourceFreshness } from '../lib/server-freshness';
-import { diversifyByVenue, filterEvents } from '../lib/events';
+import { diversifyByVenue, esTemporadaDieciocho, filterEvents } from '../lib/events';
 import { toChileDateString } from '../lib/event-extraction';
 import { parseFilters } from '../lib/filters';
 import { CATEGORIAS, CIUDADES } from '../lib/types';
@@ -45,6 +45,8 @@ export default async function Explore({
     )
     .slice(0, 3);
   const todayCount = filterEvents(result.events, { fecha: 'hoy' }, today).length;
+  const dieciocho = esTemporadaDieciocho(today);
+  const fondas = result.events.filter((e) => e.tipo === 'fonda');
   const path = home ? '/' : '/buscar';
   function href(key: string, value: string) {
     const p = new URLSearchParams(query);
@@ -167,6 +169,25 @@ export default async function Explore({
             ))}
           </div>
         </details>
+        {dieciocho && fondas.length > 0 && (
+          <div className="season-strip">
+            <div>
+              <p className="eyebrow">🇨🇱 DIECIOCHO</p>
+              <p>
+                {fondas.length} {fondas.length === 1 ? 'fonda revisada' : 'fondas revisadas'} en{' '}
+                {new Set(fondas.map((e) => e.ciudad)).size} comunas, del 17 al 20 de septiembre.
+              </p>
+            </div>
+            <div className="actions">
+              <Link className="button button-primary" href={`${path}?tipo=fonda&fecha=futuro`}>
+                Ver fondas ↗
+              </Link>
+              <Link className="button button-outline" href={`${path}?fecha=futuro`}>
+                Carretes normales
+              </Link>
+            </div>
+          </div>
+        )}
         <div className="section-heading">
           <div>
             <p className="eyebrow">

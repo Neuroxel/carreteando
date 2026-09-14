@@ -1,4 +1,4 @@
-import { Categoria, CATEGORIAS, Evento, FiltrosEvento } from './types';
+import { Categoria, CATEGORIAS, Evento, FiltrosEvento, TIPOS_EVENTO } from './types';
 import {
   addDays,
   extractEventTime,
@@ -56,6 +56,7 @@ export function dbRowToEvento(row: EventRow): Evento | null {
           : `$${price.toLocaleString('es-CL')}`
         : extracted.text),
     categoria: category,
+    tipo: (TIPOS_EVENTO.find((t) => t.value === row.event_type)?.value || 'main') as Evento['tipo'],
     imagen_url: safeImageUrl(row.image_url),
     fuente:
       row.source === 'manual'
@@ -112,6 +113,7 @@ export function filterEvents(
       if (filters.categoria && filters.categoria !== 'todos' && filters.categoria !== e.categoria)
         return false;
       if (filters.ciudad && filters.ciudad !== 'todos' && filters.ciudad !== e.ciudad) return false;
+      if (filters.tipo && filters.tipo !== 'todos' && filters.tipo !== e.tipo) return false;
       if (
         filters.precio &&
         filters.precio !== 'todos' &&
@@ -170,4 +172,11 @@ export function diversifyByVenue<T extends { lugar?: string | null }>(
     out.push(pending.splice(pick, 1)[0]);
   }
   return out;
+}
+
+// Fiestas Patrias are a fixed, short window. The surface appears on its own and
+// disappears on its own; nothing is hard-coded as permanently visible.
+export function esTemporadaDieciocho(today: string): boolean {
+  const md = today.slice(5);
+  return md >= '09-14' && md <= '09-21';
 }

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Evento, CATEGORIAS } from '../lib/types';
+import { Evento, CATEGORIAS, TIPOS_EVENTO } from '../lib/types';
 import { eventDateLabel } from '../lib/events';
 import EventImage from './EventImage';
 import ShareButton from './ShareButton';
@@ -12,7 +12,9 @@ export default function EventCard({
   today?: string;
   priority?: boolean;
 }) {
-  const category = CATEGORIAS.find((c) => c.value === e.categoria)?.label || 'Otro estilo';
+  // A fonda is not a music genre: the kind of night beats the style label.
+  const kind = TIPOS_EVENTO.find((t) => t.value === e.tipo)?.label;
+  const category = kind || CATEGORIAS.find((c) => c.value === e.categoria)?.label || 'Otro estilo';
   return (
     <article className="event-card">
       <Link
@@ -33,7 +35,7 @@ export default function EventCard({
         </span>
       </Link>
       <div className="event-card-body">
-        <div className="eyebrow card-category">
+        <div className={`eyebrow card-category ${e.tipo === 'fonda' ? 'is-fonda' : ''}`}>
           {category}
           <span>{e.hora ? `${e.hora} h` : 'Hora por confirmar'}</span>
         </div>

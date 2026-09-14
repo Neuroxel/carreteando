@@ -4,7 +4,7 @@ import { createHmac } from 'node:crypto';
 import { validSession } from '../lib/admin-session';
 import { parseFilters } from '../lib/filters';
 import { editorialRows } from '../lib/editorial-feed';
-import { dbRowToEvento, diversifyByVenue, filterEvents } from '../lib/events';
+import { dbRowToEvento, diversifyByVenue, esTemporadaDieciocho, filterEvents } from '../lib/events';
 import { dbRowToLugar, zonaSlug, zonasDe } from '../lib/venues';
 import { POST as measure } from '../app/api/medir/route';
 import { ReviewInputError, reviewInput } from '../lib/review-input';
@@ -251,4 +251,36 @@ test('one venue cannot take the whole first screen, and far dates never jump ahe
     ev('Trotamundos Valparaíso', '2026-09-22'),
   ];
   assert.deepEqual(diversifyByVenue(solo), solo);
+});
+
+test('a fonda reads as a fonda, and the Dieciocho surface opens and closes by date', () => {
+  const base = {
+    instagram_id: 'fonda-2026-alejo-barrios-0918',
+    title: 'Fonda Alejo Barrios',
+    date_text: '2026-09-18',
+    city: 'Valparaíso',
+    venue: 'Parque Alejo Barrios',
+    is_active: true,
+    moderation_status: 'approved',
+    price_clp: 0,
+    price_text: 'Entrada liberada',
+    category: 'otro',
+  };
+  const fonda = dbRowToEvento({ ...base, event_type: 'fonda' });
+  assert.equal(fonda?.tipo, 'fonda');
+  // An unknown or missing type must fall back, never crash or invent one.
+  assert.equal(dbRowToEvento({ ...base, event_type: 'kermesse' })?.tipo, 'main');
+  assert.equal(dbRowToEvento(base)?.tipo, 'main');
+  const club = dbRowToEvento({ ...base, instagram_id: 'club-1', event_type: 'club' });
+  const todos = [fonda, club].filter((e) => e !== null);
+  assert.equal(filterEvents(todos, { tipo: 'fonda' }, '2026-09-18').length, 1);
+  assert.equal(filterEvents(todos, { tipo: 'after' }, '2026-09-18').length, 0);
+  assert.equal(filterEvents(todos, { tipo: 'todos' }, '2026-09-18').length, 2);
+  // The seasonal surface is dated, not permanent.
+  assert.equal(esTemporadaDieciocho('2026-09-18'), true);
+  assert.equal(esTemporadaDieciocho('2026-09-14'), true);
+  assert.equal(esTemporadaDieciocho('2026-09-21'), true);
+  assert.equal(esTemporadaDieciocho('2026-09-22'), false);
+  assert.equal(esTemporadaDieciocho('2026-09-13'), false);
+  assert.equal(esTemporadaDieciocho('2027-03-01'), false);
 });

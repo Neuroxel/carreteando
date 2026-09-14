@@ -34,6 +34,7 @@ export interface Evento {
   activo: boolean;
   asistentes_interesados?: number;
   tags?: string[];
+  tipo: TipoEvento;
   ubicacion?: {
     lat: number;
     lng: number;
@@ -62,8 +63,17 @@ export interface EventoFormData {
   tags?: string;
 }
 
+export type TipoEvento = 'main' | 'fonda' | 'pre' | 'after' | 'live' | 'club';
+export const TIPOS_EVENTO: { value: TipoEvento; label: string }[] = [
+  { value: 'fonda', label: 'Fonda' },
+  { value: 'pre', label: 'Pre' },
+  { value: 'after', label: 'After' },
+  { value: 'live', label: 'En vivo' },
+  { value: 'club', label: 'Club' },
+];
 export interface FiltrosEvento {
   busqueda?: string;
+  tipo?: TipoEvento | 'todos';
   categoria?: Categoria | 'todos';
   ciudad?: string | 'todos';
   precio?: 'gratis' | 'pago' | 'todos';
