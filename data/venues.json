@@ -652,5 +652,65 @@
   "source_url": "https://ticketplus.cl/states/region-de-valparaiso",
   "last_verified": "2026-09-14",
   "publish": false
+ },
+ {
+  "slug": "cafe-rock-villa-alemana",
+  "name": "Café Rock",
+  "city": "Villa Alemana",
+  "zone": null,
+  "address": null,
+  "venue_type": "sala-en-vivo",
+  "tags": [
+   "en-vivo",
+   "fiesta"
+  ],
+  "description_short": null,
+  "official_url": "https://caferock.cl/",
+  "instagram_url": null,
+  "calendar_url": null,
+  "source_type": "sitio-oficial",
+  "source_url": "https://caferock.cl/",
+  "last_verified": "2026-09-14",
+  "publish": false
+ },
+ {
+  "slug": "pub-verde-mostaza",
+  "name": "Pub Verde Mostaza",
+  "city": "Villa Alemana",
+  "zone": null,
+  "address": null,
+  "venue_type": "pub",
+  "tags": [
+   "pub",
+   "karaoke"
+  ],
+  "description_short": null,
+  "official_url": "https://verdemostaza.cl/",
+  "instagram_url": null,
+  "calendar_url": null,
+  "source_type": "sitio-oficial",
+  "source_url": "https://verdemostaza.cl/",
+  "last_verified": "2026-09-14",
+  "publish": false
+ },
+ {
+  "slug": "chicago-bar-concon",
+  "name": "Chicago Bar",
+  "city": "Concón",
+  "zone": null,
+  "address": "Av. Concón Reñaca 4000, Local 12",
+  "venue_type": "bar",
+  "tags": [
+   "bar",
+   "en-vivo"
+  ],
+  "description_short": null,
+  "official_url": null,
+  "instagram_url": "https://www.instagram.com/chicagobar.cl/",
+  "calendar_url": null,
+  "source_type": "instagram-oficial",
+  "source_url": "https://www.instagram.com/chicagobar.cl/",
+  "last_verified": "2026-09-14",
+  "publish": false
  }
 ]
