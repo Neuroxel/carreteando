@@ -15,7 +15,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const l = r.lugares[0];
   if (!l)
     return {
-      title: r.status === 'error' ? 'Información temporalmente no disponible' : 'Lugar no disponible',
+      title:
+        r.status === 'error' ? 'Información temporalmente no disponible' : 'Lugar no disponible',
       robots: { index: false, follow: true },
     };
   const description = `${l.tipo_label} en ${l.zona || l.ciudad}${l.direccion ? `, ${l.direccion}` : ''}. Próximas fechas y cómo llegar.`;
@@ -66,17 +67,82 @@ export default async function VenueDetail({ params }: Props) {
           ))}
         </p>
       )}
-      <div className="actions">
+      <div className="actions venue-actions">
+        {/* Small local venues live on Instagram: that link matters more than a website. */}
+        {l.instagram_url && (
+          <a
+            className="button button-primary"
+            href={l.instagram_url}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Instagram ↗
+          </a>
+        )}
         {l.agenda_url && (
-          <a className="button button-primary" href={l.agenda_url} target="_blank" rel="noopener noreferrer">
-            Ver su cartelera ↗
+          <a
+            className={`button ${l.instagram_url ? 'button-outline' : 'button-primary'}`}
+            href={l.agenda_url}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Su cartelera ↗
+          </a>
+        )}
+        {l.sitio_url && (
+          <a
+            className="button button-outline"
+            href={l.sitio_url}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Sitio web ↗
+          </a>
+        )}
+        {l.facebook_url && (
+          <a
+            className="button button-outline"
+            href={l.facebook_url}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Facebook ↗
+          </a>
+        )}
+        {l.tiktok_url && (
+          <a
+            className="button button-outline"
+            href={l.tiktok_url}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            TikTok ↗
+          </a>
+        )}
+        {l.contacto_url && (
+          <a
+            className="button button-outline"
+            href={l.contacto_url}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Contacto ↗
           </a>
         )}
         <a className="button button-outline" href={maps} target="_blank" rel="noopener noreferrer">
           Cómo llegar ↗
         </a>
-        <ShareButton id={`lugar/${l.slug}`} title={l.nombre} details={`${l.tipo_label} · ${l.zona || l.ciudad}`} />
+        <ShareButton
+          id={`lugar/${l.slug}`}
+          title={l.nombre}
+          details={`${l.tipo_label} · ${l.zona || l.ciudad}`}
+        />
       </div>
+      {!l.instagram_url && !l.sitio_url && !l.facebook_url && (
+        <p className="trust-note">
+          Todavía no tenemos su cuenta oficial confirmada. Si la conoces, cuéntanos y la sumamos.
+        </p>
+      )}
       <h2>
         Próximas fechas
         <span className="heading-period">.</span>
@@ -101,7 +167,10 @@ export default async function VenueDetail({ params }: Props) {
       )}
       <p className="trust-note">
         {FUENTES_LUGAR[l.fuente_tipo] || 'Fuente pública revisada'}
-        {l.ultima_revision ? ` · revisado el ${l.ultima_revision.slice(0, 10).split('-').reverse().join('-')}` : ''}.
+        {l.ultima_revision
+          ? ` · revisado el ${l.ultima_revision.slice(0, 10).split('-').reverse().join('-')}`
+          : ''}
+        .
         {l.fuente_url && (
           <>
             {' '}

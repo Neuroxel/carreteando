@@ -9,15 +9,15 @@ export default function VenueCard({ lugar: l, proximos }: { lugar: Lugar; proxim
           <span>{l.zona || l.ciudad}</span>
         </p>
         <h3>{l.nombre}</h3>
-        <p className="venue-where">
-          {l.direccion ? `${l.direccion} · ${l.ciudad}` : l.ciudad}
-        </p>
+        <p className="venue-where">{l.direccion ? `${l.direccion} · ${l.ciudad}` : l.ciudad}</p>
         {l.descripcion && <p className="venue-note">{l.descripcion}</p>}
         <p className="venue-agenda">
           {proximos
             ? `${proximos} ${proximos === 1 ? 'fecha anunciada' : 'fechas anunciadas'}`
             : 'Sin fechas anunciadas ahora'}
-          <span aria-hidden="true">↗</span>
+          <span>
+            {l.instagram_url ? 'Instagram' : ''} <span aria-hidden="true">↗</span>
+          </span>
         </p>
       </Link>
     </article>
