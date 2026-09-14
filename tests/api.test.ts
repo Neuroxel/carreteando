@@ -116,3 +116,48 @@ test('cron fails closed in every environment and cooldown cannot incur Apify cos
       delete process.env[k];
   }
 });
+
+test('provider outage records failed run without leaking response or claiming scrape success', async () => {
+  process.env.CRON_SECRET = 'test-only';
+  process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://example.supabase.co';
+  process.env.SUPABASE_SECRET_KEY = 'sb_secret_test';
+  process.env.APIFY_API_TOKEN = 'test-only';
+  let failure: Record<string, unknown> | undefined;
+  let providerCalls = 0;
+  try {
+    globalThis.fetch = async (input, init) => {
+      const url = String(input);
+      const headers = { 'content-type': 'application/json' };
+      if (url.includes('claim_ingestion_run'))
+        return new Response(JSON.stringify('test-run'), { headers });
+      if (url.startsWith('https://api.apify.com/')) {
+        providerCalls++;
+        return new Response('token=SECRET_SHOULD_NOT_LEAK', { status: 503 });
+      }
+      if (url.includes('/ingestion_runs')) failure = JSON.parse(String(init?.body));
+      return new Response('[]', { headers });
+    };
+    const response = await cron(
+      new Request('https://carreteando.vercel.app/api/cron/scrape', {
+        headers: { authorization: 'Bearer test-only' },
+      }),
+    );
+    assert.equal(response.status, 502);
+    const body = await response.json();
+    assert.equal(body.success, false);
+    assert.equal(body.error_code, 'APIFY_HTTP_503');
+    assert.equal(JSON.stringify(body).includes('SECRET_SHOULD_NOT_LEAK'), false);
+    assert.equal(providerCalls, 1);
+    assert.equal(failure?.status, 'failed');
+    assert.equal(failure?.error_code, 'APIFY_HTTP_503');
+  } finally {
+    globalThis.fetch = originalFetch;
+    for (const k of [
+      'CRON_SECRET',
+      'NEXT_PUBLIC_SUPABASE_URL',
+      'SUPABASE_SECRET_KEY',
+      'APIFY_API_TOKEN',
+    ])
+      delete process.env[k];
+  }
+});
