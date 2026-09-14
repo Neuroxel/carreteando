@@ -29,10 +29,15 @@ export default async function Explore({
   const conteoLugar = new Map<string, number>();
   for (const e of result.events)
     if (e.lugar) conteoLugar.set(e.lugar, (conteoLugar.get(e.lugar) || 0) + 1);
-  const lugaresZona =
+  // Surface places that have something coming before the rest, so the block is
+  // useful rather than alphabetical.
+  const lugaresZona = (
     filters.ciudad === 'todos'
       ? venues.lugares
-      : venues.lugares.filter((l) => l.ciudad === filters.ciudad);
+      : venues.lugares.filter((l) => l.ciudad === filters.ciudad)
+  )
+    .slice()
+    .sort((a, b) => (conteoLugar.get(b.nombre) || 0) - (conteoLugar.get(a.nombre) || 0));
   const suggestions = result.events
     .filter(
       (e, i, all) =>
