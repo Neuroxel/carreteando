@@ -6,6 +6,8 @@ import { parseFilters } from '../lib/filters';
 import { editorialRows } from '../lib/editorial-feed';
 import { dbRowToEvento, filterEvents } from '../lib/events';
 import { POST as measure } from '../app/api/medir/route';
+import { ReviewInputError, reviewInput } from '../lib/review-input';
+import { toChileDateString } from '../lib/event-extraction';
 test('owner session rejects tampering, expiry, future lifetime and rotation', () => {
   const secret = 'a'.repeat(43),
     now = Date.parse('2026-09-14T12:00:00Z');
@@ -80,4 +82,97 @@ test('metrics reject cross-origin, personal payloads and unbounded bodies; honor
   } finally {
     globalThis.fetch = original;
   }
+});
+test('review actions travel as bound arguments and each rejection names its own cause', () => {
+  const today = toChileDateString(new Date());
+  const form = (extra: Record<string, string> = {}) => {
+    const f = new FormData();
+    f.set('note', 'Revisé la fuente original y la fecha.');
+    for (const [k, v] of Object.entries(extra)) f.set(k, v);
+    return f;
+  };
+  const complete = {
+    checked: 'yes',
+    nombre: 'Fiesta de prueba',
+    descripcion: 'Descripción suficientemente larga para pasar la validación.',
+    fecha: today,
+    hora: '22:00',
+    lugar: 'Trotamundos',
+    ciudad: 'Valparaíso',
+    direccion: 'Blanco 1253',
+    precio: '5000',
+    precio_texto: '',
+    categoria: 'rock',
+    organizador: 'trotamundosvalpo',
+    fuente_url: 'https://example.com/evento',
+    imagen_url: '',
+  };
+  // The original defect: the submitting button's name/value never reached the
+  // server action, so kind and action arrived empty and every cause read alike.
+  const causes = (call: () => unknown) => {
+    try {
+      call();
+      return 'ok';
+    } catch (error) {
+      return error instanceof ReviewInputError ? error.status : 'other';
+    }
+  };
+  assert.equal(
+    causes(() => reviewInput('event', 'null', 0, form())),
+    'invalid',
+  );
+  assert.equal(
+    causes(() => reviewInput('', 'withdraw', 0, form())),
+    'invalid',
+  );
+  assert.equal(
+    causes(() => reviewInput('event', 'withdraw', 1.5, form())),
+    'invalid',
+  );
+  assert.equal(
+    causes(() => reviewInput('event', 'withdraw', -1, form())),
+    'invalid',
+  );
+  assert.equal(
+    causes(() => reviewInput('event', 'withdraw', 0, form({ note: 'corta' }))),
+    'invalid-note',
+  );
+  assert.equal(
+    causes(() => reviewInput('event', 'approve', 0, form(complete))),
+    'ok',
+  );
+  assert.equal(
+    causes(() => reviewInput('event', 'approve', 0, form({ ...complete, checked: '' }))),
+    'invalid-check',
+  );
+  assert.equal(
+    causes(() => reviewInput('event', 'approve', 0, form({ ...complete, ciudad: '' }))),
+    'invalid-fields',
+  );
+  assert.equal(
+    causes(() => reviewInput('event', 'approve', 0, form({ ...complete, descripcion: 'corta' }))),
+    'invalid-fields',
+  );
+  // Withdrawing must not demand the edit form: it is a retreat, not a publication.
+  const withdraw = reviewInput('event', 'withdraw', 3, form());
+  assert.deepEqual(withdraw.fields, {});
+  assert.equal(withdraw.note, 'Revisé la fuente original y la fecha.');
+  const approved = reviewInput('inbox', 'approve', 0, form(complete)) as {
+    fields: Record<string, unknown>;
+  };
+  assert.equal(approved.fields.city, 'Valparaíso');
+  assert.equal(approved.fields.price_text, '$5.000');
+  assert.equal(approved.fields.event_time, '22:00');
+  assert.ok(String(approved.fields.event_key).length > 0);
+  const unknown = reviewInput(
+    'event',
+    'approve',
+    0,
+    form({ ...complete, precio: '', hora: '' }),
+  ) as {
+    fields: Record<string, unknown>;
+  };
+  assert.equal(unknown.fields.price_clp, null);
+  assert.equal(unknown.fields.event_time, null);
+  assert.equal(unknown.fields.price_text, 'Precio por confirmar');
 });

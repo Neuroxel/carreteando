@@ -226,7 +226,13 @@ export default async function Admin({
     saved: 'Cambio guardado.',
     conflict:
       'El elemento cambió en otra sesión. Revisa su estado actualizado antes de volver a enviar.',
-    invalid: 'No se guardó. Revisa los campos, la confirmación de fuente y la nota.',
+    invalid: 'No se guardó. La acción llegó incompleta; vuelve a abrir el elemento e inténtalo.',
+    'invalid-note': 'No se guardó. La nota de revisión necesita entre 10 y 1000 caracteres.',
+    'invalid-check':
+      'No se guardó. Marca la casilla de revisión de la fuente antes de aprobar o guardar.',
+    'invalid-fields':
+      'No se guardó. Revisa los campos del evento: la zona es obligatoria, la descripción necesita al menos 20 caracteres, y la fecha debe ser de hoy en adelante.',
+    unavailable: 'No se guardó. No hay conexión con la base de datos. No tomes decisiones hasta recuperarla.',
     failed: 'No se guardó. Puede existir un duplicado o un problema de conexión.',
   };
   return (
