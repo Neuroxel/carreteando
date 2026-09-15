@@ -100,10 +100,14 @@ export default function VenueMap({ puntos }: { puntos: PuntoMapa[] }) {
           scrollWheelZoom: false,
         });
         mapa = instancia;
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        // CARTO's dark basemap now demands an API key, so the tiles come straight
+        // from OpenStreetMap under its tile policy. The night look is a CSS
+        // filter on our side: the served tile is never altered, and the
+        // attribution stays legible over it.
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
           maxZoom: 19,
           attribution:
-            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            '&copy; colaboradores de <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
         }).addTo(instancia);
         const grupo = L.markerClusterGroup
           ? L.markerClusterGroup({ maxClusterRadius: 44, showCoverageOnHover: false })

@@ -2336,3 +2336,25 @@ textarea::placeholder {
 .mapa-ficha-sin { margin: 0 0 0.35rem; opacity: 0.75; font-size: 0.875rem; }
 .mapa-ficha-acciones { display: flex; flex-wrap: wrap; gap: 0.75rem; margin: 0.5rem 0 0; }
 .leaflet-popup-content { margin: 0.85rem 1rem; }
+
+/* Los tiles llegan tal cual de OpenStreetMap; la noche la pone el navegador. */
+.mapa-lienzo .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.86) contrast(1.05) saturate(0.55);
+}
+.mapa-lienzo .leaflet-control-attribution {
+  background: rgba(10, 11, 15, 0.82);
+  color: rgba(247, 245, 240, 0.86);
+  font-size: 0.6875rem;
+}
+.mapa-lienzo .leaflet-control-attribution a { color: #ffb4a2; }
+.mapa-lienzo .leaflet-popup-content-wrapper,
+.mapa-lienzo .leaflet-popup-tip {
+  background: #14161c;
+  color: #f4f1ea;
+}
+.mapa-lienzo .leaflet-popup-content-wrapper a { color: #ffb4a2; }
+.mapa-lienzo .leaflet-bar a {
+  background: #14161c;
+  color: #f4f1ea;
+  border-bottom-color: rgba(255, 255, 255, 0.18);
+}
