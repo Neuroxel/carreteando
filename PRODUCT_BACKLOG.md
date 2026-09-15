@@ -1,6 +1,6 @@
 # Carreteando — backlog de producto
 
-Estado al **15 de septiembre de 2026**, revisado en fase 7. Este archivo es la lista canónica: toda idea del encargo
+Estado al **15 de septiembre de 2026**, revisado en fase 9. Este archivo es la lista canónica: toda idea del encargo
 aparece aquí con su estado. Nada se descarta en silencio.
 
 Estados: **HECHO** · **EN CURSO** · **PENDIENTE** · **BLOQUEADO** · **NO AHORA**
@@ -111,6 +111,26 @@ Leyenda de fase: **P0 AHORA** (esta fase) · **P1 SIGUIENTE** · **P2 MÁS ADELA
 | 58 | Reclamar lugar | P1 | **PENDIENTE** | Un local pide su ficha y aporta logo y programación | Base del modelo de socios |
 | 59 | Barra inferior móvil | P1 | **PENDIENTE** | Prototipar y medir antes de adoptar | No se añade sólo porque otras apps la tengan |
 | 60 | Contenido destacado rotulado | P2 | **NO AHORA** | Todo destacado pagado se rotula y **nunca** altera el estado en vivo | Documentado en la especificación maestra |
+
+---
+
+## Añadido en fase 9
+
+| # | Ítem | Fase | Estado | Criterio de aceptación | Evidencia / riesgo |
+|---|---|---|---|---|---|
+| 61 | Verdad de automatización | P0 | **HECHO** | Tabla por dato: qué corre solo, con qué frecuencia y qué exige humanos | `AUTOMATION_TRUTH.md`. Verificado contra `vercel.json`, código del cron, env de producción e `ingestion_runs` |
+| 62 | Límites reales del plan Vercel | P0 | **HECHO** | Confirmado en documentación oficial | Hobby: 100 crons, **mínimo diario**, precisión ±59 min. Expresiones más frecuentes fallan al desplegar |
+| 63 | Caducidad sin depender del cron | P0 | **HECHO+VERIFICADO** | Eventos y reportes caducan en tiempo de consulta | RLS y lecturas filtran por fecha de Chile y por `expires_at` |
+| 64 | Tres direcciones visuales reales | P0 | **HECHO** | Tres prototipos comparables con el mismo contenido | `/prototipos/a-pulso`, `b-rutas`, `c-afiche`. Estáticos y `noindex`: no tocan el bundle |
+| 65 | Umbral de publicación relajado | P0 | **HECHO** | Existencia + identidad geográfica + procedencia, dirección opcional y mostrada como desconocida | 78 publicados, 11 comunas |
+| 66 | Adaptadores de agenda por fuente | **P1** | **PENDIENTE** | El cron diario refresca carteleras por recinto y registra rendimiento | Es el hueco que impide decir «se actualiza sola» |
+| 67 | Cola de revalidación de lugares | **P1** | **PENDIENTE** | `needs_recheck` automático al superar umbral de antigüedad | La columna `status` ya existe |
+| 68 | Tablero de salud de fuentes en `/admin` | **P1** | **PENDIENTE** | Responder «¿por qué no hay eventos en Quillota?» sin SQL | Los datos ya se guardan en `ingestion_runs` |
+| 69 | Mapa con geocodificación licenciada | **P1** | **PENDIENTE** | lat/lng con proveedor de términos compatibles, procedencia y precisión | Sin esto no hay LISTA \| MAPA |
+| 70 | Horarios de apertura | **P1** | **PENDIENTE** | Sólo cuando la fuente oficial los publique | Bloquea «Ahora» y la línea de tiempo |
+| 71 | Barra inferior móvil | **P1** | **PENDIENTE** | Prototipar y medir antes de adoptar | — |
+| 72 | Imagen e identidad del lugar | **P1** | **PENDIENTE** | flyer → imagen del lugar → logo → arte generativo | Hoy sólo existen los extremos |
+| 73 | Migración a scheduler de mayor frecuencia | **P2** | **NO AHORA** | Sólo cuando una fuente demuestre eventos únicos varias veces al día durante dos semanas | Hoy Apify rinde 0 vigentes sobre 80 filas |
 
 ---
 
