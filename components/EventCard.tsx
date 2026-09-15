@@ -20,7 +20,11 @@ export default function EventCard({
       <Link
         className="event-image-link"
         href={`/evento/${encodeURIComponent(e.id)}`}
-        aria-label={`Ver ${e.nombre} · ${eventDateLabel(e.fecha, today)}`}
+        // El nombre accesible debe contener el texto visible del enlace. Cuando
+        // la tarjeta usa arte generado, ese texto es el tipo de noche y el lugar,
+        // y un aria-label que empezaba por "Ver" no lo contenía.
+        tabIndex={-1}
+        aria-hidden="true"
       >
         <EventImage
           src={e.imagen_url}

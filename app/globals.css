@@ -1954,9 +1954,11 @@ textarea::placeholder {
   }
 }
 
-/* El dieciocho es temporal: se distingue sin repintar la marca. */
+/* El dieciocho es temporal: se distingue sin repintar la marca. El coral de
+   marca no alcanza el contraste mínimo sobre el fondo de la tarjeta, así que
+   esta variante usa un tono más claro de la misma familia. */
 .card-category.is-fonda {
-  color: var(--accent, #f0785a);
+  color: #ffb9a3;
 }
 .season-strip {
   display: flex;
