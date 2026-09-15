@@ -34,7 +34,7 @@ export default function How() {
         evento. Ambos pasan por revisión.
       </p>
       <div className="actions">
-        <Link href="/buscar" className="button button-primary">
+        <Link href="/explorar" className="button button-primary">
           Explorar ↗
         </Link>
         <Link href="/confianza" className="button button-outline">

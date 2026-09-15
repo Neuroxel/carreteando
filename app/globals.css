@@ -2485,3 +2485,70 @@ main {
 .mapa-lienzo .leaflet-tile-pane {
   filter: invert(1) hue-rotate(185deg) brightness(0.72) contrast(1.15) saturate(0.5);
 }
+
+/* Un solo Explorar: el segmento y la vista son filtros, no páginas. */
+.explore-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+}
+.segmented {
+  display: inline-flex;
+  border: 1px solid rgba(127, 127, 127, 0.38);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.segmented a {
+  padding: 0.5rem 1.15rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  text-decoration: none;
+  color: inherit;
+  white-space: nowrap;
+  transition: background-color 0.18s ease, color 0.18s ease;
+}
+.segmented a.activa {
+  background: var(--tinta, #f4f1ea);
+  color: var(--papel, #14161c);
+}
+/* La portada abre con la pregunta y con el cursor, no con un muro de marca. */
+.hero-home { padding-block: 2rem 1.25rem; }
+.hero-home h1 { margin-bottom: 1.1rem; }
+.hero-search {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: 34rem;
+  padding: 0.35rem 0.35rem 0.35rem 0.9rem;
+  border: 1px solid rgba(127, 127, 127, 0.42);
+  border-radius: 999px;
+  background: color-mix(in srgb, currentColor 5%, transparent);
+}
+.hero-search span { opacity: 0.6; font-size: 1.1rem; }
+.hero-search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  padding: 0.55rem 0;
+}
+.hero-search input:focus { outline: none; }
+.hero-search:focus-within { border-color: currentColor; }
+.hero-search button {
+  border: 0;
+  border-radius: 999px;
+  padding: 0.55rem 1.2rem;
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+  background: var(--acento-marca, #ff5d3b);
+  color: #14161c;
+}
+@media (max-width: 480px) {
+  .hero-search button { padding: 0.55rem 0.95rem; }
+}

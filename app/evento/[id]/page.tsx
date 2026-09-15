@@ -54,7 +54,7 @@ export default async function Detail({ params }: Props) {
     : null;
   return (
     <article className="container page-section event-detail">
-      <Link className="back-link" href="/buscar">
+      <Link className="back-link" href="/explorar">
         ← Volver a la cartelera
       </Link>
       <div className="detail-grid">

@@ -1,14 +1,12 @@
-import Explore from '../../components/Explore';
-export const dynamic = 'force-dynamic';
-export const metadata = {
-  title: 'Explorar carretes en Valpo y Viña',
-  alternates: { canonical: '/buscar' },
-  robots: { index: false, follow: true },
-};
-export default async function Search({
+import { permanentRedirect } from 'next/navigation';
+export default async function Buscar({
   searchParams,
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  return <Explore params={await searchParams} />;
+  const params = await searchParams;
+  const query = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) if (typeof v === 'string') query.set(k, v);
+  const cadena = query.toString();
+  permanentRedirect(cadena ? `/explorar?${cadena}` : '/explorar');
 }

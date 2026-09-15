@@ -2,18 +2,18 @@
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 const DESTINOS = [
-  { href: '/', label: 'Ahora', icono: 'M12 3v18M3 12h18' },
-  { href: '/buscar', label: 'Explorar', icono: 'M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM20 20l-4-4' },
-  { href: '/lugares?vista=mapa', label: 'Mapa', icono: 'M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2zM9 4v14M15 6v14' },
-  { href: '/lugares', label: 'Lugares', icono: 'M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11zM12 10h.01' },
+  { href: '/', label: 'Inicio', icono: 'M4 11 12 4l8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z' },
+  { href: '/explorar', label: 'Explorar', icono: 'M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM20 20l-4-4' },
+  { href: '/explorar?vista=mapa', label: 'Mapa', icono: 'M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2zM9 4v14M15 6v14' },
+  { href: '/publicar', label: 'Aportar', icono: 'M12 5v14M5 12h14' },
 ];
 export default function BottomNav() {
   const pathname = usePathname();
   const params = useSearchParams();
-  const enMapa = pathname === '/lugares' && params.get('vista') === 'mapa';
+  const enMapa = pathname === '/explorar' && params.get('vista') === 'mapa';
   const activo = (href: string) => {
-    if (href === '/lugares?vista=mapa') return enMapa;
-    if (href === '/lugares') return pathname.startsWith('/lugares') && !enMapa;
+    if (href === '/explorar?vista=mapa') return enMapa;
+    if (href === '/explorar') return pathname === '/explorar' && !enMapa;
     if (href === '/') return pathname === '/';
     return pathname.startsWith(href);
   };

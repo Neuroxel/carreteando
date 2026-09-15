@@ -10,6 +10,8 @@ import VenueCard from './VenueCard';
 import { getPublicVenues } from '../lib/server-venues';
 import { buscarLugares, buscarZonas, zonaSlug } from '../lib/venues';
 import ZoneRail from './ZoneRail';
+import VenueMap from './VenueMap';
+import { puntosDeMapa } from '../lib/map';
 const SHORT: Record<string, string> = { Valparaíso: 'Valpo', 'Viña del Mar': 'Viña' };
 export default async function Explore({
   params,
@@ -21,6 +23,11 @@ export default async function Explore({
   const query = new URLSearchParams();
   for (const [k, v] of Object.entries(params)) if (typeof v === 'string') query.set(k, v);
   const filters = parseFilters(query, home ? 'hoy' : 'futuro');
+  // Un solo lugar para explorar. El segmento y la vista son filtros más, no
+  // páginas distintas, así que viajan en la misma URL que todo lo demás.
+  const ver: 'todo' | 'eventos' | 'lugares' =
+    params.ver === 'eventos' ? 'eventos' : params.ver === 'lugares' ? 'lugares' : 'todo';
+  const vista: 'lista' | 'mapa' = params.vista === 'mapa' ? 'mapa' : 'lista';
   const [result, freshness, venues] = await Promise.all([
     getPublicEvents(),
     getSourceFreshness(),
@@ -42,6 +49,7 @@ export default async function Explore({
   )
     .slice()
     .sort((a, b) => (conteoLugar.get(b.nombre) || 0) - (conteoLugar.get(a.nombre) || 0));
+  const puntos = puntosDeMapa(lugaresZona, result.events, today);
   const suggestions = result.events
     .filter(
       (e, i, all) =>
@@ -63,7 +71,7 @@ export default async function Explore({
         : faltan === 0
           ? 'Es hoy'
           : 'Sigue el finde largo';
-  const path = home ? '/' : '/buscar';
+  const path = home ? '/' : '/explorar';
   function href(key: string, value: string) {
     const p = new URLSearchParams(query);
     p.set(key, value);
@@ -77,18 +85,41 @@ export default async function Explore({
   }).format(new Date(result.checkedAt));
   return (
     <>
-      <section className={`hero container ${home ? '' : 'hero-small'}`}>
+      <section className={`hero container ${home ? 'hero-home' : 'hero-small'}`}>
         <div className="hero-copy">
           <p className="eyebrow">
             <span className="status-dot" /> REGIÓN DE VALPARAÍSO{' '}
             <span className="hero-date">/ {dateLabel}</span>
           </p>
           <h1>
-            Tu próxima <em>buena noche.</em>
+            {home ? (
+              <>
+                ¿Dónde <em>salimos?</em>
+              </>
+            ) : (
+              <>
+                Explorar <em>la noche.</em>
+              </>
+            )}
           </h1>
-          <p className="hero-description">
-            Tocatas, fiestas y pistas de baile en Valpo y alrededores.
-          </p>
+          {home && (
+            // La pregunta del producto va primero y se responde escribiendo, no
+            // leyendo un párrafo de marca.
+            <form action="/explorar" className="hero-search" role="search">
+              <label htmlFor="q-home" className="sr-only">
+                Buscar lugar, fiesta, zona o estilo
+              </label>
+              <span aria-hidden="true">⌕</span>
+              <input
+                id="q-home"
+                name="q"
+                type="search"
+                maxLength={120}
+                placeholder="Buscar lugar, fiesta, zona o estilo"
+              />
+              <button type="submit">Buscar</button>
+            </form>
+          )}
         </div>
       </section>
       {dieciocho && fondas.length > 0 && (
@@ -109,16 +140,52 @@ export default async function Explore({
             <Link className="button button-outline" href={`${path}?fecha=hoy`}>
               Qué hay hoy
             </Link>
-            <Link className="button button-outline" href="/lugares">
+            <Link className="button button-outline" href="/explorar?ver=lugares">
               Lugares para salir
             </Link>
           </div>
         </section>
       )}
-      {home && !filters.busqueda && (
-        <ZoneRail lugares={venues.lugares} eventos={result.events} hoy={today} />
-      )}
       <section className="container discovery" id="cartelera" aria-label="Cartelera de eventos">
+        {!home && (
+          <div className="explore-controls">
+            <div className="segmented" role="group" aria-label="Qué mostrar">
+              {(
+                [
+                  ['todo', 'Todo'],
+                  ['eventos', 'Eventos'],
+                  ['lugares', 'Lugares'],
+                ] as const
+              ).map(([v, label]) => (
+                <Link
+                  key={v}
+                  href={href('ver', v)}
+                  className={ver === v ? 'activa' : ''}
+                  aria-current={ver === v ? 'true' : undefined}
+                >
+                  {label}
+                </Link>
+              ))}
+            </div>
+            <div className="segmented segmented-vista" role="group" aria-label="Cómo mostrarlo">
+              {(
+                [
+                  ['lista', 'Lista'],
+                  ['mapa', 'Mapa'],
+                ] as const
+              ).map(([v, label]) => (
+                <Link
+                  key={v}
+                  href={href('vista', v)}
+                  className={vista === v ? 'activa' : ''}
+                  aria-current={vista === v ? 'true' : undefined}
+                >
+                  {label}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
         <div className="date-tabs" aria-label="Filtrar por fecha">
           {[
             ['hoy', 'Hoy'],
@@ -221,6 +288,24 @@ export default async function Explore({
             ))}
           </div>
         </details>
+        {vista === 'mapa' && (
+          <>
+            {puntos.length ? (
+              <VenueMap puntos={puntos} />
+            ) : (
+              <p className="empty-state">
+                Ninguno de estos lugares tiene todavía una ubicación verificada.
+              </p>
+            )}
+            <p className="trust-note">
+              {puntos.length} de {lugaresZona.length} lugares con coordenada verificada. Los demás
+              siguen en la lista: preferimos no ponerlos en el mapa antes que dejarlos en la esquina
+              equivocada.
+            </p>
+          </>
+        )}
+        {vista === 'lista' && ver !== 'lugares' && (
+        <>
         <div className="section-heading">
           <div>
             <p className="eyebrow">
@@ -271,7 +356,7 @@ export default async function Explore({
                   : 'Mira las próximas opciones revisadas.'}
               </p>
               <div className="actions">
-                <Link href="/buscar?fecha=futuro">Ver todas las próximas fechas ↗</Link>
+                <Link href="/explorar?fecha=futuro">Ver todas las próximas fechas ↗</Link>
               </div>
             </div>
           </div>
@@ -292,7 +377,9 @@ export default async function Explore({
             </div>
           </div>
         )}
-        {filters.busqueda && (lugaresHallados.length > 0 || zonasHalladas.length > 0) && (
+        </>
+        )}
+        {vista === 'lista' && filters.busqueda && (lugaresHallados.length > 0 || zonasHalladas.length > 0) && (
           <div className="alternative-plans">
             <div className="section-heading">
               <div>
@@ -322,22 +409,30 @@ export default async function Explore({
             </div>
           </div>
         )}
-        {venues.status === 'ok' && lugaresZona.length > 0 && (
-          <div className="alternative-plans">
+        {vista === 'lista' && ver !== 'eventos' && venues.status === 'ok' && lugaresZona.length > 0 && (
+          <div className={ver === 'lugares' ? '' : 'alternative-plans'}>
             <div className="section-heading">
               <div>
-                <p className="eyebrow">AUNQUE NO HAYA EVENTO</p>
+                <p className="eyebrow">
+                  {ver === 'lugares' ? 'ABIERTOS AUNQUE NO HAYA EVENTO' : 'AUNQUE NO HAYA EVENTO'}
+                </p>
                 <h3>
                   Lugares para salir
                   <span className="heading-period">.</span>
                 </h3>
               </div>
-              <Link className="result-count" href="/lugares">
-                Ver los {venues.lugares.length} ↗
-              </Link>
+              {ver === 'lugares' ? (
+                <span className="result-count">
+                  {lugaresZona.length} {lugaresZona.length === 1 ? 'lugar' : 'lugares'}
+                </span>
+              ) : (
+                <Link className="result-count" href={href('ver', 'lugares')}>
+                  Ver los {venues.lugares.length} ↗
+                </Link>
+              )}
             </div>
             <div className="venue-grid">
-              {lugaresZona.slice(0, 6).map((l) => (
+              {(ver === 'lugares' ? lugaresZona : lugaresZona.slice(0, 6)).map((l) => (
                 <VenueCard key={l.slug} lugar={l} proximos={conteoLugar.get(l.nombre) || 0} />
               ))}
             </div>
@@ -361,6 +456,9 @@ export default async function Explore({
           </p>
         )}
       </section>
+      {home && !filters.busqueda && (
+        <ZoneRail lugares={venues.lugares} eventos={result.events} hoy={today} />
+      )}
       <section className="container contribution-strip">
         <span className="strip-symbol" aria-hidden="true">
           ↗
@@ -373,20 +471,6 @@ export default async function Explore({
         <Link href="/publicar" className="button button-light">
           Proponer un evento ↗
         </Link>
-      </section>
-      <section className="container trust-strip">
-        <div>
-          <span>01 / ENCUENTRA</span>
-          <p>Filtra por noche, zona y música.</p>
-        </div>
-        <div>
-          <span>02 / CONFIRMA</span>
-          <p>Mira la fuente, la hora y la entrada.</p>
-        </div>
-        <div>
-          <span>03 / COMPARTE</span>
-          <p>Manda el plan a tu grupo. Nos vemos allá.</p>
-        </div>
       </section>
     </>
   );

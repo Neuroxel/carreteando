@@ -8,7 +8,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [r, v] = await Promise.all([getPublicEvents(), getPublicVenues()]);
   if (r.status === 'error') throw new Error('SITEMAP_BACKEND_UNAVAILABLE');
   return [
-    ...['', '/confianza', '/como-funciona', '/zonas', '/lugares', '/publicar'].map((path) => ({
+    ...['', '/confianza', '/como-funciona', '/zonas', '/explorar', '/publicar'].map((path) => ({
       url: SITE_URL + path,
     })),
     ...r.events.map((e) => ({

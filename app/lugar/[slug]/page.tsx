@@ -43,7 +43,7 @@ export default async function VenueDetail({ params }: Props) {
   )}`;
   return (
     <article className="container page-section venue-detail">
-      <Link className="back-link" href="/lugares">
+      <Link className="back-link" href="/explorar?ver=lugares">
         ← Volver a los lugares
       </Link>
       <p className="eyebrow">

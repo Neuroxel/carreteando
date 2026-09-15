@@ -67,13 +67,13 @@ function ficha(punto: PuntoMapa) {
   );
   return `<div class="mapa-ficha">
     <p class="mapa-ficha-tipo">${escapar(punto.tipoLabel)}${punto.zona ? ` · ${escapar(punto.zona)}` : ''} · ${escapar(punto.ciudad)}</p>
-    <h3><a href="/lugares/${escapar(punto.slug)}">${escapar(punto.nombre)}</a></h3>
+    <h3><a href="/lugar/${escapar(punto.slug)}">${escapar(punto.nombre)}</a></h3>
     ${punto.vivo ? `<p class="mapa-ficha-vivo">${escapar(punto.vivo)}</p>` : ''}
     ${noche ? `<ul class="mapa-ficha-noche">${noche}</ul>` : '<p class="mapa-ficha-sin">Sin evento anunciado para hoy.</p>'}
     ${punto.proximos ? `<p class="mapa-ficha-sin">${punto.proximos} fecha${punto.proximos === 1 ? '' : 's'} más adelante.</p>` : ''}
     ${punto.precision === 'calle' ? '<p class="mapa-ficha-sin">Ubicación a nivel de calle.</p>' : ''}
     <p class="mapa-ficha-acciones">
-      <a href="/lugares/${escapar(punto.slug)}">Ver lugar</a>
+      <a href="/lugar/${escapar(punto.slug)}">Ver lugar</a>
       <a href="https://www.openstreetmap.org/directions?to=${punto.lat}%2C${punto.lng}" target="_blank" rel="noopener noreferrer nofollow">Cómo llegar</a>
       ${punto.instagram ? `<a href="${escapar(punto.instagram)}" target="_blank" rel="noopener noreferrer nofollow">Instagram</a>` : ''}
     </p>

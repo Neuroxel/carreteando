@@ -12,7 +12,7 @@ export default function NotFound() {
         El evento pudo haber pasado, estar pendiente de revisión o ya no estar publicado. También
         puede que el enlace sea incorrecto.
       </p>
-      <Link href="/buscar" className="button button-primary">
+      <Link href="/explorar" className="button button-primary">
         Ver eventos vigentes ↗
       </Link>
     </section>

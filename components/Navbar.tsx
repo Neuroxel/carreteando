@@ -7,12 +7,10 @@ export default function Navbar() {
           CARRETEANDO<span className="brand-dot">✳</span>
         </Link>
         <nav aria-label="Navegación principal">
-          <Link href="/buscar">Explorar</Link>
-          <Link href="/buscar?fecha=finde">Este finde</Link>
-          <Link href="/lugares">Lugares</Link>
-          <Link href="/lugares?vista=mapa">Mapa</Link>
+          <Link href="/explorar">Explorar</Link>
+          <Link href="/explorar?vista=mapa">Mapa</Link>
           <Link href="/publicar" className="nav-publish">
-            Publicar <span aria-hidden="true">↗</span>
+            Aportar <span aria-hidden="true">↗</span>
           </Link>
         </nav>
       </div>
