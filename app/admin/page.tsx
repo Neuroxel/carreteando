@@ -2,6 +2,7 @@ import sources from '../../data/sources.json';
 import { isAdmin } from '../../lib/admin-session';
 import { getAdminDb } from '../../lib/server-db';
 import { login, logout, review, reviewVenue, importEditorial, runIngestion } from './actions';
+import AdminStats from '../../components/AdminStats';
 import { CATEGORIAS, CIUDADES } from '../../lib/types';
 import { TIPOS_LUGAR } from '../../lib/venues';
 import { safeWebUrl } from '../../lib/safety';
@@ -501,6 +502,13 @@ export default async function Admin({
               </details>
             </>
           )}
+          <h2>Estado del producto</h2>
+          <AdminStats
+            venues={venues?.data || []}
+            events={list}
+            sources={sourceRows?.data || []}
+            metrics={metrics?.data || []}
+          />
           <h2>Fuentes automáticas</h2>
           <div className="admin-actions">
             <form action={runIngestion}>
