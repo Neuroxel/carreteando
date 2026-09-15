@@ -2474,3 +2474,14 @@ textarea::placeholder {
   .site-header nav a:not(.nav-publish) { display: none; }
   .site-header nav { gap: 0; }
 }
+
+/* Algo dentro de main deja la página 10px más ancha que un teléfono de 375.
+   Los carruseles de fechas, ciudades y zonas ya tienen su propio scroll, así que
+   contener el eje horizontal aquí no recorta nada que deba verse. La causa
+   puntual sigue sin aislarse y está anotada en el backlog. */
+main {
+  overflow-x: clip;
+}
+.mapa-lienzo .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(185deg) brightness(0.72) contrast(1.15) saturate(0.5);
+}
