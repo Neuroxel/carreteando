@@ -216,10 +216,20 @@ async function alreadyPublished(db: Db, candidate: EventCandidate) {
     return sameVenue && looksLikeSameEvent(row.title, candidate.title);
   });
 }
+/**
+ * The first dispatch after a source is registered used to find nothing at all:
+ * the row is stamped with the database's clock, which is milliseconds ahead of
+ * the clock the dispatcher read before it wrote, so a brand new source looked
+ * like it was due in the future. A minute of tolerance absorbs that and any
+ * ordinary skew between the function and the database, and cannot cause
+ * over-fetching because no source refreshes more than once a day.
+ */
+export const TOLERANCIA_RELOJ_MS = 60_000;
 /** The daily cron is a dispatcher: it refreshes whatever is due, never everything. */
 export function dueSources(rows: { id: string; active: boolean; next_check_at: string }[], now: Date, limit: number) {
+  const limite = now.getTime() + TOLERANCIA_RELOJ_MS;
   const due = rows
-    .filter((row) => row.active && new Date(row.next_check_at).getTime() <= now.getTime())
+    .filter((row) => row.active && new Date(row.next_check_at).getTime() <= limite)
     .sort((a, b) => a.next_check_at.localeCompare(b.next_check_at))
     .slice(0, limit);
   return due
@@ -255,13 +265,15 @@ export async function dispatchSources(
   now = new Date(),
 ): Promise<DispatchReport> {
   await syncRegistry(db);
+  // Read the clock after the registry write, not before it.
+  const reloj = now.getTime() >= Date.now() ? now : new Date();
   const { data } = await db.from('event_sources').select('id,active,next_check_at,consecutive_failures');
-  const due = dueSources(data || [], now, budget);
+  const due = dueSources(data || [], reloj, budget);
   const reports: SourceRunReport[] = [];
   for (const source of due) {
     const report = await runSource(source, db, fetcher);
     reports.push(report);
-    const next = new Date(now.getTime() + source.refreshHours * 3600_000).toISOString();
+    const next = new Date(reloj.getTime() + source.refreshHours * 3600_000).toISOString();
     await db.from('ingestion_source_runs').insert([
       {
         source_id: source.id,
@@ -278,7 +290,7 @@ export async function dispatchSources(
       },
     ]);
     const health: Record<string, unknown> = {
-      last_checked_at: now.toISOString(),
+      last_checked_at: reloj.toISOString(),
       next_check_at: next,
       items_found: report.itemsFound,
       candidate_count: report.candidates,
@@ -287,11 +299,11 @@ export async function dispatchSources(
       parse_failure_count: report.parseFailures,
     };
     if (report.ok) {
-      health.last_success_at = now.toISOString();
+      health.last_success_at = reloj.toISOString();
       health.consecutive_failures = 0;
       health.last_error = null;
     } else {
-      health.last_failure_at = now.toISOString();
+      health.last_failure_at = reloj.toISOString();
       health.last_error = report.error;
       const current = (data || []).find((row: { id: string }) => row.id === source.id) as
         | { consecutive_failures?: number }

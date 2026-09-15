@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { portaldiscCartelera } from '../lib/sources/adapters/portaldisc';
 import { wpDatedSlug, wpEventsList, wpNewsScan } from '../lib/sources/adapters/wordpress';
-import { decide, horizonDays, looksLikeSameEvent, normalizedTitle } from '../lib/sources/dispatcher';
+import { TOLERANCIA_RELOJ_MS, decide, dueSources, horizonDays, looksLikeSameEvent, normalizedTitle } from '../lib/sources/dispatcher';
 import { candidateKey, parseCompactDate, parseSpanishDate, parseTime, validCalendarDate } from '../lib/sources/normalize';
 import { SOURCES, ADAPTERS } from '../lib/sources/registry';
 import type { EventCandidate, Fetcher, SourceDefinition } from '../lib/sources/types';
@@ -178,4 +178,33 @@ test('una página que cambió de forma falla fuerte en vez de inventar', async (
   );
   await assert.rejects(() => wpEventsList.run(fuenteOficial, responder('no es json')), /JSON_INVALIDO/);
   await assert.rejects(() => wpEventsList.run(fuenteOficial, responder('{"a":1}')), /RESPUESTA_INESPERADA/);
+});
+
+test('una fuente recién registrada sí entra en el primer despacho', () => {
+  // El fallo real de producción: la base estampa next_check_at con su reloj,
+  // milisegundos por delante del reloj que el despachador leyó antes de escribir,
+  // y las ocho fuentes quedaban "vencidas en el futuro".
+  const ahora = new Date('2026-09-15T16:12:05.700Z');
+  const recienCreadas = SOURCES.map((s) => ({
+    id: s.id,
+    active: true,
+    next_check_at: '2026-09-15T16:12:05.813Z',
+  }));
+  assert.equal(dueSources(recienCreadas, ahora, 6).length, 6, 'ninguna fuente se despachó');
+});
+
+test('la tolerancia de reloj no adelanta una fuente de verdad futura', () => {
+  const ahora = new Date('2026-09-15T16:00:00.000Z');
+  const enDosHoras = [{ id: SOURCES[0].id, active: true, next_check_at: '2026-09-15T18:00:00.000Z' }];
+  assert.equal(dueSources(enDosHoras, ahora, 6).length, 0);
+  const enMedioMinuto = [{ id: SOURCES[0].id, active: true, next_check_at: '2026-09-15T16:00:30.000Z' }];
+  assert.equal(dueSources(enMedioMinuto, ahora, 6).length, 1, 'medio minuto entra en la tolerancia');
+  assert.equal(TOLERANCIA_RELOJ_MS, 60_000);
+});
+
+test('una fuente pausada nunca se despacha y el presupuesto se respeta', () => {
+  const vencidas = SOURCES.map((s) => ({ id: s.id, active: s.id !== 'muni-valparaiso', next_check_at: '2026-01-01T00:00:00.000Z' }));
+  const despachadas = dueSources(vencidas, new Date('2026-09-15T16:00:00Z'), 3);
+  assert.equal(despachadas.length, 3, 'el presupuesto por pasada acota el trabajo');
+  assert.equal(dueSources(vencidas, new Date('2026-09-15T16:00:00Z'), 99).some((s) => s.id === 'muni-valparaiso'), false);
 });
