@@ -1,0 +1,62 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>Dirección B · Rutas</title>
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="/prototipos/_base.css">
+<style>
+:root{--bg:#0b0f10;--sf:#121819;--tx:#e8eceb;--dim:#8a9694;--valpo:#e8a33d;--vina:#5ec7d8;--quilpue:#93cf7a}
+body{background:var(--bg);color:var(--tx)}
+/* Curvas de nivel: el cerro como textura, no como adorno */
+body::before{content:'';position:fixed;inset:0;pointer-events:none;opacity:.5;
+ background:repeating-radial-gradient(circle at 18% 112%,transparent 0 46px,rgba(232,163,61,.07) 46px 47px),
+            repeating-radial-gradient(circle at 88% -14%,transparent 0 54px,rgba(94,199,216,.055) 54px 55px)}
+.wrap{position:relative}
+.bar{border-bottom:1px solid #1d2626}
+.mark{display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:17px;text-transform:none;letter-spacing:0}
+.pin{width:12px;height:12px;border:2px solid var(--valpo);border-radius:50% 50% 50% 2px;transform:rotate(-45deg)}
+h1{font-size:clamp(2.4rem,8vw,4rem);font-weight:700}
+h1 em{font-style:normal;color:var(--valpo)}
+.ruta{display:flex;gap:0;align-items:stretch;margin:26px 0 6px;overflow-x:auto;padding-bottom:6px}
+.parada{flex:0 0 auto;padding:10px 18px 10px 0;position:relative;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);white-space:nowrap}
+.parada::before{content:'';position:absolute;left:0;top:50%;width:100%;height:1px;background:linear-gradient(90deg,var(--valpo),rgba(232,163,61,.2))}
+.parada b{position:relative;display:inline-block;background:var(--bg);padding-right:11px;color:var(--tx);font-weight:600}
+.parada b::before{content:'';display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--valpo);margin-right:8px;vertical-align:middle}
+.card{display:grid;grid-template-columns:78px 1fr;gap:0;background:var(--sf);border:1px solid #1e2727;border-radius:10px;overflow:hidden;transition:transform .25s,border-color .25s}
+.card:hover{transform:translateX(3px);border-color:rgba(232,163,61,.5)}
+.tramo{background:linear-gradient(180deg,#2c1f0c,#4a3410);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--valpo);position:relative}
+.tramo.t2{background:linear-gradient(180deg,#0b2a30,#12454f);color:var(--vina)}
+.tramo.t3{background:linear-gradient(180deg,#152614,#234a21);color:var(--quilpue)}
+.tramo::after{content:'';position:absolute;left:50%;top:14px;bottom:14px;width:1px;background:currentColor;opacity:.35}
+.tramo b{font-size:19px;letter-spacing:-.02em;position:relative;background:inherit;padding:3px 0}
+.cbody{padding:14px 16px}
+.vn{background:var(--sf);border:1px solid #1e2727;border-radius:10px;padding:15px;position:relative;overflow:hidden}
+.vn::after{content:'';position:absolute;right:-24px;top:-24px;width:78px;height:78px;border:1px solid var(--valpo);border-radius:50%;opacity:.28}
+.vn.v2::after{border-color:var(--vina)}.vn.v3::after{border-color:var(--quilpue)}
+.ig{display:inline-block;margin-top:10px;font-size:12px;color:var(--valpo);text-decoration:none;border-bottom:1px solid currentColor}
+</style></head><body>
+<div class="wrap">
+<div class="bar"><span class="mark"><i class="pin"></i>NOCHE</span><span style="color:var(--dim)">Dirección B · Rutas</span></div>
+<div style="padding:34px 0 0">
+<h1>De un lugar <em>al siguiente.</em></h1>
+<p class="lead">La noche es un recorrido: dónde partir, qué queda cerca y hasta dónde sigue.</p>
+</div>
+<div class="ruta">
+<div class="parada"><b>Subida Ecuador</b></div>
+<div class="parada"><b>Barrio Puerto</b></div>
+<div class="parada"><b>Cerro Alegre</b></div>
+<div class="parada"><b>El Almendral</b></div>
+<div class="parada"><b>Viña Poniente</b></div>
+</div>
+<h2>Esta noche</h2>
+<div class="grid">
+<div class="card"><div class="tramo"><span>Jue</span><b>17</b><span>20:00</span></div><div class="cbody"><div class="meta"><span>Fonda</span><span>Playa Ancha</span></div><h3 style="margin:8px 0 5px">Fonda Alejo Barrios</h3><p style="margin:0;font-size:13px;color:var(--dim)">Parque Alejo Barrios · liberada</p></div></div>
+<div class="card"><div class="tramo t2"><span>Sáb</span><b>19</b><span>22:00</span></div><div class="cbody"><div class="meta"><span>Club</span><span>Barrio Puerto</span></div><h3 style="margin:8px 0 5px">Quebrada Soundsystem</h3><p style="margin:0;font-size:13px;color:var(--dim)">Emporio Echaurren · desde $8.000</p></div></div>
+<div class="card"><div class="tramo t3"><span>Dom</span><b>18</b><span>21:00</span></div><div class="cbody"><div class="meta"><span>En vivo</span><span>Plan</span></div><h3 style="margin:8px 0 5px">Mad Professor</h3><p style="margin:0;font-size:13px;color:var(--dim)">Trotamundos · desde $12.000</p></div></div>
+</div>
+<h2>Cerca de ti</h2>
+<div class="grid">
+<div class="vn"><div class="meta"><span>Bar</span><span style="color:var(--valpo)">Subida Ecuador</span></div><h3 style="margin:9px 0 4px">Cassot Bar</h3><p style="margin:0;font-size:13px;color:var(--dim)">Avenida Ecuador 110 · 4 min a pie</p><a class="ig" href="#">Instagram ↗</a></div>
+<div class="vn v2"><div class="meta"><span>Pub</span><span style="color:var(--vina)">Viña Poniente</span></div><h3 style="margin:9px 0 4px">Psiquis Bar</h3><p style="margin:0;font-size:13px;color:var(--dim)">5½ Poniente 277</p><a class="ig" href="#" style="color:var(--vina)">Instagram ↗</a></div>
+<div class="vn v3"><div class="meta"><span>Bar</span><span style="color:var(--quilpue)">Quilpué Centro</span></div><h3 style="margin:9px 0 4px">El Parque</h3><p style="margin:0;font-size:13px;color:var(--dim)">David Cortés 836</p><a class="ig" href="#" style="color:var(--quilpue)">Instagram ↗</a></div>
+</div></div>
+<div class="note">Prototipo de diseño · no es producción</div>
+</body></html>

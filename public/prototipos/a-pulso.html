@@ -1,0 +1,56 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>Dirección A · Pulso</title>
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="/prototipos/_base.css">
+<style>
+:root{--bg:#07080b;--sf:#101319;--tx:#eef0f4;--dim:#8d93a1;--valpo:#ff7a4d;--vina:#3fd6cc;--quilpue:#9ede6a}
+body{background:var(--bg);color:var(--tx);
+ background-image:radial-gradient(900px 420px at 12% -8%,rgba(255,122,77,.16),transparent 62%),radial-gradient(700px 380px at 92% 4%,rgba(63,214,204,.11),transparent 60%)}
+.bar{border-bottom:1px solid #1b2028}
+.mark{display:inline-flex;align-items:center;gap:9px;font-weight:700;letter-spacing:.02em;text-transform:none;font-size:17px}
+.sig{width:13px;height:13px;border-radius:50%;background:var(--valpo);position:relative}
+.sig::after{content:'';position:absolute;inset:-6px;border-radius:50%;border:1.5px solid var(--valpo);opacity:.6;animation:on 2.4s ease-out infinite}
+@keyframes on{0%{transform:scale(.6);opacity:.75}100%{transform:scale(1.5);opacity:0}}
+h1{font-size:clamp(2.6rem,9vw,4.4rem);font-weight:800}
+h1 em{font-style:normal;color:var(--valpo)}
+.now{display:inline-flex;align-items:center;gap:9px;padding:7px 15px;border-radius:999px;border:1px solid rgba(255,122,77,.45);background:rgba(255,122,77,.09);font-size:12px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:20px}
+.card{position:relative;border-radius:14px;overflow:hidden;background:var(--sf);border:1px solid #1c212b;transition:transform .3s,border-color .3s}
+.card:hover{transform:translateY(-4px);border-color:rgba(255,122,77,.5)}
+.art{aspect-ratio:4/5;position:relative;display:flex;flex-direction:column;justify-content:flex-end;padding:16px;
+ background:linear-gradient(200deg,#2a1109,#6b2412 55%,#120a08)}
+.art.t2{background:linear-gradient(160deg,#052a2c,#0d5a58 58%,#06181c)}
+.art.t3{background:linear-gradient(220deg,#191033,#3c2a70 55%,#0d0a1c)}
+.art::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(115deg,rgba(255,255,255,.05) 0 1px,transparent 1px 13px)}
+.kind{position:absolute;top:14px;left:14px;font-size:10px;letter-spacing:.17em;text-transform:uppercase;padding:5px 10px;border-radius:999px;background:rgba(0,0,0,.55);backdrop-filter:blur(6px)}
+.pulse{position:absolute;top:14px;right:14px;display:flex;align-items:center;gap:6px;font-size:10px;letter-spacing:.12em;text-transform:uppercase;padding:5px 10px;border-radius:999px;background:rgba(255,122,77,.9);color:#140803;font-weight:700}
+.pulse span{width:6px;height:6px;border-radius:50%;background:#140803;animation:bl 1.3s infinite}
+@keyframes bl{50%{opacity:.25}}
+.art h3{font-size:1.5rem;position:relative;text-shadow:0 2px 18px rgba(0,0,0,.6)}
+.art p{margin:0;font-size:12px;opacity:.82;position:relative}
+.body{padding:14px 16px 16px}
+.price{font-weight:700;font-size:1rem}
+.vn{border-left:3px solid var(--valpo);border-radius:0 12px 12px 0;background:var(--sf);border-top:1px solid #1c212b;border-right:1px solid #1c212b;border-bottom:1px solid #1c212b;padding:16px}
+.vn.v2{border-left-color:var(--vina)}.vn.v3{border-left-color:var(--quilpue)}
+.ig{display:inline-block;margin-top:11px;font-size:12px;color:var(--valpo);text-decoration:none;border-bottom:1px solid currentColor}
+</style></head><body>
+<div class="wrap">
+<div class="bar"><span class="mark"><i class="sig"></i>NOCHE</span><span style="color:var(--dim)">Dirección A · Pulso</span></div>
+<div style="padding:34px 0 0">
+<div class="now"><i class="sig" style="width:8px;height:8px"></i>Ahora · martes 01:10</div>
+<h1>La noche <em>está corriendo.</em></h1>
+<p class="lead">Lo que está pasando ahora mismo en la región, con lo que reporta la gente que está ahí.</p>
+</div>
+<h2>Esta noche</h2>
+<div class="grid">
+<div class="card"><div class="art"><span class="kind">Fonda</span><span class="pulse"><span></span>Prendido</span><h3>Fonda Alejo Barrios</h3><p>Playa Ancha · Valparaíso</p></div><div class="body"><div class="meta"><span>Jue 17 · 20:00</span><span>4 reportes</span></div><p class="price" style="margin:9px 0 0">Entrada liberada</p></div></div>
+<div class="card"><div class="art t2"><span class="kind">Club</span><h3>Quebrada Soundsystem</h3><p>Emporio Echaurren · Barrio Puerto</p></div><div class="body"><div class="meta"><span>Sáb 19 · 22:00</span><span>Curaduría</span></div><p class="price" style="margin:9px 0 0">Desde $8.000</p></div></div>
+<div class="card"><div class="art t3"><span class="kind">En vivo</span><h3>Mad Professor</h3><p>Trotamundos · Plan</p></div><div class="body"><div class="meta"><span>Dom 18 oct · 21:00</span><span>Curaduría</span></div><p class="price" style="margin:9px 0 0">Desde $12.000</p></div></div>
+</div>
+<h2>Lugares para salir</h2>
+<div class="grid">
+<div class="vn"><div class="meta"><span>Bar</span><span style="color:var(--valpo)">Subida Ecuador</span></div><h3 style="margin:9px 0 4px">Cassot Bar</h3><p style="margin:0;font-size:13px;color:var(--dim)">Avenida Ecuador 110</p><a class="ig" href="#">Instagram ↗</a></div>
+<div class="vn v2"><div class="meta"><span>Pub</span><span style="color:var(--vina)">Viña Poniente</span></div><h3 style="margin:9px 0 4px">Psiquis Bar</h3><p style="margin:0;font-size:13px;color:var(--dim)">5½ Poniente 277</p><a class="ig" href="#" style="color:var(--vina)">Instagram ↗</a></div>
+<div class="vn v3"><div class="meta"><span>Bar</span><span style="color:var(--quilpue)">Quilpué Centro</span></div><h3 style="margin:9px 0 4px">El Parque</h3><p style="margin:0;font-size:13px;color:var(--dim)">David Cortés 836</p><a class="ig" href="#" style="color:var(--quilpue)">Instagram ↗</a></div>
+</div></div>
+<div class="note">Prototipo de diseño · no es producción</div>
+</body></html>

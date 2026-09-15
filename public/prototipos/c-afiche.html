@@ -1,0 +1,57 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>Dirección C · Afiche</title>
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="/prototipos/_base.css">
+<style>
+:root{--bg:#0d0c0a;--paper:#f2ece0;--ink:#15130f;--tx:#f2ece0;--dim:#9b9384;--valpo:#e8452f;--vina:#1f8f86;--quilpue:#6f8f2a}
+body{background:var(--bg);color:var(--tx)}
+/* Grano de papel, no ruido: textura controlada */
+body::before{content:'';position:fixed;inset:0;pointer-events:none;opacity:.05;
+ background-image:repeating-conic-gradient(#fff 0% 25%,transparent 0% 50%);background-size:3px 3px}
+.wrap{position:relative}
+.bar{border-bottom:2px solid var(--valpo)}
+.mark{font-weight:900;font-size:19px;letter-spacing:-.04em;text-transform:uppercase}
+h1{font-size:clamp(2.9rem,11vw,5.4rem);font-weight:900;text-transform:uppercase;letter-spacing:-.05em}
+h1 span{display:block}
+h1 .neg{background:var(--valpo);color:var(--bg);padding:0 .12em;transform:rotate(-1.1deg);display:inline-block}
+h2{font-weight:900;text-transform:uppercase;letter-spacing:-.03em;border-bottom:2px solid var(--valpo);padding-bottom:7px}
+/* Rejilla asimétrica: la primera tarjeta manda */
+.afiches{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}
+.afiches .a1{grid-column:span 2}
+@media(max-width:620px){.afiches .a1{grid-column:span 1}}
+.af{background:var(--paper);color:var(--ink);border-radius:2px;overflow:hidden;position:relative;transition:transform .25s}
+.af:hover{transform:rotate(-.7deg) scale(1.012)}
+.tinta{padding:20px;background:var(--valpo);color:var(--paper);position:relative;min-height:160px;display:flex;flex-direction:column;justify-content:space-between}
+.tinta.t2{background:var(--vina)}.tinta.t3{background:var(--quilpue);color:#12160a}
+.tinta::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,rgba(0,0,0,.09) 0 2px,transparent 2px 9px);mix-blend-mode:multiply}
+.tinta .tipo{font-size:10px;letter-spacing:.24em;text-transform:uppercase;position:relative}
+.tinta .tit{font-size:clamp(1.5rem,4.6vw,2.2rem);font-weight:900;text-transform:uppercase;letter-spacing:-.035em;line-height:.92;position:relative}
+.datos{padding:13px 16px 16px;display:flex;justify-content:space-between;align-items:flex-end;gap:10px}
+.datos b{font-size:1.02rem;display:block}
+.datos small{font-size:11px;text-transform:uppercase;letter-spacing:.11em;opacity:.65}
+.vn{background:transparent;border:1.5px solid #2c2822;padding:15px;border-radius:2px}
+.vn h3{text-transform:uppercase;font-weight:900;letter-spacing:-.025em;font-size:1.12rem}
+.sello{display:inline-block;font-size:10px;letter-spacing:.17em;text-transform:uppercase;border:1.5px solid var(--valpo);color:var(--valpo);padding:3px 8px;transform:rotate(-1.4deg)}
+.sello.s2{border-color:var(--vina);color:var(--vina)}.sello.s3{border-color:var(--quilpue);color:var(--quilpue)}
+.ig{display:inline-block;margin-top:10px;font-size:12px;color:var(--tx);text-decoration:none;border-bottom:1.5px solid var(--valpo)}
+</style></head><body>
+<div class="wrap">
+<div class="bar"><span class="mark">NOCHE ✱ VALPO</span><span style="color:var(--dim)">Dirección C · Afiche</span></div>
+<div style="padding:32px 0 0">
+<h1><span>¿Dónde</span><span class="neg">salimos</span><span>hoy?</span></h1>
+<p class="lead">Carteles de la noche porteña. Lo que hay, dónde y cuánto.</p>
+</div>
+<h2>Esta noche</h2>
+<div class="afiches">
+<div class="af a1"><div class="tinta"><span class="tipo">Fonda · 17 sept</span><span class="tit">Fonda Alejo Barrios</span></div><div class="datos"><div><b>Entrada liberada</b><small>Parque Alejo Barrios · Playa Ancha</small></div><span class="sello">Hoy</span></div></div>
+<div class="af"><div class="tinta t2"><span class="tipo">Club · 19 sept</span><span class="tit">Quebrada Soundsystem</span></div><div class="datos"><div><b>Desde $8.000</b><small>Emporio Echaurren</small></div><span class="sello s2">22:00</span></div></div>
+<div class="af"><div class="tinta t3"><span class="tipo">En vivo · 18 oct</span><span class="tit">Mad Professor</span></div><div class="datos"><div><b>Desde $12.000</b><small>Trotamundos · Plan</small></div><span class="sello s3">21:00</span></div></div>
+</div>
+<h2>Lugares</h2>
+<div class="grid">
+<div class="vn"><span class="sello">Subida Ecuador</span><h3 style="margin:11px 0 4px">Cassot Bar</h3><p style="margin:0;font-size:13px;color:var(--dim)">Avenida Ecuador 110 · bar</p><a class="ig" href="#">Instagram ↗</a></div>
+<div class="vn"><span class="sello s2">Viña Poniente</span><h3 style="margin:11px 0 4px">Psiquis Bar</h3><p style="margin:0;font-size:13px;color:var(--dim)">5½ Poniente 277 · bar</p><a class="ig" href="#">Instagram ↗</a></div>
+<div class="vn"><span class="sello s3">Quilpué Centro</span><h3 style="margin:11px 0 4px">El Parque</h3><p style="margin:0;font-size:13px;color:var(--dim)">David Cortés 836 · bar</p><a class="ig" href="#">Instagram ↗</a></div>
+</div></div>
+<div class="note">Prototipo de diseño · no es producción</div>
+</body></html>
