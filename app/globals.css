@@ -2463,3 +2463,11 @@ textarea::placeholder {
     to { opacity: 1; transform: none; }
   }
 }
+
+/* En el teléfono el encabezado no tiene que llevarlo todo: la barra inferior ya
+   lleva Explorar, Mapa y Lugares, y el encabezado dejaba la página 61px más
+   ancha que la pantalla. */
+@media (max-width: 767px) {
+  .site-header nav a:not(.nav-publish) { display: none; }
+  .site-header nav { gap: 0; }
+}
