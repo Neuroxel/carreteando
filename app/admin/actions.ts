@@ -57,6 +57,23 @@ export async function importEditorial() {
   redirect(`/admin?status=${saved && !saved.error ? 'imported' : 'failed'}`);
 }
 
+/** The owner should never have to wait for a cron to see whether a source works. */
+export async function runIngestion() {
+  if (!(await isAdmin())) redirect('/admin');
+  const db = getAdminDb();
+  if (!db) redirect('/admin?status=failed');
+  const { dispatchSources } = await import('../../lib/sources/dispatcher');
+  let status = 'failed';
+  try {
+    const result = await dispatchSources(db, 6);
+    status = result.ran ? `ingesta-${result.ran}` : 'ingesta-al-dia';
+  } catch {
+    status = 'failed';
+  }
+  revalidatePath('/admin');
+  redirect(`/admin?status=${status}`);
+}
+
 export async function reviewVenue(id: string, revision: number, action: string, form: FormData) {
   if (!(await isAdmin())) redirect('/admin');
   let status = 'invalid';

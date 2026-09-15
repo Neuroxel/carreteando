@@ -1,7 +1,7 @@
 import sources from '../../data/sources.json';
 import { isAdmin } from '../../lib/admin-session';
 import { getAdminDb } from '../../lib/server-db';
-import { login, logout, review, reviewVenue, importEditorial } from './actions';
+import { login, logout, review, reviewVenue, importEditorial, runIngestion } from './actions';
 import { CATEGORIAS, CIUDADES } from '../../lib/types';
 import { TIPOS_LUGAR } from '../../lib/venues';
 import { safeWebUrl } from '../../lib/safety';
@@ -163,6 +163,105 @@ function Item({ row, kind, events }: { row: Row; kind: 'event' | 'inbox'; events
   );
 }
 
+type SourceRow = Record<string, unknown>;
+/**
+ * Health is a judgement, not a column: a source that answers happily every night
+ * and has never produced an event is not "ok", it is a source we should stop
+ * paying attention to.
+ */
+function sourceHealth(row: SourceRow) {
+  const fails = Number(row.consecutive_failures || 0);
+  const checked = row.last_checked_at ? String(row.last_checked_at) : null;
+  const staleAfter = (Number(row.refresh_hours || 24) + 24) * 3600_000;
+  if (!row.active) return { label: 'pausada', tone: 'neutral' };
+  if (fails >= 3) return { label: 'caída', tone: 'bad' };
+  if (fails > 0) return { label: 'degradada', tone: 'warn' };
+  if (!checked) return { label: 'sin revisar', tone: 'neutral' };
+  if (Date.now() - Date.parse(checked) > staleAfter) return { label: 'atrasada', tone: 'warn' };
+  if (Number(row.unique_event_count || 0) === 0) return { label: 'sin resultados', tone: 'warn' };
+  return { label: 'al día', tone: 'good' };
+}
+function whenLabel(value: unknown) {
+  if (!value) return '—';
+  const time = Date.parse(String(value));
+  if (Number.isNaN(time)) return '—';
+  const minutes = Math.round((Date.now() - time) / 60000);
+  if (minutes < 0) return `en ${Math.abs(minutes) < 90 ? `${Math.abs(minutes)} min` : `${Math.round(Math.abs(minutes) / 60)} h`}`;
+  if (minutes < 90) return `hace ${minutes} min`;
+  if (minutes < 2880) return `hace ${Math.round(minutes / 60)} h`;
+  return `hace ${Math.round(minutes / 1440)} días`;
+}
+function SourceHealth({ rows, error }: { rows: SourceRow[]; error: boolean }) {
+  if (error)
+    return <p role="alert">No se pudo leer el registro de fuentes.</p>;
+  if (!rows.length)
+    return (
+      <p>
+        Todavía no hay fuentes registradas. Se registran solas en la primera revisión.
+      </p>
+    );
+  const problemas = rows.filter((r) => ['caída', 'degradada', 'sin resultados', 'atrasada'].includes(sourceHealth(r).label));
+  return (
+    <>
+      <p>
+        {rows.length} fuentes registradas
+        {problemas.length ? ` · ${problemas.length} necesitan atención` : ' · todas al día'}.
+        Los conteos son los de la última revisión de cada fuente, no acumulados.
+      </p>
+      <div className="table-scroll">
+        <table className="admin-table source-table">
+          <caption className="visually-hidden">Estado de las fuentes automáticas</caption>
+          <thead>
+            <tr>
+              <th scope="col">Fuente</th>
+              <th scope="col">Comuna</th>
+              <th scope="col">Estado</th>
+              <th scope="col">Revisada</th>
+              <th scope="col">Con éxito</th>
+              <th scope="col">Próxima</th>
+              <th scope="col">Ítems</th>
+              <th scope="col">Eventos</th>
+              <th scope="col">Duplicados</th>
+              <th scope="col">Sin leer</th>
+              <th scope="col">Costo</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => {
+              const health = sourceHealth(row);
+              return (
+                <tr key={String(row.id)}>
+                  <th scope="row">
+                    <a href={String(row.public_url)} rel="noreferrer noopener nofollow" target="_blank">
+                      {String(row.name)}
+                    </a>
+                    <small>
+                      {String(row.source_type)} ·{' '}
+                      {row.trust === 'auto' ? 'puede publicar sola' : 'siempre a revisión'}
+                    </small>
+                    {row.last_error ? <small className="source-error">último error: {String(row.last_error)}</small> : null}
+                  </th>
+                  <td>{String(row.commune || '—')}</td>
+                  <td>
+                    <span className={`source-state source-${health.tone}`}>{health.label}</span>
+                  </td>
+                  <td>{whenLabel(row.last_checked_at)}</td>
+                  <td>{whenLabel(row.last_success_at)}</td>
+                  <td>{whenLabel(row.next_check_at)}</td>
+                  <td>{Number(row.items_found || 0)}</td>
+                  <td>{Number(row.unique_event_count || 0)}</td>
+                  <td>{Number(row.duplicate_count || 0)}</td>
+                  <td>{Number(row.parse_failure_count || 0)}</td>
+                  <td>{Number(row.cost_clp || 0) === 0 ? 'sin costo' : `$${Number(row.cost_clp)}`}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+}
 function VenueItem({ row }: { row: Row }) {
   const fields: [string, string][] = [
     ['name', 'Nombre'],
@@ -278,7 +377,7 @@ export default async function Admin({
       </section>
     );
   const db = getAdminDb();
-  const [queue, events, audit, metrics, venues] = await Promise.all([
+  const [queue, events, audit, metrics, venues, sourceRows] = await Promise.all([
     db
       ?.from('community_inbox')
       .select('id,kind,payload,status,revision,reviewed_at')
@@ -307,6 +406,14 @@ export default async function Admin({
       .order('moderation_status')
       .order('name')
       .limit(400),
+    db
+      ?.from('event_sources')
+      .select(
+        'id,name,source_type,commune,trust,active,public_url,refresh_hours,last_checked_at,last_success_at,last_failure_at,last_error,next_check_at,items_found,candidate_count,unique_event_count,duplicate_count,parse_failure_count,consecutive_failures,cost_clp',
+      )
+      .order('commune')
+      .order('name')
+      .limit(100),
   ]);
   const failed = !db || queue?.error || events?.error || audit?.error;
   const list = events?.data || [];
@@ -326,7 +433,12 @@ export default async function Admin({
       'No se guardó. Revisa los campos del evento: la zona es obligatoria, la descripción necesita al menos 20 caracteres, y la fecha debe ser de hoy en adelante.',
     unavailable: 'No se guardó. No hay conexión con la base de datos. No tomes decisiones hasta recuperarla.',
     failed: 'No se guardó. Puede existir un duplicado o un problema de conexión.',
+    'ingesta-al-dia': 'Ninguna fuente tocaba todavía. Cada una tiene su propio ritmo de revisión.',
   };
+  const ingesta = String(params.status || '').match(/^ingesta-(\d+)$/);
+  const statusText = ingesta
+    ? `Se revisaron ${ingesta[1]} fuentes. El detalle quedó en la tabla de fuentes automáticas.`
+    : statuses[String(params.status)];
   return (
     <section className="container page-section admin-page">
       <p className="eyebrow">REVISIÓN PRIVADA</p>
@@ -339,8 +451,8 @@ export default async function Admin({
         mostrarse aunque nadie abra esta página. Aprobar es una decisión explícita; guardar una
         corrección conserva el estado de publicación.
       </p>
-      {params.status && statuses[String(params.status)] && (
-        <p role="status">{statuses[String(params.status)]}</p>
+      {params.status && statusText && (
+        <p role="status">{statusText}</p>
       )}
       {failed ? (
         <p role="alert">
@@ -389,10 +501,17 @@ export default async function Admin({
               </details>
             </>
           )}
-          <h2>Cobertura y fuentes</h2>
-          <form action={importEditorial}>
-            <button className="button button-outline">Importar selección editorial revisada</button>
-          </form>
+          <h2>Fuentes automáticas</h2>
+          <div className="admin-actions">
+            <form action={runIngestion}>
+              <button className="button button-primary">Revisar fuentes ahora</button>
+            </form>
+            <form action={importEditorial}>
+              <button className="button button-outline">Importar selección editorial revisada</button>
+            </form>
+          </div>
+          <SourceHealth rows={sourceRows?.data || []} error={Boolean(sourceRows?.error)} />
+          <h2>Cobertura por recinto</h2>
           <p>
             Los conteos son eventos aprobados vigentes por recinto. Las tasas de error sin muestra
             suficiente se mantienen sin determinar; no significan cero errores.

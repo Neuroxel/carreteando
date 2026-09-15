@@ -12,6 +12,7 @@ import {
   RawPost,
 } from '../../../../lib/ingestion';
 import { editorialRows } from '../../../../lib/editorial-feed';
+import { dispatchSources } from '../../../../lib/sources/dispatcher';
 import { parseTimestamp, toChileDateString } from '../../../../lib/event-extraction';
 export const maxDuration = 300;
 export const dynamic = 'force-dynamic';
@@ -113,8 +114,19 @@ export async function GET(request: Request) {
       metrics.editorial_inserted = imported.data?.length || 0;
       metrics.public_events_added = metrics.editorial_inserted;
     }
+    // The agenda is no longer only what somebody typed into a JSON file: the
+    // daily cron dispatches whichever real sources are due.
+    const dispatch = await dispatchSources(db, 6);
+    metrics.sources_due = dispatch.due;
+    metrics.sources_ran = dispatch.ran;
+    metrics.sources_ok = dispatch.reports.filter((r) => r.ok).length;
+    metrics.adapter_events_published = dispatch.reports.reduce((n, r) => n + r.newEvents, 0);
+    metrics.adapter_events_queued = dispatch.reports.reduce((n, r) => n + r.queued, 0);
+    metrics.adapter_duplicates = dispatch.reports.reduce((n, r) => n + r.duplicates, 0);
+    metrics.adapter_parse_failures = dispatch.reports.reduce((n, r) => n + r.parseFailures, 0);
+    metrics.adapter_reports = dispatch.reports;
     if (paused) {
-      metrics.mode = 'editorial_import_only';
+      metrics.mode = dispatch.ran ? 'adaptadores_y_editorial' : 'editorial_import_only';
       metrics.apify_cost_usd = 0;
       const finished = await db
         .from('ingestion_runs')
