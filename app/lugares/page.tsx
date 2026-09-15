@@ -1,5 +1,8 @@
 import Link from 'next/link';
 import VenueCard from '../../components/VenueCard';
+import VenueMap from '../../components/VenueMap';
+import { puntosDeMapa } from '../../lib/map';
+import { getChileTodayStr } from '../../lib/events';
 import { getPublicVenues } from '../../lib/server-venues';
 import { getPublicEvents } from '../../lib/server-events';
 import { TIPOS_LUGAR } from '../../lib/venues';
@@ -17,12 +20,21 @@ export default async function Lugares({
 }) {
   const params = await searchParams;
   const tipo = typeof params.tipo === 'string' ? params.tipo : 'todos';
+  const vista = params.vista === 'mapa' ? 'mapa' : 'lista';
   const [venues, events] = await Promise.all([getPublicVenues(), getPublicEvents()]);
   const conteo = new Map<string, number>();
   for (const e of events.events) if (e.lugar) conteo.set(e.lugar, (conteo.get(e.lugar) || 0) + 1);
   const disponibles = TIPOS_LUGAR.filter((t) => venues.lugares.some((l) => l.tipo === t.value));
   const lista = tipo === 'todos' ? venues.lugares : venues.lugares.filter((l) => l.tipo === tipo);
   const ciudades = [...new Set(lista.map((l) => l.ciudad))];
+  const puntos = puntosDeMapa(lista, events.events, getChileTodayStr());
+  const enlaceVista = (v: 'lista' | 'mapa') => {
+    const q = new URLSearchParams();
+    if (tipo !== 'todos') q.set('tipo', tipo);
+    if (v === 'mapa') q.set('vista', 'mapa');
+    const cadena = q.toString();
+    return cadena ? `/lugares?${cadena}` : '/lugares';
+  };
   return (
     <section className="container page-section">
       <p className="eyebrow">NO SÓLO EVENTOS</p>
@@ -59,7 +71,39 @@ export default async function Lugares({
           </Link>
         ))}
       </div>
-      {ciudades.map((c) => (
+      <div className="vista-toggle" role="group" aria-label="Cómo ver los lugares">
+        <Link
+          href={enlaceVista('lista')}
+          className={`vista-opcion ${vista === 'lista' ? 'activa' : ''}`}
+          aria-current={vista === 'lista' ? 'true' : undefined}
+        >
+          Lista
+        </Link>
+        <Link
+          href={enlaceVista('mapa')}
+          className={`vista-opcion ${vista === 'mapa' ? 'activa' : ''}`}
+          aria-current={vista === 'mapa' ? 'true' : undefined}
+        >
+          Mapa
+        </Link>
+      </div>
+      {vista === 'mapa' && (
+        <>
+          {puntos.length ? (
+            <VenueMap puntos={puntos} />
+          ) : (
+            <p className="empty-state">
+              Ninguno de estos lugares tiene todavía una ubicación verificada.
+            </p>
+          )}
+          <p className="trust-note">
+            {puntos.length} de {lista.length} lugares con coordenada verificada. Los demás siguen en
+            la lista: preferimos no ponerlos en el mapa antes que dejarlos en la esquina equivocada.
+          </p>
+        </>
+      )}
+      {vista === 'lista' &&
+        ciudades.map((c) => (
         <div key={c} className="venue-block">
           <div className="section-heading">
             <h2>
@@ -80,7 +124,7 @@ export default async function Lugares({
           </div>
         </div>
       ))}
-      {venues.status === 'ok' && lista.length === 0 && (
+      {vista === 'lista' && venues.status === 'ok' && lista.length === 0 && (
         <div className="empty-state">
           <p>Todavía no tenemos lugares revisados con ese filtro.</p>
           <div className="actions">

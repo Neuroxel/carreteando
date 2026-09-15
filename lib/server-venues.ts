@@ -3,7 +3,7 @@ import { cache } from 'react';
 import { dbRowToLugar, Lugar, VenueRow } from './venues';
 export type VenuesResult = { status: 'ok'; lugares: Lugar[] } | { status: 'error'; lugares: [] };
 const COLUMNS =
-  'slug,name,city,zone,address,venue_type,tags,description_short,official_url,instagram_url,facebook_url,tiktok_url,contact_url,calendar_url,image_url,source_type,source_url,last_verified_at,is_active,moderation_status,status';
+  'slug,name,city,zone,address,venue_type,tags,description_short,official_url,instagram_url,facebook_url,tiktok_url,contact_url,calendar_url,image_url,source_type,source_url,last_verified_at,is_active,moderation_status,status,latitude,longitude,geocode_accuracy';
 async function readVenues(slug?: string): Promise<VenuesResult> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key =

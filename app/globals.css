@@ -2246,3 +2246,93 @@ textarea::placeholder {
   .source-warn { color: #e0b15c; }
   .source-bad { color: #ff8a80; }
 }
+
+/* Lista o mapa: la misma pregunta, dos formas de responderla. */
+.vista-toggle {
+  display: inline-flex;
+  gap: 0;
+  margin: 1.25rem 0 1.5rem;
+  border: 1px solid var(--borde, rgba(128, 128, 128, 0.35));
+  border-radius: 999px;
+  overflow: hidden;
+}
+.vista-opcion {
+  padding: 0.5rem 1.35rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  color: inherit;
+  transition: background-color 0.18s ease, color 0.18s ease;
+}
+.vista-opcion.activa {
+  background: var(--tinta, #14161c);
+  color: var(--papel, #f7f5f0);
+}
+.mapa-bloque {
+  margin-bottom: 1.25rem;
+}
+.mapa-lienzo {
+  height: min(72vh, 620px);
+  min-height: 380px;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #11131a;
+  border: 1px solid var(--borde, rgba(128, 128, 128, 0.35));
+  display: grid;
+  place-items: center;
+}
+.mapa-cargando {
+  color: rgba(247, 245, 240, 0.72);
+  font-size: 0.9375rem;
+}
+.mapa-punto {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--acento, #9aa3b2);
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+  vertical-align: -3px;
+}
+.punto-lugar { opacity: 0.6; }
+.punto-evento { box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.22), 0 1px 4px rgba(0, 0, 0, 0.5); }
+.punto-fonda { border-color: #ffd166; }
+.punto-vivo { border-color: #ff5d3b; animation: latido 2.4s ease-in-out infinite; }
+@keyframes latido {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 93, 59, 0.55); }
+  50% { box-shadow: 0 0 0 7px rgba(255, 93, 59, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .punto-vivo { animation: none; }
+}
+.mapa-leyenda {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1.1rem;
+  padding: 0.75rem 0 0;
+  margin: 0;
+  font-size: 0.875rem;
+}
+.mapa-leyenda li {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+.mapa-ficha { font-size: 0.9375rem; line-height: 1.45; }
+.mapa-ficha h3 { margin: 0.1rem 0 0.4rem; font-size: 1.0625rem; }
+.mapa-ficha h3 a { text-decoration: none; color: inherit; }
+.mapa-ficha-tipo {
+  margin: 0;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+.mapa-ficha-vivo { margin: 0 0 0.4rem; font-weight: 600; color: #c2410c; }
+.mapa-ficha-noche { margin: 0 0 0.4rem; padding-left: 1.05rem; }
+.mapa-ficha-sin { margin: 0 0 0.35rem; opacity: 0.75; font-size: 0.875rem; }
+.mapa-ficha-acciones { display: flex; flex-wrap: wrap; gap: 0.75rem; margin: 0.5rem 0 0; }
+.leaflet-popup-content { margin: 0.85rem 1rem; }

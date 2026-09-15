@@ -47,6 +47,10 @@ export interface Lugar {
   fuente_tipo: string;
   fuente_url: string | null;
   ultima_revision: string | null;
+  /** Null unless a licensed geocoder resolved the address precisely enough. */
+  lat: number | null;
+  lng: number | null;
+  precision_mapa: 'exacta' | 'calle' | null;
 }
 export type VenueRow = Record<string, unknown>;
 const str = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : null);
@@ -80,7 +84,23 @@ export function dbRowToLugar(row: VenueRow): Lugar | null {
     fuente_tipo: str(row.source_type) || 'fuente-publica',
     fuente_url: safeWebUrl(row.source_url),
     ultima_revision: str(row.last_verified_at),
+    ...coordenada(row),
   };
+}
+// A point we are not sure about is worse than no point: it sends somebody to the
+// wrong corner at one in the morning.
+function coordenada(row: VenueRow) {
+  const lat = typeof row.latitude === 'number' ? row.latitude : null;
+  const lng = typeof row.longitude === 'number' ? row.longitude : null;
+  const precision =
+    row.geocode_accuracy === 'exacta' || row.geocode_accuracy === 'calle'
+      ? (row.geocode_accuracy as 'exacta' | 'calle')
+      : null;
+  const dentroDeLaRegion =
+    lat !== null && lng !== null && lat >= -34 && lat <= -32 && lng >= -72 && lng <= -70.5;
+  return dentroDeLaRegion && precision
+    ? { lat, lng, precision_mapa: precision }
+    : { lat: null, lng: null, precision_mapa: null };
 }
 export function zonasDe(lugares: Lugar[]) {
   const map = new Map<string, { zona: string; ciudad: string; lugares: Lugar[] }>();
