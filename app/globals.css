@@ -2358,3 +2358,108 @@ textarea::placeholder {
   color: #f4f1ea;
   border-bottom-color: rgba(255, 255, 255, 0.18);
 }
+
+/* La ruta de la noche: zonas encadenadas, no una grilla más. */
+.zone-rail-block { margin: 2.5rem auto 1rem; }
+.zone-rail {
+  list-style: none;
+  display: flex;
+  gap: 0;
+  margin: 0.5rem 0 0;
+  padding: 0 0 0.75rem;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+.zone-rail > li { scroll-snap-align: start; flex: 0 0 auto; position: relative; }
+/* El hilo que une las paradas. */
+.zone-rail > li:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: calc(50% + 0.6rem);
+  right: calc(-50% + 0.6rem);
+  top: 1.45rem;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.22;
+}
+.zone-stop {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 10.5rem;
+  max-width: 13rem;
+  padding: 0.9rem 1.1rem 1rem;
+  text-decoration: none;
+  color: inherit;
+  border-radius: 12px;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+.zone-stop:hover, .zone-stop:focus-visible { background: rgba(127, 127, 127, 0.1); }
+.zone-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--acento, #9aa3b2);
+  box-shadow: 0 0 0 4px rgba(127, 127, 127, 0.14);
+  margin-bottom: 0.45rem;
+}
+.zone-stop-viva .zone-dot { box-shadow: 0 0 0 4px color-mix(in srgb, var(--acento) 35%, transparent); }
+.zone-name { font-weight: 650; font-size: 1.0625rem; line-height: 1.25; }
+.zone-meta { font-size: 0.8125rem; opacity: 0.72; }
+.zone-hoy {
+  margin-top: 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--acento, inherit);
+}
+.zone-rail-pie { display: flex; gap: 1.25rem; margin: 0.25rem 0 0; font-size: 0.9375rem; }
+
+/* Navegación inferior: en el teléfono la noche se navega con el pulgar. */
+.bottom-nav { display: none; }
+@media (max-width: 767px) {
+  .bottom-nav {
+    position: fixed;
+    inset: auto 0 0 0;
+    z-index: 40;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    padding: 0.35rem 0 max(0.35rem, env(safe-area-inset-bottom));
+    background: color-mix(in srgb, var(--fondo, #0c0d11) 92%, transparent);
+    backdrop-filter: blur(12px);
+    border-top: 1px solid rgba(127, 127, 127, 0.28);
+  }
+  .bottom-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.2rem;
+    padding: 0.4rem 0.25rem;
+    font-size: 0.6875rem;
+    letter-spacing: 0.04em;
+    text-decoration: none;
+    color: inherit;
+    opacity: 0.62;
+    transition: opacity 0.18s ease, color 0.18s ease;
+  }
+  .bottom-nav-item svg { width: 22px; height: 22px; }
+  .bottom-nav-item.activo { opacity: 1; color: var(--acento-marca, #ff5d3b); }
+  body { padding-bottom: 4.25rem; }
+}
+
+/* Movimiento: entra desde un estado visible, nunca se queda esperando. */
+@media (prefers-reduced-motion: no-preference) {
+  .reveal {
+    animation: subir 0.5s cubic-bezier(0.22, 0.8, 0.3, 1) backwards;
+    animation-delay: calc(var(--i, 0) * 45ms);
+  }
+  @keyframes subir {
+    from { opacity: 0.001; transform: translateY(10px); }
+    to { opacity: 1; transform: none; }
+  }
+}

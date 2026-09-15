@@ -10,6 +10,7 @@ export default function Navbar() {
           <Link href="/buscar">Explorar</Link>
           <Link href="/buscar?fecha=finde">Este finde</Link>
           <Link href="/lugares">Lugares</Link>
+          <Link href="/lugares?vista=mapa">Mapa</Link>
           <Link href="/publicar" className="nav-publish">
             Publicar <span aria-hidden="true">↗</span>
           </Link>

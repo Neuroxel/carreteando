@@ -9,6 +9,7 @@ import EventCard from './EventCard';
 import VenueCard from './VenueCard';
 import { getPublicVenues } from '../lib/server-venues';
 import { buscarLugares, buscarZonas, zonaSlug } from '../lib/venues';
+import ZoneRail from './ZoneRail';
 const SHORT: Record<string, string> = { Valparaíso: 'Valpo', 'Viña del Mar': 'Viña' };
 export default async function Explore({
   params,
@@ -113,6 +114,9 @@ export default async function Explore({
             </Link>
           </div>
         </section>
+      )}
+      {home && !filters.busqueda && (
+        <ZoneRail lugares={venues.lugares} eventos={result.events} hoy={today} />
       )}
       <section className="container discovery" id="cartelera" aria-label="Cartelera de eventos">
         <div className="date-tabs" aria-label="Filtrar por fecha">

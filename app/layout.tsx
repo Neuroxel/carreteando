@@ -4,6 +4,7 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import BottomNav from '../components/BottomNav';
 import { SITE_URL, SITE_DESCRIPTION } from '../lib/site';
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -30,6 +31,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Navbar />
         <main id="contenido">{children}</main>
         <Footer />
+        <Suspense fallback={null}>
+          <BottomNav />
+        </Suspense>
         <Suspense fallback={null}>
           <Metrics />
         </Suspense>
