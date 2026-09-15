@@ -202,3 +202,58 @@ No se aumentará la frecuencia de scraping pago sin diagnóstico de rendimiento 
 10. Cobertura de fuentes fuera del eje Valparaíso–Viña: siete comunas con lugares
     publicados y ninguna fuente de agenda mapeada.
 11. Simulacro de cron caído uno y tres días, y de fuente que devuelve datos malformados.
+
+---
+
+## Fase 12 — deuda de datos en cero, una sola forma de explorar
+
+Investigado hasta: **2026-09-15**. No se afirma cobertura permanente.
+
+### Cerrados
+
+- **La corrida de fuentes del dueño falló y ya no falla.** El despachador leía su
+  reloj antes de escribir el registro; la base estampaba las filas nuevas
+  milisegundos después y ninguna fuente aparecía vencida. Primera corrida real:
+  32 candidatos, 19 duplicados suprimidos, 13 escritos, coste cero.
+- **Deuda de datos clasificada.** 0 lugares y 0 eventos sin disposición. Cada
+  `needs_evidence` declara qué falta, dónde se buscó, cuándo y cuándo se revisa.
+- **Una sola forma de explorar.** `/buscar`, `/lugares` y `/mapa` eran cuatro
+  páginas para una pregunta. Ahora es `/explorar` con segmentos y vista mapa,
+  compartiendo filtros. Las direcciones viejas siguen funcionando.
+- **Dieciocho.** El 18 pasó de 8 eventos en 4 comunas a 17 en 11 comunas.
+- **Los 10 px de desborde.** Eran las pestañas de fecha. Corregido en la causa;
+  la contención en `main` se eliminó.
+- **Analítica.** Se medía contra `/buscar`, que ya redirige. Corregido y ampliado
+  con mapa, búsqueda, marcador y clic a redes.
+- **Respaldos.** El plan Free no respalda. `scripts/respaldo.mjs` guarda una copia
+  fechada sin necesitar la contraseña de la base.
+- **pg_cron y pg_net habilitados y verificados** en el proyecto.
+
+### P0 — bloquean la beta cerrada
+
+1. **QA de moderación en producción.** `review_audit` sigue en 0. La semántica
+   completa está verificada contra Postgres real, pero nunca se ha ejercitado
+   contra la base de producción. Se cierra con una aprobación, una edición y un
+   retiro hechos desde /admin.
+
+### P1 — bloquean el MVP público
+
+2. **Auditoría sin actor.** No hay columna de quién. Carlos necesita credencial
+   propia antes de que dos personas moderen.
+3. **Supabase Cron sin encender.** Falta guardar el secreto en Vault; el
+   procedimiento exacto está en `docs/private/SUPABASE_CRON.md`.
+4. **Imágenes propias: 0 de 91 lugares.** Ninguna imagen de local. No se copian
+   activos de terceros sin derechos claros; hay que pedirlas o fotografiarlas.
+5. **Tiles de mapa a escala.** OpenStreetMap desaconseja el uso intensivo.
+6. **36 de 91 lugares sin fuente de programación** y 34 sin identidad digital.
+7. **Reportes en vivo sin uso orgánico.** Se resuelve con la beta.
+8. **Recheck automático.** `next_recheck_at` existe y está poblado; falta el
+   disparador que lo consuma.
+
+### P2
+
+9. 92 candidatos en `needs_evidence`, todos explicados y con fecha de revisión.
+10. Comunas del litoral sur (Algarrobo, El Quisco, Cartagena, San Antonio) sin
+    investigar.
+11. 153 eventos caducados conservados como evidencia: conviene archivarlos fuera
+    de la tabla viva cuando crezcan.
