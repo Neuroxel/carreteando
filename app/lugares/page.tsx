@@ -66,7 +66,10 @@ export default async function Lugares({
               {c}
               <span className="heading-period">.</span>
             </h2>
-            <span className="result-count">{lista.filter((l) => l.ciudad === c).length} lugares</span>
+            <span className="result-count">
+              {lista.filter((l) => l.ciudad === c).length}{' '}
+              {lista.filter((l) => l.ciudad === c).length === 1 ? 'lugar' : 'lugares'}
+            </span>
           </div>
           <div className="venue-grid">
             {lista
