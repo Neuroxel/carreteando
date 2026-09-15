@@ -1,101 +1,78 @@
-# Exploración de marca — nombre
+# Exploración de nombre y marca
 
-**Carreteando sigue en producción y no se cambia sin tu decisión.** Este documento existe para que
-esa decisión se tome con material, no por inercia.
+**Esto no decide nada.** El nombre y el logo son decisión del dueño. Producción
+sigue llamándose Carreteando y no se renombra aquí.
 
-> Las comprobaciones de dominio de abajo son **señales técnicas** (ausencia de DNS), no una
-> verificación registral ni un despeje legal de marcas. Antes de adoptar cualquier nombre hay que
-> hacer búsqueda en NIC Chile e INAPI.
+Actualizado: 2026-09-15, con el producto ya definido (eventos + lugares + zonas
++ mapa + reportes en vivo + descubrimiento automático).
 
-## Diagnóstico del nombre actual
+## La idea que cambió
 
-| Criterio | Carreteando |
-|---|---|
-| Memorable | Alto en Chile |
-| Distintivo | **Bajo**: «carrete» es la palabra común; no es propiedad de nadie |
-| Pronunciable | Sí, para chilenos |
-| Fácil de escribir | Largo (11 letras), riesgo de error al dictarlo |
-| Handles sociales | Difícil por longitud y variantes |
-| Expandible fuera de Chile | **No**: «carrete» no se entiende en el resto de Latinoamérica |
-| Marca de acción/verbo | Sí, y eso es su mayor virtud |
-| Colisión | Múltiples usos coloquiales y comerciales |
+`Prendido` funciona mejor como **nombre de la función en vivo** que como marca
+de la plataforma.
 
-**Conclusión honesta:** funciona bien hoy y es culturalmente correcto, pero encierra el producto en
-Chile y no es defendible como marca. No es urgente cambiarlo; sí conviene decidirlo antes de
-invertir en identidad visual definitiva.
+Como marca obliga a una sola palabra a explicar eventos, lugares, zonas y mapa.
+Como función es exacto y se entiende solo:
 
-## Candidatos evaluados
+> 🔥 **PRENDIDO** · 4 reportes · últimos 28 min
 
-Territorios: noche · pulso · movimiento · encuentro · ruta · ciudad · salir · escena · señal ·
-ahora · gente · lugar · habla local.
+Eso sugiere una arquitectura de marca de dos niveles:
 
-| # | Nombre | Territorio | Lectura | DNS .cl |
-|---|---|---|---|---|
-| 1 | Carreteando | salir | incumbente | libre |
-| 2 | **Prendido** | señal / ahora | «¿está prendido?» es literalmente lo que el producto responde | libre |
-| 3 | Prende | señal | imperativo, más corto | ocupado |
-| 4 | **La Movida** | escena | «la movida nocturna» es el nombre de la categoría | libre |
-| 5 | Movida | escena | idem, más corto | ocupado |
-| 6 | **Nochero** | noche / gente | quien sale de noche; cálido y humano | libre |
-| 7 | **Salimos** | encuentro | verbo en primera persona plural: invita | libre |
-| 8 | Carrete | salir | la palabra desnuda; demasiado genérica | libre |
-| 9 | Marea | movimiento / costa | rítmico y costero, pero pasivo | libre |
-| 10 | Rumbo | ruta | dirección; buen encaje con mapa | ocupado |
-| 11 | Farra | salir | latinoamericano y cálido | ocupado |
-| 12 | Sale | habla local | «¿sale?» es perfecto y demasiado genérico a la vez | ocupado |
-| 13 | Toque | música | muy chileno pero encierra en música en vivo | ocupado |
-| 14 | Trasnoche | noche | evoca cine más que carrete | ocupado |
-| 15 | Madrugá | noche | fuerte, difícil de escribir con tilde | ocupado |
-| 16 | Pulso | pulso | limpio pero usado en salud y medios | — |
-| 17 | Neón | noche | cliché visual de vida nocturna | — |
-| 18 | Litoral | ciudad | demasiado geográfico y turístico | — |
-| 19 | Cuadra | ciudad | urbano, pero ambiguo en Chile | — |
-| 20 | Ronda | ruta | evoca vigilancia | — |
-| 21 | Puerto | ciudad | encierra en Valparaíso | — |
-| 22 | Cerro | ciudad | idem, y muy local | — |
-| 23 | Enfiesta | salir | forzado | — |
-| 24 | Nocturna | noche | correcto y anodino | — |
-| 25 | Vamo | habla local | simpático, difícil de defender | — |
-| 26 | Bruma | costa | bonito, pero pasivo y frío | — |
-| 27 | Andar | movimiento | verbo amplio, poco específico | — |
-| 28 | Señal | señal | abstracto, se confunde con telecom | — |
-| 29 | Tocata | música | encierra en música en vivo | — |
-| 30 | Copete | habla local | reduce a alcohol; mal encaje | — |
+```
+[Marca de plataforma]
+   ├── Ahora / Prendido   (estado en vivo)
+   ├── Explorar           (eventos y lugares)
+   ├── Zonas              (la ruta de la noche)
+   └── Mapa               (dónde queda)
+```
 
-Descartados por regla: nombres en inglés sin motivo, estilo startup genérica, ortografía difícil,
-y cualquiera que reduzca el producto a «eventos».
+Es más fuerte que forzar una palabra para todo, y permite que la función en
+vivo tenga personalidad propia sin arrastrar a la marca.
 
-## Finalistas
+## Candidatos
 
-### 1. Prendido — *recomendado*
-Es el único nombre que **nombra la diferencia del producto**. Nuestra capa única es el estado en
-vivo de la comunidad, y la pregunta real de un usuario es «¿está prendido?». El nombre y la función
-son la misma frase. Es verbo, es adjetivo, es señal.
-**Riesgo:** «prendido» también significa encendido o achispado; hay que ver que no genere lecturas
-indeseadas. Dominio sin DNS.
+Ninguno está verificado en registro de marcas ni en dominios. Eso es trabajo
+posterior a que el dueño elija una lista corta.
 
-### 2. La Movida
-Es el nombre de la categoría —«la movida nocturna»— y se entiende en toda Latinoamérica, no sólo en
-Chile. Cálido, clásico, expandible.
-**Riesgo:** común; defender la marca cuesta más. `movida.cl` está ocupado, `lamovida.cl` no.
+| Nombre | Territorio | A favor | En contra |
+|---|---|---|---|
+| **Carreteando** | salir | Ya está en producción, es la palabra local exacta, nadie necesita que se la expliquen | Gerundio largo; muy chileno para crecer fuera |
+| **Salimos** | salir | Es literalmente la pregunta del producto; primera persona plural, invita | Genérico, difícil de defender legalmente |
+| **La Movida** | escena | Herencia cultural fuerte, dice escena y no sólo fiesta | Muy usado; carga española de los 80 |
+| **Nochero** | noche | Palabra chilena, con carácter, memorable | Connota trasnoche más que salir |
+| **Subida** | local | Muy porteño: los cerros se suben. Corto, propio, visualmente rico | Puede leerse sólo de Valparaíso |
+| **Cerro** | local | Una palabra, muy de acá, funciona como marca | Demasiado geográfico para la región completa |
+| **Al Tiro** | ahora | Chilenismo de inmediatez, perfecto para la capa en vivo | Puede sonar a app de delivery |
+| **Vamos** | movimiento | Universal en español, invita, corto | Muy genérico |
+| **Ronda** | ruta | Recorrido nocturno; "hacer la ronda" | Puede sonar a seguridad |
+| **Tocata** | escena | Palabra local de música en vivo | Deja fuera club y fonda |
+| **Pica** | local | "Una buena pica" es exactamente lo que busca el usuario | En otros países significa otra cosa |
+| **Trasnoche** | noche | Evocador, cinematográfico | Largo; sugiere sólo madrugada |
+| **Bajada** | local | Complemento de Subida; la noche baja al plan | Menos obvio |
+| **Puerto** | local | Identidad regional, corto, sólido | Muy Valparaíso; no dice noche |
+| **Farra** | salir | Directo, festivo, latinoamericano | Menos chileno que carrete |
 
-### 3. Nochero
-Humano: no nombra la fiesta, nombra a **quien sale**. Permite comunidad («los nocheros»).
-**Riesgo:** en algunos países es el guardia nocturno o una lámpara.
+## Descartados a propósito
 
-### 4. Salimos
-Verbo colectivo, invitación directa, sin jerga. Funciona fuera de Chile.
-**Riesgo:** genérico en buscadores.
-
-### 5. Carreteando — quedarse
-Opción legítima: cero coste de migración, ya tiene tráfico y contenido indexado.
-**Riesgo:** techo de crecimiento fuera de Chile y baja defensibilidad.
+- Nombres con IA, cripto o sufijos tecnológicos.
+- Inglés forzado (`NightOut`, `Vibez`, `CityPulse`).
+- Ortografía difícil de dictar por teléfono.
+- Nombres que sólo hablan de tickets o eventos: el producto tiene lugares sin
+  evento, y ese es justamente su diferencial.
 
 ## Recomendación
 
-**Prendido**, con *Carreteando* como alternativa segura si prefieres no migrar.
+Si hay que elegir hoy: **mantener Carreteando** como marca y **Prendido** como
+la función en vivo. Es la opción que no gasta tiempo en un problema que no está
+bloqueando nada, y la arquitectura de dos niveles permite cambiar la marca más
+adelante sin tocar la función.
 
-Prendido es el único que convierte la ventaja del producto en el nombre. Si lo eliges, el cambio
-debe hacerse **antes** de cerrar la identidad visual definitiva, no después.
+Si el dueño quiere algo más corto y propio para crecer fuera de la región:
+**Subida** y **Nochero** son los dos que mejor aguantan.
 
-Ninguna migración ocurre sin tu palabra.
+## El logo
+
+La interfaz **ya no depende** del asterisco naranja. Se sostiene en tipografía,
+imágenes reales, la retícula, el movimiento y el sistema de acentos por ciudad.
+El asterisco aparece una sola vez, junto a la marca, y se puede reemplazar sin
+tocar nada más.
