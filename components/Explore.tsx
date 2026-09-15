@@ -8,6 +8,7 @@ import { CATEGORIAS, CIUDADES_NUCLEO } from '../lib/types';
 import EventCard from './EventCard';
 import VenueCard from './VenueCard';
 import { getPublicVenues } from '../lib/server-venues';
+import { buscarLugares, buscarZonas, zonaSlug } from '../lib/venues';
 const SHORT: Record<string, string> = { Valparaíso: 'Valpo', 'Viña del Mar': 'Viña' };
 export default async function Explore({
   params,
@@ -31,6 +32,8 @@ export default async function Explore({
     if (e.lugar) conteoLugar.set(e.lugar, (conteoLugar.get(e.lugar) || 0) + 1);
   // Surface places that have something coming before the rest, so the block is
   // useful rather than alphabetical.
+  const lugaresHallados = filters.busqueda ? buscarLugares(venues.lugares, filters.busqueda) : [];
+  const zonasHalladas = filters.busqueda ? buscarZonas(venues.lugares, filters.busqueda) : [];
   const lugaresZona = (
     filters.ciudad === 'todos'
       ? venues.lugares
@@ -281,6 +284,36 @@ export default async function Explore({
             <div className="event-grid">
               {suggestions.map((e, i) => (
                 <EventCard key={e.id} evento={e} today={today} priority={i === 0} />
+              ))}
+            </div>
+          </div>
+        )}
+        {filters.busqueda && (lugaresHallados.length > 0 || zonasHalladas.length > 0) && (
+          <div className="alternative-plans">
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">TAMBIÉN ENCONTRAMOS</p>
+                <h3>
+                  Lugares y zonas
+                  <span className="heading-period">.</span>
+                </h3>
+              </div>
+              <span className="result-count">
+                {lugaresHallados.length + zonasHalladas.length} resultados
+              </span>
+            </div>
+            {zonasHalladas.length > 0 && (
+              <div className="category-filters">
+                {zonasHalladas.map((z) => (
+                  <Link key={z.zona} className="chip" href={`/zonas/${zonaSlug(z.zona)}`}>
+                    {z.zona} · {z.lugares.length}
+                  </Link>
+                ))}
+              </div>
+            )}
+            <div className="venue-grid">
+              {lugaresHallados.slice(0, 9).map((l) => (
+                <VenueCard key={l.slug} lugar={l} proximos={conteoLugar.get(l.nombre) || 0} />
               ))}
             </div>
           </div>

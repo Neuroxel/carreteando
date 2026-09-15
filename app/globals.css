@@ -2088,3 +2088,123 @@ textarea::placeholder {
   color: var(--ciudad, inherit);
   opacity: 0.95;
 }
+
+/* ==========================================================================
+   Movimiento: comunica vivo, cambio y noche. Nunca decora.
+   Todo se apaga con prefers-reduced-motion.
+   ========================================================================== */
+
+/* El punto de estado respira: la noche está corriendo ahora. */
+@keyframes latido {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(240, 120, 90, 0.55);
+  }
+  70% {
+    box-shadow: 0 0 0 7px rgba(240, 120, 90, 0);
+  }
+}
+.status-dot {
+  animation: latido 2.8s ease-out infinite;
+}
+
+/* El flyer se acerca al pasar el dedo o el cursor: invita a entrar. */
+.event-art {
+  overflow: hidden;
+}
+.event-art img,
+.flyer-fallback {
+  transition: transform 0.45s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.event-card:hover .event-art img,
+.event-image-link:focus-visible .event-art img {
+  transform: scale(1.045);
+}
+.event-card:hover .flyer-fallback::after {
+  transform: rotate(6deg) scale(1.08);
+}
+.flyer-fallback::after {
+  transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+/* La tarjeta de lugar se levanta apenas; el acento de ciudad se enciende. */
+.venue-card {
+  transition:
+    transform 0.25s ease,
+    border-color 0.25s ease,
+    background 0.25s ease;
+}
+.venue-card:hover {
+  transform: translateY(-2px);
+}
+
+/* Un estado en vivo fresco late: es dato que caduca. */
+@keyframes vivo {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+.live-summary strong::before {
+  content: '';
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: var(--accent, #f0785a);
+  animation: vivo 1.8s ease-in-out infinite;
+  vertical-align: middle;
+}
+
+/* Los chips y botones responden al toque sin rebotes. */
+.chip,
+.button {
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.15s ease;
+}
+.chip:active,
+.button:active {
+  transform: scale(0.97);
+}
+
+/* La franja del dieciocho tiene un brillo lento, no un parpadeo. */
+@keyframes brillo {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+.season-hero {
+  background-size: 180% 180%;
+  animation: brillo 14s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .status-dot,
+  .live-summary strong::before,
+  .season-hero {
+    animation: none;
+  }
+  .event-art img,
+  .flyer-fallback,
+  .flyer-fallback::after,
+  .venue-card,
+  .chip,
+  .button {
+    transition: none;
+  }
+  .event-card:hover .event-art img,
+  .venue-card:hover {
+    transform: none;
+  }
+}

@@ -100,3 +100,22 @@ export function zonaSlug(zona: string) {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
 }
+// Search has to cover the whole graph: a person types "bar cerro alegre" and
+// means a place and a zone, not an event title.
+export function buscarLugares(lugares: Lugar[], q: string): Lugar[] {
+  const t = normalizar(q);
+  if (!t) return [];
+  return lugares.filter((l) =>
+    normalizar(
+      [l.nombre, l.ciudad, l.zona, l.direccion, l.tipo_label, ...l.tags].filter(Boolean).join(' '),
+    ).includes(t),
+  );
+}
+export function buscarZonas(lugares: Lugar[], q: string) {
+  const t = normalizar(q);
+  if (!t) return [];
+  return zonasDe(lugares).filter((z) => normalizar(`${z.zona} ${z.ciudad}`).includes(t));
+}
+export function normalizar(v: string) {
+  return v.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+}

@@ -5,7 +5,7 @@ import { validSession } from '../lib/admin-session';
 import { parseFilters } from '../lib/filters';
 import { editorialRows } from '../lib/editorial-feed';
 import { dbRowToEvento, diversifyByVenue, esTemporadaDieciocho, filterEvents } from '../lib/events';
-import { dbRowToLugar, zonaSlug, zonasDe } from '../lib/venues';
+import { buscarLugares, buscarZonas, dbRowToLugar, zonaSlug, zonasDe } from '../lib/venues';
 import { summarizeLive, validLiveReport } from '../lib/live-reports';
 import { POST as measure } from '../app/api/medir/route';
 import { ReviewInputError, reviewInput } from '../lib/review-input';
@@ -326,4 +326,36 @@ test('a live status needs agreement and freshness, and never claims to be a meas
     ),
     [],
   );
+});
+
+test('search covers the whole graph, not only event titles', () => {
+  const row = (slug: string, name: string, city: string, zone: string | null, tipo = 'bar') => ({
+    slug,
+    name,
+    city,
+    zone,
+    venue_type: tipo,
+    tags: [],
+    source_type: 'fuente-publica',
+    source_url: 'https://example.com',
+    is_active: true,
+    moderation_status: 'approved',
+  });
+  const lugares = [
+    dbRowToLugar(row('cassot-bar', 'Cassot Bar', 'Valparaíso', 'Subida Ecuador')),
+    dbRowToLugar(row('la-colombina', 'La Colombina', 'Valparaíso', 'Cerro Alegre')),
+    dbRowToLugar(row('el-parque', 'El Parque', 'Quilpué', 'Quilpué Centro')),
+    dbRowToLugar(row('espanta', 'Espantapájaros', 'Valparaíso', 'Subida Ecuador', 'karaoke')),
+  ].filter((l) => l !== null);
+  // A person typing a zone means the zone, not an event title.
+  assert.equal(buscarLugares(lugares, 'cerro alegre').length, 1);
+  assert.equal(buscarLugares(lugares, 'subida ecuador').length, 2);
+  assert.equal(buscarLugares(lugares, 'quilpue').length, 1, 'sin tilde también encuentra');
+  assert.equal(buscarLugares(lugares, 'karaoke').length, 1, 'el tipo de lugar es buscable');
+  assert.equal(buscarLugares(lugares, 'cassot').length, 1);
+  assert.equal(buscarLugares(lugares, '').length, 0, 'una búsqueda vacía no devuelve todo');
+  assert.equal(buscarLugares(lugares, 'techno berlin').length, 0);
+  const zonas = buscarZonas(lugares, 'ecuador');
+  assert.equal(zonas.length, 1);
+  assert.equal(zonas[0].lugares.length, 2);
 });
