@@ -7,6 +7,60 @@ Contexto que cambia las decisiones: Carreteando opera en una región de ~1 mill�
 una escena de bares chicos, no en un mercado de clubes grandes con ticketing masivo. Varios
 patrones que funcionan en Europa no se sostienen aquí por falta de densidad o de datos.
 
+
+## Vesti — la referencia más cercana, y la más importante
+
+Vesti es la comparación real: opera en Chile, en la misma región, y ya lista recintos que también
+tenemos (Studio Valparaíso, Manda en Reñaca, productoras locales). Es, ante todo, una **ticketera
+con herramientas para productoras**: su centro de gravedad es vender entradas, gestionar accesos y
+darle a un negocio su panel. Eso define lo que hace bien y lo que deja fuera.
+
+### Qué hace mejor que nosotros
+
+| | Por qué importa |
+|---|---|
+| **Imagen real en cada evento** | Su tarjeta es una fotografía o flyer del productor. La nuestra cae en arte generativo cuando no hay flyer, y eso siempre pierde contra una imagen real |
+| **Identidad de negocio** | Cada productora o recinto tiene página con logo y banner. Se ve como suya |
+| **Destacados y carrusel** | Tiene una superficie editorial de portada más rica |
+| **Aplicación móvil** | iOS y Android; nosotros somos web |
+| **Precio siempre presente** | El precio es un dato de primera clase porque venden |
+| **Relación con el organizador** | El productor entra solo y publica |
+
+### Qué adaptamos
+
+- **Imagen primero.** Subir la jerarquía de imagen: flyer oficial → imagen del lugar → logo del
+  lugar → arte generativo. Hoy sólo tenemos el primero y el último.
+- **«Tu local tiene identidad».** Un lugar debe poder traer su logo y su banner, y la ficha debe
+  sentirse parcialmente suya dentro de nuestro sistema.
+- **Camino del organizador.** «Reclama este lugar» y envío de programación, sin construir panel de
+  comercio todavía.
+
+### Qué no copiamos nunca
+
+- **Checkout y ticketing.** No queremos ser otra ticketera. Enlazamos a quien vende, incluida Vesti.
+- **Producto centrado en la productora.** Nuestro usuario es quien sale, no quien produce.
+- **Datos de clientes y control de acceso.** Fuera del alcance.
+- **Sólo eventos con entrada.** Es exactamente el sesgo que nos hace falta corregir.
+
+### Qué puede Carreteando que Vesti no
+
+1. **Un lugar sin evento.** Un martes sin nada agendado, una ticketera queda vacía. Nosotros
+   seguimos respondiendo dónde ir.
+2. **La cola larga.** Un bar de la subida Cumming o un pub de Quintero nunca tendrá ficha de venta.
+3. **Multi-fuente.** Agregamos Portaldisc, Ticketplus, Passline, municipios, cuentas oficiales y
+   curaduría. Vesti muestra lo que se vende en Vesti.
+4. **Zonas reales.** Subida Ecuador y Cerro Alegre, no comunas administrativas.
+5. **Estado en vivo.** Nadie responde «¿está prendido ahora?» con reportes que caducan.
+6. **Cuenta oficial como destino.** Para un bar chico, su Instagram es su sitio web.
+7. **Ajuste cultural.** Fondas, cueca y cumbia como ciudadanos de primera.
+
+### Vesti como fuente
+
+Vesti es **una fuente**, no nuestro backend. Ya la usamos para fichas puntuales de evento, con
+enlace de vuelta a ellos. No se elude autenticación ni control técnico, no se raspa de forma
+agresiva, y cuando el dato viene de ahí, se dice y se enlaza. Su índice general es una SPA sin HTML
+servido, así que la vía razonable es por ficha concreta, no por rastreo masivo.
+
 ## Resident Advisor
 
 | Patrón | Decisión | Por qué |

@@ -1,6 +1,6 @@
 # Carreteando — backlog de producto
 
-Estado al **14 de septiembre de 2026**, revisado en fase 6. Este archivo es la lista canónica: toda idea del encargo
+Estado al **15 de septiembre de 2026**, revisado en fase 7. Este archivo es la lista canónica: toda idea del encargo
 aparece aquí con su estado. Nada se descarta en silencio.
 
 Estados: **HECHO** · **EN CURSO** · **PENDIENTE** · **BLOQUEADO** · **NO AHORA**
@@ -18,11 +18,11 @@ Leyenda de fase: **P0 AHORA** (esta fase) · **P1 SIGUIENTE** · **P2 MÁS ADELA
 | 3 | Cobertura del 18 de septiembre | **HECHO** | Fondas verificadas con fuente 2026 en varias comunas, visibles del 17 al 20 | 5 fondas, 17 filas, 4 comunas |
 | 4 | Tipo de evento (fonda/pre/after/live/club) | **HECHO** | Una fonda se lee como fonda, no como género musical | Filtro `?tipo=` operativo |
 | 5 | Superficie estacional Dieciocho | **HECHO** | Aparece y desaparece sola por fecha, sin fijarla a mano | Ventana 14–21 de septiembre |
-| 6 | Redes sociales oficiales por lugar | **EN CURSO** | Cada lugar publicado expone su cuenta oficial cuando existe | 16 de 25 verificados. Instagram encabeza las acciones de la ficha |
+| 6 | Redes sociales oficiales por lugar | **EN CURSO** | Cada lugar publicado expone su cuenta oficial cuando existe | 18 de 60. **Bajó en porcentaje al crecer el censo**: es ahora el mayor hueco de calidad |
 | 7 | Reportes en vivo de la comunidad | **HECHO** | Ambiente, gente, fila y estado, con caducidad y tamaño de muestra | Mínimo 2 reportes coincidentes; sin datos observados aún |
 | 8 | Estado del lugar (abierto/cerrado/revisar) | **HECHO** | Un lugar cerrado deja de servirse aunque quede marcado activo | Falta UI de reporte de cierre por el usuario |
-| 9 | Censo profundo de lugares | **EN CURSO** | Registro de alta confianza mucho mayor que 23 | 25 publicados + 18 candidatos + 1 cerrado. Sigue por debajo de 50–100 |
-| 10 | Cobertura Quilpué / Villa Alemana | **EN CURSO** | Lugares o eventos reales con fuente propia | Quilpué suma El Parque y El 26, ambos con Instagram y dirección. Villa Alemana y Concón siguen cubiertos sólo por fondas |
+| 9 | Censo profundo de lugares | **HECHO (primer objetivo)** | Registro de alta confianza mucho mayor que 23 | **60 publicados** en 10 comunas + 20 candidatos + 1 cerrado, tras la cartografía del propietario. Dentro del rango 50–100 |
+| 10 | Cobertura regional | **EN CURSO** | Lugares o eventos reales con fuente propia | Quilpué 7, Quintero 5, Quillota 4, Limache 2, Olmué 2, Reñaca 1, Concón 1, Villa Alemana 2. La Calera y Maitencillo sólo candidatos |
 | 11 | Matriz de cobertura | **HECHO** | El propietario puede responder «por qué está vacía tal comuna» con evidencia | En el informe final |
 | 12 | Arquitectura de frescura por capas | **HECHO (diseño)** | Base de lugar / agenda / estado en vivo con TTL distintos | Ver §Scheduler |
 | 13 | Salud de fuentes | **PARCIAL** | last_success, items, coste y error por fuente, con desactivación sugerida | Documentado en `SOURCE_REGISTRY.md`; falta el tablero en `/admin` |
@@ -91,6 +91,26 @@ Leyenda de fase: **P0 AHORA** (esta fase) · **P1 SIGUIENTE** · **P2 MÁS ADELA
 | 45 | Reporte de cierre por el usuario | P1 | **PENDIENTE** | «Este lugar cerró» entra a la cola privada | La columna `status` ya existe |
 | 46 | Tablero de salud de fuentes en `/admin` | P1 | **PENDIENTE** | Responder «por qué está vacía Reñaca» sin SQL | Datos ya disponibles |
 | 47 | Fonda multi-día como entidad | P2 | **NO AHORA** | Una ficha explica el programa y conserva la búsqueda por día | Hoy son filas por día, que es lo que hace funcionar «hoy» y «mañana» |
+
+---
+
+## Añadido en fase 7
+
+| # | Ítem | Fase | Estado | Criterio de aceptación | Nota |
+|---|---|---|---|---|---|
+| 48 | Cartografía regional del propietario | P0 | **HECHO** | Registro > 50 lugares con procedencia explícita | 35 fichas nuevas, 30 publicadas |
+| 49 | Región ampliada a 13 comunas | P0 | **HECHO** | Limache, Olmué, Quillota, La Calera, Quintero, Puchuncaví y Maitencillo son direcciones válidas | Los chips de portada siguen en el corredor |
+| 50 | Sistema de color por ciudad | P0 | **HECHO** | Acento sólo en filete y chip, nunca en fondo; sin chocar con colores semánticos | 13 acentos documentados |
+| 51 | Especificación maestra | P0 | **HECHO** | Un agente nuevo entiende el producto con un archivo | `PRODUCT_MASTER_SPEC.md` |
+| 52 | Exploración de nombre | P0 | **HECHO — espera decisión** | 30 candidatos, 5 finalistas, recomendación razonada | Recomendado **Prendido**. No se migra sin tu palabra |
+| 53 | Sistema de diseño | P0 | **HECHO** | Tokens, componentes y reglas en un solo lugar | `DESIGN_SYSTEM.md` |
+| 54 | Estudio de Vesti | P0 | **HECHO** | Qué hace mejor, qué adaptamos, qué no copiamos nunca | En `COMPETITIVE_PRODUCT_PATTERNS.md` |
+| 55 | Identidad visual definitiva | P1 | **BLOQUEADO** | Tres direcciones y una elegida | Depende de (52): el logotipo no se cierra antes que el nombre |
+| 56 | Redes oficiales de los 42 lugares nuevos | P1 | **PENDIENTE** | Cada lugar publicado con cuenta oficial o con «no confirmada» | El censo creció más rápido que la verificación de cuentas |
+| 57 | Jerarquía de imagen del lugar | P1 | **PENDIENTE** | flyer → imagen del lugar → logo → arte generativo | Patrón tomado de Vesti; hoy sólo existen los extremos |
+| 58 | Reclamar lugar | P1 | **PENDIENTE** | Un local pide su ficha y aporta logo y programación | Base del modelo de socios |
+| 59 | Barra inferior móvil | P1 | **PENDIENTE** | Prototipar y medir antes de adoptar | No se añade sólo porque otras apps la tengan |
+| 60 | Contenido destacado rotulado | P2 | **NO AHORA** | Todo destacado pagado se rotula y **nunca** altera el estado en vivo | Documentado en la especificación maestra |
 
 ---
 
