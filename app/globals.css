@@ -2427,7 +2427,9 @@ textarea::placeholder {
     inset: auto 0 0 0;
     z-index: 40;
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    /* minmax(0,·) o las columnas se ensanchan al mínimo del contenido y la
+       barra queda más ancha que la pantalla. */
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 0;
     padding: 0.35rem 0 max(0.35rem, env(safe-area-inset-bottom));
     background: color-mix(in srgb, var(--fondo, #0c0d11) 92%, transparent);
@@ -2444,7 +2446,8 @@ textarea::placeholder {
     letter-spacing: 0.04em;
     text-decoration: none;
     color: inherit;
-    opacity: 0.62;
+    opacity: 0.74;
+    text-align: center;
     transition: opacity 0.18s ease, color 0.18s ease;
   }
   .bottom-nav-item svg { width: 22px; height: 22px; }
