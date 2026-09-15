@@ -8,6 +8,13 @@ export function parseFilters(params: URLSearchParams, defaultDate = 'futuro'): F
     quilpue: 'Quilpué',
     'villa-alemana': 'Villa Alemana',
     concon: 'Concón',
+    limache: 'Limache',
+    olmue: 'Olmué',
+    quillota: 'Quillota',
+    'la-calera': 'La Calera',
+    quintero: 'Quintero',
+    puchuncavi: 'Puchuncaví',
+    maitencillo: 'Maitencillo',
   };
   const city = params.get('ciudad') || '';
   if (cityAliases[city]) params.set('ciudad', cityAliases[city]);

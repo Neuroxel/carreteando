@@ -21,6 +21,9 @@ export const FUENTES_LUGAR: Record<string, string> = {
   'calendario-publico': 'Calendario público del lugar',
   'fuente-publica': 'Fuente pública revisada',
   ticketera: 'Ticketera',
+  'instagram-oficial': 'Cuenta oficial del lugar',
+  'sitio-oficial': 'Sitio oficial del lugar',
+  'aporte-propietario': 'Registro editorial de Carreteando',
   comunidad: 'Enviado por la comunidad',
 };
 export interface Lugar {

@@ -4,7 +4,7 @@ import { getSourceFreshness } from '../lib/server-freshness';
 import { diversifyByVenue, esTemporadaDieciocho, filterEvents } from '../lib/events';
 import { toChileDateString } from '../lib/event-extraction';
 import { parseFilters } from '../lib/filters';
-import { CATEGORIAS, CIUDADES } from '../lib/types';
+import { CATEGORIAS, CIUDADES_NUCLEO } from '../lib/types';
 import EventCard from './EventCard';
 import VenueCard from './VenueCard';
 import { getPublicVenues } from '../lib/server-venues';
@@ -146,7 +146,7 @@ export default async function Explore({
           >
             Toda la costa
           </Link>
-          {CIUDADES.map((c) => (
+          {CIUDADES_NUCLEO.map((c) => (
             <Link
               key={c}
               href={href('ciudad', c)}

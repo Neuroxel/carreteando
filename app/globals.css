@@ -2074,3 +2074,17 @@ textarea::placeholder {
 .flyer-fallback.tono-3 strong {
   font-size: clamp(26px, 7.5vw, 38px);
 }
+
+/* Acento geográfico: un filete, nunca el fondo de la página. */
+.venue-card {
+  border-left: 3px solid var(--ciudad, rgba(255, 255, 255, 0.14));
+}
+.venue-card:hover,
+.venue-card:focus-within {
+  border-color: var(--line, rgba(255, 255, 255, 0.24));
+  border-left-color: var(--ciudad, #f0785a);
+}
+.venue-kind span {
+  color: var(--ciudad, inherit);
+  opacity: 0.95;
+}

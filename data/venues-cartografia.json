@@ -1,0 +1,561 @@
+[
+ {
+  "slug": "balada-el-huevo",
+  "name": "Balada El Huevo",
+  "city": "Valparaíso",
+  "zone": "Plan de Valparaíso",
+  "address": "Blanco 1386",
+  "venue_type": "discoteca",
+  "tags": [
+   "fiesta",
+   "alternativo",
+   "electronica"
+  ],
+  "description_short": "Multiespacio de cuatro niveles: rock alternativo, indie, electrónica y tropical, con tocatas periódicas. Abre desde las 23:00.",
+  "instagram_url": null,
+  "official_url": null,
+  "publish": true
+ },
+ {
+  "slug": "terraza-bellavista",
+  "name": "Terraza Bellavista",
+  "city": "Valparaíso",
+  "zone": "Plan de Valparaíso",
+  "address": "Blanco 1285",
+  "venue_type": "discoteca",
+  "tags": [
+   "fiesta",
+   "reggaeton",
+   "universitario"
+  ],
+  "description_short": "Discoteca con terraza al aire libre, música urbana y bailable. Público universitario y de intercambio.",
+  "instagram_url": null,
+  "official_url": null,
+  "publish": true
+ },
+ {
+  "slug": "bar-el-irlandes",
+  "name": "Bar El Irlandés",
+  "city": "Valparaíso",
+  "zone": "Plan de Valparaíso",
+  "address": "Blanco 1279",
+  "venue_type": "pub",
+  "tags": [
+   "pub",
+   "cerveza"
+  ],
+  "description_short": "Irish pub con schops artesanales e importados y cocina de pub. Desde las 18:00.",
+  "instagram_url": null,
+  "official_url": null,
+  "publish": true
+ },
+ {
+  "slug": "uk-bar",
+  "name": "UK Bar",
+  "city": "Valparaíso",
+  "zone": "Plan de Valparaíso",
+  "address": "Esmeralda 1083",
+  "venue_type": "pub",
+  "tags": [
+   "pub",
+   "cerveza"
+  ],
+  "description_short": "Pub cervecero con varias salidas de barril, chorrillanas y tablas. After office y grupos.",
+  "instagram_url": null,
+  "official_url": null,
+  "publish": true
+ },
+ {
+  "slug": "bar-del-tio",
+  "name": "Bar del Tío",
+  "city": "Valparaíso",
+  "zone": "Cerro Cárcel",
+  "address": "Cumming 59",
+  "venue_type": "bar",
+  "tags": [
+   "bar",
+   "rock"
+  ],
+  "description_short": "Bar bohemio en la subida Cumming, con rock, funk y garage. Estudiantes, artistas y vecinos de cerro.",
+  "instagram_url": null,
+  "official_url": null,
+  "publish": true
+ },
+ {
+  "slug": "el-internado",
+  "name": "El Internado",
+  "city": "Valparaíso",
+  "zone": "Cerro Alegre",
+  "address": "Pasaje Dimalow 167",
+  "venue_type": "centro-cultural",
+  "tags": [
+   "en-vivo",
+   "bar",
+   "cultural"
+  ],
+  "description_short": "Centro cultural con bar y terraza: ciclos de jazz, tocatas íntimas, coctelería de autor y exposiciones.",
+  "instagram_url": null,
+  "official_url": null,
+  "publish": true
+ },
+ {
+  "slug": "teatro-municipal-valparaiso",
+  "name": "Teatro Municipal de Valparaíso",
+  "city": "Valparaíso",
+  "zone": "El Almendral",
+  "address": "Av. Pedro Montt esq. Uruguay",
+  "venue_type": "teatro",
+  "tags": [
+   "cultural",
+   "en-vivo"
+  ],
+  "description_short": "Teatro y coliseo con conciertos de rock nacional, festivales corales y cine.",
+  "instagram_url": null,
+  "official_url": null,
+  "publish": true
+ },
+ {
+  "slug": "sala-negra-uv",
+  "name": "Sala Negra UV",
+  "city": "Valparaíso",
+  "zone": "El Almendral",
+  "address": "Av. Brasil 1647",
+  "venue_type": "teatro",
+  "tags": [
+   "cultural",
+   "universitario"
+  ],
+  "description_short": "Sala teatral universitaria con temporadas de teatro contemporáneo y dramaturgia independiente.",
+  "instagram_url": null,
+  "official_url": null,
+  "publish": true
+ },
+ {
+  "slug": "baron-rooftop",
+  "name": "Barón Rooftop",
+  "city": "Valparaíso",
+  "zone": "Cerro Barón",
+  "address": null,
+  "venue_type": "terraza",
+  "tags": [
+   "bar",
+   "terraza"
+  ],
+  "description_short": "Rooftop con coctelería y vista a la bahía. Falta confirmar dirección exacta.",
+  "instagram_url": null,
+  "official_url": null,
+  "publish": false
+ },
+ {
+  "slug": "hollywood-renaca",
+  "name": "Hollywood Experience Reñaca",
+  "city": "Reñaca",
+  "zone": "Borgoño",
+  "address": "Av. Borgoño 14738",
+  "venue_type": "discoteca",
+  "tags": [
+   "fiesta",
+   "electronica"
+  ],
+  "description_short": "Club de cuatro ambientes frente al mar, con terrazas lounge y pistas de baile hasta la madrugada.",
+  "instagram_url": null,
+  "official_url": null,
+  "publish": true
+ },
+ {
+  "slug": "ovo-enjoy-vina",
+  "name": "Ovo Nightclub & Sala Cenit",
+  "city": "Viña del Mar",
+  "zone": "Viña Centro",
+  "address": "Av. San Martín 199",
+  "venue_type": "club",
+  "tags": [
+   "fiesta",
+   "en-vivo"
+  ],
+  "description_short": "Club y sala de espectáculos del casino: conciertos, stand-up y clubbing.",
+  "instagram_url": null,
+  "official_url": null,
+  "publish": true
+ },
+ {
+  "slug": "jaggers-club",
+  "name": "Jaggers Club",
+  "city": "Viña del Mar",
+  "zone": "Viña Poniente",
+  "address": "2 Norte 195 esq. 5 Poniente",
+  "venue_type": "pub",
+  "tags": [
+   "en-vivo",
+   "karaoke"
+  ],
+  "description_short": "Pub con música en vivo, tributos y karaoke, con pista de baile hasta la madrugada.",
+  "instagram_url": null,
+  "official_url": null,
+  "publish": true
+ },
+ {
+  "slug": "el-journal",
+  "name": "El Journal",
+  "city": "Viña del Mar",
+  "zone": "Viña Poniente",
+  "address": "1 Poniente 452 esq. 3 Norte",
+  "venue_type": "pub",
+  "tags": [
+   "pub",
+   "cerveza"
+  ],
+  "description_short": "Pub tradicional del barrio poniente, con barra cervecera y ambiente de previa.",
+  "instagram_url": null,
+  "official_url": null,
+  "publish": true
+ },
+ {
+  "slug": "club-divino",
+  "name": "Club Divino",
+  "city": "Viña del Mar",
+  "zone": "Viña Centro",
+  "address": null,
+  "venue_type": "queer",
+  "tags": [
+   "queer",
+   "fiesta"
+  ],
+  "description_short": "Club con shows drag y pista de dance pop. Falta confirmar dirección exacta.",
+  "instagram_url": null,
+  "official_url": null,
+  "publish": false
+ },
+ {
+  "slug": "club-arabe-vina",
+  "name": "Centro de Eventos Club Árabe",
+  "city": "Viña del Mar",
+  "zone": "Viña Centro",
+  "address": "Av. Marina 50",
+  "venue_type": "centro-cultural",
+  "tags": [
+   "cultural",
+   "en-vivo"
+  ],
+  "description_short": "Salón de eventos en el borde costero, con cenas-concierto y espectáculos.",
+  "instagram_url": null,
+  "official_url": null,
+  "publish": true
+ },
+ {
+  "slug": "quinta-vergara",
+  "name": "Anfiteatro Quinta Vergara",
+  "city": "Viña del Mar",
+  "zone": "Viña Centro",
+  "address": "Quinta 563",
+  "venue_type": "centro-cultural",
+  "tags": [
+   "cultural",
+   "en-vivo"
+  ],
+  "description_short": "Anfiteatro al aire libre para conciertos y festivales masivos.",
+  "instagram_url": null,
+  "official_url": null,
+  "publish": true
+ },
+ {
+  "slug": "refineria-concon",
+  "name": "Club Deportivo Refinería Concón",
+  "city": "Concón",
+  "zone": null,
+  "address": "Concón",
+  "venue_type": "centro-cultural",
+  "tags": [
+   "cultural",
+   "fiesta"
+  ],
+  "description_short": "Recinto abierto que aloja ferias gastronómicas y cerveceras, música en vivo y celebraciones.",
+  "instagram_url": null,
+  "official_url": null,
+  "publish": true
+ },
+ {
+  "slug": "garden-quilpue",
+  "name": "Garden Quilpué",
+  "city": "Quilpué",
+  "zone": "Quilpué Centro",
+  "address": "Vicuña Mackenna 635",
+  "venue_type": "discoteca",
+  "tags": [
+   "fiesta",
+   "reggaeton",
+   "universitario"
+  ],
+  "description_short": "Club nocturno con música urbana y pachanga universitaria.",
+  "instagram_url": null,
+  "official_url": null,
+  "publish": true
+ },
+ {
+  "slug": "teatro-pompeya",
+  "name": "Teatro Pompeya",
+  "city": "Villa Alemana",
+  "zone": null,
+  "address": "Paseo Latorre",
+  "venue_type": "teatro",
+  "tags": [
+   "cultural"
+  ],
+  "description_short": "Teatro patrimonial centenario con teatro independiente, cine y danza.",
+  "instagram_url": null,
+  "official_url": null,
+  "publish": true
+ },
+ {
+  "slug": "taussbrau",
+  "name": "Cervecería TaussBräu",
+  "city": "Limache",
+  "zone": null,
+  "address": "Gabriela Mistral 700",
+  "venue_type": "bar",
+  "tags": [
+   "cerveza",
+   "bar"
+  ],
+  "description_short": "Fábrica de cerveza alemana con patio y cocina germana. Referencia del turismo cervecero del valle.",
+  "instagram_url": null,
+  "official_url": null,
+  "publish": true
+ },
+ {
+  "slug": "nativo-restobar",
+  "name": "Nativo Restobar",
+  "city": "Limache",
+  "zone": null,
+  "address": "Riquelme 246",
+  "venue_type": "bar",
+  "tags": [
+   "bar"
+  ],
+  "description_short": "Restobar con coctelería de autor y tablas para compartir.",
+  "instagram_url": null,
+  "official_url": null,
+  "publish": true
+ },
+ {
+  "slug": "terra-viva-olmue",
+  "name": "Centro de Eventos Terra Viva",
+  "city": "Olmué",
+  "zone": null,
+  "address": "Av. Eastman",
+  "venue_type": "centro-cultural",
+  "tags": [
+   "fiesta",
+   "en-vivo",
+   "cumbia"
+  ],
+  "description_short": "Centro de espectáculos con fiestas temáticas, tributos y conciertos bailables.",
+  "instagram_url": null,
+  "official_url": null,
+  "publish": true
+ },
+ {
+  "slug": "el-patagual",
+  "name": "El Patagual",
+  "city": "Olmué",
+  "zone": null,
+  "address": "Centro de Olmué",
+  "venue_type": "centro-cultural",
+  "tags": [
+   "cultural",
+   "en-vivo"
+  ],
+  "description_short": "Anfiteatro al aire libre, escenario histórico de festivales folclóricos.",
+  "instagram_url": null,
+  "official_url": null,
+  "publish": true
+ },
+ {
+  "slug": "greiscol-restobar",
+  "name": "Greiscol Restobar",
+  "city": "Quillota",
+  "zone": null,
+  "address": "Ramón Freire 392",
+  "venue_type": "bar",
+  "tags": [
+   "cerveza",
+   "en-vivo"
+  ],
+  "description_short": "Cervecería artesanal de elaboración propia con tocatas acústicas de artistas locales.",
+  "instagram_url": null,
+  "official_url": null,
+  "publish": true
+ },
+ {
+  "slug": "discoteca-evolution",
+  "name": "Discoteca Evolution",
+  "city": "Quillota",
+  "zone": null,
+  "address": "Av. Condell 167",
+  "venue_type": "discoteca",
+  "tags": [
+   "fiesta",
+   "reggaeton"
+  ],
+  "description_short": "Club bailable con reggaetón, dance urbano y cumbia electrónica.",
+  "instagram_url": null,
+  "official_url": null,
+  "publish": true
+ },
+ {
+  "slug": "valentino-club",
+  "name": "Valentino Club",
+  "city": "Quillota",
+  "zone": null,
+  "address": "Av. Condell 171",
+  "venue_type": "discoteca",
+  "tags": [
+   "fiesta",
+   "universitario"
+  ],
+  "description_short": "Club nocturno con hits radiales y fiestas temáticas de fin de semana.",
+  "instagram_url": null,
+  "official_url": null,
+  "publish": true
+ },
+ {
+  "slug": "tabeerna-quillota",
+  "name": "Tabeerna",
+  "city": "Quillota",
+  "zone": null,
+  "address": "Av. Condell 272",
+  "venue_type": "bar",
+  "tags": [
+   "cerveza",
+   "pub"
+  ],
+  "description_short": "Bar cervecero de previa, con schops y tablas.",
+  "instagram_url": null,
+  "official_url": null,
+  "publish": true
+ },
+ {
+  "slug": "boulebar-la-calera",
+  "name": "Boulebar Restobar",
+  "city": "La Calera",
+  "zone": null,
+  "address": null,
+  "venue_type": "bar",
+  "tags": [
+   "bar"
+  ],
+  "description_short": "Gastrobar del casco central con coctelería de autor. Falta dirección exacta.",
+  "instagram_url": null,
+  "official_url": null,
+  "publish": false
+ },
+ {
+  "slug": "el-tablon-la-calera",
+  "name": "Pub Restaurant El Tablón",
+  "city": "La Calera",
+  "zone": null,
+  "address": null,
+  "venue_type": "pub",
+  "tags": [
+   "pub"
+  ],
+  "description_short": "Pub nocturno con destilados y picoteo. Falta dirección exacta.",
+  "instagram_url": null,
+  "official_url": null,
+  "publish": false
+ },
+ {
+  "slug": "palladium-quintero",
+  "name": "Palladium Discotheque",
+  "city": "Quintero",
+  "zone": null,
+  "address": "Av. 21 de Mayo 1500",
+  "venue_type": "discoteca",
+  "tags": [
+   "fiesta",
+   "reggaeton"
+  ],
+  "description_short": "Discoteca de alta convocatoria en el eje 21 de Mayo.",
+  "instagram_url": null,
+  "official_url": null,
+  "publish": true
+ },
+ {
+  "slug": "stoney-quintero",
+  "name": "Bar & Snack Stoney",
+  "city": "Quintero",
+  "zone": null,
+  "address": "Francisco Bilbao 133",
+  "venue_type": "bar",
+  "tags": [
+   "bar",
+   "fiesta"
+  ],
+  "description_short": "Gastro-pub con coctelería y DJ en vivo los fines de semana, hasta las 03:00.",
+  "instagram_url": null,
+  "official_url": null,
+  "publish": true
+ },
+ {
+  "slug": "pattos-shop",
+  "name": "Restaurant Patto´s Shop",
+  "city": "Quintero",
+  "zone": null,
+  "address": "Av. 21 de Mayo",
+  "venue_type": "sala-en-vivo",
+  "tags": [
+   "en-vivo",
+   "rock"
+  ],
+  "description_short": "Pub restaurante con tocatas en vivo todos los fines de semana: rock clásico, blues y alternativo.",
+  "instagram_url": null,
+  "official_url": null,
+  "publish": true
+ },
+ {
+  "slug": "waikiki-quintero",
+  "name": "Restaurante y Bar Waikiki",
+  "city": "Quintero",
+  "zone": null,
+  "address": "Playa Los Rieles Lote 12",
+  "venue_type": "bar",
+  "tags": [
+   "bar"
+  ],
+  "description_short": "Bar histórico en Playa Los Rieles, antigua discoteca fundada en 1958.",
+  "instagram_url": null,
+  "official_url": null,
+  "publish": true
+ },
+ {
+  "slug": "la-sirenita-quintero",
+  "name": "La Sirenita Restobar",
+  "city": "Quintero",
+  "zone": null,
+  "address": "Estrella de Chile 69",
+  "venue_type": "bar",
+  "tags": [
+   "bar"
+  ],
+  "description_short": "Restobar con barra de tragos y tablas, en formato nocturno de fin de semana.",
+  "instagram_url": null,
+  "official_url": null,
+  "publish": true
+ },
+ {
+  "slug": "maitencillo-bulevar",
+  "name": "Bulevar Nocturno Maitencillo",
+  "city": "Maitencillo",
+  "zone": null,
+  "address": "Av. del Mar",
+  "venue_type": "bar",
+  "tags": [
+   "bar",
+   "terraza"
+  ],
+  "description_short": "Terrazas de playa con coctelería y música en vivo, principalmente en temporada alta. Falta confirmar locales individuales.",
+  "instagram_url": null,
+  "official_url": null,
+  "publish": false
+ }
+]

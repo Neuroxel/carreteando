@@ -138,7 +138,9 @@ export const CATEGORIAS: {
   },
 ];
 
-export const CIUDADES = [
+// El corredor urbano manda la portada; el resto de la región existe igual y se
+// descubre por zonas, sin alargar la fila de chips hasta volverla inútil.
+export const CIUDADES_NUCLEO = [
   'Valparaíso',
   'Viña del Mar',
   'Reñaca',
@@ -146,6 +148,36 @@ export const CIUDADES = [
   'Villa Alemana',
   'Concón',
 ];
+export const CIUDADES = [
+  ...CIUDADES_NUCLEO,
+  'Limache',
+  'Olmué',
+  'Quillota',
+  'La Calera',
+  'Quintero',
+  'Puchuncaví',
+  'Maitencillo',
+];
+// Una base de marca, acentos por geografía. Nunca pintan el fondo de la página:
+// sólo un filete, un chip o el encabezado de una zona.
+export const ACENTO_CIUDAD: Record<string, string> = {
+  Valparaíso: '#f0785a',
+  'Viña del Mar': '#54c7c0',
+  Reñaca: '#e8b25c',
+  Concón: '#6f9ae0',
+  Quilpué: '#8fc26a',
+  'Villa Alemana': '#b48ae0',
+  Limache: '#bccf5e',
+  Olmué: '#6fbf8e',
+  Quillota: '#e08f6a',
+  'La Calera': '#9aa8bd',
+  Quintero: '#5cc0d8',
+  Puchuncaví: '#e08aa4',
+  Maitencillo: '#5fd0b0',
+};
+export function acentoDe(ciudad?: string | null) {
+  return (ciudad && ACENTO_CIUDAD[ciudad]) || '#f0785a';
+}
 
 export const SECTORES_POPULARES: Record<string, string[]> = {
   Valparaíso: [

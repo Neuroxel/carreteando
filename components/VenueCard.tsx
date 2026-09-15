@@ -1,8 +1,9 @@
 import Link from 'next/link';
 import { Lugar } from '../lib/venues';
+import { acentoDe } from '../lib/types';
 export default function VenueCard({ lugar: l, proximos }: { lugar: Lugar; proximos?: number }) {
   return (
-    <article className="venue-card">
+    <article className="venue-card" style={{ ['--ciudad' as string]: acentoDe(l.ciudad) }}>
       <Link href={`/lugar/${l.slug}`} className="venue-card-link">
         <p className="eyebrow venue-kind">
           {l.tipo_label}
