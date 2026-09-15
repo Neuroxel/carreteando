@@ -263,6 +263,17 @@ p {
   display: flex;
   gap: 36px;
   border-bottom: 1px solid var(--line);
+  /* Cuatro pestañas de 20px con 36px de separación no caben en un teléfono de
+     375. Esta fila era la que dejaba la página diez píxeles más ancha que la
+     pantalla y hacía que se pudiera arrastrar de lado. */
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scroll-snap-type: x proximity;
+}
+.date-tabs a { scroll-snap-align: start; flex: 0 0 auto; }
+@media (max-width: 480px) {
+  .date-tabs { gap: 22px; }
+  .date-tabs a { font-size: 17px; min-height: 52px; }
 }
 .date-tabs a {
   display: flex;
@@ -2475,13 +2486,6 @@ textarea::placeholder {
   .site-header nav { gap: 0; }
 }
 
-/* Algo dentro de main deja la página 10px más ancha que un teléfono de 375.
-   Los carruseles de fechas, ciudades y zonas ya tienen su propio scroll, así que
-   contener el eje horizontal aquí no recorta nada que deba verse. La causa
-   puntual sigue sin aislarse y está anotada en el backlog. */
-main {
-  overflow-x: clip;
-}
 .mapa-lienzo .leaflet-tile-pane {
   filter: invert(1) hue-rotate(185deg) brightness(0.72) contrast(1.15) saturate(0.5);
 }
