@@ -11,6 +11,10 @@ export const METRICS = [
   'venue_open',
   'zone_open',
   'live_report',
+  'map_open',
+  'search',
+  'social_click',
+  'marker_open',
 ] as const;
 export type Metric = (typeof METRICS)[number];
 export function track(name: Metric) {

@@ -18,7 +18,11 @@ export default function Metrics() {
     );
   }, [path]);
   useEffect(() => {
-    if ((path === '/' || path === '/buscar') && query.size) track('filter');
+    // /buscar dejó de ser una página: filtrar ocurre en la portada y en /explorar.
+    if (path !== '/' && path !== '/explorar') return;
+    if (query.get('vista') === 'mapa') track('map_open');
+    else if (query.get('q')) track('search');
+    else if (query.size) track('filter');
   }, [path, query]);
   useEffect(() => {
     const listener = (event: MouseEvent) => {
@@ -26,8 +30,12 @@ export default function Metrics() {
       const link = (event.target as Element)?.closest('a');
       if (!link) return;
       const url = new URL(link.href, location.origin);
-      if (url.hostname === 'www.google.com' && url.pathname.startsWith('/maps'))
-        track('directions');
+      const comoLlegar =
+        (url.hostname === 'www.google.com' && url.pathname.startsWith('/maps')) ||
+        (url.hostname.endsWith('openstreetmap.org') && url.pathname.startsWith('/directions'));
+      const social = /(^|\.)(instagram|facebook|tiktok)\.com$/.test(url.hostname);
+      if (comoLlegar) track('directions');
+      else if (social) track('social_click');
       else if (url.origin !== location.origin && url.hostname !== 'wa.me') track('source');
     };
     document.addEventListener('click', listener);

@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { encuadre, type PuntoMapa } from '../lib/map';
+import { track } from '../lib/metrics';
 import { acentoDe } from '../lib/types';
 const LEAFLET_CSS = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css';
 const LEAFLET_JS = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js';
@@ -20,7 +21,12 @@ type LeafletGlobal = {
   marker: (
     position: [number, number],
     options: Record<string, unknown>,
-  ) => { bindPopup: (html: string, options: Record<string, unknown>) => LeafletLayer };
+  ) => {
+    bindPopup: (
+      html: string,
+      options: Record<string, unknown>,
+    ) => LeafletLayer & { on: (evento: string, manejador: () => void) => void };
+  };
   layerGroup: () => LeafletLayer;
   markerClusterGroup?: (options: Record<string, unknown>) => LeafletLayer;
   latLngBounds: (points: [number, number][]) => unknown;
@@ -120,9 +126,10 @@ export default function VenueMap({ puntos }: { puntos: PuntoMapa[] }) {
             iconSize: [18, 18],
             iconAnchor: [9, 9],
           });
-          L.marker([punto.lat, punto.lng], { icon: icono, title: punto.nombre })
-            .bindPopup(ficha(punto), { maxWidth: 280, closeButton: true })
-            .addTo(grupo);
+          const marcador = L.marker([punto.lat, punto.lng], { icon: icono, title: punto.nombre })
+            .bindPopup(ficha(punto), { maxWidth: 280, closeButton: true });
+          marcador.on('popupopen', () => track('marker_open'));
+          marcador.addTo(grupo);
         }
         grupo.addTo(instancia);
         if (puntos.length > 1) {
