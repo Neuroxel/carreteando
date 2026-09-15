@@ -151,3 +151,54 @@ en la propia consulta), `community_queue_cleanup`, `event_source_health`.
 Nota de coste: el cron actual corre una vez al día y no gasta en Apify (`APIFY_PAUSED=true`).
 Subir la frecuencia sólo tiene sentido para la capa C, que no llama a proveedores pagos.
 No se aumentará la frecuencia de scraping pago sin diagnóstico de rendimiento por fuente.
+
+---
+
+## Fase 11 — estado tras cerrar el lazo operativo
+
+### Cerrados en esta fase
+
+- **Descubrimiento automático de eventos.** Ocho adaptadores reales detrás del cron
+  diario, que ahora despacha fuentes vencidas en vez de leer un JSON escrito a mano.
+- **Registro y salud de fuentes.** `event_sources` + `ingestion_source_runs`, con panel
+  en /admin: estado, última revisión, próxima, ítems, eventos, duplicados, errores y coste.
+  El dueño no necesita SQL.
+- **Mapa.** 62 lugares con coordenada verificada de un geocodificador con licencia,
+  guardando proveedor, precisión y la consulta exacta. Vista LISTA | MAPA, agrupación,
+  ficha por marcador y entrada propia en la navegación.
+- **Acceso a /admin.** Causa raíz identificada y cerrada; deja de ser bloqueante.
+- **Navegación móvil.** Barra inferior Ahora / Explorar / Mapa / Lugares.
+- **Barra de zonas.** La idea del prototipo B llevada a producción.
+
+### P0 — bloquean la beta cerrada
+
+1. **Primera corrida de adaptadores en producción.** El despachador está desplegado y
+   probado contra las fuentes reales, pero ninguna corrida productiva se ha ejecutado.
+   Se cierra con un clic en «Revisar fuentes ahora» o con el cron de las 18:00 UTC.
+2. **QA de moderación en producción.** `review_audit` sigue en 0 en producción. La
+   semántica completa (aprobar, editar, conflicto por revisión obsoleta, retirar, que el
+   import no reactive lo retirado, reaprobar, lugares, auditoría) está verificada contra
+   Postgres real, pero no ejercitada contra la base de producción.
+
+### P1 — bloquean el MVP público
+
+3. **Auditoría sin actor.** `review_audit` responde qué, cuándo, desde qué, hacia qué y
+   por qué, pero no **quién**, porque hay una sola credencial. Carlos necesita la suya.
+4. **Tiles de mapa a escala.** OpenStreetMap sirve los tiles bajo una política que
+   desaconseja el uso intensivo. Antes de abrir al público hay que pasar a un proveedor
+   contratado o servir tiles propios.
+5. **Reportes en vivo sin uso real.** La capa funciona y no tiene datos orgánicos. Se
+   resuelve con la beta, no con código.
+6. **Recheck de lugares por antigüedad.** El estado existe; falta el disparador.
+7. **Respaldos y recuperación.** Sin auditar en esta fase: qué respalda el plan actual,
+   cuánto retiene y si hay recuperación a un punto en el tiempo.
+8. **Los 10 px de desborde horizontal.** Contenidos en `main`; el elemento concreto no
+   se aisló.
+
+### P2
+
+9. 95 candidatos de lugar sin resolver; 34 de 88 lugares publicados sin identidad digital
+   confirmada.
+10. Cobertura de fuentes fuera del eje Valparaíso–Viña: siete comunas con lugares
+    publicados y ninguna fuente de agenda mapeada.
+11. Simulacro de cron caído uno y tres días, y de fuente que devuelve datos malformados.
