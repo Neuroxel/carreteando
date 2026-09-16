@@ -2908,3 +2908,93 @@ body { background: var(--bg); }
   .season-cifras { gap: 0.5rem 1.15rem; }
   .season-cifras strong { font-size: 1.5rem; }
 }
+
+/* Lugar ≠ evento: fondo oscuro, sin flyer, con el acento de su ciudad al borde
+   y las dos acciones que de verdad se usan a un toque. */
+.venue-card {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--ciudad, var(--amarillo));
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--cream);
+  overflow: hidden;
+  transition: transform 0.22s cubic-bezier(0.2, 0.7, 0.2, 1), border-color 0.22s ease;
+}
+.venue-card:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--ciudad) 55%, var(--line)); }
+.venue-card-link {
+  display: block;
+  padding: 1rem 1.1rem 0.85rem;
+  text-decoration: none;
+  color: inherit;
+}
+.venue-card h3 { margin: 0.25rem 0 0.3rem; font-size: 1.125rem; line-height: 1.2; }
+.venue-kind {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+}
+.venue-tipo { color: var(--ciudad, var(--amarillo)); font-weight: 750; }
+.venue-where { margin: 0; font-size: 0.875rem; opacity: 0.78; }
+.venue-agenda { margin: 0.5rem 0 0; font-size: 0.8125rem; opacity: 0.68; }
+.venue-hoy {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0.55rem 0 0;
+  font-size: 0.875rem;
+  font-weight: 650;
+  color: var(--amarillo);
+}
+.venue-hoy-punto {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--amarillo);
+  flex: 0 0 auto;
+}
+.venue-acciones {
+  display: flex;
+  gap: 0.25rem;
+  margin-top: auto;
+  border-top: 1px solid var(--line);
+}
+.venue-acciones a {
+  flex: 1;
+  padding: 0.7rem 0.5rem;
+  text-align: center;
+  font-size: 0.8125rem;
+  font-weight: 650;
+  text-decoration: none;
+  color: var(--cream);
+  transition: background-color 0.18s ease, color 0.18s ease;
+}
+.venue-acciones a:hover,
+.venue-acciones a:focus-visible {
+  background: color-mix(in srgb, var(--amarillo) 14%, transparent);
+  color: var(--amarillo);
+}
+.venue-acciones a + a { border-left: 1px solid var(--line); }
+
+/* Movimiento: entra desde un estado visible y desaparece si se pide reposo. */
+@media (prefers-reduced-motion: no-preference) {
+  .event-grid > *, .venue-grid > * {
+    animation: entrar 0.42s cubic-bezier(0.22, 0.8, 0.3, 1) backwards;
+  }
+  .event-grid > *:nth-child(1), .venue-grid > *:nth-child(1) { animation-delay: 0ms; }
+  .event-grid > *:nth-child(2), .venue-grid > *:nth-child(2) { animation-delay: 45ms; }
+  .event-grid > *:nth-child(3), .venue-grid > *:nth-child(3) { animation-delay: 90ms; }
+  .event-grid > *:nth-child(4), .venue-grid > *:nth-child(4) { animation-delay: 135ms; }
+  .event-grid > *:nth-child(5), .venue-grid > *:nth-child(5) { animation-delay: 180ms; }
+  .event-grid > *:nth-child(n + 6), .venue-grid > *:nth-child(n + 6) { animation-delay: 210ms; }
+  @keyframes entrar {
+    from { opacity: 0.001; transform: translateY(12px); }
+    to { opacity: 1; transform: none; }
+  }
+  .event-card:hover .event-art img,
+  .event-card:hover .flyer-fallback { transform: scale(1.035); }
+  .season-comunas a:active, .chip:active, .bottom-nav-item:active { transform: scale(0.97); }
+}

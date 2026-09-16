@@ -36,8 +36,13 @@ export default async function Explore({
   const today = toChileDateString(result.checkedAt);
   const events = diversifyByVenue(filterEvents(result.events, filters, today));
   const conteoLugar = new Map<string, number>();
-  for (const e of result.events)
-    if (e.lugar) conteoLugar.set(e.lugar, (conteoLugar.get(e.lugar) || 0) + 1);
+  // Lo de esta noche por recinto: la tarjeta de lugar lo dice sin abrir nada.
+  const hoyPorLugar = new Map<string, string>();
+  for (const e of result.events) {
+    if (!e.lugar) continue;
+    conteoLugar.set(e.lugar, (conteoLugar.get(e.lugar) || 0) + 1);
+    if (e.fecha === today && !hoyPorLugar.has(e.lugar)) hoyPorLugar.set(e.lugar, e.nombre);
+  }
   // Surface places that have something coming before the rest, so the block is
   // useful rather than alphabetical.
   const lugaresHallados = filters.busqueda ? buscarLugares(venues.lugares, filters.busqueda) : [];
@@ -449,7 +454,12 @@ export default async function Explore({
             )}
             <div className="venue-grid">
               {lugaresHallados.slice(0, 9).map((l) => (
-                <VenueCard key={l.slug} lugar={l} proximos={conteoLugar.get(l.nombre) || 0} />
+                <VenueCard
+                  key={l.slug}
+                  lugar={l}
+                  proximos={conteoLugar.get(l.nombre) || 0}
+                  hoy={hoyPorLugar.get(l.nombre) || null}
+                />
               ))}
             </div>
           </div>
@@ -478,7 +488,12 @@ export default async function Explore({
             </div>
             <div className="venue-grid">
               {(ver === 'lugares' ? lugaresZona : lugaresZona.slice(0, 6)).map((l) => (
-                <VenueCard key={l.slug} lugar={l} proximos={conteoLugar.get(l.nombre) || 0} />
+                <VenueCard
+                  key={l.slug}
+                  lugar={l}
+                  proximos={conteoLugar.get(l.nombre) || 0}
+                  hoy={hoyPorLugar.get(l.nombre) || null}
+                />
               ))}
             </div>
           </div>
