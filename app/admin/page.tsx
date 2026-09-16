@@ -1,5 +1,5 @@
 import sources from '../../data/sources.json';
-import { isAdmin } from '../../lib/admin-session';
+import { currentActor, isAdmin } from '../../lib/admin-session';
 import { getAdminDb } from '../../lib/server-db';
 import { login, logout, review, reviewVenue, importEditorial, runIngestion } from './actions';
 import AdminStats from '../../components/AdminStats';
@@ -377,6 +377,7 @@ export default async function Admin({
         </form>
       </section>
     );
+  const actor = await currentActor();
   const db = getAdminDb();
   const [queue, events, audit, metrics, venues, sourceRows] = await Promise.all([
     db
@@ -393,7 +394,7 @@ export default async function Admin({
       .limit(300),
     db
       ?.from('review_audit')
-      .select('created_at,target,action,note')
+      .select('created_at,target,action,note,actor')
       .order('created_at', { ascending: false })
       .limit(20),
     db
@@ -445,8 +446,12 @@ export default async function Admin({
       : statuses[String(params.status)];
   return (
     <section className="container page-section admin-page">
-      <p className="eyebrow">REVISIÓN PRIVADA</p>
+      <p className="eyebrow">REVISIÓN PRIVADA · {(actor || 'sesión').toUpperCase()}</p>
       <h1>Una cartelera confiable.</h1>
+      <p className="trust-note">
+        Estás moderando como <strong>{actor || 'desconocido'}</strong>. Cada cambio que hagas queda
+        registrado con tu nombre.
+      </p>
       <form action={logout}>
         <button className="button button-outline">Cerrar sesión</button>
       </form>

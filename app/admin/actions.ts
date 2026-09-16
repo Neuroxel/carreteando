@@ -1,7 +1,7 @@
 'use server';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
-import { isAdmin, loginAdmin, logoutAdmin } from '../../lib/admin-session';
+import { currentActor, isAdmin, loginAdmin, logoutAdmin } from '../../lib/admin-session';
 import { getAdminDb } from '../../lib/server-db';
 import { ReviewInputError, reviewInput } from '../../lib/review-input';
 import { CIUDADES } from '../../lib/types';
@@ -21,7 +21,8 @@ export async function review(
   action: string,
   form: FormData,
 ) {
-  if (!(await isAdmin())) redirect('/admin');
+  const actor = await currentActor();
+  if (!actor) redirect('/admin');
   let status = 'invalid';
   let detalle = '';
   try {
@@ -35,6 +36,7 @@ export async function review(
       p_action: action,
       p_note: note,
       p_fields: fields,
+      p_actor: actor,
     });
     status = result.error ? 'failed' : result.data === 'saved' ? 'saved' : 'conflict';
     if (result.error)
@@ -83,7 +85,8 @@ export async function runIngestion() {
 }
 
 export async function reviewVenue(id: string, revision: number, action: string, form: FormData) {
-  if (!(await isAdmin())) redirect('/admin');
+  const actor = await currentActor();
+  if (!actor) redirect('/admin');
   let status = 'invalid';
   try {
     const note = String(form.get('note') || '').trim();
@@ -127,6 +130,7 @@ export async function reviewVenue(id: string, revision: number, action: string, 
       p_action: action,
       p_note: note,
       p_fields: fields,
+      p_actor: actor,
     });
     status = result.error ? 'failed' : result.data === 'saved' ? 'saved' : 'conflict';
   } catch (error) {

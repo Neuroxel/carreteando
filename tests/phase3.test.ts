@@ -13,7 +13,9 @@ import { toChileDateString } from '../lib/event-extraction';
 test('owner session rejects tampering, expiry, future lifetime and rotation', () => {
   const secret = 'a'.repeat(43),
     now = Date.parse('2026-09-14T12:00:00Z');
-  const payload = `${now + 3600000}.${'a'.repeat(32)}`;
+  // La cookie lleva además quién es: la auditoría necesita el actor.
+  const actorB64 = Buffer.from('propietario', 'utf8').toString('base64url');
+  const payload = `${now + 3600000}.${'a'.repeat(32)}.${actorB64}`;
   const signature = createHmac('sha256', secret)
     .update(`admin-session-v1|${payload}`)
     .digest('base64url');

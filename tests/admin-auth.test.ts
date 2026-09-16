@@ -55,17 +55,53 @@ test('a session cookie is only valid signed, unexpired and well formed', () => {
   const { createHmac } = require('node:crypto') as typeof import('node:crypto');
   const sign = (payload: string) =>
     createHmac('sha256', SECRET).update(`admin-session-v1|${payload}`).digest('base64url');
-  const payload = `${now + 3_600_000}.${'a'.repeat(32)}`;
+  const actor = Buffer.from('propietario', 'utf8').toString('base64url');
+  const payload = `${now + 3_600_000}.${'a'.repeat(32)}.${actor}`;
   assert.equal(validSession(`${payload}.${sign(payload)}`, SECRET, now), true);
   assert.equal(validSession(`${payload}.${sign(payload)}`, null, now), false, 'no secret, no session');
   assert.equal(validSession(`${payload}.${sign(payload)}`, 'z'.repeat(48), now), false);
   assert.equal(validSession(`${payload}.nope`, SECRET, now), false);
   assert.equal(validSession(undefined, SECRET, now), false);
-  const expired = `${now - 1}.${'a'.repeat(32)}`;
+  const expired = `${now - 1}.${'a'.repeat(32)}.${actor}`;
   assert.equal(validSession(`${expired}.${sign(expired)}`, SECRET, now), false);
   // A cookie that claims more than the two hours the page promises.
-  const overlong = `${now + 7_200_001 + 1000}.${'a'.repeat(32)}`;
+  const overlong = `${now + 7_200_001 + 1000}.${'a'.repeat(32)}.${actor}`;
   assert.equal(validSession(`${overlong}.${sign(overlong)}`, SECRET, now), false);
   const extra = `${payload}.${sign(payload)}.extra`;
   assert.equal(validSession(extra, SECRET, now), false);
+});
+
+test('la sesión dice quién modera, y no se puede falsificar', async () => {
+  const { sessionActor } = await import('../lib/admin-session');
+  const { createHmac } = await import('node:crypto');
+  const now = 1_700_000_000_000;
+  const cookie = (nombre: string, clave: string) => {
+    const actor = Buffer.from(nombre, 'utf8').toString('base64url');
+    const payload = `${now + 3_600_000}.${'a'.repeat(32)}.${actor}`;
+    const firma = createHmac('sha256', clave)
+      .update(`admin-session-v1|${payload}`)
+      .digest('base64url');
+    return `${payload}.${firma}`;
+  };
+  assert.equal(sessionActor(cookie('Carlos', SECRET), SECRET, now), 'Carlos');
+  assert.equal(sessionActor(cookie('propietario', SECRET), SECRET, now), 'propietario');
+  // Cambiar el nombre invalida la firma: nadie modera bajo el nombre de otro.
+  const suplantada = cookie('Carlos', SECRET).replace(
+    Buffer.from('Carlos', 'utf8').toString('base64url'),
+    Buffer.from('propietario', 'utf8').toString('base64url'),
+  );
+  assert.equal(sessionActor(suplantada, SECRET, now), null);
+  assert.equal(sessionActor(cookie('Carlos', 'z'.repeat(48)), SECRET, now), null);
+  assert.equal(sessionActor(undefined, SECRET, now), null);
+});
+
+test('un moderador con nombre entra sin ser el propietario', () => {
+  // La clave del propietario ya no es la única puerta, y no hay una segunda
+  // clave compartida: cada moderador tiene la suya.
+  assert.equal(loginOutcome('clave-de-carlos', SECRET, true, true, 'Carlos'), 'ok');
+  assert.equal(loginOutcome('clave-de-carlos', SECRET, true, true, null), 'mismatch');
+  assert.equal(loginOutcome(SECRET, SECRET, true, true, null), 'ok');
+  // Un moderador desactivado no entra: la búsqueda no lo devuelve.
+  assert.equal(loginOutcome('clave-revocada', SECRET, true, true, null), 'mismatch');
+  assert.equal(loginOutcome('clave-de-carlos', SECRET, true, false, 'Carlos'), 'rate-limited');
 });
