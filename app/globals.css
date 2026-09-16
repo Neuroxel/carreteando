@@ -2697,10 +2697,12 @@ body { background: var(--bg); }
 .flyer-fallback {
   height: 100%;
   width: 100%;
-  padding: 16px 18px 18px;
+  /* Arriba queda aire para la insignia de fecha, que antes se comía la primera
+     línea y dejaba leer "DEL MAR" y "AVÍ". */
+  padding: 52px 18px 16px;
   display: grid;
-  grid-template-rows: auto 1fr auto;
-  gap: 6px;
+  grid-template-rows: 1fr auto;
+  gap: 8px;
   position: relative;
   overflow: hidden;
   isolation: isolate;
@@ -2714,14 +2716,39 @@ body { background: var(--bg); }
   inset: 0;
   z-index: -1;
 }
-.ff-lugar-alto {
+.ff-pie {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
   font-size: 9px;
   font-weight: 700;
-  letter-spacing: 0.18em;
-  opacity: 0.82;
+  letter-spacing: 0.16em;
+}
+.ff-tipo-chip {
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ff-trazo) 88%, #000);
+  color: #10100f;
+}
+.ff-donde {
+  opacity: 0.86;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ff-donde::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 5px;
+  border-radius: 50%;
+  background: var(--acento, var(--ff-trazo));
+  vertical-align: 1px;
 }
 .ff-tipo {
-  align-self: center;
+  align-self: end;
   /* El nombre de un recinto es más largo que una etiqueta: el tamaño baja con
      los caracteres para que "Cancha Capilla Nuestra Señora del Carmen" quepa
      sin partirse en seis líneas. */
@@ -2735,20 +2762,7 @@ body { background: var(--bg); }
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-.ff-recinto {
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  font-size: 10px;
-  opacity: 0.85;
-}
-.ff-recinto {
-  font-size: 11px;
-  font-weight: 600;
-  opacity: 0.9;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
+
 /* Familias: el tipo de noche elige la paleta base. */
 .art-fonda      { --ff-fondo: #8c1f12; --ff-tinta: #ffe3b0; --ff-trazo: #ffb703; }
 .art-club       { --ff-fondo: #161a3a; --ff-tinta: #dfe4ff; --ff-trazo: #7a8cff; }
@@ -2818,17 +2832,7 @@ body { background: var(--bg); }
 .comp-6::after {
   background: linear-gradient(160deg, transparent 60%, color-mix(in srgb, #000 45%, transparent));
 }
-/* El acento de ciudad firma el cartel sin repintarlo. */
-.flyer-fallback .ff-lugar-alto::before {
-  content: '';
-  display: inline-block;
-  width: 7px;
-  height: 7px;
-  margin-right: 6px;
-  border-radius: 50%;
-  background: var(--acento, var(--ff-trazo));
-  vertical-align: 1px;
-}
+
 
 /* El Dieciocho en portada: cifras, comunas y fondas reales, no un botón. */
 .season-hero {

@@ -64,10 +64,13 @@ export default function EventImage({
           aria-hidden="true"
         >
           {/* El recinto manda: "FONDA" repetido quince veces no distingue nada,
-              y "Medialuna de Puchuncaví" sí dice dónde es la noche. */}
-          <span className="ff-lugar-alto">{lugarTexto.toUpperCase()}</span>
+              y "Medialuna de Puchuncaví" sí dice dónde es la noche. La esquina
+              superior izquierda queda libre: ahí va la insignia de fecha. */}
           <strong className="ff-tipo">{(lugar || headline).toUpperCase()}</strong>
-          <small className="ff-recinto">{headline}</small>
+          <small className="ff-pie">
+            <span className="ff-tipo-chip">{headline}</span>
+            <span className="ff-donde">{lugarTexto.toUpperCase()}</span>
+          </small>
         </div>
       )}
     </div>
