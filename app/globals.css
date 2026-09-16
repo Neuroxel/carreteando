@@ -2722,11 +2722,24 @@ body { background: var(--bg); }
 }
 .ff-tipo {
   align-self: center;
-  font-size: clamp(26px, 8.5vw, 44px);
-  line-height: 0.9;
-  letter-spacing: -0.045em;
+  /* El nombre de un recinto es más largo que una etiqueta: el tamaño baja con
+     los caracteres para que "Cancha Capilla Nuestra Señora del Carmen" quepa
+     sin partirse en seis líneas. */
+  font-size: clamp(19px, 6.4vw, 34px);
+  line-height: 0.96;
+  letter-spacing: -0.035em;
   text-transform: uppercase;
   overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.ff-recinto {
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-size: 10px;
+  opacity: 0.85;
 }
 .ff-recinto {
   font-size: 11px;

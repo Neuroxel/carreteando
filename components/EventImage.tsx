@@ -63,9 +63,11 @@ export default function EventImage({
           style={{ ['--acento' as string]: acentoDe(ciudad || '') }}
           aria-hidden="true"
         >
+          {/* El recinto manda: "FONDA" repetido quince veces no distingue nada,
+              y "Medialuna de Puchuncaví" sí dice dónde es la noche. */}
           <span className="ff-lugar-alto">{lugarTexto.toUpperCase()}</span>
-          <strong className="ff-tipo">{headline}</strong>
-          <small className="ff-recinto">{lugar || 'Lugar por confirmar'}</small>
+          <strong className="ff-tipo">{(lugar || headline).toUpperCase()}</strong>
+          <small className="ff-recinto">{headline}</small>
         </div>
       )}
     </div>
