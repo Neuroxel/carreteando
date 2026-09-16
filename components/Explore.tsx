@@ -334,10 +334,12 @@ export default async function Explore({
             </p>
             <h2>
               {filters.fecha === 'hoy'
-                ? 'Para esta noche'
+                ? 'Hoy'
                 : filters.fecha === 'finde'
                   ? 'Se viene el finde'
-                  : 'Lo que se viene'}
+                  : filters.fecha === 'manana'
+                    ? 'Mañana'
+                    : 'Lo que se viene'}
               <span className="heading-period">.</span>
             </h2>
           </div>
