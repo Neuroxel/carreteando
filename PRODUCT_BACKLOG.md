@@ -257,3 +257,50 @@ Investigado hasta: **2026-09-15**. No se afirma cobertura permanente.
     investigar.
 11. 153 eventos caducados conservados como evidencia: conviene archivarlos fuera
     de la tabla viva cuando crezcan.
+
+---
+
+## Fase 13 — cierre operativo
+
+Investigado hasta: **2026-09-15**.
+
+### Corregido
+
+- **La moderación estaba rota, no sólo sin usar.** El dueño aprobó, editó y
+  retiró en /admin y la base no registró nada: `review_audit` vacío y ningún
+  evento llegó nunca a `revision 1`. El formulario validaba con el validador de
+  **aportes públicos**, que exige organizador de 2+ caracteres y descripción de
+  20+. La agenda propia de un local no tiene ninguno de los dos, y las filas de
+  adaptador traen `username` nulo: aprobar era imposible, y el mensaje de error
+  nombraba campos que no eran el problema. Corregido, con tests que fijan la
+  nueva regla y protegen la estricta del público.
+- **Programación sub-diaria encendida.** Cuatro trabajos `pg_cron` activos. La
+  autenticación no usa secreto compartido: la base emite un pase de un solo uso
+  desde una tabla del rol de servicio. Probado: 401 sin pase, 200 con pase.
+- **De 8 a 24 fuentes automáticas.** Las 16 carteleras que esperaban adaptador,
+  todas probadas antes de registrarse. Lugares con fuente automática: 5 → 21.
+- **Un lugar cerrado que seguía publicado.** Bar El Irlandés cerró en 2025.
+- **Respaldo honesto.** Copia el esquema junto a los datos y declara que la
+  restauración no se ha ensayado.
+
+### P0 — bloquean la beta cerrada
+
+1. **`review_audit` sigue en 0 en producción.** El defecto que lo impedía está
+   corregido y desplegado; falta que una aprobación, una edición y un retiro
+   se completen contra la base real.
+
+### P1 — bloquean el MVP público
+
+2. Auditoría sin actor: Carlos necesita credencial propia.
+3. 0 de 91 lugares con imagen propia.
+4. Tiles de mapa a escala: OpenStreetMap desaconseja uso intensivo.
+5. 36 lugares sin fuente de programación; 30 sin identidad digital.
+6. Reportes en vivo sin uso orgánico.
+7. Disparador de recheck: `next_recheck_at` poblado, sin consumidor.
+8. Restauración de respaldo sin ensayar.
+
+### P2
+
+9. 92 candidatos en `needs_evidence`, todos explicados y con fecha de revisión.
+10. Litoral sur (Algarrobo, El Quisco, Cartagena, San Antonio) sin investigar.
+11. 153 eventos caducados conservados como evidencia.
