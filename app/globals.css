@@ -1958,6 +1958,7 @@ textarea::placeholder {
    tarjeta es crema (#f0eddf), así que el acento tiene que ir hacia el óxido
    oscuro y no hacia el coral claro: a 9px en negrita el mínimo es 4,5:1 y este
    tono da alrededor de 7:1. */
+.event-card .card-category.is-fonda,
 .card-category.is-fonda {
   color: #8a3113;
 }
@@ -2041,7 +2042,9 @@ textarea::placeholder {
   border: 1px solid rgba(240, 120, 90, 0.5);
   background: linear-gradient(135deg, rgba(122, 35, 24, 0.5), rgba(240, 120, 90, 0.12));
 }
-.season-hero .eyebrow {
+/* Sólo el rótulo del propio bloque: dentro viven tarjetas con su propio
+   .eyebrow, y esta regla las pintaba crema sobre crema. */
+.season-hero > .season-cabecera .eyebrow {
   color: #ffd9a8;
 }
 .season-hero h2 {
