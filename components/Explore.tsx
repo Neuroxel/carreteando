@@ -59,6 +59,16 @@ export default async function Explore({
   const todayCount = filterEvents(result.events, { fecha: 'hoy' }, today).length;
   const dieciocho = esTemporadaDieciocho(today);
   const fondas = result.events.filter((e) => e.tipo === 'fonda');
+  // El rango se lee de las fechas que hay, no de un texto escrito a mano: la
+  // primera vez que una fonda se estiró un día más, el bloque quedó mintiendo.
+  const diasFonda = [...new Set(fondas.map((e) => e.fecha))].sort();
+  const diaCorto = (iso: string) => Number(iso.slice(8, 10));
+  const rangoFondas = diasFonda.length
+    ? diasFonda.length === 1
+      ? `el ${diaCorto(diasFonda[0])} de septiembre`
+      : `del ${diaCorto(diasFonda[0])} al ${diaCorto(diasFonda[diasFonda.length - 1])}`
+    : '';
+
   const faltan = Math.round(
     (Date.parse(`${today.slice(0, 4)}-09-18T12:00:00Z`) - Date.parse(`${today}T12:00:00Z`)) /
       86400000,
@@ -131,7 +141,7 @@ export default async function Explore({
           </h2>
           <p>
             {fondas.length} fechas de fonda revisadas en {new Set(fondas.map((e) => e.ciudad)).size}{' '}
-            comunas, del 17 al 20. Con dirección, precio y fuente.
+            comunas, {rangoFondas}. Con dirección, precio y fuente.
           </p>
           <div className="actions">
             <Link className="button button-primary" href={`${path}?tipo=fonda&fecha=futuro`}>
