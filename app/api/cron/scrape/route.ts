@@ -68,7 +68,7 @@ export async function GET(request: Request) {
     return reply({
       success: true,
       skipped: 'cooldown',
-      message: 'Ya hubo una ingesta en las últimas 6 horas.',
+      message: 'Ya hubo una ingesta en las últimas 3 horas.',
     });
   const started = Date.now();
   let apifyId: string | null = null;

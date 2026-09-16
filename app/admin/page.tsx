@@ -379,7 +379,7 @@ export default async function Admin({
     );
   const actor = await currentActor();
   const db = getAdminDb();
-  const [queue, events, audit, metrics, venues, sourceRows] = await Promise.all([
+  const [queue, events, audit, metrics, venues, sourceRows, runs] = await Promise.all([
     db
       ?.from('community_inbox')
       .select('id,kind,payload,status,revision,reviewed_at')
@@ -416,6 +416,11 @@ export default async function Admin({
       .order('commune')
       .order('name')
       .limit(100),
+    db
+      ?.from('ingestion_runs')
+      .select('status,started_at,completed_at,metrics')
+      .order('started_at', { ascending: false })
+      .limit(5),
   ]);
   const failed = !db || queue?.error || events?.error || audit?.error;
   const list = events?.data || [];
@@ -510,6 +515,17 @@ export default async function Admin({
               </details>
             </>
           )}
+          {(() => {
+            // Una corrida fallida tiene que verse acá, no en los logs.
+            const ultima = runs?.data?.[0];
+            if (!ultima || ultima.status === 'succeeded') return null;
+            return (
+              <p role="alert" className="form-error">
+                La última ingesta automática ({String(ultima.started_at).slice(0, 16).replace('T', ' ')}
+                ) terminó en «{String(ultima.status)}». Revisa la tabla de fuentes más abajo.
+              </p>
+            );
+          })()}
           <h2>Estado del producto</h2>
           <AdminStats
             venues={venues?.data || []}
