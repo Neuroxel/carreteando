@@ -9,6 +9,10 @@ import {
   stripTags,
 } from '../normalize';
 import { SourceError, type Adapter, type AdapterResult, type SourceDefinition } from '../types';
+type WpMedia = {
+  source_url?: string;
+  media_details?: { sizes?: Record<string, { source_url?: string; width?: number }> };
+};
 type WpPost = {
   id?: number;
   slug?: string;
@@ -18,11 +22,35 @@ type WpPost = {
   excerpt?: { rendered?: string };
   meta?: Record<string, unknown>;
   date?: string;
+  _embedded?: { 'wp:featuredmedia'?: WpMedia[] };
 };
+/**
+ * El cartel oficial del evento, en un tamaño razonable para una tarjeta: bajar
+ * el original de 4000px para mostrarlo a 300 es tirar el ancho de banda del
+ * usuario. Algunos sitios ya publican la URL directa en un campo propio.
+ */
+function imagenOficial(post: WpPost): string | null {
+  const meta = post.meta || {};
+  for (const clave of ['imagen_evento', 'imagen', 'afiche']) {
+    const valor = meta[clave];
+    if (typeof valor === 'string' && /^https?:\/\//.test(valor)) return valor;
+  }
+  const media = post._embedded?.['wp:featuredmedia']?.[0];
+  if (!media) return null;
+  const sizes = media.media_details?.sizes || {};
+  const preferidos = ['medium_large', 'large', 'medium'];
+  for (const nombre of preferidos) {
+    const url = sizes[nombre]?.source_url;
+    if (url) return url;
+  }
+  return media.source_url || null;
+}
 async function wpPosts(source: SourceDefinition, fetcher: Parameters<Adapter['run']>[1]) {
   const postType = source.config?.postType || 'posts';
   const perPage = source.config?.perPage || '30';
-  const url = `${source.publicUrl.replace(/\/$/, '')}/wp-json/wp/v2/${postType}?per_page=${perPage}&orderby=date&order=desc`;
+  // _embed trae la imagen destacada en la misma petición: una llamada por
+  // fuente en vez de una por evento.
+  const url = `${source.publicUrl.replace(/\/$/, '')}/wp-json/wp/v2/${postType}?per_page=${perPage}&orderby=date&order=desc&_embed=wp:featuredmedia`;
   const response = await fetcher(url);
   if (response.status !== 200) throw new SourceError(`HTTP_${response.status}`);
   let parsed: unknown;
@@ -78,6 +106,7 @@ export const wpEventsList: Adapter = {
         venue: source.venueName || null,
         city: source.commune,
         detailUrl: detail,
+        imageUrl: imagenOficial(post),
         description: blurb || textOf(post),
         confidence: 'high',
         reasons: ['fecha estructurada en la fuente oficial', 'lugar conocido'],
@@ -117,6 +146,7 @@ export const wpDatedSlug: Adapter = {
         venue: source.venueName || null,
         city: source.commune,
         detailUrl: post.link || source.publicUrl,
+        imageUrl: imagenOficial(post),
         description: textOf(post),
         // Two independent readings agreeing is what earns the extra confidence.
         confidence: fromSlug && fromTitle && fromSlug === fromTitle ? 'high' : 'medium',
@@ -162,6 +192,7 @@ export const wpNewsScan: Adapter = {
         venue: null,
         city: source.commune,
         detailUrl: post.link || source.publicUrl,
+        imageUrl: imagenOficial(post),
         description: body,
         confidence: 'low',
         reasons: ['mención en comunicado municipal', 'fecha leída del texto, sin confirmar'],

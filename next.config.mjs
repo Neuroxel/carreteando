@@ -11,6 +11,14 @@ const nextConfig = {
       { protocol: 'https', hostname: 'ticketing-uploads-1.ticketplus.global' },
       { protocol: 'https', hostname: 'events-cdn.vesti.cl' },
       { protocol: 'https', hostname: 'images.portaldisc.com' },
+      // Sitios oficiales de los propios lugares y municipios: de ahí sale el
+      // cartel que el organizador publicó para anunciar su evento.
+      { protocol: 'https', hostname: 'parquecultural.cl' },
+      { protocol: 'https', hostname: 'cinzanooficial.cl' },
+      { protocol: 'https', hostname: 'municipalidaddevalparaiso.cl' },
+      { protocol: 'https', hostname: 'www.municipalidaddevalparaiso.cl' },
+      { protocol: 'https', hostname: 'www.munivina.cl' },
+      { protocol: 'https', hostname: 'lacalera.cl' },
     ],
   },
   async headers() {

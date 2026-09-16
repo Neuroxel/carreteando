@@ -171,6 +171,17 @@ export async function runSource(
       instagram_url: candidate.detailUrl,
       source_detail_url: candidate.detailUrl,
       image_url: candidate.imageUrl,
+      // La procedencia viaja con la imagen: una ticketera no es lo mismo que el
+      // cartel que el propio local publicó.
+      image_source_url: candidate.imageUrl ? candidate.detailUrl : null,
+      image_kind: candidate.imageUrl
+        ? source.sourceType === 'TICKET_PLATFORM'
+          ? 'ticketera'
+          : source.sourceType === 'MUNICIPALITY'
+            ? 'grafica_municipal'
+            : 'flyer_oficial'
+        : null,
+      image_verified_at: candidate.imageUrl ? new Date().toISOString() : null,
       price_clp: candidate.priceClp,
       price_text: candidate.priceText,
       category: detectCategory(`${candidate.title} ${candidate.description || ''}`),

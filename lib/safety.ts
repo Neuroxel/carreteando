@@ -1,3 +1,4 @@
+import { hostPermitido } from './image-hosts';
 /** Only explicit web URLs; never use untrusted URLs for server-side fetching. */
 export function safeWebUrl(value: unknown): string | null {
   if (typeof value !== 'string' || value.length > 1200 || /[\u0000-\u0020\u007f]/.test(value))
@@ -15,12 +16,5 @@ export function safeImageUrl(value: unknown): string | null {
   if (!url) return null;
   const u = new URL(url);
   if (u.protocol !== 'https:') return null;
-  return /(?:^|\.)(?:cdninstagram\.com|fbcdn\.net)$/.test(u.hostname) ||
-    u.hostname === 'images.unsplash.com' ||
-    u.hostname === 'imagenes.passline.com' ||
-    u.hostname === 'ticketing-uploads-1.ticketplus.global' ||
-    u.hostname === 'events-cdn.vesti.cl' ||
-    u.hostname === 'images.portaldisc.com'
-    ? url
-    : null;
+  return hostPermitido(u.hostname) ? url : null;
 }
