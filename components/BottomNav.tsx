@@ -11,6 +11,16 @@ export default function BottomNav() {
   const pathname = usePathname();
   const params = useSearchParams();
   const enMapa = pathname === '/explorar' && params.get('vista') === 'mapa';
+  // Tocar Mapa mientras exploras filtrado no debería devolverte a la región
+  // entera: la vista cambia, lo que estabas mirando se mantiene.
+  const conFiltros = (vista: 'lista' | 'mapa') => {
+    if (pathname !== '/explorar') return vista === 'mapa' ? '/explorar?vista=mapa' : '/explorar';
+    const q = new URLSearchParams(params.toString());
+    if (vista === 'mapa') q.set('vista', 'mapa');
+    else q.delete('vista');
+    const cadena = q.toString();
+    return cadena ? `/explorar?${cadena}` : '/explorar';
+  };
   const activo = (href: string) => {
     if (href === '/explorar?vista=mapa') return enMapa;
     if (href === '/explorar') return pathname === '/explorar' && !enMapa;
@@ -22,7 +32,13 @@ export default function BottomNav() {
       {DESTINOS.map((d) => (
         <Link
           key={d.label}
-          href={d.href}
+          href={
+            d.href === '/explorar?vista=mapa'
+              ? conFiltros('mapa')
+              : d.href === '/explorar'
+                ? conFiltros('lista')
+                : d.href
+          }
           className={`bottom-nav-item ${activo(d.href) ? 'activo' : ''}`}
           aria-current={activo(d.href) ? 'page' : undefined}
         >
