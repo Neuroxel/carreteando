@@ -5,6 +5,17 @@ import { safeImageUrl, safeWebUrl } from './safety';
 import { CIUDADES, CATEGORIAS } from './types';
 // Version-controlled operator approvals, not auto-approval of scraped/anonymous input.
 // Import-only: subsequent runs must never overwrite withdrawals or editorial corrections.
+/** Una imagen sin origen declarado no entra: la base lo exige y tiene razón. */
+export function imagenConOrigen(imagen: unknown, fuente: string) {
+  const url = safeImageUrl(imagen);
+  if (!url) return { image_url: null, image_source_url: null, image_kind: null };
+  return {
+    image_url: url,
+    image_source_url: fuente,
+    image_kind: 'ticketera' as const,
+    image_verified_at: new Date().toISOString(),
+  };
+}
 export function editorialRows(now = new Date()) {
   const today = toChileDateString(now);
   return feed
@@ -50,7 +61,9 @@ export function editorialRows(now = new Date()) {
       price_text: e.price_text,
       category: e.category,
       instagram_url: e.source_url,
-      image_url: safeImageUrl(e.image_url),
+      // La procedencia viaja con la imagen. Sin esto, la restricción de la base
+      // rechazaba el import completo y la ingesta diaria caía con DB_EDITORIAL.
+      ...imagenConOrigen(e.image_url, e.source_url),
       username: e.organizer,
       source: new URL(e.source_url).hostname === 'www.passline.com' ? 'passline' : 'editorial',
       source_published_at: null,

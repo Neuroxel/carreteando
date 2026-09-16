@@ -35,3 +35,17 @@ test('sólo se muestran imágenes de dominios declarados y por https', () => {
   assert.equal(hostPermitido('scontent.cdninstagram.com'), true);
   assert.equal(hostPermitido('cdninstagram.com.malicioso.cl'), false);
 });
+
+test('el import editorial nunca manda una imagen sin origen', async () => {
+  // La restricción de la base rechazaba el import completo y tumbaba la ingesta
+  // diaria entera con DB_EDITORIAL. Una fila sin origen no debe existir.
+  const { editorialRows } = await import('../lib/editorial-feed');
+  for (const fila of editorialRows()) {
+    const r = fila as Record<string, unknown>;
+    if (r.image_url)
+      assert.ok(
+        r.image_source_url && r.image_kind,
+        `${r.instagram_id} lleva imagen sin declarar de dónde salió`,
+      );
+  }
+});
