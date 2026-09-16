@@ -44,6 +44,11 @@ export default function EventImage({
   const composicion = `comp-${(semilla % COMPOSICIONES) + 1}`;
   const tono = `tono-${((semilla >> 8) % 4) + 1}`;
   const lugarTexto = ciudad ? [zona, ciudad].filter(Boolean).join(' · ') : 'REGIÓN DE VALPARAÍSO';
+  // "MEDIALUNA DE PUCHUNCAVÍ" no cabe a tamaño completo en una columna estrecha
+  // y se partía a mitad de palabra. El cuerpo baja según la palabra más larga.
+  const titular = (lugar || headline).toUpperCase();
+  const palabraMasLarga = Math.max(...titular.split(/\s+/).map((p) => p.length), 0);
+  const largo = palabraMasLarga > 13 ? 'ff-muy-largo' : palabraMasLarga > 9 ? 'ff-largo' : '';
   return (
     <div className="event-art">
       {src && !failed ? (
@@ -66,7 +71,7 @@ export default function EventImage({
           {/* El recinto manda: "FONDA" repetido quince veces no distingue nada,
               y "Medialuna de Puchuncaví" sí dice dónde es la noche. La esquina
               superior izquierda queda libre: ahí va la insignia de fecha. */}
-          <strong className="ff-tipo">{(lugar || headline).toUpperCase()}</strong>
+          <strong className={`ff-tipo ${largo}`}>{titular}</strong>
           <small className="ff-pie">
             <span className="ff-tipo-chip">{headline}</span>
             <span className="ff-donde">{lugarTexto.toUpperCase()}</span>

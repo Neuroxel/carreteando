@@ -3008,3 +3008,7 @@ body { background: var(--bg); }
   .event-card:hover .flyer-fallback { transform: scale(1.035); }
   .season-comunas a:active, .chip:active, .bottom-nav-item:active { transform: scale(0.97); }
 }
+
+/* Palabras largas: baja el cuerpo antes que romperlas. */
+.ff-tipo.ff-largo { font-size: clamp(16px, 5.2vw, 26px); letter-spacing: -0.02em; }
+.ff-tipo.ff-muy-largo { font-size: clamp(14px, 4.4vw, 21px); letter-spacing: -0.01em; }
