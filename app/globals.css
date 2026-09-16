@@ -2613,3 +2613,285 @@ textarea::placeholder {
 @media (max-width: 560px) {
   .stat-lista li { grid-template-columns: minmax(6rem, 9rem) 1fr auto; font-size: 0.8125rem; }
 }
+
+/* ==========================================================================
+   Dirección visual de septiembre 2026.
+   Negro de noche, crema legible y amarillo como acento. Los acentos por ciudad
+   siguen existiendo, pero como micro-señal en el borde y el chip, no repintando
+   la interfaz. El amarillo nunca lleva texto encima sobre crema: ahí va de
+   fondo con tinta oscura, como en la referencia.
+   ========================================================================== */
+:root {
+  --bg: #0c0c0e;
+  --surface: #151619;
+  --surface-2: #1d1f24;
+  --cream: #f7f4ec;
+  --muted: #a7abb6;
+  --line: #2b2e36;
+  --amarillo: #ffd23f;
+  --amarillo-hondo: #e5b400;
+  --coral: #ff6a3d;
+  --tinta: #121317;
+  --acento-marca: var(--amarillo);
+}
+body { background: var(--bg); }
+.status-dot { background: var(--amarillo); }
+.brand-dot { color: var(--amarillo); }
+.hero h1 em { color: var(--amarillo); font-style: normal; }
+.heading-period { color: var(--amarillo); }
+.hero-search button { background: var(--amarillo); color: var(--tinta); }
+.hero-search button:hover { background: var(--amarillo-hondo); }
+.button-primary { background: var(--amarillo); color: var(--tinta); border-color: var(--amarillo); }
+.button-primary:hover { background: var(--amarillo-hondo); border-color: var(--amarillo-hondo); }
+.date-tabs a.selected { color: var(--cream); border-bottom-color: var(--amarillo); }
+.date-tabs a span { background: var(--amarillo); color: var(--tinta); }
+.bottom-nav-item.activo { color: var(--amarillo); }
+.segmented a.activa { background: var(--amarillo); color: var(--tinta); }
+.vista-opcion.activa { background: var(--amarillo); color: var(--tinta); }
+.stat-barra > span { background: var(--amarillo); }
+
+/* La tarjeta: ficha de una noche, no una fila de base de datos. */
+.event-card {
+  border: 1px solid #ddd8c6;
+  border-radius: 14px;
+  background: #faf7ef;
+  color: var(--tinta);
+  overflow: hidden;
+  transition: transform 0.22s cubic-bezier(0.2, 0.7, 0.2, 1), box-shadow 0.22s ease;
+}
+.event-card:hover { transform: translateY(-3px); box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45); }
+.event-card:active { transform: translateY(-1px) scale(0.995); }
+.event-art { aspect-ratio: 3 / 2; background: #0f1013; }
+.event-art img { object-fit: cover; }
+.date-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 2;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  background: rgba(10, 10, 12, 0.82);
+  backdrop-filter: blur(6px);
+  color: var(--cream);
+  font-size: 0.75rem;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.date-badge.is-today { background: var(--amarillo); color: var(--tinta); }
+.card-bottom strong {
+  display: inline-block;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  background: var(--amarillo);
+  color: var(--tinta);
+  font-size: 0.875rem;
+  font-weight: 750;
+}
+
+/* --------------------------------------------------------------------------
+   Carteles generados. Seis composiciones por cuatro tonos por familia de
+   noche: ninguna pareja de tarjetas del 18 se repite. Todo es gradiente CSS,
+   deliberadamente gráfico: no simula una fotografía que no tenemos.
+   -------------------------------------------------------------------------- */
+.flyer-fallback {
+  height: 100%;
+  width: 100%;
+  padding: 16px 18px 18px;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 6px;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  background: var(--ff-fondo, #1a1c22);
+  color: var(--ff-tinta, #f4f1e8);
+}
+.flyer-fallback::before,
+.flyer-fallback::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+}
+.ff-lugar-alto {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  opacity: 0.82;
+}
+.ff-tipo {
+  align-self: center;
+  font-size: clamp(26px, 8.5vw, 44px);
+  line-height: 0.9;
+  letter-spacing: -0.045em;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+.ff-recinto {
+  font-size: 11px;
+  font-weight: 600;
+  opacity: 0.9;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* Familias: el tipo de noche elige la paleta base. */
+.art-fonda      { --ff-fondo: #8c1f12; --ff-tinta: #ffe3b0; --ff-trazo: #ffb703; }
+.art-club       { --ff-fondo: #161a3a; --ff-tinta: #dfe4ff; --ff-trazo: #7a8cff; }
+.art-after      { --ff-fondo: #0f2027; --ff-tinta: #cfeff0; --ff-trazo: #35c7c0; }
+.art-pre        { --ff-fondo: #2a1a3d; --ff-tinta: #eddcff; --ff-trazo: #b57bff; }
+.art-live       { --ff-fondo: #2b1207; --ff-tinta: #ffdfc4; --ff-trazo: #ff8a3d; }
+.art-cumbia     { --ff-fondo: #7a2a05; --ff-tinta: #ffe6c9; --ff-trazo: #ffc447; }
+.art-reggaeton  { --ff-fondo: #3d0b2a; --ff-tinta: #ffd9ee; --ff-trazo: #ff5fa8; }
+.art-electronica{ --ff-fondo: #071f24; --ff-tinta: #ccf6ff; --ff-trazo: #2ee6d6; }
+.art-rock       { --ff-fondo: #1c1c1e; --ff-tinta: #f0eee9; --ff-trazo: #e8503a; }
+.art-under      { --ff-fondo: #121212; --ff-tinta: #e6e6e6; --ff-trazo: #9aff5c; }
+.art-universitario { --ff-fondo: #10233f; --ff-tinta: #d8e8ff; --ff-trazo: #56a8ff; }
+.art-cueca      { --ff-fondo: #6e1b1b; --ff-tinta: #ffe8d0; --ff-trazo: #ffd23f; }
+.art-generico   { --ff-fondo: #1a1c22; --ff-tinta: #f2efe6; --ff-trazo: var(--amarillo); }
+/* Tonos: cuatro desviaciones para que la misma familia no se repita. */
+.tono-1 { filter: none; }
+.tono-2 { --ff-fondo: color-mix(in srgb, var(--ff-fondo) 82%, #000); }
+.tono-3 { --ff-fondo: color-mix(in srgb, var(--ff-fondo) 78%, var(--acento, #888)); }
+.tono-4 { --ff-fondo: color-mix(in srgb, var(--ff-fondo) 88%, #fff 6%); }
+/* Composiciones: la geometría del cartel. */
+.comp-1::before {
+  background: repeating-linear-gradient(115deg, transparent 0 22px,
+    color-mix(in srgb, var(--ff-trazo) 26%, transparent) 22px 25px);
+}
+.comp-1::after {
+  background: radial-gradient(120% 90% at 100% 0%,
+    color-mix(in srgb, var(--ff-trazo) 34%, transparent), transparent 60%);
+}
+.comp-2::before {
+  background:
+    radial-gradient(circle at 78% 82%, color-mix(in srgb, var(--ff-trazo) 45%, transparent) 0 14%, transparent 14.5%),
+    radial-gradient(circle at 78% 82%, color-mix(in srgb, var(--ff-trazo) 28%, transparent) 0 26%, transparent 26.5%),
+    radial-gradient(circle at 78% 82%, color-mix(in srgb, var(--ff-trazo) 16%, transparent) 0 40%, transparent 40.5%);
+}
+.comp-3::before {
+  background-image: radial-gradient(color-mix(in srgb, var(--ff-trazo) 42%, transparent) 1.4px, transparent 1.5px);
+  background-size: 13px 13px;
+  opacity: 0.55;
+}
+.comp-3::after {
+  background: linear-gradient(200deg, transparent 52%,
+    color-mix(in srgb, var(--ff-trazo) 30%, transparent) 52% 60%, transparent 60%);
+}
+.comp-4::before {
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--ff-trazo) 34%, transparent) 0 16%,
+    transparent 16% 34%,
+    color-mix(in srgb, var(--ff-trazo) 22%, transparent) 34% 44%,
+    transparent 44%);
+}
+.comp-4::after {
+  background: radial-gradient(90% 60% at 20% 108%,
+    color-mix(in srgb, var(--ff-trazo) 40%, transparent), transparent 70%);
+}
+.comp-5::before {
+  background: repeating-linear-gradient(90deg, transparent 0 30px,
+    color-mix(in srgb, var(--ff-trazo) 20%, transparent) 30px 38px);
+}
+.comp-5::after {
+  background: linear-gradient(0deg, color-mix(in srgb, #000 55%, transparent), transparent 55%);
+}
+.comp-6::before {
+  background: conic-gradient(from 210deg at 88% 12%,
+    color-mix(in srgb, var(--ff-trazo) 40%, transparent) 0 18deg, transparent 18deg 72deg,
+    color-mix(in srgb, var(--ff-trazo) 24%, transparent) 72deg 90deg, transparent 90deg);
+}
+.comp-6::after {
+  background: linear-gradient(160deg, transparent 60%, color-mix(in srgb, #000 45%, transparent));
+}
+/* El acento de ciudad firma el cartel sin repintarlo. */
+.flyer-fallback .ff-lugar-alto::before {
+  content: '';
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: var(--acento, var(--ff-trazo));
+  vertical-align: 1px;
+}
+
+/* El Dieciocho en portada: cifras, comunas y fondas reales, no un botón. */
+.season-hero {
+  border: 1px solid color-mix(in srgb, var(--amarillo) 34%, transparent);
+  border-radius: 18px;
+  padding: 1.35rem 1.25rem 1.5rem;
+  background:
+    radial-gradient(120% 90% at 0% 0%, color-mix(in srgb, var(--coral) 16%, transparent), transparent 62%),
+    linear-gradient(180deg, color-mix(in srgb, var(--amarillo) 7%, transparent), transparent 60%),
+    var(--surface);
+}
+.season-cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  align-items: baseline;
+  justify-content: space-between;
+}
+.season-cifras {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.75rem;
+  margin: 0.85rem 0 1rem;
+  padding: 0;
+}
+.season-cifras strong {
+  display: block;
+  font-size: 1.75rem;
+  line-height: 1;
+  color: var(--amarillo);
+  font-variant-numeric: tabular-nums;
+}
+.season-cifras span { font-size: 0.8125rem; opacity: 0.8; }
+.season-comunas {
+  list-style: none;
+  display: flex;
+  gap: 0.5rem;
+  margin: 0 0 1.15rem;
+  padding: 0 0 0.4rem;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scroll-snap-type: x proximity;
+}
+.season-comunas li { flex: 0 0 auto; scroll-snap-align: start; }
+.season-comunas a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  text-decoration: none;
+  color: inherit;
+  font-size: 0.9375rem;
+  white-space: nowrap;
+  transition: border-color 0.18s ease, background-color 0.18s ease;
+}
+.season-comunas a:hover,
+.season-comunas a:focus-visible {
+  border-color: var(--amarillo);
+  background: color-mix(in srgb, var(--amarillo) 12%, transparent);
+}
+.season-comunas a span {
+  min-width: 1.4rem;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  background: var(--amarillo);
+  color: var(--tinta);
+  font-size: 0.75rem;
+  font-weight: 750;
+  text-align: center;
+}
+.season-grid { margin-top: 0.25rem; }
+@media (max-width: 480px) {
+  .season-hero { padding: 1.1rem 1rem 1.25rem; }
+  .season-cifras { gap: 0.5rem 1.15rem; }
+  .season-cifras strong { font-size: 1.5rem; }
+}

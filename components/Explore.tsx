@@ -62,6 +62,19 @@ export default async function Explore({
   // El rango se lee de las fechas que hay, no de un texto escrito a mano: la
   // primera vez que una fonda se estiró un día más, el bloque quedó mintiendo.
   const diasFonda = [...new Set(fondas.map((e) => e.fecha))].sort();
+  const fondasPorDia = [...new Set(fondas.map((e) => e.fecha))]
+    .sort()
+    .map((dia) => ({ dia, total: fondas.filter((e) => e.fecha === dia).length }))
+    .filter((d) => d.dia >= today);
+  const comunasFonda = [...fondas.reduce((m, e) => m.set(e.ciudad, (m.get(e.ciudad) || 0) + 1), new Map<string, number>())]
+    .sort((a, b) => b[1] - a[1]);
+  // Una fonda por comuna primero: así el bloque no se lo come Valparaíso.
+  const fondasDestacadas = (() => {
+    const vistas = new Set<string>();
+    const orden = [...fondas].sort((a, b) => a.fecha.localeCompare(b.fecha));
+    const primeras = orden.filter((e) => !vistas.has(e.ciudad) && vistas.add(e.ciudad));
+    return [...primeras, ...orden.filter((e) => !primeras.includes(e))].slice(0, 6);
+  })();
   const diaCorto = (iso: string) => Number(iso.slice(8, 10));
   const rangoFondas = diasFonda.length
     ? diasFonda.length === 1
@@ -133,26 +146,48 @@ export default async function Explore({
         </div>
       </section>
       {dieciocho && fondas.length > 0 && (
-        <section className="container season-hero">
-          <p className="eyebrow">🇨🇱 DIECIOCHO · {cuenta.toUpperCase()}</p>
-          <h2>
-            Dónde carretear el 18
-            <span className="heading-period">.</span>
-          </h2>
-          <p>
-            {fondas.length} fechas de fonda revisadas en {new Set(fondas.map((e) => e.ciudad)).size}{' '}
-            comunas, {rangoFondas}. Con dirección, precio y fuente.
-          </p>
-          <div className="actions">
-            <Link className="button button-primary" href={`${path}?tipo=fonda&fecha=futuro`}>
-              Ver las fondas ↗
+        <section className="container season-hero" aria-labelledby="dieciocho-titulo">
+          <div className="season-cabecera">
+            <div>
+              <p className="eyebrow">🇨🇱 DIECIOCHO · {cuenta.toUpperCase()}</p>
+              <h2 id="dieciocho-titulo">
+                Dónde carretear el 18
+                <span className="heading-period">.</span>
+              </h2>
+            </div>
+            <Link className="result-count" href={`${path}?tipo=fonda&fecha=futuro`}>
+              Ver las {fondas.length} ↗
             </Link>
-            <Link className="button button-outline" href={`${path}?fecha=hoy`}>
-              Qué hay hoy
-            </Link>
-            <Link className="button button-outline" href="/explorar?ver=lugares">
-              Lugares para salir
-            </Link>
+          </div>
+          <ul className="season-cifras">
+            <li>
+              <strong>{fondasPorDia[0]?.total ?? 0}</strong>
+              <span>el {fondasPorDia[0] ? diaCorto(fondasPorDia[0].dia) : 18} de septiembre</span>
+            </li>
+            <li>
+              <strong>{fondas.length}</strong>
+              <span>fechas {rangoFondas}</span>
+            </li>
+            <li>
+              <strong>{comunasFonda.length}</strong>
+              <span>comunas</span>
+            </li>
+          </ul>
+          {/* Las comunas no son un filtro escondido: son la primera pregunta. */}
+          <ul className="season-comunas" aria-label="Fondas por comuna">
+            {comunasFonda.map(([ciudad, n]) => (
+              <li key={ciudad}>
+                <Link href={`${path}?tipo=fonda&fecha=futuro&ciudad=${encodeURIComponent(ciudad)}`}>
+                  {ciudad}
+                  <span>{n}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <div className="event-grid season-grid">
+            {fondasDestacadas.map((e, i) => (
+              <EventCard key={e.id} evento={e} today={today} priority={i === 0} />
+            ))}
           </div>
         </section>
       )}
@@ -198,7 +233,7 @@ export default async function Explore({
         )}
         <div className="date-tabs" aria-label="Filtrar por fecha">
           {[
-            ['hoy', 'Hoy'],
+            ['hoy', 'Esta noche'],
             ['finde', 'Este finde'],
             ['futuro', 'Próximas noches'],
           ].map(([v, label]) => (

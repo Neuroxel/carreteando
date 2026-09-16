@@ -1,17 +1,19 @@
 'use client';
 import Image from 'next/image';
 import { useState } from 'react';
-import { CATEGORIAS, TIPOS_EVENTO, TipoEvento } from '../lib/types';
-// Fifteen identical tiles is not a fallback, it is a placeholder. The art has to
-// carry the kind of night and where it is, so two cards never read the same.
-const VARIANTES = ['art-v1', 'art-v2', 'art-v3', 'art-v4', 'art-v5'];
+import { CATEGORIAS, TIPOS_EVENTO, TipoEvento, acentoDe } from '../lib/types';
+// Cuarenta y cinco fondas sin flyer no pueden verse como cuarenta y cinco
+// rectángulos iguales. No hay fotografías reales de estas fondas y no se
+// inventan: lo que hay es un sistema gráfico que compone cada tarjeta a partir
+// del tipo de noche, la ciudad y el título, y que se ve como un cartel.
+const COMPOSICIONES = 6;
 function hash(seed: string) {
-  let h = 0;
-  for (const c of seed) h = (h * 31 + c.charCodeAt(0)) >>> 0;
-  return h;
-}
-function variante(seed: string) {
-  return VARIANTES[hash(seed) % VARIANTES.length];
+  let h = 2166136261;
+  for (const c of seed) {
+    h ^= c.charCodeAt(0);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
 }
 export default function EventImage({
   src,
@@ -20,6 +22,7 @@ export default function EventImage({
   tipo = 'main',
   lugar,
   ciudad,
+  zona,
   priority = false,
 }: {
   src?: string | null;
@@ -28,21 +31,19 @@ export default function EventImage({
   tipo?: TipoEvento;
   lugar?: string | null;
   ciudad?: string | null;
+  zona?: string | null;
   priority?: boolean;
 }) {
   const [failed, setFailed] = useState(false);
   const kind = TIPOS_EVENTO.find((t) => t.value === tipo);
   const style = CATEGORIAS.find((c) => c.value === category && c.value !== 'otro');
-  // A fonda is a kind of night, not a music genre. Unknown genre stays unsaid.
+  // Una fonda es un tipo de noche, no un género. Género desconocido no se dice.
   const headline = (kind?.label || style?.label || 'Carrete').toUpperCase();
-  const art = kind
-    ? `art-${kind.value}`
-    : style
-      ? `art-${style.value}`
-      : variante(`${title}${ciudad || ''}`);
-  // Seventeen fondas sharing one palette is the same failure as one green tile.
-  // The family stays, the geometry and tint shift per event.
-  const tono = `tono-${(hash(`${title}${lugar || ''}`) % 4) + 1}`;
+  const familia = kind ? `art-${kind.value}` : style ? `art-${style.value}` : 'art-generico';
+  const semilla = hash(`${title}|${lugar || ''}|${ciudad || ''}`);
+  const composicion = `comp-${(semilla % COMPOSICIONES) + 1}`;
+  const tono = `tono-${((semilla >> 8) % 4) + 1}`;
+  const lugarTexto = ciudad ? [zona, ciudad].filter(Boolean).join(' · ') : 'REGIÓN DE VALPARAÍSO';
   return (
     <div className="event-art">
       {src && !failed ? (
@@ -57,10 +58,14 @@ export default function EventImage({
           referrerPolicy="no-referrer"
         />
       ) : (
-        <div className={`flyer-fallback ${art} ${tono}`}>
-          <span>{(ciudad || 'REGIÓN DE VALPARAÍSO').toUpperCase()}</span>
-          <strong>{headline}</strong>
-          <small>{lugar || 'Lugar por confirmar'}</small>
+        <div
+          className={`flyer-fallback ${familia} ${composicion} ${tono}`}
+          style={{ ['--acento' as string]: acentoDe(ciudad || '') }}
+          aria-hidden="true"
+        >
+          <span className="ff-lugar-alto">{lugarTexto.toUpperCase()}</span>
+          <strong className="ff-tipo">{headline}</strong>
+          <small className="ff-recinto">{lugar || 'Lugar por confirmar'}</small>
         </div>
       )}
     </div>

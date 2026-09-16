@@ -33,6 +33,7 @@ export default function EventCard({
           tipo={e.tipo}
           lugar={e.lugar}
           ciudad={e.ciudad}
+          zona={e.sector}
           priority={priority}
         />
         <span
