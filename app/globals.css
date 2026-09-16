@@ -2759,7 +2759,10 @@ body { background: var(--bg); }
   line-height: 0.96;
   letter-spacing: -0.035em;
   text-transform: uppercase;
-  overflow-wrap: anywhere;
+  /* anywhere partía "MEDIALUNA" por la mitad; break-word sólo rompe una palabra
+     que de verdad no cabe. */
+  overflow-wrap: break-word;
+  hyphens: none;
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
