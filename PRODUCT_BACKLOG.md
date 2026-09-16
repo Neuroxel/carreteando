@@ -304,3 +304,42 @@ Investigado hasta: **2026-09-15**.
 9. 92 candidatos en `needs_evidence`, todos explicados y con fecha de revisión.
 10. Litoral sur (Algarrobo, El Quisco, Cartagena, San Antonio) sin investigar.
 11. 153 eventos caducados conservados como evidencia.
+
+---
+
+## Sprint 16–18 septiembre 2026
+
+### P0 cerrado
+
+- **Admin.** `review_audit` = 3. Guardar (rev 0→1, sigue privado), aprobar
+  (rev 1→2, `pending`→`approved`, publicado) y retirar (rev 0→1). Cada fila con
+  nota, hora, estado anterior y posterior. **No volver a pedir estas acciones.**
+
+### Corregido en el sprint
+
+- La aprobación desde el panel dejaba el lugar visible pero contado como
+  «esperando evidencia»: añadí `disposition` sin conectarla a la moderación.
+  Ahora la mantiene coherente un *trigger*, no la memoria de quien escriba.
+- `.season-hero .eyebrow` pintaba crema sobre crema el rótulo de cada tarjeta
+  metida en el bloque del Dieciocho (contraste 1,24).
+- La insignia de fecha tapaba la ciudad en el cartel generado.
+- Pedir Mapa mostraba tarjetas con el mapa 600 px más abajo.
+
+### P1
+
+1. **0 de 92 lugares con imagen propia.** No se copian fotos de terceros sin
+   derechos claros. Falta el flujo «Reclama este lugar».
+2. Auditoría sin actor: Carlos necesita credencial propia.
+3. Tiles de mapa a escala: OpenStreetMap desaconseja uso intensivo.
+4. 36 lugares sin fuente de programación; 30 sin identidad digital.
+5. 31 lugares sin coordenada fiable.
+6. Reportes en vivo sin uso orgánico.
+7. Disparador de recheck sin construir.
+8. Restauración de respaldo sin ensayar.
+
+### P2
+
+9. 91 candidatos en `needs_evidence`, todos explicados y con fecha de revisión.
+10. Litoral sur sin investigar.
+11. Favoritos y perfil: en los mockups de Carlos, **no** en el producto. No se
+    añade navegación que no funciona.
