@@ -78,8 +78,8 @@ export default async function Detail({ params }: Props) {
               : e.fuente === 'manual'
                 ? 'Comunidad · revisado'
                 : e.fuente === 'passline' || e.fuente === 'editorial'
-                  ? 'Curaduría · fuente revisada'
-                  : 'Detectado · fuente revisada'}
+                  ? 'Revisado por nosotros'
+                  : 'Revisado por nosotros'}
           </span>
           <dl className="event-facts">
             <div>

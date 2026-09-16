@@ -3012,3 +3012,101 @@ body { background: var(--bg); }
 /* Palabras largas: baja el cuerpo antes que romperlas. */
 .ff-tipo.ff-largo { font-size: clamp(16px, 5.2vw, 26px); letter-spacing: -0.02em; }
 .ff-tipo.ff-muy-largo { font-size: clamp(14px, 4.4vw, 21px); letter-spacing: -0.01em; }
+
+/* ==========================================================================
+   Portada: atmósfera de noche porteña, hecha con gradientes. No es una
+   fotografía de un local real ni pretende serlo — es identidad de marca, y
+   pesa cero bytes de red.
+   ========================================================================== */
+.hero-home {
+  position: relative;
+  isolation: isolate;
+  border-radius: 0 0 22px 22px;
+  overflow: hidden;
+}
+.hero-home::before {
+  content: '';
+  position: absolute;
+  inset: -1px -1px auto;
+  height: 100%;
+  z-index: -2;
+  background:
+    /* luces de los cerros */
+    radial-gradient(1.6px 1.6px at 12% 78%, var(--amarillo) 40%, transparent 42%),
+    radial-gradient(1.4px 1.4px at 23% 86%, #ffe89b 40%, transparent 42%),
+    radial-gradient(1.8px 1.8px at 34% 72%, var(--amarillo) 40%, transparent 42%),
+    radial-gradient(1.3px 1.3px at 47% 88%, #ffd9a0 40%, transparent 42%),
+    radial-gradient(1.7px 1.7px at 61% 76%, var(--amarillo) 40%, transparent 42%),
+    radial-gradient(1.4px 1.4px at 73% 90%, #ffe89b 40%, transparent 42%),
+    radial-gradient(1.6px 1.6px at 86% 74%, var(--amarillo) 40%, transparent 42%),
+    radial-gradient(1.3px 1.3px at 94% 84%, #ffd9a0 40%, transparent 42%),
+    /* resplandor del puerto */
+    radial-gradient(120% 70% at 50% 118%, color-mix(in srgb, var(--amarillo) 22%, transparent), transparent 62%),
+    /* cielo */
+    linear-gradient(180deg, #0a0c14 0%, #12121a 46%, var(--bg) 100%);
+}
+/* silueta de los cerros */
+.hero-home::after {
+  content: '';
+  position: absolute;
+  inset: auto -1px -1px;
+  height: 46%;
+  z-index: -1;
+  background:
+    linear-gradient(112deg, transparent 0 18%, #0b0b10 18% 34%, transparent 34%),
+    linear-gradient(68deg, transparent 0 46%, #0b0b10 46% 66%, transparent 66%),
+    linear-gradient(0deg, #0b0b10 0 28%, transparent 28%);
+  opacity: 0.82;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .hero-home::before { animation: respirar 9s ease-in-out infinite alternate; }
+  @keyframes respirar { from { opacity: 0.92; } to { opacity: 1; } }
+}
+
+/* Ubicación: el segundo control del producto, no un filtro escondido. */
+.lugar-selector {
+  display: flex;
+  gap: 0.45rem;
+  margin-top: 0.9rem;
+  padding-bottom: 0.4rem;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scroll-snap-type: x proximity;
+}
+.lugar-selector a {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.9rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  background: rgba(10, 10, 14, 0.5);
+  backdrop-filter: blur(6px);
+  color: var(--cream);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+.lugar-selector a:hover { border-color: var(--amarillo); }
+.lugar-selector a.activa {
+  background: var(--amarillo);
+  border-color: var(--amarillo);
+  color: var(--tinta);
+}
+.lugar-selector a span {
+  min-width: 1.3rem;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-align: center;
+}
+.lugar-selector a.activa span { background: rgba(0, 0, 0, 0.18); }
+.oculto-en-portada { display: none; }
+.season-resumen { margin: 0.6rem 0 1rem; font-size: 1rem; }
+.season-resumen strong { color: var(--amarillo); }

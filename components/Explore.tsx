@@ -62,7 +62,14 @@ export default async function Explore({
     )
     .slice(0, 3);
   const todayCount = filterEvents(result.events, { fecha: 'hoy' }, today).length;
+  const mananaCount = filterEvents(result.events, { fecha: 'manana' }, today).length;
   const dieciocho = esTemporadaDieciocho(today);
+  // Sólo se ofrecen comunas donde de verdad hay algo: una ciudad vacía en la
+  // portada es una promesa que el producto no cumple.
+  const porCiudad = new Map<string, number>();
+  for (const e of result.events)
+    if (e.fecha >= today) porCiudad.set(e.ciudad, (porCiudad.get(e.ciudad) || 0) + 1);
+  const ciudadesConOferta = CIUDADES_NUCLEO.filter((c) => (porCiudad.get(c) || 0) > 0);
   const fondas = result.events.filter((e) => e.tipo === 'fonda');
   // El rango se lee de las fechas que hay, no de un texto escrito a mano: la
   // primera vez que una fonda se estiró un día más, el bloque quedó mintiendo.
@@ -122,7 +129,7 @@ export default async function Explore({
           <h1>
             {home ? (
               <>
-                ¿Dónde <em>salimos?</em>
+                ¿Qué hacemos <em>hoy?</em>
               </>
             ) : (
               <>
@@ -131,73 +138,31 @@ export default async function Explore({
             )}
           </h1>
           {home && (
-            // La pregunta del producto va primero y se responde escribiendo, no
-            // leyendo un párrafo de marca.
-            <form action="/explorar" className="hero-search" role="search">
-              <label htmlFor="q-home" className="sr-only">
-                Buscar lugar, fiesta, zona o estilo
-              </label>
-              <span aria-hidden="true">⌕</span>
-              <input
-                id="q-home"
-                name="q"
-                type="search"
-                maxLength={120}
-                placeholder="Buscar lugar, fiesta, zona o estilo"
-              />
-              <button type="submit">Buscar</button>
-            </form>
+            // Dónde estás es la primera pregunta, no un filtro escondido a
+            // media página. Selección manual siempre; nunca se pide ubicación.
+            <div className="lugar-selector" role="group" aria-label="Elegir ciudad">
+              <Link
+                href={href('ciudad', 'todos')}
+                className={filters.ciudad === 'todos' ? 'activa' : ''}
+                aria-current={filters.ciudad === 'todos' ? 'true' : undefined}
+              >
+                Toda la costa
+              </Link>
+              {ciudadesConOferta.map((c) => (
+                <Link
+                  key={c}
+                  href={href('ciudad', c)}
+                  className={filters.ciudad === c ? 'activa' : ''}
+                  aria-current={filters.ciudad === c ? 'true' : undefined}
+                >
+                  {SHORT[c] || c}
+                  <span>{porCiudad.get(c)}</span>
+                </Link>
+              ))}
+            </div>
           )}
         </div>
       </section>
-      {/* Si alguien pidió el mapa, el mapa es el contenido: el bloque del
-          Dieciocho lo empujaba fuera de la primera pantalla. */}
-      {dieciocho && fondas.length > 0 && vista === 'lista' && (
-        <section className="container season-hero" aria-labelledby="dieciocho-titulo">
-          <div className="season-cabecera">
-            <div>
-              <p className="eyebrow">🇨🇱 DIECIOCHO · {cuenta.toUpperCase()}</p>
-              <h2 id="dieciocho-titulo">
-                Dónde carretear el 18
-                <span className="heading-period">.</span>
-              </h2>
-            </div>
-            <Link className="result-count" href={`${path}?tipo=fonda&fecha=futuro`}>
-              Ver las {fondas.length} ↗
-            </Link>
-          </div>
-          <ul className="season-cifras">
-            <li>
-              <strong>{fondasPorDia[0]?.total ?? 0}</strong>
-              <span>el {fondasPorDia[0] ? diaCorto(fondasPorDia[0].dia) : 18} de septiembre</span>
-            </li>
-            <li>
-              <strong>{fondas.length}</strong>
-              <span>fechas {rangoFondas}</span>
-            </li>
-            <li>
-              <strong>{comunasFonda.length}</strong>
-              <span>comunas</span>
-            </li>
-          </ul>
-          {/* Las comunas no son un filtro escondido: son la primera pregunta. */}
-          <ul className="season-comunas" aria-label="Fondas por comuna">
-            {comunasFonda.map(([ciudad, n]) => (
-              <li key={ciudad}>
-                <Link href={`${path}?tipo=fonda&fecha=futuro&ciudad=${encodeURIComponent(ciudad)}`}>
-                  {ciudad}
-                  <span>{n}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-          <div className="event-grid season-grid">
-            {fondasDestacadas.map((e, i) => (
-              <EventCard key={e.id} evento={e} today={today} priority={i === 0} />
-            ))}
-          </div>
-        </section>
-      )}
       <section className="container discovery" id="cartelera" aria-label="Cartelera de eventos">
         {!home && (
           <div className="explore-controls">
@@ -240,9 +205,10 @@ export default async function Explore({
         )}
         <div className="date-tabs" aria-label="Filtrar por fecha">
           {[
-            ['hoy', 'Esta noche'],
+            ['hoy', 'Hoy'],
+            ['manana', 'Mañana'],
             ['finde', 'Este finde'],
-            ['futuro', 'Próximas noches'],
+            ['futuro', 'Más adelante'],
           ].map(([v, label]) => (
             <Link
               key={v}
@@ -251,7 +217,10 @@ export default async function Explore({
               aria-current={filters.fecha === v ? 'true' : undefined}
             >
               {label}
-              {v === 'hoy' && result.status === 'ok' && <span>{todayCount}</span>}
+              {v === 'hoy' && result.status === 'ok' && todayCount > 0 && <span>{todayCount}</span>}
+              {v === 'manana' && result.status === 'ok' && mananaCount > 0 && (
+                <span>{mananaCount}</span>
+              )}
             </Link>
           ))}
           {dieciocho && fondas.length > 0 && (
@@ -264,7 +233,7 @@ export default async function Explore({
             </Link>
           )}
         </div>
-        <div className="city-filters" aria-label="Filtrar por zona">
+        <div className={`city-filters ${home ? 'oculto-en-portada' : ''}`} aria-label="Filtrar por zona">
           <Link
             href={href('ciudad', 'todos')}
             className={filters.ciudad === 'todos' ? 'selected' : ''}
@@ -397,18 +366,28 @@ export default async function Explore({
             <div>
               <h3>
                 {result.events.length === 0
-                  ? 'Estamos buscando los próximos planes.'
+                  ? 'Todavía no tenemos planes confirmados.'
                   : filters.fecha === 'hoy'
-                    ? 'Hoy aún sin planes revisados.'
-                    : 'Sin planes con estos filtros.'}
+                    ? 'No tenemos nada confirmado para hoy acá.'
+                    : filters.fecha === 'manana'
+                      ? 'No tenemos nada confirmado para mañana acá.'
+                      : 'No encontramos nada con estos filtros.'}
               </h3>
               <p>
                 {result.events.length === 0
-                  ? 'Por ahora no tenemos eventos revisados para mostrar. Preferimos una cartelera vacía a mandarte a un carrete que ya pasó.'
-                  : 'Mira las próximas opciones revisadas.'}
+                  ? 'Preferimos no mostrarte nada antes que mandarte a un carrete que ya pasó.'
+                  : 'Prueba otra noche, otra comuna, o mira los lugares que están abiertos igual.'}
               </p>
               <div className="actions">
-                <Link href="/explorar?fecha=futuro">Ver todas las próximas fechas ↗</Link>
+                <Link className="button button-primary" href="/explorar?ver=lugares">
+                  Lugares para salir
+                </Link>
+                <Link className="button button-outline" href="/explorar?fecha=finde">
+                  Ver este finde
+                </Link>
+                <Link className="button button-outline" href="/publicar">
+                  Aportar un dato
+                </Link>
               </div>
             </div>
           </div>
@@ -518,6 +497,44 @@ export default async function Explore({
           </p>
         )}
       </section>
+      {/* Si alguien pidió el mapa, el mapa es el contenido: el bloque del
+          Dieciocho lo empujaba fuera de la primera pantalla. */}
+      {dieciocho && fondas.length > 0 && vista === 'lista' && (
+        <section className="container season-hero" aria-labelledby="dieciocho-titulo">
+          <div className="season-cabecera">
+            <div>
+              <p className="eyebrow">🇨🇱 DIECIOCHO · {cuenta.toUpperCase()}</p>
+              <h2 id="dieciocho-titulo">
+                Dónde carretear el 18
+                <span className="heading-period">.</span>
+              </h2>
+            </div>
+            <Link className="result-count" href={`${path}?tipo=fonda&fecha=futuro`}>
+              Ver las {fondas.length} ↗
+            </Link>
+          </div>
+          <p className="season-resumen">
+            <strong>{fondas.length} fondas</strong> en {comunasFonda.length} comunas,{' '}
+            {rangoFondas}.
+          </p>
+          {/* Las comunas no son un filtro escondido: son la primera pregunta. */}
+          <ul className="season-comunas" aria-label="Fondas por comuna">
+            {comunasFonda.map(([ciudad, n]) => (
+              <li key={ciudad}>
+                <Link href={`${path}?tipo=fonda&fecha=futuro&ciudad=${encodeURIComponent(ciudad)}`}>
+                  {ciudad}
+                  <span>{n}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <div className="event-grid season-grid">
+            {fondasDestacadas.map((e, i) => (
+              <EventCard key={e.id} evento={e} today={today} priority={i === 0} />
+            ))}
+          </div>
+        </section>
+      )}
       {home && !filters.busqueda && (
         <ZoneRail lugares={venues.lugares} eventos={result.events} hoy={today} />
       )}

@@ -58,13 +58,13 @@ export default function EventCard({
           <div>
             <strong>{e.precio_texto || 'Precio por confirmar'}</strong>
             <span className="provenance">
+              {/* El usuario no tiene por qué saber cómo llamamos a nuestras
+                  fuentes. Sólo le importa si alguien lo revisó. */}
               {e.verificado
-                ? 'Organizador verificado'
+                ? 'Confirmado por el organizador'
                 : e.fuente === 'manual'
-                  ? 'Comunidad · revisado'
-                  : e.fuente === 'passline' || e.fuente === 'editorial'
-                    ? 'Curaduría · fuente revisada'
-                    : 'Detectado · fuente revisada'}
+                  ? 'Dato de la comunidad, revisado'
+                  : 'Revisado por nosotros'}
             </span>
           </div>
           <ShareButton

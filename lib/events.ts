@@ -122,6 +122,8 @@ export function filterEvents(
       )
         return false;
       if (filters.fecha === 'hoy' && e.fecha !== today) return false;
+      // Carlos: primero hoy, y en una segunda pestaña mañana.
+      if (filters.fecha === 'manana' && e.fecha !== addDays(today, 1)) return false;
       if (filters.fecha === 'semana' && e.fecha > addDays(today, 7)) return false;
       if (filters.fecha === 'finde') {
         const dow = new Date(`${today}T12:00:00Z`).getUTCDay();

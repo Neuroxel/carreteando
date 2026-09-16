@@ -77,7 +77,7 @@ export interface FiltrosEvento {
   categoria?: Categoria | 'todos';
   ciudad?: string | 'todos';
   precio?: 'gratis' | 'pago' | 'todos';
-  fecha?: 'hoy' | 'finde' | 'futuro' | 'semana' | 'todos';
+  fecha?: 'hoy' | 'manana' | 'finde' | 'futuro' | 'semana' | 'todos';
 }
 
 export const CATEGORIAS: {

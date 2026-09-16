@@ -37,7 +37,7 @@ export function parseFilters(params: URLSearchParams, defaultDate = 'futuro'): F
     ) as FiltrosEvento['tipo'],
     fecha: value(
       'fecha',
-      ['hoy', 'finde', 'futuro', 'semana', 'todos'],
+      ['hoy', 'manana', 'finde', 'futuro', 'semana', 'todos'],
       defaultDate,
     ) as FiltrosEvento['fecha'],
     precio: value('precio', ['gratis', 'pago', 'todos'], 'todos') as FiltrosEvento['precio'],
