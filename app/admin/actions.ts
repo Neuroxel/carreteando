@@ -73,7 +73,7 @@ export async function runIngestion() {
   const { dispatchSources } = await import('../../lib/sources/dispatcher');
   let status = 'failed';
   try {
-    const result = await dispatchSources(db, 6);
+    const result = await dispatchSources(db, 8);
     status = result.ran ? `ingesta-${result.ran}` : 'ingesta-al-dia';
   } catch {
     status = 'failed';

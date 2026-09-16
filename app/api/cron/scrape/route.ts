@@ -25,18 +25,34 @@ const record = (v: unknown): RawPost =>
   v !== null && typeof v === 'object' && !Array.isArray(v) ? (v as RawPost) : {};
 const reply = (body: object, status = 200) =>
   NextResponse.json(body, { status, headers: { 'Cache-Control': 'no-store' } });
-export async function GET(request: Request) {
+/**
+ * Dos formas de probar autoridad, ninguna de las cuales expone un secreto.
+ * Vercel manda su cabecera con CRON_SECRET. La propia base de datos manda un
+ * pase de un solo uso que sólo ella pudo crear, porque la tabla está reservada
+ * al rol de servicio: así el programador de Postgres no necesita que nadie
+ * copie un secreto a mano.
+ */
+async function autorizado(request: Request, db: ReturnType<typeof getAdminDb>) {
   const secret = process.env.CRON_SECRET;
   const auth = request.headers.get('authorization') || '';
-  const expected = `Bearer ${secret}`;
-  if (!secret) return reply({ error: 'Cron no disponible.' }, 503);
-  if (
-    Buffer.byteLength(auth) !== Buffer.byteLength(expected) ||
-    !timingSafeEqual(Buffer.from(auth), Buffer.from(expected))
-  )
-    return reply({ error: 'Unauthorized' }, 401);
+  if (secret) {
+    const expected = `Bearer ${secret}`;
+    if (
+      Buffer.byteLength(auth) === Buffer.byteLength(expected) &&
+      timingSafeEqual(Buffer.from(auth), Buffer.from(expected))
+    )
+      return true;
+  }
+  const ticket = new URL(request.url).searchParams.get('ticket');
+  if (!ticket || !/^[a-f0-9]{48}$/.test(ticket) || !db) return false;
+  const { data, error } = await db.rpc('redeem_cron_ticket', { p_nonce: ticket });
+  return !error && data === true;
+}
+export async function GET(request: Request) {
   const db = getAdminDb(),
     token = process.env.APIFY_API_TOKEN;
+  if (!process.env.CRON_SECRET && !db) return reply({ error: 'Cron no disponible.' }, 503);
+  if (!(await autorizado(request, db))) return reply({ error: 'Unauthorized' }, 401);
   const paused = process.env.APIFY_PAUSED === 'true';
   const missing = ['NEXT_PUBLIC_SUPABASE_URL', 'SUPABASE_SECRET_KEY', 'APIFY_API_TOKEN'].filter(
     (k) => !process.env[k],
@@ -116,7 +132,7 @@ export async function GET(request: Request) {
     }
     // The agenda is no longer only what somebody typed into a JSON file: the
     // daily cron dispatches whichever real sources are due.
-    const dispatch = await dispatchSources(db, 6);
+    const dispatch = await dispatchSources(db, 8);
     metrics.sources_due = dispatch.due;
     metrics.sources_ran = dispatch.ran;
     metrics.sources_ok = dispatch.reports.filter((r) => r.ok).length;

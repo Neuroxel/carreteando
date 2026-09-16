@@ -62,7 +62,7 @@ export const SOURCES: SourceDefinition[] = [
     refreshHours: 24,
     config: { postType: 'cinzano_event', perPage: '40' },
   },
-  portaldisc('portaldisc-cassot', 'cassotbar', 'Cassot Bar', 'cassot-bar', 'Valparaíso', 'Subida Ecuador'),
+  portaldisc('portaldisc-cassot', 'cassotbar', 'Cassot Bar', 'cassot-bar', 'Valparaíso', 'Subida Ecuador', 48),
   portaldisc(
     'portaldisc-echaurren',
     'emporioechaurren',
@@ -70,6 +70,7 @@ export const SOURCES: SourceDefinition[] = [
     'emporio-echaurren',
     'Valparaíso',
     'Plan de Valparaíso',
+    48,
   ),
   portaldisc(
     'portaldisc-pcdv',
@@ -87,7 +88,27 @@ export const SOURCES: SourceDefinition[] = [
     'teatro-mauri-scd',
     'Valparaíso',
     'Plan de Valparaíso',
+    48,
   ),
+  // Las dieciséis carteleras que ya existían en la ticketera y esperaban
+  // adaptador. Todas probadas antes de registrarse: responden, tienen la
+  // estructura esperada y su robots.txt lo permite.
+  portaldisc('portaldisc-trotamundos', 'trotamundosvalparaiso', 'Trotamundos Valparaíso', 'trotamundos-valparaiso', 'Valparaíso', 'Plan de Valparaíso', 48),
+  portaldisc('portaldisc-elpasaje', 'elpasaje', 'El Pasaje', 'el-pasaje', 'Viña del Mar', 'Viña Norte', 48),
+  portaldisc('portaldisc-barvienes', 'barvienes', 'Bar Vienés', 'bar-vienes', 'Viña del Mar', 'Viña Centro', 48),
+  portaldisc('portaldisc-casacultura', 'casadelaculturadevalparaiso', 'Casa de la Cultura de Valparaíso', 'casa-de-la-cultura-valparaiso', 'Valparaíso', 'Barrio Puerto', 48),
+  portaldisc('portaldisc-espaciobarcelona', 'espaciobarcelona', 'Espacio Barcelona', 'espacio-barcelona', 'Valparaíso', 'El Almendral', 48),
+  portaldisc('portaldisc-segundopiso', 'clubsegundopiso', 'Club Segundo Piso', 'club-segundo-piso', 'Valparaíso', 'El Almendral', 48),
+  portaldisc('portaldisc-clubaleman', 'clubalemandevalparaiso', 'Club Alemán de Valparaíso', 'club-aleman-valparaiso', 'Valparaíso', 'Plan de Valparaíso', 48),
+  portaldisc('portaldisc-lacolombina', 'lacolombina', 'La Colombina', 'la-colombina', 'Valparaíso', 'Cerro Alegre', 48),
+  portaldisc('portaldisc-laparakultural', 'laparakulturalvalparaiso', 'La Pará Kultural', 'la-para-kultural', 'Valparaíso', 'Barrio Puerto', 48),
+  portaldisc('portaldisc-lemutt', 'lemuttbar', 'Lemutt Bar', 'lemutt-bar', 'Valparaíso', 'Plan de Valparaíso', 48),
+  portaldisc('portaldisc-alquinta', 'losalquintadelpuerto', 'Los Alquinta del Puerto', 'los-alquinta-del-puerto', 'Valparaíso', 'El Almendral', 48),
+  portaldisc('portaldisc-multiespacio', 'multiespaciocondell', 'Multiespacio Condell', 'multiespacio-condell', 'Valparaíso', 'Plan de Valparaíso', 48),
+  portaldisc('portaldisc-panichouse', 'panichouse', 'Panic House', 'panic-house', 'Valparaíso', 'Barrio Puerto', 48),
+  portaldisc('portaldisc-espantapajaros', 'espantapajaroskaraoke', 'Espantapájaros Karaoke', 'espantapajaros-karaoke', 'Valparaíso', 'Subida Ecuador', 48),
+  portaldisc('portaldisc-espaciomusa', 'espaciomusa', 'Espacio Musa', 'espacio-musa', 'Quilpué', 'Quilpué Centro', 48),
+  portaldisc('portaldisc-municipalvina', 'municipal-vinadelmar', 'Teatro Municipal de Viña del Mar', 'teatro-municipal-vina', 'Viña del Mar', 'Viña Centro', 48),
   {
     id: 'muni-valparaiso',
     name: 'Municipalidad de Valparaíso · comunicados',
