@@ -133,39 +133,49 @@ npm run build
 
 ## 7. Qué acceso necesitas
 
-| Recurso | Qué necesitas | Quién lo da |
+| Recurso | Estado | Cómo |
 |---|---|---|
-| Repositorio | lectura (o escritura si vas a aportar) | David, en GitHub |
-| Producción | nada: el sitio es público | — |
-| Vercel | sólo si vas a desplegar | David, como miembro del proyecto |
-| Supabase | sólo si vas a tocar el esquema | David, invitación al proyecto |
-| `/admin` | **credencial propia, todavía no existe** | ver abajo |
+| Repositorio | **invitación enviada a `tpotp` con permiso de escritura** | acéptala en GitHub → Notifications |
+| Producción | nada que pedir: el sitio es público | https://carreteando.vercel.app |
+| `/admin` | **tienes credencial propia a tu nombre** | David te la pasa por un canal privado (ver abajo) |
+| Vercel | sólo si vas a desplegar | David te agrega al proyecto |
+| Supabase | sólo si vas a tocar el esquema | David te invita al proyecto |
 
-**No vas a recibir la contraseña de David.** Compartir una sola credencial deja
-el registro de auditoría sin poder decir quién hizo cada cambio, que es
-precisamente para lo que existe. La ruta correcta está en §9.
+**No recibes la contraseña de David, y eso es a propósito.** Tienes la tuya:
+entras como «Carlos» y cada cambio que hagas queda firmado con tu nombre en
+`review_audit`. Si compartiéramos una sola clave, el registro no podría decir
+quién hizo qué, que es justo para lo que existe.
+
+David recupera tu credencial así (nunca por chat ni por correo):
+
+```bash
+security find-generic-password -s "Carreteando Moderador Carlos" -a carlos -w | tr -d '\n' | pbcopy
+```
+
+Si alguna vez hay que revocarla, es una línea y no afecta a nadie más:
+
+```sql
+update public.moderators set active = false where name = 'Carlos';
+```
 
 ## 8. Cómo revisarlo
 
 Ver `CARLOS_REVIEW_CHECKLIST.md`: catorce pruebas concretas, con las
 limitaciones ya conocidas listadas para que no pierdas tiempo redescubriéndolas.
 
-## 9. Moderadores con nombre (P1)
+## 9. Moderadores con nombre — implementado
 
-Hoy `review_audit` responde qué cambió, cuándo, desde qué y hacia qué — pero no
-**quién**, porque hay una sola credencial.
+`review_audit` ya registra **quién**. Cada moderador tiene su propia credencial
+en `public.moderators`, guardada sólo como resumen SHA-256: el token vive en el
+Llavero del Mac de David y en un archivo 0600 fuera de Git, nunca en la base ni
+en el repositorio.
 
-Camino correcto, después del 18:
+La sesión lleva el nombre firmado con HMAC. Cambiarlo en la cookie invalida la
+firma, así que nadie modera bajo el nombre de otro. El panel dice en pantalla
+como quién estás moderando.
 
-1. Tabla `moderators` (id, nombre, correo, activo).
-2. Autenticación de Supabase con correo + contraseña o enlace mágico, en vez
-   del token único.
-3. Columna `actor_id` en `review_audit`, escrita por `review_item` y
-   `review_venue` desde `auth.uid()`.
-4. MFA obligatorio para moderadores.
-
-**No crear un segundo secreto compartido**: eso repite el problema con dos
-personas en vez de una.
+Lo que falta (P1, después del 18): **MFA**. Hoy es un token largo y aleatorio,
+suficiente para dos personas de confianza, insuficiente para un equipo.
 
 ## 10. Respaldos
 

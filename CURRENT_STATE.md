@@ -80,15 +80,17 @@ el import editorial.
 
 ## Admin
 
-Una credencial, del propietario. `review_audit` registra cada cambio con
-estado anterior, posterior, revisión, nota y hora. **No registra quién**, porque
-hay una sola cuenta: ese es el P1 antes de que more de una persona modere.
+**Moderadores con nombre.** `review_audit` registra cada cambio con estado
+anterior, posterior, revisión, nota, hora **y quién**. Cada moderador tiene
+credencial propia y revocable; sólo se guarda el resumen SHA-256 del token.
+Falta MFA (P1).
 
 ## Limitaciones conocidas
 
 1. **0 de 93 lugares con imagen propia.** No se copian fotos de terceros sin
    derechos claros. Falta el flujo «Reclama este lugar».
-2. **Auditoría sin actor.** Carlos necesita credencial propia.
+2. **Sin MFA para moderadores.** Hay credenciales por persona y auditoría con
+   nombre; falta un segundo factor.
 3. **Tiles de mapa**: OpenStreetMap desaconseja uso intensivo; hay que pasar a
    un proveedor contratado antes de escalar.
 4. **31 lugares sin coordenada fiable.** No se publica un pin dudoso.
