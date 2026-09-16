@@ -177,6 +177,20 @@ como quién estás moderando.
 Lo que falta (P1, después del 18): **MFA**. Hoy es un token largo y aleatorio,
 suficiente para dos personas de confianza, insuficiente para un equipo.
 
+## 9b. Qué se publica solo (la pregunta de Carlos)
+
+De 24 fuentes, **sólo 2 publican sin revisión**, y ninguna es Instagram:
+Instagram no es fuente activa (el proveedor pago está pausado). Las dos son el
+calendario oficial del propio local, y necesitan las cuatro condiciones de §5
+juntas.
+
+**Todo lo que manda la gente lo aprobamos nosotros.** Nunca se publica solo.
+
+Contra flood, sin captcha: 3 envíos por hora por IP, 150 sin revisar por día,
+duplicados por huella durante 7 días, cuerpo cortado a 16 KB, campo trampa y
+RLS. Lo peor que puede pasar es una cola privada con basura. El detalle está en
+`docs/private/MODERACION.md`.
+
 ## 10. Respaldos
 
 El plan Free de Supabase **no hace respaldos automáticos de ningún tipo**.

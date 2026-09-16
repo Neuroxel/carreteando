@@ -343,3 +343,14 @@ Investigado hasta: **2026-09-15**.
 10. Litoral sur sin investigar.
 11. Favoritos y perfil: en los mockups de Carlos, **no** en el producto. No se
     añade navegación que no funciona.
+
+---
+
+## Nota del 16-09-2026 · preguntas de Carlos
+
+- **Corregido:** el tope global de aportes contaba todo lo recibido, revisado o
+  no, así que un flood de basura dejaba fuera a la gente real el resto del día.
+  Ahora sólo cuenta lo que está sin revisar; moderar libera cupo.
+- **P2 (no bloqueante):** captcha en el formulario de aportes. El disparador es
+  evidencia de basura real en la cola, no precaución. Opciones: Cloudflare
+  Turnstile o la protección de bots de Vercel.
