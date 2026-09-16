@@ -150,7 +150,9 @@ export default async function Explore({
           )}
         </div>
       </section>
-      {dieciocho && fondas.length > 0 && (
+      {/* Si alguien pidió el mapa, el mapa es el contenido: el bloque del
+          Dieciocho lo empujaba fuera de la primera pantalla. */}
+      {dieciocho && fondas.length > 0 && vista === 'lista' && (
         <section className="container season-hero" aria-labelledby="dieciocho-titulo">
           <div className="season-cabecera">
             <div>
