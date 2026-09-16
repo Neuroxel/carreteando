@@ -1,4 +1,4 @@
-import { validateSubmission } from './submission-validation';
+import { ValidationError, validateSubmission } from './submission-validation';
 import { eventKey } from './event-identity';
 import { safeImageUrl } from './safety';
 export const REVIEW_KINDS = ['event', 'inbox'];
@@ -6,8 +6,11 @@ export const REVIEW_ACTIONS = ['approve', 'save', 'reject', 'withdraw', 'resolve
 // A failed review must say which half failed. Reporting every cause as "invalid"
 // hid a real defect: the submit button's name/value never reached the action.
 export class ReviewInputError extends Error {
-  constructor(readonly status: string) {
-    super(status);
+  constructor(
+    readonly status: string,
+    readonly detail?: string,
+  ) {
+    super(detail || status);
   }
 }
 export function reviewInput(
@@ -27,10 +30,23 @@ export function reviewInput(
   if (note.length < 10 || note.length > 1000) throw new ReviewInputError('invalid-note');
   if (action !== 'approve' && action !== 'save') return { note, fields: {} };
   if (form.get('checked') !== 'yes') throw new ReviewInputError('invalid-check');
+  let v: ReturnType<typeof validateSubmission>;
   try {
     const raw = Object.fromEntries(form.entries()) as Record<string, unknown>;
-    const v = validateSubmission({ ...raw, precio: raw.precio === '' ? null : Number(raw.precio) });
-    return {
+    // Moderar no es aportar: el organizador y la descripción son deseables, no
+    // requisitos. Lo que sí sigue siendo obligatorio es dónde, cuándo y la fuente.
+    v = validateSubmission({ ...raw, precio: raw.precio === '' ? null : Number(raw.precio) }, new Date(), {
+      organizadorMin: 0,
+      descripcionMin: 0,
+    });
+  } catch (error) {
+    // Un rechazo que no dice qué campo revisar es indistinguible de un producto roto.
+    throw new ReviewInputError(
+      'invalid-fields',
+      error instanceof ValidationError ? error.message : undefined,
+    );
+  }
+  return {
       note,
       fields: {
         title: v.nombre,
@@ -54,8 +70,5 @@ export function reviewInput(
         username: v.organizador,
         event_key: eventKey(`${v.lugar} ${v.ciudad}`, v.fecha, v.nombre),
       },
-    };
-  } catch {
-    throw new ReviewInputError('invalid-fields');
-  }
+  };
 }

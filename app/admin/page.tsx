@@ -431,15 +431,18 @@ export default async function Admin({
     'invalid-check':
       'No se guardó. Marca la casilla de revisión de la fuente antes de aprobar o guardar.',
     'invalid-fields':
-      'No se guardó. Revisa los campos del evento: la zona es obligatoria, la descripción necesita al menos 20 caracteres, y la fecha debe ser de hoy en adelante.',
+      'No se guardó. Revisa los campos del evento: el recinto, la comuna, el estilo y la publicación original son obligatorios, y la fecha debe ser de hoy en adelante.',
     unavailable: 'No se guardó. No hay conexión con la base de datos. No tomes decisiones hasta recuperarla.',
     failed: 'No se guardó. Puede existir un duplicado o un problema de conexión.',
     'ingesta-al-dia': 'Ninguna fuente tocaba todavía. Cada una tiene su propio ritmo de revisión.',
   };
   const ingesta = String(params.status || '').match(/^ingesta-(\d+)$/);
+  const campo = typeof params.campo === 'string' ? params.campo.slice(0, 200) : '';
   const statusText = ingesta
     ? `Se revisaron ${ingesta[1]} fuentes. El detalle quedó en la tabla de fuentes automáticas.`
-    : statuses[String(params.status)];
+    : campo && statuses[String(params.status)]
+      ? `${statuses[String(params.status)]} ${campo}`
+      : statuses[String(params.status)];
   return (
     <section className="container page-section admin-page">
       <p className="eyebrow">REVISIÓN PRIVADA</p>

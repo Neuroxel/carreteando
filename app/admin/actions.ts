@@ -23,6 +23,7 @@ export async function review(
 ) {
   if (!(await isAdmin())) redirect('/admin');
   let status = 'invalid';
+  let detalle = '';
   try {
     const { note, fields } = reviewInput(kind, action, revision, form);
     const db = getAdminDb();
@@ -36,11 +37,18 @@ export async function review(
       p_fields: fields,
     });
     status = result.error ? 'failed' : result.data === 'saved' ? 'saved' : 'conflict';
+    if (result.error)
+      // Sin esto, un fallo de la base es indistinguible de un campo mal llenado.
+      console.warn(`admin-review falló rpc kind=${kind} accion=${action} motivo=${result.error.message}`);
   } catch (error) {
     status = error instanceof ReviewInputError ? error.status : 'failed';
+    // El motivo exacto viaja a la pantalla: un rechazo sin campo señalado es
+    // indistinguible de un producto roto, que es lo que pasó aquí.
+    if (error instanceof ReviewInputError && error.detail) detalle = error.detail;
+    console.warn(`admin-review rechazado kind=${kind} accion=${action} motivo=${status}`);
   }
   revalidatePath('/admin');
-  redirect(`/admin?status=${status}`);
+  redirect(`/admin?status=${status}${detalle ? `&campo=${encodeURIComponent(detalle)}` : ''}`);
 }
 export async function importEditorial() {
   if (!(await isAdmin())) redirect('/admin');

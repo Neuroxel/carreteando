@@ -151,9 +151,12 @@ test('review actions travel as bound arguments and each rejection names its own 
     causes(() => reviewInput('event', 'approve', 0, form({ ...complete, ciudad: '' }))),
     'invalid-fields',
   );
+  // Una descripción corta ya no bloquea: moderar no es aportar. Un aporte del
+  // público sigue necesitando veinte caracteres; la agenda propia de un local a
+  // veces no trae ninguna, y exigirla hacía imposible aprobarla.
   assert.equal(
     causes(() => reviewInput('event', 'approve', 0, form({ ...complete, descripcion: 'corta' }))),
-    'invalid-fields',
+    'ok',
   );
   // Withdrawing must not demand the edit form: it is a retreat, not a publication.
   const withdraw = reviewInput('event', 'withdraw', 3, form());

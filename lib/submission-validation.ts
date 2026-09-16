@@ -20,7 +20,23 @@ function url(body: Record<string, unknown>, key: string, required = false): stri
   if (!safe) throw new ValidationError(`Usa una URL http o https válida en ${key}.`);
   return safe;
 }
-export function validateSubmission(value: unknown, now = new Date()) {
+/**
+ * Un aporte del público y una revisión del panel no piden lo mismo. El público
+ * tiene que decir quién organiza y contar de qué se trata; la agenda propia de
+ * un local no trae "organizador" y a veces no trae descripción, y exigirlos
+ * hacía que aprobar fuera imposible sin que el mensaje dijera por qué.
+ */
+export interface SubmissionRules {
+  organizadorMin?: number;
+  descripcionMin?: number;
+}
+export function validateSubmission(
+  value: unknown,
+  now = new Date(),
+  rules: SubmissionRules = {},
+) {
+  const organizadorMin = rules.organizadorMin ?? 2;
+  const descripcionMin = rules.descripcionMin ?? 20;
   if (!value || typeof value !== 'object' || Array.isArray(value))
     throw new ValidationError('Solicitud inválida.');
   const b = value as Record<string, unknown>;
@@ -45,7 +61,7 @@ export function validateSubmission(value: unknown, now = new Date()) {
     throw new ValidationError('Revisa el precio en pesos chilenos.');
   return {
     nombre: text(b, 'nombre', 160, 4),
-    descripcion: text(b, 'descripcion', 3500, 20),
+    descripcion: text(b, 'descripcion', 3500, descripcionMin),
     fecha,
     hora: hora || null,
     lugar: text(b, 'lugar', 160, 3),
@@ -55,7 +71,7 @@ export function validateSubmission(value: unknown, now = new Date()) {
     precio: price,
     precio_texto: text(b, 'precio_texto', 160),
     categoria,
-    organizador: text(b, 'organizador', 100, 2),
+    organizador: text(b, 'organizador', 100, organizadorMin) || null,
     fuente_url: url(b, 'fuente_url', true),
     organizador_url: url(b, 'organizador_url'),
     imagen_url: url(b, 'imagen_url'),
