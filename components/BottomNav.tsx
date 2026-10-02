@@ -10,21 +10,22 @@ const DESTINOS = [
 export default function BottomNav() {
   const pathname = usePathname();
   const params = useSearchParams();
-  const enMapa = pathname === '/explorar' && params.get('vista') === 'mapa';
+  const discovery = pathname === '/' || pathname === '/explorar';
+  const enMapa = discovery && params.get('vista') === 'mapa';
   // Tocar Mapa mientras exploras filtrado no debería devolverte a la región
   // entera: la vista cambia, lo que estabas mirando se mantiene.
   const conFiltros = (vista: 'lista' | 'mapa') => {
-    if (pathname !== '/explorar') return vista === 'mapa' ? '/explorar?vista=mapa' : '/explorar';
+    if (!discovery) return vista === 'mapa' ? '/explorar?vista=mapa' : '/explorar';
     const q = new URLSearchParams(params.toString());
     if (vista === 'mapa') q.set('vista', 'mapa');
     else q.delete('vista');
     const cadena = q.toString();
-    return cadena ? `/explorar?${cadena}` : '/explorar';
+    return cadena ? `${pathname}?${cadena}` : pathname;
   };
   const activo = (href: string) => {
     if (href === '/explorar?vista=mapa') return enMapa;
     if (href === '/explorar') return pathname === '/explorar' && !enMapa;
-    if (href === '/') return pathname === '/';
+    if (href === '/') return pathname === '/' && !enMapa;
     return pathname.startsWith(href);
   };
   return (
@@ -32,6 +33,13 @@ export default function BottomNav() {
       {DESTINOS.map((d) => (
         <Link
           key={d.label}
+          prefetch={false}
+          onClick={(e) => {
+            if (!discovery || !d.href.startsWith('/explorar') || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+            e.preventDefault();
+            history.pushState(null, '', conFiltros(d.label === 'Mapa' ? 'mapa' : 'lista'));
+            window.dispatchEvent(new PopStateEvent('popstate'));
+          }}
           href={
             d.href === '/explorar?vista=mapa'
               ? conFiltros('mapa')

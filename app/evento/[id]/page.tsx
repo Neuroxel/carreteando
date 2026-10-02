@@ -77,10 +77,6 @@ export default async function Detail({ params }: Props) {
         <div className="detail-info">
           <p className="eyebrow">{category ? `${category} / ${e.ciudad}` : e.ciudad}</p>
           <h1>{e.nombre}</h1>
-          {/* La procedencia vive aquí, no en la tarjeta: en la lista estorba. */}
-          <span className="trust-badge">
-            {CONFIANZA_TEXTO[e.confianza || (e.verificado ? 'organizador' : e.fuente === 'manual' ? 'comunidad' : 'revisado')]}
-          </span>
           <dl className="event-facts">
             <div>
               <dt>CUÁNDO</dt>
@@ -103,10 +99,6 @@ export default async function Detail({ params }: Props) {
             <div>
               <dt>ENTRADA</dt>
               <dd>{e.precio_texto || 'Precio por confirmar'}</dd>
-            </div>
-            <div>
-              <dt>ORGANIZA / PUBLICA</dt>
-              <dd>{e.organizador || 'Por confirmar'}</dd>
             </div>
           </dl>
           <div className="actions">
@@ -146,6 +138,11 @@ export default async function Detail({ params }: Props) {
       </div>
       <div className="detail-description prose">
         <h2>El dato completo</h2>
+          {/* La procedencia vive aquí, no en la tarjeta: en la lista estorba. */}
+          <span className="trust-badge">
+            {CONFIANZA_TEXTO[e.confianza || (e.verificado ? 'organizador' : e.fuente === 'manual' ? 'comunidad' : 'revisado')]}
+          </span>
+        <p>Organiza / publica: {e.organizador || 'Por confirmar'}</p>
         <p className="preserve-lines">
           {e.descripcion || 'Consulta los detalles en la publicación original.'}
         </p>

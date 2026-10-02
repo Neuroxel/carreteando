@@ -36,7 +36,7 @@ export default function LiveReport({
   return (
     <section className="live-box">
       <h2>
-        Cómo está ahora
+        {resumen.length ? 'Cómo está ahora' : '¿Estás acá?'}
         <span className="heading-period">.</span>
       </h2>
       {resumen.length ? (
@@ -53,8 +53,7 @@ export default function LiveReport({
         </ul>
       ) : (
         <p>
-          Todavía no hay reportes recientes suficientes. Si estás ahí, cuéntanos cómo está: dos
-          reportes que coincidan ya sirven a quien viene después.
+          Cuéntanos cómo está. Aún no hay reportes recientes suficientes.
         </p>
       )}
       <button type="button" className="button button-outline" onClick={() => setOpen(!open)}>

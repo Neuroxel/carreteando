@@ -43,7 +43,7 @@ export default async function VenueDetail({ params }: Props) {
   if (!l) notFound();
   const [events, enVivo] = await Promise.all([getPublicEvents(), liveFor('venue', l.slug)]);
   const today = toChileDateString(new Date());
-  const agenda = events.events.filter((e) => e.lugar === l.nombre);
+  const agenda = events.events.filter((e) => e.lugar === l.nombre && e.fecha >= today);
   const maps = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
     [l.nombre, l.direccion, l.ciudad, 'Chile'].filter(Boolean).join(', '),
   )}`;
@@ -65,6 +65,7 @@ export default async function VenueDetail({ params }: Props) {
           </>
         )}
       </p>
+      <div className="venue-tonight"><span className="eyebrow">Esta noche</span><p>{agenda.filter((e) => e.fecha === today).map((e) => e.nombre).join(' · ') || 'Sin evento anunciado. Consulta al lugar antes de salir.'}</p></div>
       {l.descripcion && <p className="detail-description">{l.descripcion}</p>}
       {l.tags.length > 0 && (
         <p className="venue-tags">

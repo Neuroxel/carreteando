@@ -3,7 +3,7 @@ export default function Footer() {
   return (
     <footer className="site-footer container">
       <div>
-        <Link href="/" className="brand">
+        <Link prefetch={false} href="/" className="brand">
           CARRETEANDO<span className="brand-dot">✳</span>
         </Link>
         <p>
@@ -13,11 +13,11 @@ export default function Footer() {
         </p>
       </div>
       <nav aria-label="Información">
-        <Link href="/como-funciona">Cómo funciona</Link>
-        <Link href="/confianza">Fuentes y confianza</Link>
-        <Link href="/zonas">Explorar por zona</Link>
-        <Link href="/explorar?ver=lugares">Lugares para salir</Link>
-        <Link href="/publicar">Proponer un evento</Link>
+        <Link prefetch={false} href="/como-funciona">Cómo funciona</Link>
+        <Link prefetch={false} href="/confianza">Fuentes y confianza</Link>
+        <Link prefetch={false} href="/zonas">Explorar por zona</Link>
+        <Link prefetch={false} href="/explorar?ver=lugares">Lugares para salir</Link>
+        <Link prefetch={false} href="/publicar">Proponer un evento</Link>
       </nav>
       <p className="footer-note">
         Consulta la fuente antes de salir.
