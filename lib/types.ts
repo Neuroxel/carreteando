@@ -74,13 +74,33 @@ export interface EventoFormData {
   tags?: string;
 }
 
-export type TipoEvento = 'main' | 'fonda' | 'pre' | 'after' | 'live' | 'club';
+export type TipoEvento =
+  | 'main'
+  | 'fonda'
+  | 'pre'
+  | 'after'
+  | 'live'
+  | 'club'
+  | 'tocata'
+  | 'pena'
+  | 'fiesta_universitaria'
+  | 'concierto'
+  | 'festival'
+  | 'bar'
+  | 'noche_cultural';
 export const TIPOS_EVENTO: { value: TipoEvento; label: string }[] = [
-  { value: 'fonda', label: 'Fonda' },
+  { value: 'club', label: 'Fiesta' },
+  { value: 'concierto', label: 'Concierto' },
+  { value: 'tocata', label: 'Tocata' },
+  { value: 'pena', label: 'Peña' },
+  { value: 'fiesta_universitaria', label: 'Fiesta universitaria' },
+  { value: 'festival', label: 'Festival' },
+  { value: 'noche_cultural', label: 'Noche cultural' },
+  { value: 'bar', label: 'Noche de bar' },
+  { value: 'live', label: 'En vivo' },
   { value: 'pre', label: 'Pre' },
   { value: 'after', label: 'After' },
-  { value: 'live', label: 'En vivo' },
-  { value: 'club', label: 'Club' },
+  { value: 'fonda', label: 'Fonda' },
 ];
 export interface FiltrosEvento {
   busqueda?: string;
@@ -89,6 +109,7 @@ export interface FiltrosEvento {
   ciudad?: string | 'todos';
   precio?: 'gratis' | 'pago' | 'todos';
   fecha?: 'hoy' | 'manana' | 'finde' | 'futuro' | 'semana' | 'todos';
+  escena?: string;
 }
 
 export const CATEGORIAS: {

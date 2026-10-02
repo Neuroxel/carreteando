@@ -203,3 +203,20 @@ test('"previa inscripción" no es una previa', async () => {
   assert.equal(k.relevancia, 'IRRELEVANT');
   assert.equal(k.academico, true);
 });
+
+test('el tipo se infiere del texto y las escenas solo aparecen con oferta', async () => {
+  const { inferTipo } = await import('../lib/event-types');
+  const { escenasConOferta } = await import('../lib/escenas');
+  assert.equal(inferTipo('Tocata punk en el puerto'), 'tocata');
+  assert.equal(inferTipo('Peña folclórica de octubre'), 'pena');
+  assert.equal(inferTipo('Fiesta retro 80-90s'), 'club');
+  assert.equal(inferTipo('Camila Moreno: la última luz en concierto'), 'concierto');
+  assert.equal(inferTipo('Varieté circense'), 'noche_cultural');
+  assert.equal(inferTipo('Alma adentro'), 'main', 'sin señal no se inventa un tipo');
+  const base = { id: 'a', descripcion: '', fecha: '2026-10-10', ciudad: 'Valparaíso', precio: 0, categoria: 'otro', fuente: 'editorial', verificado: false, activo: true, created_at: '' } as const;
+  const escenas = escenasConOferta([
+    { ...base, nombre: 'Tocata punk', tipo: 'tocata' },
+    { ...base, id: 'b', nombre: 'Noche de karaoke', tipo: 'bar' },
+  ] as never);
+  assert.deepEqual(escenas.map((e) => e.slug).sort(), ['en-vivo', 'karaoke', 'under']);
+});

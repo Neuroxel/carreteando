@@ -274,9 +274,10 @@ test('a fonda reads as a fonda, and the Dieciocho surface opens and closes by da
   };
   const fonda = dbRowToEvento({ ...base, event_type: 'fonda' });
   assert.equal(fonda?.tipo, 'fonda');
-  // An unknown or missing type must fall back, never crash or invent one.
-  assert.equal(dbRowToEvento({ ...base, event_type: 'kermesse' })?.tipo, 'main');
-  assert.equal(dbRowToEvento(base)?.tipo, 'main');
+  // An unknown or missing type falls back to what the text supports, never crashes or invents one.
+  assert.equal(dbRowToEvento({ ...base, event_type: 'kermesse' })?.tipo, 'fonda');
+  assert.equal(dbRowToEvento({ ...base, title: 'Alejo Barrios', event_type: 'kermesse' })?.tipo, 'main');
+  assert.equal(dbRowToEvento({ ...base, title: 'Alejo Barrios' })?.tipo, 'main');
   const club = dbRowToEvento({ ...base, instagram_id: 'club-1', event_type: 'club' });
   const todos = [fonda, club].filter((e) => e !== null);
   assert.equal(filterEvents(todos, { tipo: 'fonda' }, '2026-09-18').length, 1);

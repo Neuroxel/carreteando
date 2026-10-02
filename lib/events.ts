@@ -10,6 +10,8 @@ import {
   validIsoDate,
 } from './event-extraction';
 import { safeImageUrl, safeWebUrl } from './safety';
+import { inferTipo } from './event-types';
+import { enEscena } from './escenas';
 export type EventRow = Record<string, unknown>;
 const str = (v: unknown): string | null => (typeof v === 'string' && v.trim() ? v.trim() : null);
 export function dbRowToEvento(row: EventRow): Evento | null {
@@ -56,7 +58,10 @@ export function dbRowToEvento(row: EventRow): Evento | null {
           : `$${price.toLocaleString('es-CL')}`
         : extracted.text),
     categoria: category,
-    tipo: (TIPOS_EVENTO.find((t) => t.value === row.event_type)?.value || 'main') as Evento['tipo'],
+    // El tipo que trae la fila manda; si no trae, se infiere del texto.
+    tipo:
+      (TIPOS_EVENTO.find((t) => t.value === row.event_type)?.value as Evento['tipo']) ||
+      inferTipo(`${title} ${description || ''}`, category),
     imagen_url: safeImageUrl(row.image_url),
     fuente:
       row.source === 'manual'
@@ -125,6 +130,7 @@ export function filterEvents(
         return false;
       if (filters.ciudad && filters.ciudad !== 'todos' && filters.ciudad !== e.ciudad) return false;
       if (filters.tipo && filters.tipo !== 'todos' && filters.tipo !== e.tipo) return false;
+      if (filters.escena && filters.escena !== 'todos' && !enEscena(e, filters.escena)) return false;
       if (
         filters.precio &&
         filters.precio !== 'todos' &&

@@ -1,4 +1,5 @@
 import { CATEGORIAS, CIUDADES, FiltrosEvento, TIPOS_EVENTO } from './types';
+import { ESCENAS } from './escenas';
 export function parseFilters(params: URLSearchParams, defaultDate = 'futuro'): FiltrosEvento {
   params = new URLSearchParams(params);
   const cityAliases: Record<string, string> = {
@@ -41,5 +42,6 @@ export function parseFilters(params: URLSearchParams, defaultDate = 'futuro'): F
       defaultDate,
     ) as FiltrosEvento['fecha'],
     precio: value('precio', ['gratis', 'pago', 'todos'], 'todos') as FiltrosEvento['precio'],
+    escena: value('escena', ['todos', ...ESCENAS.map((e) => e.slug)], 'todos'),
   };
 }

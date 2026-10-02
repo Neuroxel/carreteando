@@ -4,7 +4,8 @@ import { getSourceFreshness } from '../lib/server-freshness';
 import { diversifyByVenue, esTemporadaDieciocho, filterEvents } from '../lib/events';
 import { toChileDateString } from '../lib/event-extraction';
 import { parseFilters } from '../lib/filters';
-import { CATEGORIAS, CIUDADES_NUCLEO } from '../lib/types';
+import { CIUDADES_NUCLEO } from '../lib/types';
+import { escenasConOferta } from '../lib/escenas';
 import EventCard from './EventCard';
 import VenueCard from './VenueCard';
 import { getPublicVenues } from '../lib/server-venues';
@@ -61,6 +62,8 @@ export default async function Explore({
         all.findIndex((other) => other.lugar === e.lugar && other.ciudad === e.ciudad) === i,
     )
     .slice(0, 3);
+  // Escenas con oferta en la noche y la zona elegidas: una escena vacía no se ofrece.
+  const escenas = escenasConOferta(filterEvents(result.events, { ...filters, escena: 'todos' }, today));
   const todayCount = filterEvents(result.events, { fecha: 'hoy' }, today).length;
   const mananaCount = filterEvents(result.events, { fecha: 'manana' }, today).length;
   const dieciocho = esTemporadaDieciocho(today);
@@ -205,7 +208,7 @@ export default async function Explore({
         )}
         <div className="date-tabs" aria-label="Filtrar por fecha">
           {[
-            ['hoy', 'Hoy'],
+            ['hoy', 'Esta noche'],
             ['manana', 'Mañana'],
             ['finde', 'Este finde'],
             ['futuro', 'Más adelante'],
@@ -252,63 +255,58 @@ export default async function Explore({
             </Link>
           ))}
         </div>
-        <details
-          className="extra-filters"
-          open={Boolean(
-            filters.busqueda || filters.categoria !== 'todos' || filters.precio !== 'todos',
-          )}
-        >
-          <summary>Buscar por nombre, música o precio</summary>
-          <div className="filter-toolbar">
-            <form action={path} className="search-form">
-              <label htmlFor="q" className="sr-only">
-                Buscar evento, lugar o estilo
-              </label>
-              <span aria-hidden="true">⌕</span>
-              <input
-                id="q"
-                name="q"
-                type="search"
-                maxLength={120}
-                defaultValue={filters.busqueda}
-                placeholder="Un evento, un lugar, tu estilo…"
-              />
-              {Object.entries(filters)
-                .filter(([k]) => k !== 'busqueda')
-                .map(([k, v]) => (
-                  <input key={k} type="hidden" name={k} value={v} />
-                ))}
-              <button aria-label="Buscar eventos" type="submit">
-                Buscar
-              </button>
-            </form>
-            <Link
-              href={href('precio', filters.precio === 'gratis' ? 'todos' : 'gratis')}
-              className={`chip free-filter ${filters.precio === 'gratis' ? 'selected' : ''}`}
-              aria-current={filters.precio === 'gratis' ? 'true' : undefined}
-            >
-              $ Entrada gratis
-            </Link>
-          </div>
-          <div className="category-filters" aria-label="Filtrar por estilo">
-            <Link
-              href={href('categoria', 'todos')}
-              className={`chip ${filters.categoria === 'todos' ? 'selected' : ''}`}
-            >
-              Todos los estilos
-            </Link>
-            {CATEGORIAS.filter((c) => c.value !== 'otro').map((c) => (
+        <div className="buscar-y-escenas">
+          <form action={path} className="search-form" role="search">
+            <label htmlFor="q" className="sr-only">
+              Buscar evento, lugar o artista
+            </label>
+            <span aria-hidden="true">⌕</span>
+            <input
+              id="q"
+              name="q"
+              type="search"
+              maxLength={120}
+              defaultValue={filters.busqueda}
+              placeholder="Un evento, un lugar, un artista…"
+            />
+            {Object.entries(filters)
+              .filter(([k, v]) => k !== 'busqueda' && v && v !== 'todos')
+              .map(([k, v]) => (
+                <input key={k} type="hidden" name={k} value={v} />
+              ))}
+            <button aria-label="Buscar eventos" type="submit">
+              Buscar
+            </button>
+          </form>
+          {escenas.length > 0 && (
+            <div className="escenas" aria-label="Escenas">
               <Link
-                key={c.value}
-                className={`chip ${filters.categoria === c.value ? 'selected' : ''}`}
-                href={href('categoria', c.value)}
-                aria-current={filters.categoria === c.value ? 'true' : undefined}
+                href={href('escena', 'todos')}
+                className={`chip ${!filters.escena || filters.escena === 'todos' ? 'selected' : ''}`}
+                aria-current={!filters.escena || filters.escena === 'todos' ? 'true' : undefined}
               >
-                {c.label}
+                Todas las escenas
               </Link>
-            ))}
-          </div>
-        </details>
+              {escenas.map((x) => (
+                <Link
+                  key={x.slug}
+                  href={href('escena', x.slug)}
+                  className={`chip ${filters.escena === x.slug ? 'selected' : ''}`}
+                  aria-current={filters.escena === x.slug ? 'true' : undefined}
+                >
+                  {x.label} <span className="chip-n">{x.n}</span>
+                </Link>
+              ))}
+              <Link
+                href={href('precio', filters.precio === 'gratis' ? 'todos' : 'gratis')}
+                className={`chip free-filter ${filters.precio === 'gratis' ? 'selected' : ''}`}
+                aria-current={filters.precio === 'gratis' ? 'true' : undefined}
+              >
+                $ Gratis
+              </Link>
+            </div>
+          )}
+        </div>
         {vista === 'mapa' && (
           <>
             {puntos.length ? (
