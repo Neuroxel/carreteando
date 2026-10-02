@@ -3,6 +3,7 @@ import { currentActor, isAdmin } from '../../lib/admin-session';
 import { getAdminDb } from '../../lib/server-db';
 import { login, logout, review, reviewVenue, importEditorial, runIngestion } from './actions';
 import AdminStats from '../../components/AdminStats';
+import AutomationPanel from '../../components/AutomationPanel';
 import { CATEGORIAS, CIUDADES } from '../../lib/types';
 import { TIPOS_LUGAR } from '../../lib/venues';
 import { safeWebUrl } from '../../lib/safety';
@@ -82,6 +83,37 @@ function Fields({ row }: { row: Row }) {
     </div>
   );
 }
+/** Por qué el motor decidió lo que decidió, o por qué esto necesita a una persona. */
+function AutoExplanation({ row }: { row: Row }) {
+  const auto = row.auto_reasons && typeof row.auto_reasons === 'object' ? (row.auto_reasons as Row) : null;
+  const lista = (v: unknown) => (Array.isArray(v) ? v.map(String) : []);
+  if (row.disposition === 'review' && row.human_reason)
+    return (
+      <p className="auto-motivo auto-humano">
+        <strong>Necesita una persona:</strong> {string(row.human_reason)}
+      </p>
+    );
+  if (!auto || !['AUTO_PUBLISH', 'AUTO_PROMOTE_FROM_REVIEW'].includes(String(row.auto_decision))) return null;
+  return (
+    <div className="auto-motivo">
+      <strong>
+        {row.auto_decision === 'AUTO_PROMOTE_FROM_REVIEW' ? 'Promovido automáticamente desde la cola' : 'Publicado automáticamente'}
+      </strong>
+      <ul>
+        {[...lista(auto.supporting), ...lista(auto.reasons)].map((r) => (
+          <li key={r}>✓ {r}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+/** Primero lo que tiene una contradicción, después lo que pasa hoy y mañana. */
+function prioridad(row: Row, hoy: string, manana: string) {
+  if (row.auto_decision === 'REVIEW_CONFLICT') return 0;
+  if (row.date_text === hoy) return 1;
+  if (row.date_text === manana) return 2;
+  return 3;
+}
 function Item({ row, kind, events }: { row: Row; kind: 'event' | 'inbox'; events: Row[] }) {
   const payload =
     kind === 'inbox' && row.payload && typeof row.payload === 'object' ? (row.payload as Row) : row;
@@ -116,6 +148,7 @@ function Item({ row, kind, events }: { row: Row; kind: 'event' | 'inbox'; events
           </a>
         </p>
       )}
+      <AutoExplanation row={row} />
       {duplicates.length > 0 && (
         <p className="form-error">
           Posibles coincidencias: {duplicates.map((d) => string(d.title)).join(' / ')}. Compara
@@ -409,6 +442,29 @@ export default async function Admin({
     );
   const actor = await currentActor();
   const db = getAdminDb();
+  const hace30 = new Date(Date.now() - 30 * 86_400_000).toISOString();
+  const [decisiones, modo, vencidosEsperando, masAntiguo] = await Promise.all([
+    db
+      ?.from('automation_decisions')
+      .select('event_id,decision,applied,mode,created_at')
+      .neq('mode', 'backtest')
+      .gte('created_at', hace30)
+      .order('created_at', { ascending: false })
+      .limit(3000),
+    db?.from('automation_config').select('value').eq('key', 'engine_mode').limit(1),
+    db
+      ?.from('events')
+      .select('id', { count: 'exact', head: true })
+      .eq('disposition', 'expired')
+      .eq('disposition_note', 'La fecha pasó sin que nadie lo revisara.')
+      .gte('disposition_at', hace30),
+    db
+      ?.from('events')
+      .select('scraped_at')
+      .eq('disposition', 'review')
+      .order('scraped_at')
+      .limit(1),
+  ]);
   const [queue, events, audit, metrics, venues, sourceRows, runs] = await Promise.all([
     db
       ?.from('community_inbox')
@@ -441,7 +497,7 @@ export default async function Admin({
     db
       ?.from('event_sources')
       .select(
-        'id,name,source_type,family,trust_tier,access_mode,relevance_filter,relevant_count,irrelevant_count,notes,commune,trust,active,public_url,refresh_hours,last_checked_at,last_success_at,last_failure_at,last_error,next_check_at,items_found,candidate_count,unique_event_count,duplicate_count,parse_failure_count,consecutive_failures,cost_clp',
+        'id,name,source_type,family,trust_tier,access_mode,relevance_filter,relevant_count,irrelevant_count,notes,reviewed_n,confirmed_n,serious_errors,precision_lb,earned_trust,trust_reason,commune,trust,active,public_url,refresh_hours,last_checked_at,last_success_at,last_failure_at,last_error,next_check_at,items_found,candidate_count,unique_event_count,duplicate_count,parse_failure_count,consecutive_failures,cost_clp',
       )
       .order('commune')
       .order('name')
@@ -509,10 +565,32 @@ export default async function Admin({
           ) : (
             <p>No hay aportes pendientes.</p>
           )}
-          <h2>Candidatos y cartelera ({current.length})</h2>
-          {current.map((r) => (
-            <Item key={r.id} row={r} kind="event" events={list} />
-          ))}
+          {(() => {
+            const manana = toChileDateString(new Date(Date.now() + 86_400_000));
+            const pendientes = current
+              .filter((r) => r.disposition === 'review')
+              .sort((a, b) => prioridad(a, today, manana) - prioridad(b, today, manana) || String(a.date_text).localeCompare(String(b.date_text)));
+            const cartelera = current.filter((r) => r.disposition !== 'review');
+            const conflictos = pendientes.filter((r) => r.auto_decision === 'REVIEW_CONFLICT').length;
+            return (
+              <>
+                <h2>Necesitan una persona ({pendientes.length})</h2>
+                <p>
+                  Ordenados por urgencia: primero las contradicciones ({conflictos}), luego lo de hoy y
+                  mañana. Cada uno dice por qué el motor no pudo decidir solo.
+                </p>
+                {pendientes.map((r) => (
+                  <Item key={r.id} row={r} kind="event" events={list} />
+                ))}
+                <details className="admin-item">
+                  <summary>Cartelera vigente ({cartelera.length})</summary>
+                  {cartelera.map((r) => (
+                    <Item key={r.id} row={r} kind="event" events={list} />
+                  ))}
+                </details>
+              </>
+            );
+          })()}
           <h2>
             Lugares ({venues?.data?.filter((v) => v.moderation_status === 'pending').length || 0}{' '}
             por revisar de {venues?.data?.length || 0})
@@ -554,6 +632,13 @@ export default async function Admin({
               </p>
             );
           })()}
+          <AutomationPanel
+            mode={String(modo?.data?.[0]?.value || 'shadow')}
+            decisions={decisiones?.data || []}
+            sources={sourceRows?.data || []}
+            expiredWaiting={vencidosEsperando?.count || 0}
+            oldestPending={masAntiguo?.data?.[0]?.scraped_at ? String(masAntiguo.data[0].scraped_at) : null}
+          />
           <h2>Estado del producto</h2>
           <AdminStats
             venues={venues?.data || []}
