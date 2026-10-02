@@ -145,15 +145,20 @@ export function sourceStatsFrom(evidenceByEvent: Map<number, Evidence[]>) {
       if (e.authority === 'human' || visto.has(e.originGroup)) continue;
       if (!['first_party', 'transactional', 'directory'].includes(e.authority)) continue;
       const delta = Date.parse(e.retrievedAt) - Date.parse(h.retrievedAt);
-      if (delta > 2 * 86_400_000 || delta < -30 * 86_400_000) continue;
-      visto.add(e.originGroup);
-      const s = stats.get(e.originGroup) || { reviewed: 0, confirmed: 0, serious: 0 };
-      s.reviewed += 1;
+      if (delta < -30 * 86_400_000) continue;
       const mismaFecha = e.claims.date === h.claims.date;
       const lugarA = normalizedTitle(e.claims.venue || '');
       const lugarB = normalizedTitle(h.claims.venue || '');
       const mismoLugar = !lugarA || !lugarB || lugarA.includes(lugarB) || lugarB.includes(lugarA);
-      if (mismaFecha && mismoLugar) s.confirmed += 1;
+      const coincide = mismaFecha && mismoLugar;
+      // Una diferencia leída días después de la ficha puede ser una
+      // reprogramación real: no se cuenta como error (la detecta el motor de
+      // contradicciones). Una coincidencia posterior sí confirma al parser.
+      if (!coincide && delta > 2 * 86_400_000) continue;
+      visto.add(e.originGroup);
+      const s = stats.get(e.originGroup) || { reviewed: 0, confirmed: 0, serious: 0 };
+      s.reviewed += 1;
+      if (coincide) s.confirmed += 1;
       else s.serious += 1;
       stats.set(e.originGroup, s);
     }
@@ -180,7 +185,8 @@ async function learnTrust(db: Db, evidenceByEvent: Map<number, Evidence[]>, appl
     }
     const g = groupOfSource(row.id) || host;
     const s = stats.get(g) || { reviewed: 0, confirmed: 0, serious: 0 };
-    const current = asTrust(row.earned_trust || row.trust);
+    // Punto de partida: lo ganado, o si no, lo que declara el registro en código.
+    const current = asTrust(row.earned_trust || def?.trust || row.trust);
     const ceiling = CEILING[row.trust_tier || def?.tier || 'C'] || 'review';
     const full: SourceStats = { ...s, parserHealthy: Number(row.consecutive_failures || 0) < 2 };
     const { trust, reason } = earnTrust(current, ceiling, full);

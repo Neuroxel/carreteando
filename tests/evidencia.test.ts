@@ -138,8 +138,11 @@ test('la precisión se mide contra la ficha humana y no castiga un cambio poster
   const humana = ev({ authority: 'human', sourceId: null, retrievedAt: '2026-09-20T00:00:00Z' });
   const antes = ev({ retrievedAt: '2026-09-19T00:00:00Z' });
   const despues = ev({ retrievedAt: '2026-10-02T00:00:00Z' }, { date: '2026-10-11' });
-  const stats = sourceStatsFrom(new Map([[1, [humana, antes]], [2, [humana, despues]]]));
-  assert.deepEqual(stats.get('portaldisc'), { reviewed: 1, confirmed: 1, serious: 0 });
+  const confirmaDespues = ev({ retrievedAt: '2026-10-02T00:00:00Z' });
+  const stats = sourceStatsFrom(new Map([[1, [humana, antes]], [2, [humana, despues]], [3, [humana, confirmaDespues]]]));
+  assert.deepEqual(stats.get('portaldisc'), { reviewed: 2, confirmed: 2, serious: 0 });
+  const errorAlMomento = ev({ retrievedAt: '2026-09-20T12:00:00Z' }, { date: '2026-10-04' });
+  assert.deepEqual(sourceStatsFrom(new Map([[1, [humana, errorAlMomento]]])).get('portaldisc'), { reviewed: 1, confirmed: 0, serious: 1 });
 });
 
 test('el origen agrupa espejos y separa cuentas', () => {
