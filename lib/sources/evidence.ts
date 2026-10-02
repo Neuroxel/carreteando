@@ -48,6 +48,8 @@ export interface EventState {
   /** Un moderador lo tocó: la automatización no cambia sus datos ni su estado. */
   humanLocked: boolean;
   eventStatus: EventStatus | 'rescheduled';
+  /** El clasificador vio una señal académica explícita (seminario, taller, charla...). */
+  academic?: boolean;
 }
 export type EarnedTrust = Extract<Trust, 'auto' | 'strict' | 'review'>;
 export type Decision =
@@ -273,8 +275,10 @@ export function evaluateEventEvidence(
 
   // 3. Basura evidente: se descarta sin gastar a una persona.
   const soloDebiles = fuertes.length === 0;
-  if (event.relevance === 'IRRELEVANT') {
-    reasons.push('no es una salida: actividad académica o diurna');
+  // Solo se descarta sin persona lo que lleva una señal académica explícita: el
+  // backtest mostró que "diurno sin señales" incluía fondas aprobadas a mano.
+  if (event.relevance === 'IRRELEVANT' && event.academic) {
+    reasons.push('no es una salida: actividad académica');
     return out(publicado ? 'REVIEW_CONFLICT' : 'AUTO_REJECT');
   }
 

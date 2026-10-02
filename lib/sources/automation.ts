@@ -72,6 +72,7 @@ function stateFrom(r: Row, locked: Set<number>): EventState & { academico: boole
     humanLocked: locked.has(r.id),
     eventStatus: r.event_status || 'scheduled',
     academico: rel.academico,
+    academic: rel.academico,
     validCity: !r.city || (CIUDADES as readonly string[]).includes(r.city),
   };
 }
@@ -243,10 +244,6 @@ export async function reevaluate(db: Db, now = new Date(), forced?: EngineMode):
     let result = evaluateEventEvidence(st, ev, trustOf, today);
     // Fuera de la región: no es nuestro, se descarta sin persona.
     if (!st.validCity && r.disposition === 'review') result = { ...result, decision: 'AUTO_REJECT', reasons: ['fuera de la región cubierta'] };
-    // Diurno sin señal académica de una fuente fuerte: lo mira una persona, no se bota.
-    if (result.decision === 'AUTO_REJECT' && !st.academico && ev.some((e) => ['first_party', 'transactional', 'human'].includes(e.authority)) && st.validCity) {
-      result = { ...result, decision: 'REVIEW_INSUFFICIENT', reasons: ['actividad diurna de una fuente confiable: confirmar si es una salida'] };
-    }
     report.counts[result.decision] = (report.counts[result.decision] || 0) + 1;
     const human = result.decision.startsWith('REVIEW') ? [...result.conflicting, ...result.reasons].join(' · ').slice(0, 500) : null;
     const yaDecidido = r.auto_decision === result.decision && (r.human_reason || null) === human;
@@ -336,9 +333,7 @@ export async function backtest(db: Db) {
         : e,
     );
     const st = stateFrom({ ...r, disposition: 'review' }, new Set());
-    let res = evaluateEventEvidence({ ...st, disposition: 'review' }, ev, trustOf, asOf);
-    if (res.decision === 'AUTO_REJECT' && !st.academico && ev.some((e) => ['first_party', 'transactional'].includes(e.authority)))
-      res = { ...res, decision: 'REVIEW_INSUFFICIENT' };
+    const res = evaluateEventEvidence({ ...st, disposition: 'review' }, ev, trustOf, asOf);
     out.push({
       event_id: r.id,
       decision: res.decision,

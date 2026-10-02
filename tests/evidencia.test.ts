@@ -117,7 +117,9 @@ test('estado leído del texto de la fuente', () => {
 
 test('lo pasado se vence, lo académico se descarta, lo humano no se toca', () => {
   assert.equal(evaluateEventEvidence(evento({ date: '2026-09-30' }), [ev()], confianza('strict'), HOY).decision, 'AUTO_EXPIRE');
-  assert.equal(evaluateEventEvidence(evento({ relevance: 'IRRELEVANT', time: '09:30' }), [ev({}, { start_time: '09:30' })], confianza('strict'), HOY).decision, 'AUTO_REJECT');
+  assert.equal(evaluateEventEvidence(evento({ relevance: 'IRRELEVANT', academic: true, time: '09:30' }), [ev({}, { start_time: '09:30' })], confianza('strict'), HOY).decision, 'AUTO_REJECT');
+  // Backtest: una fonda de día aprobada a mano no tiene señal académica y no se bota.
+  assert.equal(evaluateEventEvidence(evento({ relevance: 'IRRELEVANT', academic: false, time: '09:00' }), [ev({}, { start_time: '09:00' })], confianza('strict'), HOY).decision, 'REVIEW_INSUFFICIENT');
   assert.equal(evaluateEventEvidence(evento({ humanLocked: true }), [ev()], confianza('strict'), HOY).decision, 'KEEP');
 });
 
