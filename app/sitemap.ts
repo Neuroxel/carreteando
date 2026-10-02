@@ -19,6 +19,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: `${SITE_URL}/lugar/${l.slug}`,
       ...(l.ultima_revision ? { lastModified: l.ultima_revision } : {}),
     })),
-    ...zonasDe(v.lugares).map((z) => ({ url: `${SITE_URL}/zonas/${zonaSlug(z.zona)}` })),
+    // Solo zonas con sustancia: las delgadas llevan noindex y no se anuncian.
+    ...zonasDe(v.lugares)
+      .filter((z) => z.lugares.length >= 3)
+      .map((z) => ({ url: `${SITE_URL}/zonas/${zonaSlug(z.zona)}` })),
   ];
 }

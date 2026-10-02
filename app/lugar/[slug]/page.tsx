@@ -9,6 +9,7 @@ import { FUENTES_LUGAR, zonaSlug } from '../../../lib/venues';
 import ShareButton from '../../../components/ShareButton';
 import LiveReport from '../../../components/LiveReport';
 import { liveFor } from '../../../lib/server-live';
+import { breadcrumbJsonLd, safeJsonLd, venueJsonLd } from '../../../lib/event-seo';
 export const dynamic = 'force-dynamic';
 type Props = { params: Promise<{ slug: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -193,6 +194,22 @@ export default async function VenueDetail({ params }: Props) {
           Enviar o corregir ↗
         </Link>
       </div>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(venueJsonLd(l)) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: safeJsonLd(
+            breadcrumbJsonLd([
+              { name: 'Inicio', path: '/' },
+              ...(l.zona ? [{ name: l.zona, path: `/zonas/${zonaSlug(l.zona)}` }] : []),
+              { name: l.nombre, path: `/lugar/${l.slug}` },
+            ]),
+          ),
+        }}
+      />
     </article>
   );
 }

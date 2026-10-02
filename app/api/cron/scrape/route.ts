@@ -13,6 +13,7 @@ import {
 } from '../../../../lib/ingestion';
 import { editorialRows } from '../../../../lib/editorial-feed';
 import { dispatchSources } from '../../../../lib/sources/dispatcher';
+import { notifyIndexNow } from '../../../../lib/indexnow';
 import { parseTimestamp, toChileDateString } from '../../../../lib/event-extraction';
 export const maxDuration = 300;
 export const dynamic = 'force-dynamic';
@@ -141,6 +142,24 @@ export async function GET(request: Request) {
     metrics.adapter_duplicates = dispatch.reports.reduce((n, r) => n + r.duplicates, 0);
     metrics.adapter_parse_failures = dispatch.reports.reduce((n, r) => n + r.parseFailures, 0);
     metrics.adapter_reports = dispatch.reports;
+    // Lo que esta corrida dejó público se anuncia a los buscadores que usan
+    // IndexNow. Solo en producción: una vista previa no debe anunciar URLs.
+    if (process.env.VERCEL_ENV === 'production') {
+      const nuevos = await db
+        .from('events')
+        .select('instagram_id')
+        .eq('is_active', true)
+        .eq('moderation_status', 'approved')
+        .gte('created_at', new Date(started).toISOString())
+        .limit(100);
+      const paths = (nuevos.data || []).map(
+        (r: { instagram_id: string }) => `/evento/${encodeURIComponent(r.instagram_id)}`,
+      );
+      if (paths.length) paths.push('/', '/explorar');
+      const aviso = await notifyIndexNow(paths);
+      metrics.indexnow_sent = aviso.sent;
+      metrics.indexnow_status = aviso.status;
+    }
     if (paused) {
       metrics.mode = dispatch.ran ? 'adaptadores_y_editorial' : 'editorial_import_only';
       metrics.apify_cost_usd = 0;

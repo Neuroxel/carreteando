@@ -7,6 +7,12 @@ import { getPublicVenues } from '../../../lib/server-venues';
 import { getPublicEvents } from '../../../lib/server-events';
 import { toChileDateString } from '../../../lib/event-extraction';
 import { zonaSlug, zonasDe } from '../../../lib/venues';
+import { breadcrumbJsonLd, safeJsonLd } from '../../../lib/event-seo';
+/**
+ * Una página de zona con uno o dos lugares es contenido delgado: existe para
+ * quien navega, pero no se ofrece a los buscadores hasta que tenga sustancia.
+ */
+const MIN_LUGARES_INDEXABLE = 3;
 export const dynamic = 'force-dynamic';
 type Props = { params: Promise<{ slug: string }> };
 async function findZone(slug: string) {
@@ -21,6 +27,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: `Salir en ${z.zona}, ${z.ciudad}`,
     description: `${z.lugares.length} lugares revisados en ${z.zona}: bares, clubes y salas en vivo, con direcciones y próximas fechas.`,
     alternates: { canonical: `/zonas/${slug}` },
+    ...(z.lugares.length < MIN_LUGARES_INDEXABLE ? { robots: { index: false, follow: true } } : {}),
   };
 }
 export default async function Zone({ params }: Props) {
@@ -71,6 +78,18 @@ export default async function Zone({ params }: Props) {
         Las zonas se arman con la dirección publicada por cada lugar. Si falta un sitio de este
         sector, cuéntanos y lo revisamos.
       </p>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: safeJsonLd(
+            breadcrumbJsonLd([
+              { name: 'Inicio', path: '/' },
+              { name: 'Zonas', path: '/zonas' },
+              { name: z.zona, path: `/zonas/${slug}` },
+            ]),
+          ),
+        }}
+      />
     </section>
   );
 }

@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation';
 import { getPublicEvent } from '../../../lib/server-events';
 import { eventDateLabel } from '../../../lib/events';
 import { toChileDateString } from '../../../lib/event-extraction';
-import { eventJsonLd, safeJsonLd } from '../../../lib/event-seo';
+import { breadcrumbJsonLd, eventJsonLd, safeJsonLd } from '../../../lib/event-seo';
 import EventImage from '../../../components/EventImage';
 import ShareButton from '../../../components/ShareButton';
 import ReportForm from '../../../components/ReportForm';
@@ -166,6 +166,18 @@ export default async function Detail({ params }: Props) {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(eventJsonLd(e)) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: safeJsonLd(
+            breadcrumbJsonLd([
+              { name: 'Inicio', path: '/' },
+              { name: 'Explorar', path: '/explorar' },
+              { name: e.nombre, path: `/evento/${encodeURIComponent(e.id)}` },
+            ]),
+          ),
+        }}
       />
     </article>
   );
