@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
-import test from 'node:test';
+import test, { mock } from 'node:test';
 import { ReviewInputError, reviewInput } from '../lib/review-input';
+// Las fixtures son de septiembre de 2026: el reloj se fija para que el test no caduque.
+mock.timers.enable({ apis: ['Date'], now: new Date('2026-09-15T15:00:00Z') });
 /** Un FormData mínimo con la misma superficie que usa reviewInput. */
 function formulario(campos: Record<string, string>) {
   const mapa = new Map(Object.entries(campos));

@@ -1,5 +1,5 @@
 import { toChileDateString } from '../../event-extraction';
-import { buildCandidate, parseSpanishDate, parseTime, stripTags } from '../normalize';
+import { buildCandidate, fechaVerificada, parseSpanishDate, parseTime, stripTags } from '../normalize';
 import { SourceError, type Adapter, type AdapterResult } from '../types';
 const CARD_SEPARATOR = 'class="album"';
 const HREF = /href="(\/evento\/[A-Za-z0-9_-]+)"/;
@@ -42,6 +42,7 @@ export const portaldiscCartelera: Adapter = {
         continue;
       }
       if (date < today) continue;
+      const verificada = fechaVerificada(whenLine, date);
       const candidate = buildCandidate({
         sourceId: source.id,
         title,
@@ -52,8 +53,11 @@ export const portaldiscCartelera: Adapter = {
         detailUrl: new URL(href[1], 'https://www.portaldisc.com').toString(),
         imageUrl: card.match(IMG)?.[1] || null,
         description: [whenLine, whereLine].filter(Boolean).join(' · '),
-        confidence: 'medium',
-        reasons: ['cartelera oficial del lugar en la ticketera', 'fecha escrita en texto'],
+        confidence: verificada ? 'high' : 'medium',
+        reasons: [
+          'cartelera oficial del lugar en la ticketera',
+          verificada ? 'año escrito y día de la semana coinciden con la fecha' : 'fecha escrita en texto, sin año verificable',
+        ],
       });
       if (candidate) candidates.push(candidate);
       else parseFailures += 1;

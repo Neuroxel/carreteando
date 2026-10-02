@@ -174,6 +174,8 @@ function sourceHealth(row: SourceRow) {
   const fails = Number(row.consecutive_failures || 0);
   const checked = row.last_checked_at ? String(row.last_checked_at) : null;
   const staleAfter = (Number(row.refresh_hours || 24) + 24) * 3600_000;
+  if (row.access_mode === 'blocked') return { label: 'bloqueada (manual)', tone: 'neutral' };
+  if (row.access_mode === 'manual') return { label: 'manual', tone: 'neutral' };
   if (!row.active) return { label: 'pausada', tone: 'neutral' };
   if (fails >= 3) return { label: 'caída', tone: 'bad' };
   if (fails > 0) return { label: 'degradada', tone: 'warn' };
@@ -202,13 +204,29 @@ function SourceHealth({ rows, error }: { rows: SourceRow[]; error: boolean }) {
       </p>
     );
   const problemas = rows.filter((r) => ['caída', 'degradada', 'sin resultados', 'atrasada'].includes(sourceHealth(r).label));
+  const automaticas = rows.filter((r) => r.access_mode !== 'manual' && r.access_mode !== 'blocked');
+  // La concentración importa más que el total: si casi todo viene de una sola
+  // ticketera, una caída suya vacía la cartelera.
+  const porFamilia = new Map<string, number>();
+  for (const r of automaticas) {
+    const f = String(r.family || 'sin familia');
+    porFamilia.set(f, (porFamilia.get(f) || 0) + Number(r.unique_event_count || 0));
+  }
+  const totalEventos = [...porFamilia.values()].reduce((a, b) => a + b, 0);
+  const mayor = [...porFamilia.entries()].sort((a, b) => b[1] - a[1])[0];
   return (
     <>
       <p>
-        {rows.length} fuentes registradas
+        {automaticas.length} fuentes automáticas y {rows.length - automaticas.length} de revisión manual
         {problemas.length ? ` · ${problemas.length} necesitan atención` : ' · todas al día'}.
         Los conteos son los de la última revisión de cada fuente, no acumulados.
       </p>
+      {mayor && totalEventos > 0 ? (
+        <p>
+          Diversidad: {porFamilia.size} familias de fuente. La que más aporta ({mayor[0]}) trae el{' '}
+          {Math.round((mayor[1] / totalEventos) * 100)}% de los eventos nuevos de la última revisión.
+        </p>
+      ) : null}
       <div className="table-scroll">
         <table className="admin-table source-table">
           <caption className="visually-hidden">Estado de las fuentes automáticas</caption>
@@ -223,6 +241,7 @@ function SourceHealth({ rows, error }: { rows: SourceRow[]; error: boolean }) {
               <th scope="col">Ítems</th>
               <th scope="col">Eventos</th>
               <th scope="col">Duplicados</th>
+              <th scope="col">Útiles / ajenos</th>
               <th scope="col">Sin leer</th>
               <th scope="col">Costo</th>
             </tr>
@@ -237,9 +256,15 @@ function SourceHealth({ rows, error }: { rows: SourceRow[]; error: boolean }) {
                       {String(row.name)}
                     </a>
                     <small>
-                      {String(row.source_type)} ·{' '}
-                      {row.trust === 'auto' ? 'puede publicar sola' : 'siempre a revisión'}
+                      {String(row.family || row.source_type)}
+                      {row.trust_tier ? ` · nivel ${String(row.trust_tier)}` : ''} ·{' '}
+                      {row.trust === 'auto'
+                        ? 'puede publicar sola'
+                        : row.trust === 'strict'
+                          ? 'publica sola solo noches inequívocas'
+                          : 'siempre a revisión'}
                     </small>
+                    {row.notes ? <small>{String(row.notes)}</small> : null}
                     {row.last_error ? <small className="source-error">último error: {String(row.last_error)}</small> : null}
                   </th>
                   <td>{String(row.commune || '—')}</td>
@@ -252,6 +277,11 @@ function SourceHealth({ rows, error }: { rows: SourceRow[]; error: boolean }) {
                   <td>{Number(row.items_found || 0)}</td>
                   <td>{Number(row.unique_event_count || 0)}</td>
                   <td>{Number(row.duplicate_count || 0)}</td>
+                  <td>
+                    {row.relevance_filter
+                      ? `${Number(row.relevant_count || 0)} / ${Number(row.irrelevant_count || 0)}`
+                      : `${Number(row.relevant_count || 0)} / —`}
+                  </td>
                   <td>{Number(row.parse_failure_count || 0)}</td>
                   <td>{Number(row.cost_clp || 0) === 0 ? 'sin costo' : `$${Number(row.cost_clp)}`}</td>
                 </tr>
@@ -389,7 +419,7 @@ export default async function Admin({
     db
       ?.from('events')
       .select('*')
-      .or(`moderation_status.eq.pending,date_text.gte.${toChileDateString(new Date())}`)
+      .gte('date_text', toChileDateString(new Date()))
       .order('date_text')
       .limit(300),
     db
@@ -411,7 +441,7 @@ export default async function Admin({
     db
       ?.from('event_sources')
       .select(
-        'id,name,source_type,commune,trust,active,public_url,refresh_hours,last_checked_at,last_success_at,last_failure_at,last_error,next_check_at,items_found,candidate_count,unique_event_count,duplicate_count,parse_failure_count,consecutive_failures,cost_clp',
+        'id,name,source_type,family,trust_tier,access_mode,relevance_filter,relevant_count,irrelevant_count,notes,commune,trust,active,public_url,refresh_hours,last_checked_at,last_success_at,last_failure_at,last_error,next_check_at,items_found,candidate_count,unique_event_count,duplicate_count,parse_failure_count,consecutive_failures,cost_clp',
       )
       .order('commune')
       .order('name')
@@ -426,7 +456,6 @@ export default async function Admin({
   const list = events?.data || [];
   const today = toChileDateString(new Date());
   const current = list.filter(r => r.date_text && r.date_text >= today);
-  const older = list.filter(r => !r.date_text || r.date_text < today);
   const statuses: Record<string, string> = {
     imported: 'Selección editorial importada. Los registros existentes conservaron su estado.',
     saved: 'Cambio guardado.',
@@ -484,7 +513,6 @@ export default async function Admin({
           {current.map((r) => (
             <Item key={r.id} row={r} kind="event" events={list} />
           ))}
-          <details className="admin-item"><summary>Archivo privado: fechas pasadas o sin confirmar ({older.length})</summary>{older.map(r=><Item key={r.id} row={r} kind="event" events={list}/>)}</details>
           <h2>
             Lugares ({venues?.data?.filter((v) => v.moderation_status === 'pending').length || 0}{' '}
             por revisar de {venues?.data?.length || 0})

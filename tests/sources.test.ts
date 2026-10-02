@@ -1,11 +1,13 @@
 import assert from 'node:assert/strict';
-import test from 'node:test';
+import test, { mock } from 'node:test';
 import { portaldiscCartelera } from '../lib/sources/adapters/portaldisc';
 import { wpDatedSlug, wpEventsList, wpNewsScan } from '../lib/sources/adapters/wordpress';
 import { TOLERANCIA_RELOJ_MS, decide, dueSources, horizonDays, looksLikeSameEvent, normalizedTitle } from '../lib/sources/dispatcher';
 import { candidateKey, parseCompactDate, parseSpanishDate, parseTime, validCalendarDate } from '../lib/sources/normalize';
 import { SOURCES, ADAPTERS } from '../lib/sources/registry';
 import type { EventCandidate, Fetcher, SourceDefinition } from '../lib/sources/types';
+// Las fixtures son de septiembre de 2026: el reloj se fija para que el test no caduque.
+mock.timers.enable({ apis: ['Date'], now: new Date('2026-09-15T15:00:00Z') });
 const HOY = '2026-09-15';
 const fuenteOficial: SourceDefinition = {
   id: 'prueba-oficial',
@@ -17,6 +19,8 @@ const fuenteOficial: SourceDefinition = {
   venueSlug: 'lugar-de-prueba',
   venueName: 'Lugar de prueba',
   trust: 'auto',
+  family: 'VENUE_OFFICIAL',
+  tier: 'A',
   refreshHours: 24,
   config: { postType: 'events_list' },
 };

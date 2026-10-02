@@ -136,3 +136,20 @@ export function buildCandidate(input: {
     reasons: input.reasons,
   };
 }
+const DIAS = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+/**
+ * "Sábado 3 de octubre 2026" se lee dos veces: el año está escrito y el día de
+ * la semana tiene que caer en esa fecha. Si ambas cosas cuadran, la fecha no
+ * es una suposición nuestra.
+ */
+export function fechaVerificada(texto: string, date: string) {
+  const plano = texto
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '');
+  const year = plano.match(/\b(20\d{2})\b/);
+  if (!year || year[1] !== date.slice(0, 4)) return false;
+  const dia = DIAS.find((d) => new RegExp(`\\b${d}\\b`).test(plano));
+  if (!dia) return false;
+  return DIAS[new Date(`${date}T12:00:00Z`).getUTCDay()] === dia;
+}

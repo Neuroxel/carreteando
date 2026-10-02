@@ -1,6 +1,7 @@
 import { toChileDateString } from '../event-extraction';
 import { detectCategory } from '../events';
-import { ADAPTERS, SOURCES } from './registry';
+import { ADAPTERS, MANUAL_SOURCES, SOURCES } from './registry';
+import { clasificar, type Relevancia } from './relevance';
 import { SourceError, type EventCandidate, type Fetcher, type SourceDefinition } from './types';
 const USER_AGENT = 'CarreteandoBot/1.0 (+https://carreteando.vercel.app/confianza)';
 const MAX_BYTES = 3_000_000;
@@ -51,6 +52,7 @@ export function decide(
   candidate: EventCandidate,
   source: SourceDefinition,
   today: string,
+  relevance: Relevancia | null = null,
 ): { decision: Decision; reason: string } {
   if (candidate.date < today) return { decision: 'descartado', reason: 'fecha pasada' };
   if (!candidate.title || candidate.title.length < 4)
@@ -62,13 +64,30 @@ export function decide(
   const maxHorizon = candidate.confidence === 'high' ? 365 : 120;
   if (horizon > maxHorizon)
     return { decision: 'descartado', reason: 'fecha demasiado lejana para la evidencia disponible' };
+  // Una universidad o un directorio traen veinte seminarios por cada tocata:
+  // en esas fuentes lo claramente ajeno a la noche no llega ni a la cola.
+  if (source.relevanceFilter && relevance === 'IRRELEVANT')
+    return { decision: 'descartado', reason: 'no es una salida: actividad académica o diurna' };
   if (source.trust === 'evidence')
     return { decision: 'revisar', reason: 'fuente marcada solo como evidencia' };
   // This product is about the night. A gallery open from 10:00 to 13:30 is real,
   // current and correctly parsed, and still not an answer to "quiero salir".
   const daytime = candidate.time !== null && candidate.time < '17:00';
-  if (source.trust === 'auto' && candidate.confidence === 'high' && source.venueSlug && !daytime)
+  const ajeno = relevance === 'IRRELEVANT';
+  if (source.trust === 'auto' && candidate.confidence === 'high' && source.venueSlug && !daytime && !ajeno)
     return { decision: 'publicar', reason: 'fuente oficial del lugar con fecha estructurada' };
+  // Nivel B: además de fecha verificada y local conocido, la hora tiene que
+  // estar escrita y ser de noche. Un "17:43" o un evento sin hora va a la cola.
+  if (
+    source.trust === 'strict' &&
+    candidate.confidence === 'high' &&
+    source.venueSlug &&
+    candidate.time !== null &&
+    candidate.time >= '18:00' &&
+    horizon <= 120 &&
+    !ajeno
+  )
+    return { decision: 'publicar', reason: 'nivel B: local conocido, fecha verificada y hora de noche' };
   if (daytime)
     return { decision: 'revisar', reason: 'horario diurno: se revisa antes de ponerlo en la cartelera' };
   return {
@@ -91,6 +110,8 @@ export interface SourceRunReport {
   duplicates: number;
   rejected: number;
   parseFailures: number;
+  irrelevant: number;
+  relevant: number;
   error: string | null;
 }
 type Db = {
@@ -115,6 +136,8 @@ export async function runSource(
     duplicates: 0,
     rejected: 0,
     parseFailures: 0,
+    irrelevant: 0,
+    relevant: 0,
     error: null,
   };
   const adapter = ADAPTERS[source.adapter];
@@ -148,7 +171,21 @@ export async function runSource(
   });
   const venueId = source.venueSlug ? await lookupVenueId(db, source.venueSlug) : null;
   for (const candidate of unique) {
-    const { decision } = decide(candidate, source, today);
+    // El nombre del local no dice nada del evento: "Teatro Mauri" haría pasar
+    // por teatro cualquier cosa que ocurra ahí.
+    const sinLocal = candidate.venue
+      ? normalizedTitle(candidate.title).replace(normalizedTitle(candidate.venue), ' ')
+      : candidate.title;
+    const clasificacion = clasificar({
+      titulo: sinLocal,
+      descripcion: candidate.description,
+      hora: candidate.time,
+      horaFin: candidate.endTime ?? null,
+      categorias: candidate.categories,
+    });
+    if (clasificacion.relevancia === 'IRRELEVANT') report.irrelevant += 1;
+    else if (clasificacion.relevancia !== 'REVIEW') report.relevant += 1;
+    const { decision } = decide(candidate, source, today, clasificacion.relevancia);
     if (decision === 'descartado') {
       report.rejected += 1;
       continue;
@@ -190,6 +227,8 @@ export async function runSource(
       event_key: candidate.key,
       is_active: publish,
       moderation_status: publish ? 'approved' : 'pending',
+      relevance: clasificacion.relevancia,
+      relevance_reasons: clasificacion.razones.join(' · ').slice(0, 300),
       last_verified_at: new Date().toISOString(),
     };
     // Insert-only: a row the owner has already withdrawn or corrected is never
@@ -260,9 +299,36 @@ export async function syncRegistry(db: Db) {
     zone: source.zone ?? null,
     venue_slug: source.venueSlug ?? null,
     trust: source.trust,
+    family: source.family,
+    trust_tier: source.tier,
+    access_mode: source.accessMode || 'api',
+    relevance_filter: Boolean(source.relevanceFilter),
     refresh_hours: source.refreshHours,
   }));
+  // Las fuentes manuales se registran inactivas: el despachador nunca las
+  // toca, pero el panel las muestra para que el mapa de fuentes sea completo.
+  const manuales = MANUAL_SOURCES.map((source) => ({
+    id: source.id,
+    name: source.name,
+    source_type: 'OTHER_PUBLIC_EVENT_SOURCE',
+    adapter: 'manual',
+    public_url: source.publicUrl,
+    commune: source.commune,
+    zone: null,
+    venue_slug: null,
+    trust: 'evidence',
+    family: source.family,
+    trust_tier: 'C',
+    access_mode: source.accessMode,
+    relevance_filter: true,
+    refresh_hours: 720,
+    active: false,
+    notes: source.notes,
+  }));
+  // Dos escrituras separadas: un upsert con filas de distintas columnas
+  // rellena con NULL lo que falta, y apagaría 'active' en las automáticas.
   await db.from('event_sources').upsert(rows, { onConflict: 'id' });
+  await db.from('event_sources').upsert(manuales, { onConflict: 'id' });
 }
 export interface DispatchReport {
   due: number;
@@ -297,6 +363,7 @@ export async function dispatchSources(
         duplicates: report.duplicates,
         rejected: report.rejected,
         parse_failures: report.parseFailures,
+        irrelevant: report.irrelevant,
         error: report.error,
       },
     ]);
@@ -308,6 +375,8 @@ export async function dispatchSources(
       unique_event_count: report.newEvents + report.queued,
       duplicate_count: report.duplicates,
       parse_failure_count: report.parseFailures,
+      relevant_count: report.relevant,
+      irrelevant_count: report.irrelevant,
     };
     if (report.ok) {
       health.last_success_at = reloj.toISOString();
