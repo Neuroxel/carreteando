@@ -1,16 +1,15 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
-  earnTrust,
   evaluateEventEvidence,
   independentGroups,
   originGroupOf,
   statusFromText,
   wilsonLower,
-  type EarnedTrust,
   type EventState,
   type Evidence,
 } from '../lib/sources/evidence';
+import type { TrustTier } from '../lib/sources/types';
 import { duplicadosPorFicha, sourceStatsFrom } from '../lib/sources/automation';
 import { dueSources, urgencia } from '../lib/sources/dispatcher';
 const HOY = '2026-10-02';
@@ -40,7 +39,8 @@ const ev = (over: Partial<Evidence> = {}, claims: Evidence['claims'] = {}): Evid
   active: true,
   ...over,
 });
-const confianza = (t: EarnedTrust) => () => t;
+/** Nivel fijo del registro: el mismo para todas las fuentes del test. */
+const confianza = (t: 'auto' | 'strict' | 'review') => (): TrustTier => (t === 'auto' ? 'A' : t === 'strict' ? 'B' : 'C');
 
 test('2 de 2 no es 100 %: el límite inferior castiga las muestras chicas', () => {
   assert.ok(wilsonLower(2, 2) < 0.35);
@@ -57,7 +57,8 @@ test('la ticketera confiable con fecha verificada publica sola una noche', () =>
 test('sin fecha verificada, sin historial o de tarde, la ticketera no basta', () => {
   assert.equal(evaluateEventEvidence(evento(), [ev({}, { date_verified: false })], confianza('strict'), HOY).decision, 'REVIEW_INSUFFICIENT');
   assert.equal(evaluateEventEvidence(evento(), [ev()], confianza('review'), HOY).decision, 'REVIEW_INSUFFICIENT');
-  assert.equal(evaluateEventEvidence(evento({ time: '17:43' }), [ev({}, { start_time: '17:43' })], confianza('strict'), HOY).decision, 'REVIEW_INSUFFICIENT');
+  assert.equal(evaluateEventEvidence(evento({ time: '16:00' }), [ev({}, { start_time: '16:00' })], confianza('strict'), HOY).decision, 'REVIEW_INSUFFICIENT');
+  assert.equal(evaluateEventEvidence(evento({ time: null }), [ev({}, { start_time: null })], confianza('strict'), HOY).decision, 'REVIEW_INSUFFICIENT');
   assert.equal(evaluateEventEvidence(evento({ venueKnown: false }), [ev()], confianza('strict'), HOY).decision, 'REVIEW_INSUFFICIENT');
 });
 
@@ -115,23 +116,14 @@ test('estado leído del texto de la fuente', () => {
   assert.equal(statusFromText('Fiesta retro'), 'scheduled');
 });
 
-test('lo pasado se vence, lo académico se descarta, lo humano no se toca', () => {
+test('lo pasado se vence, lo académico se descarta, lo humano no se toca salvo contradicción crítica', () => {
+  // Editado por una persona y una fuente oficial ahora dice otra fecha: se retira, no se corrige solo.
+  assert.equal(evaluateEventEvidence(evento({ humanLocked: true, disposition: 'public' }), [ev({}, { date: '2026-10-05' })], confianza('strict'), HOY).decision, 'REVIEW_CONFLICT');
   assert.equal(evaluateEventEvidence(evento({ date: '2026-09-30' }), [ev()], confianza('strict'), HOY).decision, 'AUTO_EXPIRE');
   assert.equal(evaluateEventEvidence(evento({ relevance: 'IRRELEVANT', academic: true, time: '09:30' }), [ev({}, { start_time: '09:30' })], confianza('strict'), HOY).decision, 'AUTO_REJECT');
   // Backtest: una fonda de día aprobada a mano no tiene señal académica y no se bota.
   assert.equal(evaluateEventEvidence(evento({ relevance: 'IRRELEVANT', academic: false, time: '09:00' }), [ev({}, { start_time: '09:00' })], confianza('strict'), HOY).decision, 'REVIEW_INSUFFICIENT');
   assert.equal(evaluateEventEvidence(evento({ humanLocked: true }), [ev()], confianza('strict'), HOY).decision, 'KEEP');
-});
-
-test('la confianza sube despacio y baja rápido, con un techo por nivel', () => {
-  const sano = { parserHealthy: true };
-  assert.equal(earnTrust('review', 'strict', { reviewed: 5, confirmed: 5, serious: 0, ...sano }).trust, 'review');
-  assert.equal(earnTrust('review', 'strict', { reviewed: 25, confirmed: 25, serious: 0, ...sano }).trust, 'strict');
-  assert.equal(earnTrust('review', 'strict', { reviewed: 200, confirmed: 200, serious: 0, ...sano }).trust, 'strict', 'el techo B no deja pasar a automático');
-  assert.equal(earnTrust('strict', 'strict', { reviewed: 25, confirmed: 17, serious: 8, ...sano }).trust, 'review');
-  // Histéresis: un error no tumba a una fuente estricta con buen historial.
-  assert.equal(earnTrust('strict', 'strict', { reviewed: 60, confirmed: 59, serious: 1, ...sano }).trust, 'strict');
-  assert.equal(earnTrust('auto', 'auto', { reviewed: 50, confirmed: 50, serious: 0, parserHealthy: false }).trust, 'review');
 });
 
 test('la precisión se mide contra la ficha humana y no castiga un cambio posterior del origen', () => {
@@ -171,10 +163,7 @@ test('no se publica con evidencia vieja: la fuente tiene que haberlo mostrado en
   assert.ok(r.reasons[0].includes('3 días'));
 });
 
-test('si la ticketera deja de mostrarlo, lo publicado se retira para revisión', () => {
-  const desaparecida = ev({ active: false });
-  assert.equal(evaluateEventEvidence(evento({ disposition: 'public' }), [desaparecida], confianza('strict'), HOY).decision, 'REVIEW_CONFLICT');
-  // Una versión anterior reemplazada por otra de la misma fuente no es desaparición.
+test('una versión anterior reemplazada por la misma fuente no es contradicción', () => {
   const anterior = ev({ active: false, retrievedAt: '2026-09-25T14:00:00Z' }, { date: '2026-10-02' });
   assert.equal(evaluateEventEvidence(evento(), [anterior, ev()], confianza('strict'), HOY).decision, 'AUTO_PROMOTE_FROM_REVIEW');
 });

@@ -130,7 +130,6 @@ export async function GET(request: Request) {
       metrics.engine_mode = motor.mode;
       metrics.engine_counts = motor.counts;
       metrics.engine_applied = motor.applied;
-      metrics.engine_trust_changes = motor.trustChanges;
     } catch {
       metrics.engine_error = 'ENGINE_FAILED';
     }

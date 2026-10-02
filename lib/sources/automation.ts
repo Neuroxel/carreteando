@@ -1,35 +1,24 @@
 /**
- * Reevaluación automática: después de cada ingesta, cada evento vigente se
- * vuelve a juzgar con toda su evidencia. Lo que se confirmó se publica solo,
- * lo que es basura se descarta solo, lo que pasó se vence solo, y una persona
- * solo ve lo que de verdad tiene una duda. Todo queda en automation_decisions
- * con el estado anterior, para poder deshacerlo.
+ * Corre el motor de decisión (evidence.ts) sobre la base. Se llama al final de
+ * cada ingesta (/api/cron/scrape) y desde /api/cron/automatizacion. Toma los
+ * eventos vigentes, su evidencia, aplica las siete reglas y, en modo activo,
+ * cambia el estado. Cada decisión queda en automation_decisions con el estado
+ * anterior, para poder ver por qué pasó y deshacerla.
  */
 import { toChileDateString } from '../event-extraction';
 import { CIUDADES } from '../types';
 import { httpFetcher, looksLikeSameEvent, normalizedTitle } from './dispatcher';
-import {
-  earnTrust,
-  evaluateEventEvidence,
-  wilsonLower,
-  type Authority,
-  type Decision,
-  type EarnedTrust,
-  type EventState,
-  type Evidence,
-  type SourceStats,
-} from './evidence';
+import { evaluateEventEvidence, sameVenue, wilsonLower, type Authority, type Decision, type EventState, type Evidence } from './evidence';
 import { ADAPTERS, SOURCES } from './registry';
-import type { Fetcher } from './types';
 import { clasificar, type Relevancia } from './relevance';
+import type { Fetcher, TrustTier } from './types';
 
-type Db = { from: (t: string) => any; rpc?: (f: string, a?: object) => any };
-export type EngineMode = 'shadow' | 'active';
+type Db = { from: (t: string) => any };
 type Row = Record<string, any>;
+export type EngineMode = 'shadow' | 'active';
 
-const CEILING: Record<string, EarnedTrust> = { A: 'auto', B: 'strict', C: 'strict', D: 'review' };
-const asTrust = (t: string | null | undefined): EarnedTrust =>
-  t === 'auto' || t === 'strict' ? t : 'review';
+/** Niveles fijos del registro en código. No cambian solos. */
+const tierOf = (id: string | null): TrustTier | null => SOURCES.find((s) => s.id === id)?.tier ?? null;
 
 export async function engineMode(db: Db): Promise<EngineMode> {
   const { data } = await db.from('automation_config').select('value').eq('key', 'engine_mode').limit(1);
@@ -49,15 +38,10 @@ function evidenceFrom(r: Row): Evidence {
     active: r.active !== false,
   };
 }
-function relevanceOf(r: Row): { relevancia: Relevancia; academico: boolean } {
-  const titulo = r.venue
-    ? normalizedTitle(r.title || '').replace(normalizedTitle(r.venue), ' ')
-    : r.title || '';
+function stateFrom(r: Row, locked: Set<number>): EventState {
+  // El nombre del local no dice nada del evento ("Teatro Mauri" no hace teatro todo).
+  const titulo = r.venue ? normalizedTitle(r.title || '').replace(normalizedTitle(r.venue), ' ') : r.title || '';
   const k = clasificar({ titulo, descripcion: r.description, hora: r.event_time });
-  return { relevancia: k.relevancia, academico: k.academico };
-}
-function stateFrom(r: Row, locked: Set<number>): EventState & { academico: boolean; validCity: boolean } {
-  const rel = relevanceOf(r);
   return {
     id: r.id,
     title: r.title,
@@ -67,35 +51,28 @@ function stateFrom(r: Row, locked: Set<number>): EventState & { academico: boole
     city: r.city,
     venueKnown: r.venue_id !== null && r.venue_id !== undefined,
     disposition: r.disposition,
-    // La relevancia guardada al insertar manda; si no hay, se calcula igual.
-    relevance: (r.relevance as Relevancia) || rel.relevancia,
+    relevance: (r.relevance as Relevancia) || k.relevancia,
+    academic: k.academico,
     humanLocked: locked.has(r.id),
     eventStatus: r.event_status || 'scheduled',
-    academico: rel.academico,
-    academic: rel.academico,
-    validCity: !r.city || (CIUDADES as readonly string[]).includes(r.city),
   };
 }
 
-async function inChunks<T>(ids: number[], fn: (chunk: number[]) => Promise<T[]>): Promise<T[]> {
-  const out: T[] = [];
+async function inChunks(ids: number[], fn: (chunk: number[]) => Promise<Row[]>) {
+  const out: Row[] = [];
   for (let i = 0; i < ids.length; i += 150) out.push(...(await fn(ids.slice(i, i + 150))));
   return out;
 }
 async function loadEvidence(db: Db, ids: number[]) {
   const rows = await inChunks(ids, async (chunk) => {
     const { data } = await db.from('event_evidence').select('*').in('event_id', chunk).limit(5000);
-    return (data || []) as Row[];
+    return data || [];
   });
   const by = new Map<number, Evidence[]>();
-  for (const r of rows) {
-    const list = by.get(r.event_id) || [];
-    list.push(evidenceFrom(r));
-    by.set(r.event_id, list);
-  }
+  for (const r of rows) by.set(r.event_id, [...(by.get(r.event_id) || []), evidenceFrom(r)]);
   return by;
 }
-/** Un moderador con nombre (no el sistema) tocó este evento: queda bajo control humano. */
+/** Eventos que una persona con nombre (no el sistema) tocó en el panel. */
 async function loadLocked(db: Db, ids: number[]) {
   const rows = await inChunks(ids, async (chunk) => {
     const { data } = await db
@@ -103,26 +80,23 @@ async function loadLocked(db: Db, ids: number[]) {
       .select('target,actor')
       .in('target', chunk.map((id) => `event:${id}`))
       .limit(5000);
-    return (data || []) as Row[];
+    return data || [];
   });
   return new Set(
-    rows
-      .filter((r) => !String(r.actor || '').startsWith('sistema'))
-      .map((r) => Number(String(r.target).split(':')[1])),
+    rows.filter((r) => !String(r.actor || '').startsWith('sistema')).map((r) => Number(String(r.target).split(':')[1])),
   );
 }
 
 /**
- * Dos filas con la misma URL de detalle son el mismo evento. Se queda la
- * pública, si no la que tiene ficha humana, si no la que coincide con la
- * última fecha que da la fuente; las demás pasan a duplicado.
+ * Regla 4 (duplicado): dos filas con la misma URL de detalle son el mismo
+ * evento. Se queda la pública, si no la que coincide con la última fecha que
+ * da la fuente, si no la más antigua.
  */
 export function duplicadosPorFicha(rows: Row[], evidence: Map<number, Evidence[]>) {
   const porUrl = new Map<string, Row[]>();
   for (const r of rows) {
     const url = r.source_detail_url || r.instagram_url;
-    if (!url) continue;
-    porUrl.set(url, [...(porUrl.get(url) || []), r]);
+    if (url) porUrl.set(url, [...(porUrl.get(url) || []), r]);
   }
   const copias = new Map<number, number>();
   for (const [url, grupo] of porUrl) {
@@ -131,11 +105,9 @@ export function duplicadosPorFicha(rows: Row[], evidence: Map<number, Evidence[]
       .flatMap((r) => evidence.get(r.id) || [])
       .filter((e) => e.url === url && e.authority !== 'human' && e.active)
       .sort((a, b) => b.retrievedAt.localeCompare(a.retrievedAt))[0]?.claims.date;
-    const humana = (r: Row) => (evidence.get(r.id) || []).some((e) => e.authority === 'human');
     const orden = [...grupo].sort(
       (a, b) =>
         Number(b.disposition === 'public') - Number(a.disposition === 'public') ||
-        Number(humana(b)) - Number(humana(a)) ||
         Number(b.date_text === ultimaFecha) - Number(a.date_text === ultimaFecha) ||
         a.id - b.id,
     );
@@ -143,49 +115,24 @@ export function duplicadosPorFicha(rows: Row[], evidence: Map<number, Evidence[]
   }
   return copias;
 }
-async function lastDecisions(db: Db, ids: number[]) {
-  const rows = await inChunks(ids, async (chunk) => {
-    const { data } = await db
-      .from('automation_decisions')
-      .select('event_id,decision,created_at')
-      .in('event_id', chunk)
-      .neq('mode', 'backtest')
-      .order('created_at', { ascending: false })
-      .limit(3000);
-    return (data || []) as Row[];
-  });
-  const last = new Map<number, string>();
-  for (const r of rows) if (!last.has(r.event_id)) last.set(r.event_id, r.decision);
-  return last;
-}
+
 /**
- * La precisión de una fuente se mide contra lo que una persona verificó: para
- * cada evento con ficha humana, ¿lo que dijo la fuente (antes de esa ficha o a
- * lo más dos días después) coincidía en fecha y lugar? Una fecha distinta
- * declarada después de la ficha es un cambio del origen, no un error, y no se
- * cuenta. Se agrega por origen: las 20 carteleras de la ticketera son un parser.
+ * Diagnóstico, no decisión: para cada origen, ¿lo que dijo coincidía con lo
+ * que una persona verificó? Una diferencia leída más de 2 días después de la
+ * ficha no se cuenta (puede ser una reprogramación real).
  */
 export function sourceStatsFrom(evidenceByEvent: Map<number, Evidence[]>) {
   const stats = new Map<string, { reviewed: number; confirmed: number; serious: number }>();
   for (const list of evidenceByEvent.values()) {
-    const humanas = list.filter((e) => e.authority === 'human');
-    if (!humanas.length) continue;
-    const h = humanas[0];
+    const h = list.find((e) => e.authority === 'human');
+    if (!h) continue;
     const visto = new Set<string>();
     for (const e of list) {
       if (e.authority === 'human' || visto.has(e.originGroup)) continue;
       if (!['first_party', 'transactional', 'directory'].includes(e.authority)) continue;
       const delta = Date.parse(e.retrievedAt) - Date.parse(h.retrievedAt);
-      if (delta < -30 * 86_400_000) continue;
-      const mismaFecha = e.claims.date === h.claims.date;
-      const lugarA = normalizedTitle(e.claims.venue || '');
-      const lugarB = normalizedTitle(h.claims.venue || '');
-      const mismoLugar = !lugarA || !lugarB || lugarA.includes(lugarB) || lugarB.includes(lugarA);
-      const coincide = mismaFecha && mismoLugar;
-      // Una diferencia leída días después de la ficha puede ser una
-      // reprogramación real: no se cuenta como error (la detecta el motor de
-      // contradicciones). Una coincidencia posterior sí confirma al parser.
-      if (!coincide && delta > 2 * 86_400_000) continue;
+      const coincide = e.claims.date === h.claims.date && sameVenue(e.claims.venue, h.claims.venue);
+      if (delta < -30 * 86_400_000 || (!coincide && delta > 2 * 86_400_000)) continue;
       visto.add(e.originGroup);
       const s = stats.get(e.originGroup) || { reviewed: 0, confirmed: 0, serious: 0 };
       s.reviewed += 1;
@@ -196,49 +143,40 @@ export function sourceStatsFrom(evidenceByEvent: Map<number, Evidence[]>) {
   }
   return stats;
 }
-const groupOfSource = (id: string) => (id.startsWith('portaldisc-') ? 'portaldisc' : null);
-
-async function learnTrust(db: Db, evidenceByEvent: Map<number, Evidence[]>, apply: boolean) {
-  const stats = sourceStatsFrom(evidenceByEvent);
-  const { data } = await db
-    .from('event_sources')
-    .select('id,trust,trust_tier,earned_trust,consecutive_failures,public_url,active,access_mode');
-  const trustById = new Map<string, EarnedTrust>();
-  const cambios: { id: string; from: EarnedTrust; to: EarnedTrust; reason: string }[] = [];
-  for (const row of (data || []) as Row[]) {
-    if (row.access_mode === 'manual' || row.access_mode === 'blocked') continue;
-    const def = SOURCES.find((s) => s.id === row.id);
-    let host = '';
-    try {
-      host = new URL(row.public_url).hostname.replace(/^www\./, '');
-    } catch {
-      /* sin host */
-    }
-    const g = groupOfSource(row.id) || host;
-    const s = stats.get(g) || { reviewed: 0, confirmed: 0, serious: 0 };
-    // Punto de partida: lo ganado, o si no, lo que declara el registro en código.
-    const current = asTrust(row.earned_trust || def?.trust || row.trust);
-    const ceiling = CEILING[row.trust_tier || def?.tier || 'C'] || 'review';
-    const full: SourceStats = { ...s, parserHealthy: Number(row.consecutive_failures || 0) < 2 };
-    const { trust, reason } = earnTrust(current, ceiling, full);
-    trustById.set(row.id, trust);
-    if (trust !== current) cambios.push({ id: row.id, from: current, to: trust, reason });
-    if (apply)
-      await db
-        .from('event_sources')
-        .update({
-          reviewed_n: s.reviewed,
-          confirmed_n: s.confirmed,
-          serious_errors: s.serious,
-          precision_lb: s.reviewed ? Number(wilsonLower(s.confirmed, s.reviewed).toFixed(3)) : null,
-          earned_trust: trust,
-          ...(trust !== current || !row.earned_trust
-            ? { trust_changed_at: new Date().toISOString(), trust_reason: reason }
-            : {}),
-        })
-        .eq('id', row.id);
+async function recordSourceStats(db: Db) {
+  const { data } = await db.from('event_evidence').select('event_id').eq('authority', 'human').limit(5000);
+  const ids = [...new Set(((data || []) as Row[]).map((r) => r.event_id as number))];
+  const stats = sourceStatsFrom(await loadEvidence(db, ids));
+  for (const s of SOURCES) {
+    const grupo = s.id.startsWith('portaldisc-') ? 'portaldisc' : new URL(s.publicUrl).hostname.replace(/^www\./, '');
+    const st = stats.get(grupo);
+    if (!st) continue;
+    await db
+      .from('event_sources')
+      .update({
+        reviewed_n: st.reviewed,
+        confirmed_n: st.confirmed,
+        serious_errors: st.serious,
+        precision_lb: Number(wilsonLower(st.confirmed, st.reviewed).toFixed(3)),
+      })
+      .eq('id', s.id);
   }
-  return { trustById, cambios, stats };
+}
+
+async function lastDecisions(db: Db, ids: number[]) {
+  const rows = await inChunks(ids, async (chunk) => {
+    const { data } = await db
+      .from('automation_decisions')
+      .select('event_id,decision,created_at')
+      .in('event_id', chunk)
+      .neq('mode', 'backtest')
+      .order('created_at', { ascending: false })
+      .limit(3000);
+    return data || [];
+  });
+  const last = new Map<number, string>();
+  for (const r of rows) if (!last.has(r.event_id)) last.set(r.event_id, r.decision);
+  return last;
 }
 
 export interface EngineReport {
@@ -246,11 +184,33 @@ export interface EngineReport {
   evaluated: number;
   counts: Partial<Record<Decision, number>>;
   applied: number;
-  trustChanges: { id: string; from: EarnedTrust; to: EarnedTrust; reason: string }[];
 }
 
-/** Sí cambia el estado: lo demás solo se anota. */
-const CAMBIA: Decision[] = ['AUTO_PUBLISH', 'AUTO_PROMOTE_FROM_REVIEW', 'AUTO_REJECT', 'AUTO_EXPIRE', 'AUTO_CANCEL', 'REVIEW_CONFLICT'];
+/** Cómo queda la fila después de cada decisión. KEEP y REVIEW_INSUFFICIENT no cambian el estado. */
+function patchFor(decision: Decision, r: Row, reasons: string[], now: Date): Row | null {
+  const nota = reasons.join(' · ').slice(0, 300);
+  switch (decision) {
+    case 'AUTO_PUBLISH':
+    case 'AUTO_PROMOTE_FROM_REVIEW':
+      return { is_active: true, moderation_status: 'approved', disposition: 'public', last_verified_at: now.toISOString() };
+    case 'AUTO_REJECT':
+      // Un duplicado no es un rechazo: queda enlazado al original.
+      return /^(misma ficha|ya publicado)/.test(reasons[0] || '')
+        ? { is_active: false, disposition: 'duplicate', disposition_note: nota }
+        : { is_active: false, moderation_status: 'rejected', disposition: 'rejected', disposition_note: nota };
+    case 'AUTO_EXPIRE':
+      return { is_active: false, disposition: 'expired', disposition_note: 'La fecha ya pasó.' };
+    case 'AUTO_CANCEL':
+      return { is_active: false, disposition: 'cancelled', event_status: 'cancelled', disposition_note: nota };
+    case 'REVIEW_CONFLICT':
+      // Falla hacia lo privado: un dato crítico en duda no se queda en la cartelera.
+      return r.disposition === 'public'
+        ? { is_active: false, moderation_status: 'pending', disposition: 'review', disposition_note: 'Retirado por contradicción entre fuentes.' }
+        : null;
+    default:
+      return null;
+  }
+}
 
 export async function reevaluate(db: Db, now = new Date(), forced?: EngineMode): Promise<EngineReport> {
   const mode = forced || (await engineMode(db));
@@ -259,91 +219,66 @@ export async function reevaluate(db: Db, now = new Date(), forced?: EngineMode):
   const { data } = await db
     .from('events')
     .select(
-      'id,title,description,date_text,event_time,venue,venue_id,city,disposition,moderation_status,is_active,source,source_id,relevance,event_status,auto_decision,human_reason,source_detail_url,instagram_url',
+      'id,title,description,date_text,event_time,venue,venue_id,city,disposition,moderation_status,is_active,relevance,event_status,auto_decision,human_reason,source_detail_url,instagram_url',
     )
     .in('disposition', ['review', 'public'])
     .gte('date_text', ayer)
     .limit(2000);
   const rows = (data || []) as Row[];
   const ids = rows.map((r) => r.id as number);
-  const [evidence, locked] = await Promise.all([loadEvidence(db, ids), loadLocked(db, ids)]);
-  // El aprendizaje usa toda la evidencia con ficha humana, no solo la vigente.
-  const { data: humanEv } = await db.from('event_evidence').select('event_id').eq('authority', 'human').limit(5000);
-  const humanIds = [...new Set(((humanEv || []) as Row[]).map((r) => r.event_id as number))];
-  const evidenceForStats = await loadEvidence(db, humanIds);
-  const { trustById, cambios } = await learnTrust(db, evidenceForStats, mode === 'active');
-  const trustOf = (id: string | null) => (id ? trustById.get(id) || 'review' : 'review');
-  const ultimas = await lastDecisions(db, ids);
-  const report: EngineReport = { mode, evaluated: rows.length, counts: {}, applied: 0, trustChanges: cambios };
+  const [evidence, locked, ultimas] = await Promise.all([loadEvidence(db, ids), loadLocked(db, ids), lastDecisions(db, ids)]);
+  if (mode === 'active') await recordSourceStats(db);
   const copias = duplicadosPorFicha(rows, evidence);
   const publicos = rows.filter((r) => r.disposition === 'public');
+  const report: EngineReport = { mode, evaluated: rows.length, counts: {}, applied: 0 };
+
   for (const r of rows) {
     const st = stateFrom(r, locked);
-    const ev = evidence.get(r.id) || [];
-    let result = evaluateEventEvidence(st, ev, trustOf, today, now);
+    let res = evaluateEventEvidence(st, evidence.get(r.id) || [], tierOf, today, now);
+    // Regla 4: duplicados y región, que necesitan mirar otras filas.
+    if (r.city && !(CIUDADES as readonly string[]).includes(r.city) && r.disposition === 'review')
+      res = { ...res, decision: 'AUTO_REJECT', rule: 4, reasons: ['fuera de la región cubierta'] };
     const copiaDe = copias.get(r.id);
-    if (copiaDe && !st.humanLocked) result = { ...result, decision: 'AUTO_REJECT', reasons: [`misma ficha que el evento ${copiaDe}`], conflicting: [] };
-    // Antes de publicar: que no esté ya en la cartelera con otro título de la misma noche.
-    if (['AUTO_PUBLISH', 'AUTO_PROMOTE_FROM_REVIEW'].includes(result.decision)) {
+    if (copiaDe && !st.humanLocked) res = { ...res, decision: 'AUTO_REJECT', rule: 4, reasons: [`misma ficha que el evento ${copiaDe}`], conflicting: [] };
+    if (res.decision === 'AUTO_PROMOTE_FROM_REVIEW' || res.decision === 'AUTO_PUBLISH') {
       const gemelo = publicos.find((p) => p.id !== r.id && p.date_text === r.date_text && looksLikeSameEvent(p.title || '', r.title || ''));
-      if (gemelo) result = { ...result, decision: 'AUTO_REJECT', reasons: [`ya publicado como el evento ${gemelo.id}`] };
+      if (gemelo) res = { ...res, decision: 'AUTO_REJECT', rule: 4, reasons: [`ya publicado como el evento ${gemelo.id}`] };
     }
-    // Fuera de la región: no es nuestro, se descarta sin persona.
-    if (!st.validCity && r.disposition === 'review') result = { ...result, decision: 'AUTO_REJECT', reasons: ['fuera de la región cubierta'] };
-    report.counts[result.decision] = (report.counts[result.decision] || 0) + 1;
-    const human = result.decision.startsWith('REVIEW') ? [...result.conflicting, ...result.reasons].join(' · ').slice(0, 500) : null;
-    const yaDecidido = r.auto_decision === result.decision && (r.human_reason || null) === human;
-    if (yaDecidido && mode === 'active') continue;
-    const aplica = mode === 'active' && CAMBIA.includes(result.decision);
-    const previous = {
-      disposition: r.disposition,
-      moderation_status: r.moderation_status,
-      is_active: r.is_active,
-      event_status: r.event_status,
-    };
+    report.counts[res.decision] = (report.counts[res.decision] || 0) + 1;
+
+    const humano = res.decision.startsWith('REVIEW') ? [...res.conflicting, ...res.reasons].join(' · ').slice(0, 500) : null;
+    const repetida = ultimas.get(r.id) === res.decision && (mode === 'shadow' || r.auto_decision === res.decision);
+    if (repetida || (res.decision === 'KEEP' && !r.auto_decision)) continue;
+    // Lo editado por una persona: solo se retira ante contradicción; nunca se cambian sus datos.
+    let patch = patchFor(res.decision, r, res.reasons, now);
+    if (st.humanLocked && res.decision !== 'REVIEW_CONFLICT') patch = null;
+    const aplica = mode === 'active' && patch !== null;
     if (mode === 'active') {
-      const base = {
-        auto_decision: result.decision,
-        auto_reasons: { reasons: result.reasons, supporting: result.supporting, conflicting: result.conflicting },
-        auto_decided_at: now.toISOString(),
-        human_reason: human,
-      };
-      let patch: Row = base;
-      if (result.decision === 'AUTO_PUBLISH' || result.decision === 'AUTO_PROMOTE_FROM_REVIEW')
-        patch = { ...base, is_active: true, moderation_status: 'approved', disposition: 'public', last_verified_at: now.toISOString() };
-      else if (result.decision === 'AUTO_REJECT' && /^(misma ficha|ya publicado)/.test(result.reasons[0] || ''))
-        // Un duplicado no es un rechazo: queda enlazado al original.
-        patch = { ...base, is_active: false, disposition: 'duplicate', disposition_note: result.reasons[0] };
-      else if (result.decision === 'AUTO_REJECT')
-        patch = { ...base, is_active: false, moderation_status: 'rejected', disposition: 'rejected', disposition_note: result.reasons.join(' · ').slice(0, 300) };
-      else if (result.decision === 'AUTO_EXPIRE')
-        patch = { ...base, is_active: false, disposition: 'expired', disposition_note: 'La fecha ya pasó.' };
-      else if (result.decision === 'AUTO_CANCEL')
-        patch = { ...base, is_active: false, disposition: 'cancelled', event_status: 'cancelled', disposition_note: result.reasons.join(' · ').slice(0, 300) };
-      else if (result.decision === 'REVIEW_CONFLICT' && r.disposition === 'public')
-        // Falla hacia lo privado: una fecha en duda no se queda en la cartelera.
-        patch = { ...base, is_active: false, moderation_status: 'pending', disposition: 'review', disposition_note: 'Retirado por contradicción entre fuentes.' };
-      // Nunca se toca una fila bajo control humano más allá de anotar la duda.
-      if (st.humanLocked) patch = { human_reason: human, auto_decision: result.decision, auto_reasons: base.auto_reasons, auto_decided_at: base.auto_decided_at };
       const { error } = await db
         .from('events')
-        .update({ ...patch, independent_sources: result.independentGroups })
+        .update({
+          ...(patch || {}),
+          auto_decision: res.decision,
+          auto_reasons: { rule: res.rule, reasons: res.reasons, supporting: res.supporting, conflicting: res.conflicting },
+          auto_decided_at: now.toISOString(),
+          human_reason: humano,
+          independent_sources: res.independentGroups,
+        })
         .eq('id', r.id)
         .eq('disposition', r.disposition);
-      if (!error && aplica && !st.humanLocked) report.applied += 1;
+      if (!error && aplica) report.applied += 1;
     }
-    if (result.decision === 'KEEP' && mode === 'shadow') continue;
-    if (mode === 'shadow' && ultimas.get(r.id) === result.decision) continue;
+    if (res.decision === 'KEEP') continue;
     await db.from('automation_decisions').insert([
       {
         event_id: r.id,
-        decision: result.decision,
-        applied: aplica && !st.humanLocked,
+        decision: res.decision,
+        applied: aplica,
         mode,
-        reasons: result.reasons,
-        supporting: result.supporting,
-        conflicting: result.conflicting,
-        previous,
+        reasons: [`regla ${res.rule ?? '-'}`, ...res.reasons],
+        supporting: res.supporting,
+        conflicting: res.conflicting,
+        previous: { disposition: r.disposition, moderation_status: r.moderation_status, is_active: r.is_active, event_status: r.event_status },
       },
     ]);
   }
@@ -352,8 +287,8 @@ export async function reevaluate(db: Db, now = new Date(), forced?: EngineMode):
 
 /**
  * Backtest: cada evento histórico se juzga como si acabara de llegar (con la
- * fecha de ese día y sin la ficha humana, para no hacer trampa) y se compara
- * con lo que una persona decidió. Escribe en modo 'backtest'; no cambia nada.
+ * fecha de ese día y sin su ficha humana) y se compara con lo que decidió una
+ * persona. Escribe en modo 'backtest'; no cambia ningún evento.
  */
 export async function backtest(db: Db) {
   await db.from('automation_decisions').delete().eq('mode', 'backtest');
@@ -363,90 +298,63 @@ export async function backtest(db: Db) {
     .limit(3000);
   const rows = (data || []) as Row[];
   const evidence = await loadEvidence(db, rows.map((r) => r.id));
-  // Con la confianza inicial del registro, no con la aprendida: aprender de
-  // las mismas fichas con que se mide sería hacer trampa.
-  const trustOf = (id: string | null) => asTrust(SOURCES.find((s) => s.id === id)?.trust);
   const out: Row[] = [];
   for (const r of rows) {
-    const asOf = r.scraped_at ? toChileDateString(new Date(r.scraped_at)) : r.date_text;
-    const etiquetaHumana =
+    const etiqueta =
       r.source === 'editorial' || (r.source === 'passline' && r.moderation_status === 'approved')
         ? 'aprobado'
         : r.disposition === 'rejected'
           ? 'rechazado'
           : 'sin_etiqueta';
-    // Sin la ficha humana: lo que se ve es lo que traía el origen.
-    const ev = (evidence.get(r.id) || []).map((e) =>
-      e.authority === 'human'
-        ? { ...e, authority: (e.originGroup === 'portaldisc' || e.originGroup === 'passline.com' ? 'transactional' : 'directory') as Authority, claims: { ...e.claims, date_verified: false } }
-        : e,
-    );
-    const st = stateFrom({ ...r, disposition: 'review' }, new Set());
-    const res = evaluateEventEvidence({ ...st, disposition: 'review' }, ev, trustOf, asOf, r.scraped_at ? new Date(r.scraped_at) : undefined);
+    const ev = (evidence.get(r.id) || []).filter((e) => e.authority !== 'human');
+    const asOf = r.scraped_at ? new Date(r.scraped_at) : new Date(`${r.date_text}T12:00:00Z`);
+    const res = evaluateEventEvidence(stateFrom({ ...r, disposition: 'review' }, new Set()), ev, tierOf, toChileDateString(asOf), asOf);
     out.push({
       event_id: r.id,
       decision: res.decision,
       applied: false,
       mode: 'backtest',
-      reasons: res.reasons,
+      reasons: [`regla ${res.rule ?? '-'}`, ...res.reasons],
       supporting: res.supporting,
       conflicting: res.conflicting,
-      previous: { etiqueta: etiquetaHumana, source: r.source, source_id: r.source_id, title: String(r.title || '').slice(0, 80) },
+      previous: { etiqueta, source: r.source, source_id: r.source_id, title: String(r.title || '').slice(0, 80) },
     });
   }
   for (let i = 0; i < out.length; i += 200) await db.from('automation_decisions').insert(out.slice(i, i + 200));
   const matriz: Record<string, Record<string, number>> = {};
   for (const o of out) {
     const k = (o.previous as Row).etiqueta as string;
-    matriz[k] = matriz[k] || {};
-    matriz[k][o.decision] = (matriz[k][o.decision] || 0) + 1;
+    matriz[k] = { ...(matriz[k] || {}), [o.decision]: ((matriz[k] || {})[o.decision] || 0) + 1 };
   }
   return { evaluated: out.length, matriz, parser: await parserCheck(db) };
 }
 
-/**
- * ¿El parser de la ticketera lee bien? Se relee hoy cada cartelera y se compara,
- * por URL, con las fichas que una persona verificó. Una diferencia puede ser
- * un error del parser o un cambio real del evento; se listan para mirarlas.
- */
+/** Relee hoy las carteleras de la ticketera y las compara, por URL, con fichas verificadas por una persona. */
 export async function parserCheck(db: Db, fetcher: Fetcher = httpFetcher) {
   const { data } = await db
     .from('events')
-    .select('id,title,date_text,event_time,venue,source_detail_url,instagram_url')
+    .select('title,date_text,event_time,venue,source_detail_url,instagram_url')
     .eq('source', 'editorial')
     .limit(1000);
   const humanas = new Map<string, Row>();
   for (const r of (data || []) as Row[]) {
     const url = r.source_detail_url || r.instagram_url;
-    if (url && url.includes('portaldisc.com')) humanas.set(url, r);
+    if (url?.includes('portaldisc.com')) humanas.set(url, r);
   }
-  let comparados = 0;
-  let fecha = 0;
-  let hora = 0;
-  let lugar = 0;
-  const diferencias: string[] = [];
+  const res = { comparados: 0, fecha: 0, hora: 0, lugar: 0, diferencias: [] as string[] };
   for (const source of SOURCES.filter((s) => s.adapter === 'portaldisc-cartelera')) {
-    let result;
-    try {
-      result = await ADAPTERS[source.adapter].run(source, fetcher);
-    } catch {
-      continue;
-    }
-    for (const c of result.candidates) {
+    const result = await ADAPTERS[source.adapter].run(source, fetcher).catch(() => null);
+    for (const c of result?.candidates || []) {
       const h = humanas.get(c.detailUrl);
       if (!h) continue;
-      comparados += 1;
-      const okFecha = c.date === h.date_text;
-      const okHora = !h.event_time || c.time === h.event_time;
-      const a = normalizedTitle(c.venue || '');
-      const b = normalizedTitle(h.venue || '');
-      const okLugar = !a || !b || a.includes(b) || b.includes(a);
-      fecha += Number(okFecha);
-      hora += Number(okHora);
-      lugar += Number(okLugar);
-      if (!okFecha || !okHora || !okLugar)
-        diferencias.push(`${h.title}: ficha ${h.date_text} ${h.event_time ?? ''} @ ${h.venue} · ticketera hoy ${c.date} ${c.time ?? ''} @ ${c.venue}`);
+      const ok = [c.date === h.date_text, !h.event_time || c.time === h.event_time, sameVenue(c.venue, h.venue)];
+      res.comparados += 1;
+      res.fecha += Number(ok[0]);
+      res.hora += Number(ok[1]);
+      res.lugar += Number(ok[2]);
+      if (ok.includes(false))
+        res.diferencias.push(`${h.title}: ficha ${h.date_text} ${h.event_time ?? ''} @ ${h.venue} · ticketera hoy ${c.date} ${c.time ?? ''} @ ${c.venue}`);
     }
   }
-  return { comparados, fecha, hora, lugar, diferencias };
+  return res;
 }
