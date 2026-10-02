@@ -5,12 +5,16 @@ import { zonaSlug, zonasDe } from '../lib/venues';
 import { SITE_URL } from '../lib/site';
 export const revalidate = 3600;
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const fijas = ['', '/confianza', '/como-funciona', '/zonas', '/explorar', '/publicar'].map((path) => ({
+    url: SITE_URL + path,
+  }));
+  // Sin base configurada (CI): solo las rutas fijas. En producción, un error
+  // de la base lanza, y la caché sigue sirviendo el último sitemap bueno.
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return fijas;
   const [r, v] = await Promise.all([getPublicEvents(), getPublicVenues()]);
   if (r.status === 'error') throw new Error('SITEMAP_BACKEND_UNAVAILABLE');
   return [
-    ...['', '/confianza', '/como-funciona', '/zonas', '/explorar', '/publicar'].map((path) => ({
-      url: SITE_URL + path,
-    })),
+    ...fijas,
     ...r.events.map((e) => ({
       url: `${SITE_URL}/evento/${e.id}`,
       ...(e.ultima_revision ? { lastModified: e.ultima_revision } : {}),
