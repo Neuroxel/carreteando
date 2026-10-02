@@ -45,6 +45,7 @@ export default function ZoneRail({
           return (
             <li key={z.zona} className="reveal" style={{ ['--i' as string]: String(i) }}>
               <Link
+                prefetch={false}
                 href={`/zonas/${zonaSlug(z.zona)}`}
                 className={`zone-stop ${hoyAqui ? 'zone-stop-viva' : ''}`}
                 style={{ ['--acento' as string]: acentoDe(z.ciudad) }}
@@ -65,8 +66,8 @@ export default function ZoneRail({
         })}
       </ul>
       <p className="zone-rail-pie">
-        <Link href="/zonas">Ver todas las zonas</Link>
-        <Link href="/explorar?vista=mapa">Verlas en el mapa</Link>
+        <Link href="/zonas" prefetch={false}>Ver todas las zonas</Link>
+        <Link href="/explorar?vista=mapa" prefetch={false}>Verlas en el mapa</Link>
       </p>
     </section>
   );

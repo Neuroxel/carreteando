@@ -10,7 +10,7 @@ import ShareButton from '../../../components/ShareButton';
 import ReportForm from '../../../components/ReportForm';
 import LiveReport from '../../../components/LiveReport';
 import { liveFor } from '../../../lib/server-live';
-import { CATEGORIAS, TIPOS_EVENTO } from '../../../lib/types';
+import { CATEGORIAS, CONFIANZA_TEXTO, TIPOS_EVENTO } from '../../../lib/types';
 // Cacheada: se regenera como mucho cada 5 minutos o al cambiar los datos públicos.
 export const revalidate = 300;
 // Ninguna se pre-genera en el build: cada ficha se arma en su primera visita y queda en caché.
@@ -77,14 +77,9 @@ export default async function Detail({ params }: Props) {
         <div className="detail-info">
           <p className="eyebrow">{category ? `${category} / ${e.ciudad}` : e.ciudad}</p>
           <h1>{e.nombre}</h1>
+          {/* La procedencia vive aquí, no en la tarjeta: en la lista estorba. */}
           <span className="trust-badge">
-            {e.verificado
-              ? 'Organizador verificado'
-              : e.fuente === 'manual'
-                ? 'Comunidad · revisado'
-                : e.fuente === 'passline' || e.fuente === 'editorial'
-                  ? 'Revisado por nosotros'
-                  : 'Revisado por nosotros'}
+            {CONFIANZA_TEXTO[e.confianza || (e.verificado ? 'organizador' : e.fuente === 'manual' ? 'comunidad' : 'revisado')]}
           </span>
           <dl className="event-facts">
             <div>

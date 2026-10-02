@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Evento, CATEGORIAS, CONFIANZA_TEXTO, TIPOS_EVENTO } from '../lib/types';
+import { Evento, CATEGORIAS, TIPOS_EVENTO } from '../lib/types';
 import { eventDateLabel } from '../lib/events';
 import EventImage from './EventImage';
 import ShareButton from './ShareButton';
@@ -20,6 +20,8 @@ export default function EventCard({
       <Link
         className="event-image-link"
         href={`/evento/${encodeURIComponent(e.id)}`}
+        // Sin precarga: abrir una ficha pide su página, recorrer la lista no pide nada.
+        prefetch={false}
         // El nombre accesible debe contener el texto visible del enlace. Cuando
         // la tarjeta usa arte generado, ese texto es el tipo de noche y el lugar,
         // y un aria-label que empezaba por "Ver" no lo contenía.
@@ -48,7 +50,9 @@ export default function EventCard({
           <span>{e.hora ? `${e.hora} h` : 'Hora por confirmar'}</span>
         </div>
         <h3>
-          <Link href={`/evento/${encodeURIComponent(e.id)}`}>{e.nombre}</Link>
+          <Link href={`/evento/${encodeURIComponent(e.id)}`} prefetch={false}>
+            {e.nombre}
+          </Link>
         </h3>
         <p className="card-location">
           {e.lugar || 'Lugar por confirmar'}
@@ -56,12 +60,9 @@ export default function EventCard({
         </p>
         <div className="card-bottom">
           <div>
+            {/* Lo esencial se lee en dos segundos: cuándo, qué, dónde, cuánto.
+                La procedencia está en la ficha. */}
             <strong>{e.precio_texto || 'Precio por confirmar'}</strong>
-            <span className="provenance">
-              {/* El usuario no tiene por qué saber cómo llamamos a nuestras
-                  fuentes. Sólo le importa si alguien lo revisó. */}
-              {CONFIANZA_TEXTO[e.confianza || (e.verificado ? 'organizador' : e.fuente === 'manual' ? 'comunidad' : 'revisado')]}
-            </span>
           </div>
           <ShareButton
             id={e.id}

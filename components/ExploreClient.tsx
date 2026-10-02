@@ -163,9 +163,17 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
         .slice(0, 3),
     };
   }, [todos, snap.venues, filtros, today]);
+  // El mapa muestra lo mismo que la lista: la ciudad y, si hay búsqueda, lo que calza.
+  const lugaresVisibles = useMemo(
+    () =>
+      filtros.busqueda
+        ? derivados.lugaresHallados.filter((l) => filtros.ciudad === 'todos' || l.ciudad === filtros.ciudad)
+        : derivados.lugaresZona,
+    [filtros.busqueda, filtros.ciudad, derivados.lugaresHallados, derivados.lugaresZona],
+  );
   const puntos = useMemo(
-    () => (vista === 'mapa' ? puntosDeMapa(derivados.lugaresZona, todos, today) : []),
-    [vista, derivados.lugaresZona, todos, today],
+    () => (vista === 'mapa' ? puntosDeMapa(lugaresVisibles, todos, today) : []),
+    [vista, lugaresVisibles, todos, today],
   );
   const vigentes = todos.filter((e) => e.fecha >= today).length;
   const viejo = ahora - Date.parse(snap.generatedAt) > VIEJO_MS;
@@ -311,7 +319,7 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
               <p className="empty-state">Ninguno de estos lugares tiene todavía una ubicación verificada.</p>
             )}
             <p className="trust-note">
-              {puntos.length} de {derivados.lugaresZona.length} lugares con ubicación verificada. Los demás siguen en la
+              {puntos.length} de {lugaresVisibles.length} lugares con ubicación verificada. Los demás siguen en la
               lista: preferimos no ponerlos en la esquina equivocada.
             </p>
           </>
@@ -425,12 +433,7 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
               )}
             </div>
             <div className="venue-grid">
-              {(ver === 'lugares'
-                ? filtros.busqueda
-                  ? derivados.lugaresHallados.filter((l) => filtros.ciudad === 'todos' || l.ciudad === filtros.ciudad)
-                  : derivados.lugaresZona
-                : derivados.lugaresZona.slice(0, 6)
-              ).map((l) => (
+              {(ver === 'lugares' ? lugaresVisibles : derivados.lugaresZona.slice(0, 6)).map((l) => (
                 <VenueCard key={l.slug} lugar={l} proximos={derivados.conteoLugar.get(l.nombre) || 0} hoy={derivados.hoyPorLugar.get(l.nombre) || null} />
               ))}
             </div>

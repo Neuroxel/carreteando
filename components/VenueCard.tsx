@@ -21,7 +21,7 @@ export default function VenueCard({
       : null;
   return (
     <article className="venue-card" style={{ ['--ciudad' as string]: acentoDe(l.ciudad) }}>
-      <Link href={`/lugar/${l.slug}`} className="venue-card-link">
+      <Link href={`/lugar/${l.slug}`} className="venue-card-link" prefetch={false}>
         <p className="eyebrow venue-kind">
           <span className="venue-tipo">{l.tipo_label}</span>
           <span>{l.zona || l.ciudad}</span>
