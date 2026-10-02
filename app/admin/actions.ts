@@ -1,6 +1,6 @@
 'use server';
 import { redirect } from 'next/navigation';
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, revalidateTag } from 'next/cache';
 import { currentActor, isAdmin, loginAdmin, logoutAdmin } from '../../lib/admin-session';
 import { getAdminDb } from '../../lib/server-db';
 import { ReviewInputError, reviewInput } from '../../lib/review-input';
@@ -50,6 +50,8 @@ export async function review(
     console.warn(`admin-review rechazado kind=${kind} accion=${action} motivo=${status}`);
   }
   revalidatePath('/admin');
+  // Lo público (portada, Explorar, fichas, snapshot) se regenera con el cambio.
+  revalidateTag('public-snapshot');
   redirect(`/admin?status=${status}${detalle ? `&campo=${encodeURIComponent(detalle)}` : ''}`);
 }
 export async function importEditorial() {
@@ -64,6 +66,8 @@ export async function importEditorial() {
         .select('instagram_id')
     : null;
   revalidatePath('/admin');
+  // Lo público (portada, Explorar, fichas, snapshot) se regenera con el cambio.
+  revalidateTag('public-snapshot');
   redirect(`/admin?status=${saved && !saved.error ? 'imported' : 'failed'}`);
 }
 
@@ -81,6 +85,8 @@ export async function runIngestion() {
     status = 'failed';
   }
   revalidatePath('/admin');
+  // Lo público (portada, Explorar, fichas, snapshot) se regenera con el cambio.
+  revalidateTag('public-snapshot');
   redirect(`/admin?status=${status}`);
 }
 
@@ -137,5 +143,7 @@ export async function reviewVenue(id: string, revision: number, action: string, 
     status = error instanceof ReviewInputError ? error.status : 'failed';
   }
   revalidatePath('/admin');
+  // Lo público (portada, Explorar, fichas, snapshot) se regenera con el cambio.
+  revalidateTag('public-snapshot');
   redirect(`/admin?status=${status}`);
 }

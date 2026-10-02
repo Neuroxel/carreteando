@@ -1,4 +1,5 @@
 import { createHmac } from 'node:crypto';
+import { revalidateTag } from 'next/cache';
 import { getAdminDb } from '../../../lib/server-db';
 import { validLiveReport } from '../../../lib/live-reports';
 export async function POST(request: Request) {
@@ -64,6 +65,8 @@ export async function POST(request: Request) {
       p_hash: hash,
     });
     if (saved.error) return response(503);
+    // El reporte nuevo se ve en la ficha sin esperar el minuto de caché.
+    revalidateTag('live-reports');
     return response(200, { status: saved.data });
   } catch {
     return response(400);

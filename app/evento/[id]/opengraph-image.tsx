@@ -2,7 +2,7 @@ import { ImageResponse } from 'next/og';
 import { getPublicEvent } from '../../../lib/server-events';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
-export const dynamic = 'force-dynamic';
+export const revalidate = 3600;
 export default async function Image({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const r = await getPublicEvent(id);

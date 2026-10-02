@@ -3,7 +3,8 @@ import { getPublicEvents } from '../../lib/server-events';
 import { getPublicVenues } from '../../lib/server-venues';
 import { zonaSlug, zonasDe } from '../../lib/venues';
 import { CIUDADES } from '../../lib/types';
-export const dynamic = 'force-dynamic';
+// Cacheada: se regenera como mucho cada 5 minutos o al cambiar los datos públicos.
+export const revalidate = 300;
 export const metadata = {
   title: 'Carretes por zona',
   description:

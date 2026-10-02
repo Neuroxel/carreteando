@@ -17,6 +17,29 @@ export const METRICS = [
   'marker_open',
 ] as const;
 export type Metric = (typeof METRICS)[number];
+const pendientes = new Set<Metric>();
+let escuchando = false;
+/**
+ * Filtrar, buscar o abrir el mapa son interacciones locales: no deben costar
+ * una petición por toque. Se anotan y se mandan una sola vez al salir de la
+ * página (o al pasar a segundo plano).
+ */
+export function trackLater(name: Metric) {
+  if (typeof window === 'undefined') return;
+  pendientes.add(name);
+  if (escuchando) return;
+  escuchando = true;
+  const enviar = () => {
+    if (document.visibilityState !== 'hidden') return;
+    for (const n of pendientes) track(n);
+    pendientes.clear();
+  };
+  document.addEventListener('visibilitychange', enviar);
+  window.addEventListener('pagehide', () => {
+    for (const n of pendientes) track(n);
+    pendientes.clear();
+  });
+}
 export function track(name: Metric) {
   if (
     typeof navigator === 'undefined' ||

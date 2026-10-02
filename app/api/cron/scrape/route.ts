@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { refrescarPublico } from '../../../../lib/snapshot';
 import { getAdminDb } from '../../../../lib/server-db';
 import { cronAutorizado } from '../../../../lib/cron-auth';
 import {
@@ -133,6 +134,8 @@ export async function GET(request: Request) {
     } catch {
       metrics.engine_error = 'ENGINE_FAILED';
     }
+    // Un solo punto donde lo público se renueva: después de ingerir y decidir.
+    metrics.snapshot_refreshed = await refrescarPublico();
     // Lo que esta corrida dejó público se anuncia a los buscadores que usan
     // IndexNow. Solo en producción: una vista previa no debe anunciar URLs.
     if (process.env.VERCEL_ENV === 'production') {

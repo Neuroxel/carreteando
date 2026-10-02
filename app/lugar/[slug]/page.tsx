@@ -10,7 +10,12 @@ import ShareButton from '../../../components/ShareButton';
 import LiveReport from '../../../components/LiveReport';
 import { liveFor } from '../../../lib/server-live';
 import { breadcrumbJsonLd, safeJsonLd, venueJsonLd } from '../../../lib/event-seo';
-export const dynamic = 'force-dynamic';
+// Cacheada: se regenera como mucho cada 5 minutos o al cambiar los datos públicos.
+export const revalidate = 300;
+// Ninguna se pre-genera en el build: cada ficha se arma en su primera visita y queda en caché.
+export async function generateStaticParams() {
+  return [];
+}
 type Props = { params: Promise<{ slug: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;

@@ -20,7 +20,7 @@ async function readVenues(slug?: string): Promise<VenuesResult> {
   try {
     const response = await fetch(`${url}/rest/v1/venues?${query}`, {
       headers: { apikey: key },
-      cache: 'no-store',
+      next: { revalidate: 300, tags: ['public-snapshot'] },
       signal: AbortSignal.timeout(8000),
     });
     if (!response.ok) return { status: 'error', lugares: [] };

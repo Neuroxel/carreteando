@@ -13,7 +13,12 @@ import { breadcrumbJsonLd, safeJsonLd } from '../../../lib/event-seo';
  * quien navega, pero no se ofrece a los buscadores hasta que tenga sustancia.
  */
 const MIN_LUGARES_INDEXABLE = 3;
-export const dynamic = 'force-dynamic';
+// Cacheada: se regenera como mucho cada 5 minutos o al cambiar los datos públicos.
+export const revalidate = 300;
+// Ninguna se pre-genera en el build: cada ficha se arma en su primera visita y queda en caché.
+export async function generateStaticParams() {
+  return [];
+}
 type Props = { params: Promise<{ slug: string }> };
 async function findZone(slug: string) {
   const venues = await getPublicVenues();

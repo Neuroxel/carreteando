@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { refrescarPublico } from '../../../../lib/snapshot';
 import { cronAutorizado } from '../../../../lib/cron-auth';
 import { getAdminDb } from '../../../../lib/server-db';
 import { backtest, reevaluate } from '../../../../lib/sources/automation';
@@ -17,5 +18,7 @@ export async function GET(request: Request) {
   if (!(await cronAutorizado(request, db))) return reply({ error: 'Unauthorized' }, 401);
   const modo = new URL(request.url).searchParams.get('modo');
   if (modo === 'backtest') return reply(await backtest(db));
-  return reply(await reevaluate(db));
+  const r = await reevaluate(db);
+  if (r.applied > 0) await refrescarPublico();
+  return reply(r);
 }

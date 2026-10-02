@@ -1,7 +1,7 @@
 'use client';
 import { useEffect } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { track } from '../lib/metrics';
+import { track, trackLater } from '../lib/metrics';
 export default function Metrics() {
   const path = usePathname(),
     query = useSearchParams();
@@ -20,9 +20,9 @@ export default function Metrics() {
   useEffect(() => {
     // /buscar dejó de ser una página: filtrar ocurre en la portada y en /explorar.
     if (path !== '/' && path !== '/explorar') return;
-    if (query.get('vista') === 'mapa') track('map_open');
-    else if (query.get('q')) track('search');
-    else if (query.size) track('filter');
+    if (query.get('vista') === 'mapa') trackLater('map_open');
+    else if (query.get('q')) trackLater('search');
+    else if (query.size) trackLater('filter');
   }, [path, query]);
   useEffect(() => {
     const listener = (event: MouseEvent) => {

@@ -1,6 +1,6 @@
 import SubmissionForm from '../../components/SubmissionForm';
 import { toChileDateString } from '../../lib/event-extraction';
-export const dynamic = 'force-dynamic';
+export const revalidate = 3600;
 export const metadata = { title: 'Propón un evento', alternates: { canonical: '/publicar' } };
 export default function Publish() {
   return (

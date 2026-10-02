@@ -15,7 +15,8 @@ async function readLive(): Promise<Map<string, LiveRow[]>> {
   try {
     const response = await fetch(`${url}/rest/v1/live_reports?${query}`, {
       headers: { apikey: key },
-      cache: 'no-store',
+      // "Cómo está ahora" envejece rápido: un minuto, y cada reporte nuevo lo invalida.
+      next: { revalidate: 60, tags: ['live-reports'] },
       signal: AbortSignal.timeout(6000),
     });
     if (!response.ok) return map;

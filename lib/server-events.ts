@@ -8,6 +8,12 @@ export type EventsResult =
   | { status: 'error'; events: []; checkedAt: string };
 const COLUMNS =
   'instagram_id,title,description,date_text,location,image_url,instagram_url,username,scraped_at,source,is_active,moderation_status,source_published_at,last_verified_at,city,venue,address,event_time,price_clp,price_text,category,organizer_verified,event_type,source_id,independent_sources';
+/**
+ * Lecturas públicas cacheadas en el servidor (5 minutos, etiqueta
+ * 'public-snapshot'). La ingesta y la moderación invalidan la etiqueta, así que
+ * un cambio real se ve al tiro y una visita normal no toca la base.
+ */
+export const PUBLIC_CACHE = { revalidate: 300, tags: ['public-snapshot'] };
 export async function readEvents(id?: string): Promise<EventsResult> {
   const checkedAt = new Date().toISOString();
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -26,7 +32,9 @@ export async function readEvents(id?: string): Promise<EventsResult> {
   try {
     const response = await fetch(`${url}/rest/v1/events?${query}`, {
       headers: { apikey: key },
-      cache: 'no-store',
+      // La fecha de hoy va en la URL: al cambiar el día cambia la clave de caché
+      // y nunca se reviven eventos vencidos.
+      next: PUBLIC_CACHE,
       signal: AbortSignal.timeout(8000),
     });
     if (!response.ok) return { status: 'error', events: [], checkedAt };

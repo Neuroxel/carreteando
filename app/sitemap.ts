@@ -3,7 +3,7 @@ import { getPublicEvents } from '../lib/server-events';
 import { getPublicVenues } from '../lib/server-venues';
 import { zonaSlug, zonasDe } from '../lib/venues';
 import { SITE_URL } from '../lib/site';
-export const dynamic = 'force-dynamic';
+export const revalidate = 3600;
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [r, v] = await Promise.all([getPublicEvents(), getPublicVenues()]);
   if (r.status === 'error') throw new Error('SITEMAP_BACKEND_UNAVAILABLE');

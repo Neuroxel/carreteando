@@ -108,6 +108,45 @@ export function detectCategory(textValue: string): Categoria {
   if (/rock|tocata|punk|metal/.test(text)) return 'rock';
   return 'otro';
 }
+/** Formas comunes de decir lo mismo. Se busca la palabra y su equivalente. */
+const SINONIMOS: Record<string, string> = {
+  valpo: 'valparaiso',
+  vina: 'vina del mar',
+  electro: 'electronica',
+  techno: 'electronica',
+  tecno: 'electronica',
+  reggaeton: 'reggaeton',
+  perreo: 'reggaeton',
+  tocatas: 'tocata',
+  carrete: 'fiesta',
+  stand: 'stand up',
+  standup: 'stand up',
+};
+/**
+ * Búsqueda local, en el teléfono: sin acentos ni mayúsculas, sobre nombre,
+ * lugar, comuna, sector, organizador, descripción, tipo y estilo. Todas las
+ * palabras tienen que aparecer (o su sinónimo).
+ */
+export function coincideBusqueda(e: Evento, busqueda: string) {
+  const texto = normalizeText(
+    [
+      e.nombre,
+      e.descripcion,
+      e.lugar,
+      e.ciudad,
+      e.sector,
+      e.organizador,
+      TIPOS_EVENTO.find((t) => t.value === e.tipo)?.label,
+      CATEGORIAS.find((c) => c.value === e.categoria)?.label,
+    ]
+      .filter(Boolean)
+      .join(' '),
+  );
+  return normalizeText(busqueda)
+    .split(/\s+/)
+    .filter(Boolean)
+    .every((w) => texto.includes(w) || (SINONIMOS[w] ? texto.includes(SINONIMOS[w]) : false));
+}
 export function getChileTodayStr(): string {
   return toChileDateString(new Date());
 }
@@ -119,13 +158,7 @@ export function filterEvents(
   return events
     .filter((e) => {
       if (!e.activo || !validIsoDate(e.fecha) || e.fecha < today) return false;
-      if (
-        filters.busqueda &&
-        !normalizeText(
-          `${e.nombre} ${e.descripcion || ''} ${e.lugar || ''} ${e.ciudad} ${e.organizador || ''}`,
-        ).includes(normalizeText(filters.busqueda))
-      )
-        return false;
+      if (filters.busqueda && !coincideBusqueda(e, filters.busqueda)) return false;
       if (filters.categoria && filters.categoria !== 'todos' && filters.categoria !== e.categoria)
         return false;
       if (filters.ciudad && filters.ciudad !== 'todos' && filters.ciudad !== e.ciudad) return false;
