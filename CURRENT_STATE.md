@@ -125,6 +125,23 @@ Detalle y mantenimiento en `docs/AUTOMATION.md`.
 Cartelera pública al 02-10: 3 hoy, 6 este fin de semana, 7 en 7 días, 11 en
 14 días; 44 vigentes en cola.
 
+## Lectura pública: el teléfono filtra, el servidor casi no trabaja
+
+- Portada y Explorar son **páginas estáticas** que se regeneran como mucho
+  cada 5 minutos, o al instante cuando la ingesta, el motor o la moderación
+  cambian algo. Traen el snapshot público (`lib/snapshot.ts`): 26 eventos y
+  93 lugares, 84 KB sin comprimir y 12 KB comprimido.
+- Filtros, búsqueda, lista/mapa y escenas corren en el teléfono
+  (`components/ExploreClient.tsx`). La URL se actualiza y atrás/adelante
+  funcionan. Medido en producción: el recorrido completo hizo **0 peticiones de
+  datos**. Antes cada toque era un render en el servidor con 3 consultas a
+  Supabase.
+- Fichas de evento, lugar y zona: cacheadas (ISR), con su JSON-LD.
+- Siguen en el servidor: ingesta, motor, escrituras (aportes, reportes,
+  "cómo está ahora", moderación), panel admin y `/api/eventos`.
+- Lighthouse móvil: portada 96/100/100/100, Explorar 99/100/100/100, ficha
+  98/100/100/100.
+
 ## Buscadores
 
 - Dirección pública configurable con `NEXT_PUBLIC_SITE_URL` (si falta o es
