@@ -103,27 +103,27 @@ total, 80 candidatos). Ninguno se publicó solo y ninguno fue aprobado. Está
 pausado (`APIFY_PAUSED=true`) por costo/rendimiento; reactivarlo es decisión
 del dueño.
 
-## Automatización 3.0 — motor de evidencia
+## Automatización 3.1 — siete reglas fijas, sin IA
 
-Detalle completo en `docs/AUTOMATION.md`. En corto:
+Detalle y mantenimiento en `docs/AUTOMATION.md`.
 
-- Cada fuente que menciona un evento deja **evidencia** (`event_evidence`) con
-  su origen y autoridad. Los espejos de un mismo origen no cuentan dos veces.
-- Después de cada ingesta, el motor **reevalúa toda la cola vigente**: publica
-  lo confirmado (con evidencia de las últimas 72 h), descarta lo académico,
-  vence lo pasado, cancela ante una cancelación explícita y manda a una persona
-  solo las contradicciones y lo que no tiene prueba suficiente, **con el motivo
-  escrito**.
-- La precisión de cada fuente se aprende contra fichas humanas (límite de
-  Wilson, con histéresis). La ticketera midió 23/23 sin errores.
-- Backtest: 0 de 115 eventos aprobados por una persona habrían sido
-  descartados; 1 contradicción real detectada (una reprogramación).
-- **Estado: modo sombra.** Registra lo que haría sin cambiar nada. La
-  activación (`automation_config.engine_mode = 'active'`) queda en manos del
-  dueño.
+- `pg_cron` → `/api/cron/scrape` → adaptadores → evidencia → evaluador
+  determinista (`lib/sources/evidence.ts`, 7 reglas) → publicar / descartar /
+  persona. **Sin IA, LLM ni embeddings.**
+- Niveles fijos: A oficial, B ticketera, C directorio/institución, D redes.
+  La precisión por fuente se mide y se muestra, pero no cambia niveles.
+- Backtest de la política simple: 0 de 115 aprobados descartados por error,
+  0 publicaciones con error crítico, 1 contradicción real detectada; parser
+  de la ticketera 23/24 (la diferencia es una reprogramación real).
+- Fuentes: 30 automáticas (se sumó TicketPlus, segunda ticketera
+  independiente, vía JSON-LD) + 7 manuales. Adaptadores genéricos JSON-LD e
+  ICS listos.
+- **Estado: modo sombra.** Cumple los criterios de activación del dueño; la
+  activación quedó bloqueada por permisos del entorno y la hace el dueño
+  (una línea SQL, ver `docs/AUTOMATION.md`).
 
-Cartelera pública al 02-10 (antes de activar): 3 hoy, 6 este fin de semana,
-7 en 7 días, 11 en 14 días; 43 vigentes esperando en la cola.
+Cartelera pública al 02-10: 3 hoy, 6 este fin de semana, 7 en 7 días, 11 en
+14 días; 44 vigentes en cola.
 
 ## Buscadores
 
