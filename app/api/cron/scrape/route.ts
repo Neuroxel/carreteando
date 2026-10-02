@@ -1,6 +1,6 @@
-import { timingSafeEqual } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { getAdminDb } from '../../../../lib/server-db';
+import { cronAutorizado } from '../../../../lib/cron-auth';
 import {
   boundedResultsLimit,
   classifyPost,
@@ -14,6 +14,7 @@ import {
 import { editorialRows } from '../../../../lib/editorial-feed';
 import { dispatchSources } from '../../../../lib/sources/dispatcher';
 import { notifyIndexNow } from '../../../../lib/indexnow';
+import { engineMode, reevaluate } from '../../../../lib/sources/automation';
 import { parseTimestamp, toChileDateString } from '../../../../lib/event-extraction';
 export const maxDuration = 300;
 export const dynamic = 'force-dynamic';
@@ -26,34 +27,11 @@ const record = (v: unknown): RawPost =>
   v !== null && typeof v === 'object' && !Array.isArray(v) ? (v as RawPost) : {};
 const reply = (body: object, status = 200) =>
   NextResponse.json(body, { status, headers: { 'Cache-Control': 'no-store' } });
-/**
- * Dos formas de probar autoridad, ninguna de las cuales expone un secreto.
- * Vercel manda su cabecera con CRON_SECRET. La propia base de datos manda un
- * pase de un solo uso que sólo ella pudo crear, porque la tabla está reservada
- * al rol de servicio: así el programador de Postgres no necesita que nadie
- * copie un secreto a mano.
- */
-async function autorizado(request: Request, db: ReturnType<typeof getAdminDb>) {
-  const secret = process.env.CRON_SECRET;
-  const auth = request.headers.get('authorization') || '';
-  if (secret) {
-    const expected = `Bearer ${secret}`;
-    if (
-      Buffer.byteLength(auth) === Buffer.byteLength(expected) &&
-      timingSafeEqual(Buffer.from(auth), Buffer.from(expected))
-    )
-      return true;
-  }
-  const ticket = new URL(request.url).searchParams.get('ticket');
-  if (!ticket || !/^[a-f0-9]{48}$/.test(ticket) || !db) return false;
-  const { data, error } = await db.rpc('redeem_cron_ticket', { p_nonce: ticket });
-  return !error && data === true;
-}
 export async function GET(request: Request) {
   const db = getAdminDb(),
     token = process.env.APIFY_API_TOKEN;
   if (!process.env.CRON_SECRET && !db) return reply({ error: 'Cron no disponible.' }, 503);
-  if (!(await autorizado(request, db))) return reply({ error: 'Unauthorized' }, 401);
+  if (!(await cronAutorizado(request, db))) return reply({ error: 'Unauthorized' }, 401);
   const paused = process.env.APIFY_PAUSED === 'true';
   const missing = ['NEXT_PUBLIC_SUPABASE_URL', 'SUPABASE_SECRET_KEY', 'APIFY_API_TOKEN'].filter(
     (k) => !process.env[k],
@@ -133,7 +111,10 @@ export async function GET(request: Request) {
     }
     // The agenda is no longer only what somebody typed into a JSON file: the
     // daily cron dispatches whichever real sources are due.
-    const dispatch = await dispatchSources(db, 8);
+    // Con el motor activo, la ingesta solo reúne evidencia y el motor decide;
+    // en modo sombra la política anterior sigue publicando y el motor anota.
+    const modoMotor = await engineMode(db);
+    const dispatch = await dispatchSources(db, 8, undefined, undefined, { deferToEngine: modoMotor === 'active' });
     metrics.sources_due = dispatch.due;
     metrics.sources_ran = dispatch.ran;
     metrics.sources_ok = dispatch.reports.filter((r) => r.ok).length;
@@ -142,6 +123,17 @@ export async function GET(request: Request) {
     metrics.adapter_duplicates = dispatch.reports.reduce((n, r) => n + r.duplicates, 0);
     metrics.adapter_parse_failures = dispatch.reports.reduce((n, r) => n + r.parseFailures, 0);
     metrics.adapter_reports = dispatch.reports;
+    // Después de reunir evidencia, toda la cola vigente se vuelve a juzgar:
+    // lo confirmado se publica, lo ajeno se descarta, lo dudoso queda con su motivo.
+    try {
+      const motor = await reevaluate(db);
+      metrics.engine_mode = motor.mode;
+      metrics.engine_counts = motor.counts;
+      metrics.engine_applied = motor.applied;
+      metrics.engine_trust_changes = motor.trustChanges;
+    } catch {
+      metrics.engine_error = 'ENGINE_FAILED';
+    }
     // Lo que esta corrida dejó público se anuncia a los buscadores que usan
     // IndexNow. Solo en producción: una vista previa no debe anunciar URLs.
     if (process.env.VERCEL_ENV === 'production') {
@@ -150,7 +142,8 @@ export async function GET(request: Request) {
         .select('instagram_id')
         .eq('is_active', true)
         .eq('moderation_status', 'approved')
-        .gte('scraped_at', new Date(started).toISOString())
+        // Lo nuevo y lo que el motor acaba de promover desde la cola.
+        .or(`scraped_at.gte.${new Date(started).toISOString()},auto_decided_at.gte.${new Date(started).toISOString()}`)
         .limit(100);
       const paths = (nuevos.data || []).map(
         (r: { instagram_id: string }) => `/evento/${encodeURIComponent(r.instagram_id)}`,

@@ -2,6 +2,7 @@ import { toChileDateString } from '../event-extraction';
 import { detectCategory } from '../events';
 import { ADAPTERS, MANUAL_SOURCES, SOURCES } from './registry';
 import { clasificar, type Relevancia } from './relevance';
+import { authorityOf, originGroupOf, statusFromText } from './evidence';
 import { SourceError, type EventCandidate, type Fetcher, type SourceDefinition } from './types';
 const USER_AGENT = 'CarreteandoBot/1.0 (+https://carreteando.vercel.app/confianza)';
 const MAX_BYTES = 3_000_000;
@@ -117,11 +118,16 @@ export interface SourceRunReport {
 type Db = {
   from: (table: string) => any;
 };
+export interface RunOptions {
+  /** El motor de evidencia decide la publicación: aquí todo entra privado. */
+  deferToEngine?: boolean;
+}
 export async function runSource(
   source: SourceDefinition,
   db: Db,
   fetcher: Fetcher = httpFetcher,
   today = toChileDateString(),
+  options: RunOptions = {},
 ): Promise<SourceRunReport> {
   const started = Date.now();
   const report: SourceRunReport = {
@@ -190,11 +196,15 @@ export async function runSource(
       report.rejected += 1;
       continue;
     }
-    if (await alreadyPublished(db, candidate)) {
+    // Lo que ya existe no se duplica: se le agrega evidencia. Así una segunda
+    // fuente confirma, y un cambio de fecha en el origen queda a la vista.
+    const existente = await findExisting(db, candidate);
+    if (existente) {
+      await addEvidence(db, existente, source, candidate);
       report.duplicates += 1;
       continue;
     }
-    const publish = decision === 'publicar';
+    const publish = decision === 'publicar' && !options.deferToEngine;
     const row = {
       instagram_id: candidate.key,
       title: candidate.title,
@@ -241,6 +251,7 @@ export async function runSource(
       report.rejected += 1;
       continue;
     }
+    if (data && data[0]) await addEvidence(db, data[0].id as number, source, candidate);
     if (!data || data.length === 0) report.duplicates += 1;
     else if (publish) report.newEvents += 1;
     else report.queued += 1;
@@ -252,19 +263,69 @@ async function lookupVenueId(db: Db, slug: string): Promise<number | null> {
   const { data } = await db.from('venues').select('id').eq('slug', slug).limit(1);
   return data && data[0] ? (data[0].id as number) : null;
 }
-async function alreadyPublished(db: Db, candidate: EventCandidate) {
+/**
+ * El mismo evento, aunque venga de otra fuente o con otro título: primero por
+ * la URL de detalle (la misma ficha es el mismo evento aunque cambie la fecha),
+ * luego por la clave estable, luego por fecha, lugar y título parecido.
+ */
+async function findExisting(db: Db, candidate: EventCandidate): Promise<number | null> {
+  const porUrl = await db
+    .from('events')
+    .select('id,title,date_text')
+    .or(`source_detail_url.eq."${candidate.detailUrl.replace(/"/g, '')}",instagram_url.eq."${candidate.detailUrl.replace(/"/g, '')}"`)
+    .neq('disposition', 'duplicate')
+    .limit(5);
+  const mismaFicha = (porUrl.data || []).find(
+    (r: { title?: string; date_text?: string }) =>
+      r.date_text === candidate.date || (r.title ? looksLikeSameEvent(r.title, candidate.title) : false),
+  );
+  if (mismaFicha) return mismaFicha.id as number;
+  const porClave = await db.from('events').select('id').eq('instagram_id', candidate.key).limit(1);
+  if (porClave.data && porClave.data[0]) return porClave.data[0].id as number;
   const { data } = await db
     .from('events')
-    .select('title,venue')
+    .select('id,title,venue')
     .eq('date_text', candidate.date)
+    .neq('disposition', 'duplicate')
     .limit(60);
-  if (!data) return false;
-  return data.some((row: { title?: string; venue?: string | null }) => {
+  const parecido = (data || []).find((row: { title?: string; venue?: string | null }) => {
     if (!row.title) return false;
     const sameVenue =
       !candidate.venue || !row.venue || normalizedTitle(row.venue) === normalizedTitle(candidate.venue);
     return sameVenue && looksLikeSameEvent(row.title, candidate.title);
   });
+  return parecido ? (parecido.id as number) : null;
+}
+const ESTRUCTURADOS = new Set(['wp-events-list', 'tribe-events', 'usm-eventos', 'jsonld-events', 'ics-calendar']);
+/** Lo que esta fuente afirma hoy sobre el evento, con su procedencia. */
+export function evidenceRow(eventId: number, source: SourceDefinition, candidate: EventCandidate) {
+  return {
+    p_event_id: eventId,
+    p_source_id: source.id,
+    p_family: source.family,
+    p_origin: originGroupOf(candidate.detailUrl, source.id),
+    p_authority: authorityOf(source),
+    p_url: candidate.detailUrl,
+    p_claims: {
+      title: candidate.title,
+      date: candidate.date,
+      start_time: candidate.time,
+      venue: candidate.venue,
+      city: candidate.city,
+      status: statusFromText(`${candidate.title} ${candidate.description || ''}`),
+      date_verified: candidate.confidence === 'high',
+    },
+    p_structured: ESTRUCTURADOS.has(source.adapter) || candidate.confidence === 'high',
+  };
+}
+async function addEvidence(db: Db, eventId: number, source: SourceDefinition, candidate: EventCandidate) {
+  // Si la evidencia no se puede guardar, la ingesta sigue: el motor sin
+  // evidencia nueva simplemente no promueve nada (falla hacia lo privado).
+  if (typeof (db as { rpc?: unknown }).rpc !== 'function') return;
+  await (db as unknown as { rpc: (f: string, a: object) => Promise<unknown> }).rpc(
+    'add_event_evidence',
+    evidenceRow(eventId, source, candidate),
+  );
 }
 /**
  * The first dispatch after a source is registered used to find nothing at all:
@@ -275,12 +336,36 @@ async function alreadyPublished(db: Db, candidate: EventCandidate) {
  * over-fetching because no source refreshes more than once a day.
  */
 export const TOLERANCIA_RELOJ_MS = 60_000;
+/**
+ * Que una ficha estuviera bien hace una semana no garantiza que esté bien esta
+ * noche. Una fuente con eventos en las próximas 72 horas se vuelve a mirar
+ * antes de su turno: cada 12 horas si el evento es en 1 a 3 días, cada 6 si es
+ * en menos de 24. Nunca más seguido: no se martilla a nadie.
+ */
+export function urgencia(horasHastaEvento: number): number | null {
+  if (horasHastaEvento < 0) return null;
+  if (horasHastaEvento <= 24) return 6;
+  if (horasHastaEvento <= 72) return 12;
+  return null;
+}
 /** The daily cron is a dispatcher: it refreshes whatever is due, never everything. */
-export function dueSources(rows: { id: string; active: boolean; next_check_at: string }[], now: Date, limit: number) {
+export function dueSources(
+  rows: { id: string; active: boolean; next_check_at: string; last_checked_at?: string | null }[],
+  now: Date,
+  limit: number,
+  urgentes: Map<string, number> = new Map(),
+) {
   const limite = now.getTime() + TOLERANCIA_RELOJ_MS;
+  const urgente = (row: (typeof rows)[number]) => {
+    const cada = urgentes.get(row.id);
+    if (!cada) return false;
+    const ultima = row.last_checked_at ? Date.parse(row.last_checked_at) : 0;
+    return now.getTime() - ultima >= cada * 3600_000 - TOLERANCIA_RELOJ_MS;
+  };
   const due = rows
-    .filter((row) => row.active && new Date(row.next_check_at).getTime() <= limite)
-    .sort((a, b) => a.next_check_at.localeCompare(b.next_check_at))
+    .filter((row) => row.active && (new Date(row.next_check_at).getTime() <= limite || urgente(row)))
+    // Primero lo que tiene eventos encima; después, por antigüedad.
+    .sort((a, b) => Number(urgente(b)) - Number(urgente(a)) || a.next_check_at.localeCompare(b.next_check_at))
     .slice(0, limit);
   return due
     .map((row) => SOURCES.find((source) => source.id === row.id))
@@ -330,6 +415,26 @@ export async function syncRegistry(db: Db) {
   await db.from('event_sources').upsert(rows, { onConflict: 'id' });
   await db.from('event_sources').upsert(manuales, { onConflict: 'id' });
 }
+async function sourcesWithEventsSoon(db: Db, now: Date) {
+  const hoy = toChileDateString(now);
+  const en3 = toChileDateString(new Date(now.getTime() + 3 * 86_400_000));
+  const { data } = await db
+    .from('events')
+    .select('source_id,date_text,event_time')
+    .in('disposition', ['public', 'review'])
+    .gte('date_text', hoy)
+    .lte('date_text', en3)
+    .not('source_id', 'is', null)
+    .limit(500);
+  const urgentes = new Map<string, number>();
+  for (const row of (data || []) as { source_id: string; date_text: string; event_time: string | null }[]) {
+    // Hora de Chile aproximada a -03:00; para elegir el turno basta.
+    const inicio = Date.parse(`${row.date_text}T${row.event_time || '21:00'}:00-03:00`);
+    const cada = urgencia((inicio - now.getTime()) / 3600_000);
+    if (cada && (!urgentes.has(row.source_id) || cada < urgentes.get(row.source_id)!)) urgentes.set(row.source_id, cada);
+  }
+  return urgentes;
+}
 export interface DispatchReport {
   due: number;
   ran: number;
@@ -340,15 +445,19 @@ export async function dispatchSources(
   budget = 6,
   fetcher: Fetcher = httpFetcher,
   now = new Date(),
+  options: RunOptions = {},
 ): Promise<DispatchReport> {
   await syncRegistry(db);
   // Read the clock after the registry write, not before it.
   const reloj = now.getTime() >= Date.now() ? now : new Date();
-  const { data } = await db.from('event_sources').select('id,active,next_check_at,consecutive_failures');
-  const due = dueSources(data || [], reloj, budget);
+  const { data } = await db
+    .from('event_sources')
+    .select('id,active,next_check_at,last_checked_at,consecutive_failures');
+  const urgentes = await sourcesWithEventsSoon(db, reloj);
+  const due = dueSources(data || [], reloj, budget, urgentes);
   const reports: SourceRunReport[] = [];
   for (const source of due) {
-    const report = await runSource(source, db, fetcher);
+    const report = await runSource(source, db, fetcher, toChileDateString(reloj), options);
     reports.push(report);
     const next = new Date(reloj.getTime() + source.refreshHours * 3600_000).toISOString();
     await db.from('ingestion_source_runs').insert([
