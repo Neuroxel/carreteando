@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Evento, CATEGORIAS, TIPOS_EVENTO } from '../lib/types';
+import { Evento, CATEGORIAS, CONFIANZA_TEXTO, TIPOS_EVENTO } from '../lib/types';
 import { eventDateLabel } from '../lib/events';
 import EventImage from './EventImage';
 import ShareButton from './ShareButton';
@@ -60,11 +60,7 @@ export default function EventCard({
             <span className="provenance">
               {/* El usuario no tiene por qué saber cómo llamamos a nuestras
                   fuentes. Sólo le importa si alguien lo revisó. */}
-              {e.verificado
-                ? 'Confirmado por el organizador'
-                : e.fuente === 'manual'
-                  ? 'Dato de la comunidad, revisado'
-                  : 'Revisado por nosotros'}
+              {CONFIANZA_TEXTO[e.confianza || (e.verificado ? 'organizador' : e.fuente === 'manual' ? 'comunidad' : 'revisado')]}
             </span>
           </div>
           <ShareButton

@@ -11,7 +11,7 @@ import {
   type EventState,
   type Evidence,
 } from '../lib/sources/evidence';
-import { sourceStatsFrom } from '../lib/sources/automation';
+import { duplicadosPorFicha, sourceStatsFrom } from '../lib/sources/automation';
 import { dueSources, urgencia } from '../lib/sources/dispatcher';
 const HOY = '2026-10-02';
 const evento = (over: Partial<EventState> = {}): EventState => ({
@@ -162,4 +162,44 @@ test('una fuente con eventos encima se revisa antes de su turno, sin martillar',
   ];
   const urgentes = new Map([['pcdv-agenda', 6], ['cinzano-agenda', 6]]);
   assert.deepEqual(dueSources(rows, now, 8, urgentes).map((s) => s.id), ['pcdv-agenda']);
+});
+
+test('no se publica con evidencia vieja: la fuente tiene que haberlo mostrado en 72 horas', () => {
+  const vieja = ev({ retrievedAt: '2026-09-25T14:00:00Z' });
+  const r = evaluateEventEvidence(evento(), [vieja], confianza('strict'), HOY, new Date('2026-10-02T15:00:00Z'));
+  assert.equal(r.decision, 'REVIEW_INSUFFICIENT');
+  assert.ok(r.reasons[0].includes('3 días'));
+});
+
+test('si la ticketera deja de mostrarlo, lo publicado se retira para revisión', () => {
+  const desaparecida = ev({ active: false });
+  assert.equal(evaluateEventEvidence(evento({ disposition: 'public' }), [desaparecida], confianza('strict'), HOY).decision, 'REVIEW_CONFLICT');
+  // Una versión anterior reemplazada por otra de la misma fuente no es desaparición.
+  const anterior = ev({ active: false, retrievedAt: '2026-09-25T14:00:00Z' }, { date: '2026-10-02' });
+  assert.equal(evaluateEventEvidence(evento(), [anterior, ev()], confianza('strict'), HOY).decision, 'AUTO_PROMOTE_FROM_REVIEW');
+});
+
+test('la ticketera sin año escrito lo dice como motivo', () => {
+  const r = evaluateEventEvidence(evento(), [ev({}, { date_verified: false })], confianza('strict'), HOY);
+  assert.ok(r.reasons[0].includes('año'));
+});
+
+test('dos filas con la misma ficha: queda la pública o la que coincide con la última fecha', () => {
+  const url = 'https://www.portaldisc.com/evento/benjaminwalkerenvina';
+  const filas = [
+    { id: 1273, disposition: 'review', date_text: '2026-10-09', source_detail_url: url },
+    { id: 1301, disposition: 'review', date_text: '2026-10-11', source_detail_url: url },
+  ];
+  const evid = new Map([
+    [1273, [ev({ url, retrievedAt: '2026-09-28T00:00:00Z', active: false }, { date: '2026-10-09' })]],
+    [1301, [ev({ url, retrievedAt: '2026-10-02T14:00:00Z' }, { date: '2026-10-11' })]],
+  ]);
+  assert.deepEqual([...duplicadosPorFicha(filas, evid)], [[1273, 1301]]);
+});
+
+test('"previa inscripción" no es una previa', async () => {
+  const { clasificar } = await import('../lib/sources/relevance');
+  const k = clasificar({ titulo: 'Seminario Derechos Culturales', descripcion: 'Entrada liberada previa inscripción', hora: '09:30' });
+  assert.equal(k.relevancia, 'IRRELEVANT');
+  assert.equal(k.academico, true);
 });

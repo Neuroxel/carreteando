@@ -7,7 +7,7 @@
  */
 export type Relevancia = 'NIGHTLIFE_HIGH' | 'CULTURAL_NIGHT' | 'REVIEW' | 'IRRELEVANT';
 const NOCHE = [
-  'fiesta', 'party', 'tocata', 'pena', 'karaoke', 'dj', 'after', 'previa', 'carrete',
+  'fiesta', 'party', 'tocata', 'pena', 'karaoke', 'dj', 'after', 'carrete',
   'baile', 'bailable', 'cumbia', 'reggaeton', 'techno', 'house', 'electronica', 'rave',
   'perreo', 'salsa', 'fonda', 'ramada', 'bienvenida', 'mechoneo', 'tambores',
 ];

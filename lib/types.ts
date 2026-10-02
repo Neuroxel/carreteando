@@ -43,7 +43,18 @@ export interface Evento {
   direccion?: string | null;
   ultima_revision?: string | null;
   publicado_en_fuente?: string | null;
+  /** Etiqueta pública de confianza: nunca un número, solo de dónde viene. */
+  confianza?: ConfianzaPublica;
 }
+export type ConfianzaPublica = 'organizador' | 'oficial' | 'varias' | 'ticketera' | 'revisado' | 'comunidad';
+export const CONFIANZA_TEXTO: Record<ConfianzaPublica, string> = {
+  organizador: 'Confirmado por el organizador',
+  oficial: 'Fuente oficial del lugar',
+  varias: 'Confirmado por varias fuentes',
+  ticketera: 'Ticketera oficial',
+  revisado: 'Revisado por nosotros',
+  comunidad: 'Dato de la comunidad, revisado',
+};
 
 export interface EventoFormData {
   nombre: string;

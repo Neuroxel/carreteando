@@ -7,7 +7,7 @@
  */
 import { toChileDateString } from '../event-extraction';
 import { CIUDADES } from '../types';
-import { httpFetcher, normalizedTitle } from './dispatcher';
+import { httpFetcher, looksLikeSameEvent, normalizedTitle } from './dispatcher';
 import {
   earnTrust,
   evaluateEventEvidence,
@@ -112,6 +112,37 @@ async function loadLocked(db: Db, ids: number[]) {
   );
 }
 
+/**
+ * Dos filas con la misma URL de detalle son el mismo evento. Se queda la
+ * pública, si no la que tiene ficha humana, si no la que coincide con la
+ * última fecha que da la fuente; las demás pasan a duplicado.
+ */
+export function duplicadosPorFicha(rows: Row[], evidence: Map<number, Evidence[]>) {
+  const porUrl = new Map<string, Row[]>();
+  for (const r of rows) {
+    const url = r.source_detail_url || r.instagram_url;
+    if (!url) continue;
+    porUrl.set(url, [...(porUrl.get(url) || []), r]);
+  }
+  const copias = new Map<number, number>();
+  for (const [url, grupo] of porUrl) {
+    if (grupo.length < 2) continue;
+    const ultimaFecha = grupo
+      .flatMap((r) => evidence.get(r.id) || [])
+      .filter((e) => e.url === url && e.authority !== 'human' && e.active)
+      .sort((a, b) => b.retrievedAt.localeCompare(a.retrievedAt))[0]?.claims.date;
+    const humana = (r: Row) => (evidence.get(r.id) || []).some((e) => e.authority === 'human');
+    const orden = [...grupo].sort(
+      (a, b) =>
+        Number(b.disposition === 'public') - Number(a.disposition === 'public') ||
+        Number(humana(b)) - Number(humana(a)) ||
+        Number(b.date_text === ultimaFecha) - Number(a.date_text === ultimaFecha) ||
+        a.id - b.id,
+    );
+    for (const r of orden.slice(1)) copias.set(r.id, orden[0].id);
+  }
+  return copias;
+}
 async function lastDecisions(db: Db, ids: number[]) {
   const rows = await inChunks(ids, async (chunk) => {
     const { data } = await db
@@ -228,7 +259,7 @@ export async function reevaluate(db: Db, now = new Date(), forced?: EngineMode):
   const { data } = await db
     .from('events')
     .select(
-      'id,title,description,date_text,event_time,venue,venue_id,city,disposition,moderation_status,is_active,source,source_id,relevance,event_status,auto_decision,human_reason',
+      'id,title,description,date_text,event_time,venue,venue_id,city,disposition,moderation_status,is_active,source,source_id,relevance,event_status,auto_decision,human_reason,source_detail_url,instagram_url',
     )
     .in('disposition', ['review', 'public'])
     .gte('date_text', ayer)
@@ -244,10 +275,19 @@ export async function reevaluate(db: Db, now = new Date(), forced?: EngineMode):
   const trustOf = (id: string | null) => (id ? trustById.get(id) || 'review' : 'review');
   const ultimas = await lastDecisions(db, ids);
   const report: EngineReport = { mode, evaluated: rows.length, counts: {}, applied: 0, trustChanges: cambios };
+  const copias = duplicadosPorFicha(rows, evidence);
+  const publicos = rows.filter((r) => r.disposition === 'public');
   for (const r of rows) {
     const st = stateFrom(r, locked);
     const ev = evidence.get(r.id) || [];
-    let result = evaluateEventEvidence(st, ev, trustOf, today);
+    let result = evaluateEventEvidence(st, ev, trustOf, today, now);
+    const copiaDe = copias.get(r.id);
+    if (copiaDe && !st.humanLocked) result = { ...result, decision: 'AUTO_REJECT', reasons: [`misma ficha que el evento ${copiaDe}`], conflicting: [] };
+    // Antes de publicar: que no esté ya en la cartelera con otro título de la misma noche.
+    if (['AUTO_PUBLISH', 'AUTO_PROMOTE_FROM_REVIEW'].includes(result.decision)) {
+      const gemelo = publicos.find((p) => p.id !== r.id && p.date_text === r.date_text && looksLikeSameEvent(p.title || '', r.title || ''));
+      if (gemelo) result = { ...result, decision: 'AUTO_REJECT', reasons: [`ya publicado como el evento ${gemelo.id}`] };
+    }
     // Fuera de la región: no es nuestro, se descarta sin persona.
     if (!st.validCity && r.disposition === 'review') result = { ...result, decision: 'AUTO_REJECT', reasons: ['fuera de la región cubierta'] };
     report.counts[result.decision] = (report.counts[result.decision] || 0) + 1;
@@ -271,6 +311,9 @@ export async function reevaluate(db: Db, now = new Date(), forced?: EngineMode):
       let patch: Row = base;
       if (result.decision === 'AUTO_PUBLISH' || result.decision === 'AUTO_PROMOTE_FROM_REVIEW')
         patch = { ...base, is_active: true, moderation_status: 'approved', disposition: 'public', last_verified_at: now.toISOString() };
+      else if (result.decision === 'AUTO_REJECT' && /^(misma ficha|ya publicado)/.test(result.reasons[0] || ''))
+        // Un duplicado no es un rechazo: queda enlazado al original.
+        patch = { ...base, is_active: false, disposition: 'duplicate', disposition_note: result.reasons[0] };
       else if (result.decision === 'AUTO_REJECT')
         patch = { ...base, is_active: false, moderation_status: 'rejected', disposition: 'rejected', disposition_note: result.reasons.join(' · ').slice(0, 300) };
       else if (result.decision === 'AUTO_EXPIRE')
@@ -339,7 +382,7 @@ export async function backtest(db: Db) {
         : e,
     );
     const st = stateFrom({ ...r, disposition: 'review' }, new Set());
-    const res = evaluateEventEvidence({ ...st, disposition: 'review' }, ev, trustOf, asOf);
+    const res = evaluateEventEvidence({ ...st, disposition: 'review' }, ev, trustOf, asOf, r.scraped_at ? new Date(r.scraped_at) : undefined);
     out.push({
       event_id: r.id,
       decision: res.decision,

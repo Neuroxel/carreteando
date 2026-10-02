@@ -1,4 +1,4 @@
-import { Categoria, CATEGORIAS, Evento, FiltrosEvento, TIPOS_EVENTO } from './types';
+import { Categoria, CATEGORIAS, ConfianzaPublica, Evento, FiltrosEvento, TIPOS_EVENTO } from './types';
 import {
   addDays,
   extractEventTime,
@@ -75,12 +75,23 @@ export function dbRowToEvento(row: EventRow): Evento | null {
         ? `https://www.instagram.com/${row.username}/`
         : null,
     verificado: row.organizer_verified === true,
+    confianza: confianzaPublica(row),
     activo: true,
     tags: [],
     created_at: str(row.scraped_at) || '',
     ultima_revision: parseTimestamp(row.last_verified_at)?.toISOString() || null,
     publicado_en_fuente: parseTimestamp(row.source_published_at)?.toISOString() || null,
   };
+}
+const OFICIALES = new Set(['pcdv-agenda', 'cinzano-agenda']);
+/** De dónde viene, dicho como lo entiende cualquiera. */
+export function confianzaPublica(row: EventRow): ConfianzaPublica {
+  if (row.organizer_verified === true) return 'organizador';
+  if (Number(row.independent_sources || 0) >= 2) return 'varias';
+  if (typeof row.source_id === 'string' && OFICIALES.has(row.source_id)) return 'oficial';
+  if (typeof row.source_id === 'string' && row.source_id.startsWith('portaldisc-')) return 'ticketera';
+  if (row.source === 'manual') return 'comunidad';
+  return 'revisado';
 }
 export function detectCategory(textValue: string): Categoria {
   const text = normalizeText(textValue);

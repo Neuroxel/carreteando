@@ -210,11 +210,14 @@ export function independentGroups(evidence: Evidence[]) {
   return groups.size;
 }
 
+/** Para publicar, la fuente tiene que haberlo mostrado hace poco: lo de hace una semana puede haber cambiado. */
+export const FRESCURA_MS = 72 * 3600_000;
 export function evaluateEventEvidence(
   event: EventState,
   evidence: Evidence[],
   trustOf: (sourceId: string | null) => EarnedTrust,
   today: string,
+  now: Date = new Date(`${today}T15:00:00Z`),
 ): Evaluation {
   const reasons: string[] = [];
   const supporting: string[] = [];
@@ -264,6 +267,13 @@ export function evaluateEventEvidence(
       conflicting.push(`${quien} dice ${e.claims.start_time}; la ficha dice ${event.time}`);
     }
   }
+  // Una fuente fuerte que antes lo mostraba y en su última lectura ya no.
+  const activos = new Set(evidence.filter((e) => e.active).map((e) => e.originGroup));
+  for (const e of evidence) {
+    if (e.active || !['first_party', 'transactional'].includes(e.authority) || activos.has(e.originGroup)) continue;
+    conflicting.push(`${e.sourceId || e.originGroup} ya no lo publica`);
+    activos.add(e.originGroup);
+  }
   if (conflicting.length) {
     reasons.push('hay datos contradictorios entre fuentes con autoridad');
     return out(event.humanLocked ? 'KEEP' : 'REVIEW_CONFLICT');
@@ -285,16 +295,30 @@ export function evaluateEventEvidence(
   // 4. Publicación con evidencia suficiente.
   const deNoche = event.time !== null && event.time >= '18:00';
   const diurno = event.time !== null && event.time < '17:00';
-  if (independientes >= 2) {
-    supporting.push(`${independientes} orígenes independientes coinciden en fecha y lugar`);
+  const independientesFrescos = new Set(
+    evidence
+      .filter((e) => e.active && (e.authority === 'first_party' || e.authority === 'transactional'))
+      .filter((e) => now.getTime() - Date.parse(e.retrievedAt) <= FRESCURA_MS)
+      .map((e) => e.originGroup),
+  ).size;
+  if (independientesFrescos >= 2) {
+    supporting.push(`${independientesFrescos} orígenes independientes coinciden en fecha y lugar`);
     if (!diurno) {
       reasons.push('confirmado por fuentes independientes');
       return promover();
     }
   }
+  const fresca = (e: Evidence) => now.getTime() - Date.parse(e.retrievedAt) <= FRESCURA_MS;
+  let viejas = 0;
+  let sinAno = 0;
   for (const e of fuertes) {
     const nivel = trustOf(e.sourceId);
     const quien = e.sourceId || e.originGroup;
+    if (e.authority !== 'human' && !fresca(e)) {
+      viejas += 1;
+      continue;
+    }
+    if (e.authority === 'transactional' && !e.claims.date_verified) sinAno += 1;
     if (e.authority === 'human') {
       supporting.push(`${quien}: revisado por una persona`);
       continue;
@@ -330,6 +354,9 @@ export function evaluateEventEvidence(
   else if (!event.venueKnown) reasons.push('el lugar no está en el registro');
   else if (diurno) reasons.push('horario diurno: hay que confirmar que es una salida');
   else if (!deNoche) reasons.push('sin hora de noche confirmada');
+  else if (viejas && viejas === fuertes.filter((e) => e.authority !== 'human').length)
+    reasons.push('la fuente no lo ha vuelto a mostrar en los últimos 3 días: se confirma en la próxima lectura');
+  else if (sinAno) reasons.push('la ticketera no escribió el año: la fecha no se pudo verificar');
   else reasons.push('la fuente aún no tiene historial suficiente para publicar sola');
   return out('REVIEW_INSUFFICIENT');
 }

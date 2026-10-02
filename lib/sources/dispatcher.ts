@@ -256,8 +256,32 @@ export async function runSource(
     else if (publish) report.newEvents += 1;
     else report.queued += 1;
   }
+  if (COMPLETOS.has(source.adapter) && candidates.length > 0)
+    await markMissing(db, source, new Set(candidates.map((c) => c.detailUrl)), today);
   report.durationMs = Date.now() - started;
   return report;
+}
+/**
+ * Adaptadores que leen la cartelera completa de lo que viene. Solo en ellos
+ * "ya no aparece" significa algo: un listado paginado de noticias no.
+ */
+const COMPLETOS = new Set(['portaldisc-cartelera']);
+/** Lo que la fuente mostraba y en esta lectura ya no: su evidencia queda inactiva. */
+async function markMissing(db: Db, source: SourceDefinition, vistos: Set<string>, today: string) {
+  const { data } = await db
+    .from('event_evidence')
+    .select('id,event_id,source_url,claims')
+    .eq('source_id', source.id)
+    .eq('active', true)
+    .limit(500);
+  const ausentes = ((data || []) as { id: number; source_url: string | null; claims: { date?: string } }[]).filter(
+    (r) => r.source_url && !vistos.has(r.source_url) && (r.claims?.date || '') >= today,
+  );
+  if (ausentes.length)
+    await db
+      .from('event_evidence')
+      .update({ active: false })
+      .in('id', ausentes.map((r) => r.id));
 }
 async function lookupVenueId(db: Db, slug: string): Promise<number | null> {
   const { data } = await db.from('venues').select('id').eq('slug', slug).limit(1);
@@ -275,10 +299,12 @@ async function findExisting(db: Db, candidate: EventCandidate): Promise<number |
     .or(`source_detail_url.eq."${candidate.detailUrl.replace(/"/g, '')}",instagram_url.eq."${candidate.detailUrl.replace(/"/g, '')}"`)
     .neq('disposition', 'duplicate')
     .limit(5);
-  const mismaFicha = (porUrl.data || []).find(
-    (r: { title?: string; date_text?: string }) =>
-      r.date_text === candidate.date || (r.title ? looksLikeSameEvent(r.title, candidate.title) : false),
-  );
+  type Fila = { id: number; title?: string; date_text?: string };
+  const filas = (porUrl.data || []) as Fila[];
+  // Primero la fila de esa misma fecha; si la fuente cambió la fecha, la ficha parecida.
+  const mismaFicha =
+    filas.find((r) => r.date_text === candidate.date) ||
+    filas.find((r) => (r.title ? looksLikeSameEvent(r.title, candidate.title) : false));
   if (mismaFicha) return mismaFicha.id as number;
   const porClave = await db.from('events').select('id').eq('instagram_id', candidate.key).limit(1);
   if (porClave.data && porClave.data[0]) return porClave.data[0].id as number;
