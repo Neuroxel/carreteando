@@ -20,7 +20,7 @@ export function inferTipo(texto: string, categoria?: Categoria): TipoEvento {
   if (/ (festival|fest|festilambe) /.test(t)) return 'festival';
   if (/ after /.test(t)) return 'after';
   if (/ (fiesta|party|dj|djs|techno|house|perreo|rave|retro|club night|reggaeton|cumbia night) /.test(t)) return 'club';
-  if (/ (concierto|en vivo|show|gira|tour|tributo|banda|orquesta|trio|quinteto|cuarteto|octeto|lanzamiento|disco|sinfonia|recital|jazz) /.test(t))
+  if (/ (concierto|en vivo|show|gira|tour|tributo|banda|orquesta|trio|quinteto|cuarteto|octeto|lanzamiento|disco|sinfonia|recital|jazz|tuna|tunas|estudiantina|coro|cueca|folclor|folclore|bolero|cantautor|sound system) /.test(t))
     return 'concierto';
   if (/ (teatro|obra|cine|stand up|standup|comedia|circo|circense|variete|danza|poesia|cabaret|drag) /.test(t)) return 'noche_cultural';
   if (/ (karaoke|happy hour|bar) /.test(t)) return 'bar';

@@ -14,7 +14,7 @@ export default function EventCard({
 }) {
   // A fonda is not a music genre: the kind of night beats the style label.
   const kind = TIPOS_EVENTO.find((t) => t.value === e.tipo)?.label;
-  const category = kind || CATEGORIAS.find((c) => c.value === e.categoria)?.label || 'Otro estilo';
+  const category = kind || CATEGORIAS.find((c) => c.value === e.categoria)?.label || 'Panorama';
   return (
     <article className="event-card">
       <Link

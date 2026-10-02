@@ -163,7 +163,7 @@ export const CATEGORIAS: {
   },
   {
     value: 'otro',
-    label: 'Otro estilo',
+    label: 'Panorama',
     emoji: '🎉',
     badgeClass: 'badge-otro',
     desc: 'Ferias nocturnas, acústicos y arte',
