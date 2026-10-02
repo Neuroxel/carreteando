@@ -234,6 +234,20 @@ lista corta de cuentas que no tengan otra fuente pública, tope de gasto por
 corrida (ya está en el código: US$ 1), y todo a revisión. Hoy no se justifica:
 las 80 candidaturas que trajo no terminaron en ninguna publicación.
 
+## 9c. Automatización 3.0 (motor de evidencia)
+
+Lee `docs/AUTOMATION.md`. Lo que te importa como moderador:
+
+- En `/admin`, la sección **"Necesitan una persona"** está ordenada por
+  urgencia (contradicciones, hoy, mañana) y cada ítem dice **por qué** el
+  motor no pudo decidir solo ("la ticketera dice 11-oct; la ficha dice 3-oct").
+- Lo que el motor publicó muestra la evidencia que lo publicó.
+- El panel **Automatización** muestra qué parte se resuelve sola, cuántos se
+  vencieron esperando (debe tender a cero) y la precisión aprendida por fuente.
+- Si una persona edita un evento, el motor no lo vuelve a tocar.
+- Para pausar el motor sin desplegar nada:
+  `update automation_config set value = 'shadow' where key = 'engine_mode';`
+
 ## 10. Respaldos
 
 El plan Free de Supabase **no hace respaldos automáticos de ningún tipo**.

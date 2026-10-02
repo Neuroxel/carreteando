@@ -103,6 +103,28 @@ total, 80 candidatos). Ninguno se publicó solo y ninguno fue aprobado. Está
 pausado (`APIFY_PAUSED=true`) por costo/rendimiento; reactivarlo es decisión
 del dueño.
 
+## Automatización 3.0 — motor de evidencia
+
+Detalle completo en `docs/AUTOMATION.md`. En corto:
+
+- Cada fuente que menciona un evento deja **evidencia** (`event_evidence`) con
+  su origen y autoridad. Los espejos de un mismo origen no cuentan dos veces.
+- Después de cada ingesta, el motor **reevalúa toda la cola vigente**: publica
+  lo confirmado (con evidencia de las últimas 72 h), descarta lo académico,
+  vence lo pasado, cancela ante una cancelación explícita y manda a una persona
+  solo las contradicciones y lo que no tiene prueba suficiente, **con el motivo
+  escrito**.
+- La precisión de cada fuente se aprende contra fichas humanas (límite de
+  Wilson, con histéresis). La ticketera midió 23/23 sin errores.
+- Backtest: 0 de 115 eventos aprobados por una persona habrían sido
+  descartados; 1 contradicción real detectada (una reprogramación).
+- **Estado: modo sombra.** Registra lo que haría sin cambiar nada. La
+  activación (`automation_config.engine_mode = 'active'`) queda en manos del
+  dueño.
+
+Cartelera pública al 02-10 (antes de activar): 3 hoy, 6 este fin de semana,
+7 en 7 días, 11 en 14 días; 43 vigentes esperando en la cola.
+
 ## Buscadores
 
 - Dirección pública configurable con `NEXT_PUBLIC_SITE_URL` (si falta o es
