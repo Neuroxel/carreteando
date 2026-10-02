@@ -99,9 +99,34 @@ select * from public.ingestion_source_runs order by started_at desc limit 20;
 select id, last_success_at, next_check_at, consecutive_failures from public.event_sources;
 ```
 
-**Publicar sin revisión** exige las cuatro condiciones juntas: fuente oficial de
-un solo lugar conocido, fecha de un campo estructurado (no leída de una frase),
-hora de noche, y que no exista ya la misma noche en el mismo lugar.
+**Publicar sin revisión** depende del nivel de la fuente (ver §9b): el nivel A
+(calendario oficial del local) exige fecha estructurada, hora de noche y que no
+exista ya la misma noche; el nivel B (ticketera de un local conocido) exige
+además que el año escrito y el día de la semana coincidan con la fecha y que la
+hora sea ≥ 18:00. Los niveles C y D nunca publican solos.
+
+### Mapa de fuentes (octubre 2026)
+
+```
+                        ┌──────────────────────────────┐
+  Nivel A  (auto)       │ Parque Cultural · Bar Cinzano│──┐
+                        └──────────────────────────────┘  │
+                        ┌──────────────────────────────┐  │   ┌─────────────┐
+  Nivel B  (estricto)   │ 20 carteleras Portaldisc     │──┼──▶│ despachador │
+                        └──────────────────────────────┘  │   │  normaliza  │
+                        ┌──────────────────────────────┐  │   │  clasifica  │──▶ público
+  Nivel C  (revisión)   │ Valpo Cultura · USM · 2 munis│──┤   │  deduplica  │──▶ cola
+                        └──────────────────────────────┘  │   │  decide     │──▶ descartado
+  Editorial (curado)      selección importada a mano  ────┘   └─────────────┘
+  Comunidad (/publicar)   siempre a la cola privada
+  Nivel D  Instagram      Apify PAUSADO, nunca publicaba solo
+  Manual                  UV (anti-bots), PUCV, UPLA, Puntos de Cultura
+```
+
+El código vive en `lib/sources/`: `registry.ts` (qué fuentes, con qué
+nivel), `adapters/` (cómo se lee cada una: `wordpress`, `portaldisc`, `tribe`,
+`usm`), `relevance.ts` (clasificador) y `dispatcher.ts` (`decide()` es toda la
+política de publicación en 40 líneas).
 
 ## 6. Cómo correrlo
 
@@ -177,19 +202,37 @@ como quién estás moderando.
 Lo que falta (P1, después del 18): **MFA**. Hoy es un token largo y aleatorio,
 suficiente para dos personas de confianza, insuficiente para un equipo.
 
-## 9b. Qué se publica solo (la pregunta de Carlos)
+## 9b. ¿Está activado el scraping? (la pregunta de Carlos)
 
-De 24 fuentes, **sólo 2 publican sin revisión**, y ninguna es Instagram:
-Instagram no es fuente activa (el proveedor pago está pausado). Las dos son el
-calendario oficial del propio local, y necesitan las cuatro condiciones de §5
-juntas.
+«Scraping» son cinco mecanismos distintos. Estado al 2 de octubre de 2026:
 
-**Todo lo que manda la gente lo aprobamos nosotros.** Nunca se publica solo.
+| | Mecanismo | ¿Activo? | Última corrida | Frecuencia | Fuentes | Resultado | Costo |
+|---|---|---|---|---|---|---|---|
+| A | **Instagram vía Apify** | **No, pausado** | 14-09 | — | 4 cuentas | 2 corridas (13 y 14-09): 38 posts, 80 candidatos, **0 publicados** (todo iba a revisión) | US$ 0,08 total |
+| B | **Adaptadores de fuentes públicas** | **Sí** | hoy 11:00 | 3 veces al día (11, 17, 21 h) | 28 automáticas | 49 corridas desde el 16-09, 1 fallida (corregida) | 0 |
+| C | **Import editorial** | Sí | hoy | con cada corrida | selección curada | 106 eventos, todos aprobados | 0 |
+| D | **Aportes de la comunidad** | Sí | — | cuando alguien envía | `/publicar` | 3 pendientes; **nunca** se publica solo | 0 |
+| E | **Investigación manual** | A demanda | 02-10 | — | UV, PUCV, UPLA, Puntos de Cultura | registra fuentes, no eventos | 0 |
+
+Lo que te dijeron («está desactivado») es cierto **solo para Instagram**. El
+resto corre solo todos los días. Lo que faltó en septiembre no fue scraping,
+fue **moderación**: la cola no se revisó y se venció.
+
+**Qué se publica solo ahora:** nivel A (2 fuentes) y la parte inequívoca del
+nivel B (ticketera). Todo lo demás pasa por la cola. Instagram, aunque se
+reactive, **nunca** publica solo.
+
+**Todo lo que manda la gente lo aprobamos nosotros.**
 
 Contra flood, sin captcha: 3 envíos por hora por IP, 150 sin revisar por día,
 duplicados por huella durante 7 días, cuerpo cortado a 16 KB, campo trampa y
 RLS. Lo peor que puede pasar es una cola privada con basura. El detalle está en
 `docs/private/MODERACION.md`.
+
+**¿Reactivar Apify?** Solo como experimento acotado y con aprobación del dueño:
+lista corta de cuentas que no tengan otra fuente pública, tope de gasto por
+corrida (ya está en el código: US$ 1), y todo a revisión. Hoy no se justifica:
+las 80 candidaturas que trajo no terminaron en ninguna publicación.
 
 ## 10. Respaldos
 
@@ -216,9 +259,12 @@ se ensaye, considérala sin verificar. Es un P1.
 Está en `CURRENT_STATE.md` §Limitaciones y en `PRODUCT_BACKLOG.md` con
 prioridades. Los tres que más pesan:
 
-1. Ningún lugar tiene imagen propia. Es el mayor límite visual del producto.
-2. No hay moderadores con nombre.
+1. **Rutina de moderación.** Sin alguien revisando la cola un par de veces por
+   semana, lo que no es nivel A/B se vence. El barrido diario evita que se
+   pudra; no lo reemplaza.
+2. Ningún lugar tiene imagen propia. Es el mayor límite visual del producto.
 3. Los tiles del mapa no aguantan escala pública.
+4. Sin MFA para moderadores.
 
 ## 12. Dónde está cada documento
 

@@ -150,7 +150,7 @@ export async function GET(request: Request) {
         .select('instagram_id')
         .eq('is_active', true)
         .eq('moderation_status', 'approved')
-        .gte('created_at', new Date(started).toISOString())
+        .gte('scraped_at', new Date(started).toISOString())
         .limit(100);
       const paths = (nuevos.data || []).map(
         (r: { instagram_id: string }) => `/evento/${encodeURIComponent(r.instagram_id)}`,
