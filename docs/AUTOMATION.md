@@ -162,6 +162,7 @@ base de artistas que se registren, ni volumen para moderar todo a mano.
 | **Volver a modo sombra** | `update automation_config set value = 'shadow' where key = 'engine_mode';` (sin desplegar) |
 | Correr el motor sin esperar | `/api/cron/automatizacion` (con pase) |
 | Repetir el backtest | `/api/cron/automatizacion?modo=backtest` (con pase); escribe en modo `backtest`, no cambia eventos |
+| Ver el snapshot público | `https://carreteando.vercel.app/api/snapshot` (versión, hora, eventos y lugares) |
 | Pruebas | `npm test` (`tests/evidencia.test.ts`, `tests/adaptadores-genericos.test.ts`) |
 
 ## Hacia dónde va: "Reclama este lugar"

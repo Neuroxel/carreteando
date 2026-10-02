@@ -256,6 +256,45 @@ Lo que te importa como moderador:
 - Para pausar el motor sin desplegar nada:
   `update automation_config set value = 'shadow' where key = 'engine_mode';`
 
+## 9d. Qué corre dónde y qué podría costar
+
+| Dónde | Qué | Cuánto cuesta hoy |
+|---|---|---|
+| **El teléfono** | Buscar, filtrar (fecha, ciudad, escena, precio), lista/mapa, conteos. JavaScript común sobre el snapshot que ya bajó | nada para nosotros |
+| **CDN de Vercel** | Portada, Explorar, fichas de eventos/lugares/zonas y `/api/snapshot`, ya generados y cacheados | incluido en el plan actual |
+| **Vercel + Supabase** | Ingesta 3 veces al día, motor de 7 reglas, escrituras (aportes, reportes, "cómo está ahora", moderación) y regenerar lo público (máximo cada 5 min o cuando algo cambia) | plan gratuito de ambos |
+| **Scrapers pagos** | ninguno; Apify está pausado | $0 |
+| **IA en tiempo de ejecución** | ninguna | $0 |
+
+**Por qué la ingesta no corre en el celular:** las fuentes no permiten
+leerse desde un navegador ajeno (CORS), algunas lecturas necesitan
+credenciales, nadie garantiza que alguien abra la app justo a la hora, gastaría
+batería y datos del usuario, y cada teléfono podría llegar a una cartelera
+distinta. Por eso hay **una** cartelera canónica en el servidor y los teléfonos
+solo la filtran.
+
+**Cómo fluye una visita:** el HTML de la portada ya trae el snapshot (eventos y
+lugares públicos). Desde ahí, cada toque es local: medido en producción, el
+recorrido Valparaíso → Esta noche → "rock" → Lugares → Mapa → Lista → borrar →
+escena → atrás ×2 hizo **0 peticiones de datos**. Antes, cada toque era un
+render en el servidor con 3 consultas a Supabase.
+
+Diseñado para mantenerse cerca de costo cero de infraestructura a la escala
+actual de la beta. No es una promesa de $0 permanente: si el tráfico crece
+mucho, lo primero que cuesta es el ancho de banda de la CDN y las imágenes.
+
+**Dónde está cada pieza:**
+
+- Snapshot público: `lib/snapshot.ts` (qué contiene) y `app/api/snapshot/route.ts`.
+- Filtros y búsqueda del teléfono: `components/ExploreClient.tsx`, `lib/events.ts`
+  (`filterEvents`, `coincideBusqueda`), `lib/escenas.ts`.
+- Cuándo se regenera lo público: `refrescarPublico()` en `lib/snapshot.ts`, que
+  llaman la ingesta, el motor y el panel de moderación.
+- **Datos viejos:** si la portada muestra "Estos datos tienen más de 6 horas",
+  revisa en `/admin` la última ingesta. Para forzar la regeneración, corre una
+  ingesta o aprueba algo en el panel. Los eventos pasados nunca reaparecen:
+  la fecha de hoy la calcula el teléfono.
+
 ## 10. Respaldos
 
 El plan Free de Supabase **no hace respaldos automáticos de ningún tipo**.
