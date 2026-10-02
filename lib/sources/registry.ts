@@ -1,5 +1,7 @@
 import { portaldiscCartelera } from './adapters/portaldisc';
 import { tribeEvents } from './adapters/tribe';
+import { jsonldEvents } from './adapters/jsonld';
+import { icsCalendar } from './adapters/ics';
 import { usmEventos } from './adapters/usm';
 import { wpDatedSlug, wpEventsList, wpNewsScan } from './adapters/wordpress';
 import type { Adapter, SourceDefinition } from './types';
@@ -10,6 +12,8 @@ export const ADAPTERS: Record<string, Adapter> = {
   [portaldiscCartelera.id]: portaldiscCartelera,
   [tribeEvents.id]: tribeEvents,
   [usmEventos.id]: usmEventos,
+  [jsonldEvents.id]: jsonldEvents,
+  [icsCalendar.id]: icsCalendar,
 };
 const portaldisc = (
   id: string,
@@ -187,6 +191,29 @@ export const SOURCES: SourceDefinition[] = [
     relevanceFilter: true,
     refreshHours: 48,
   },
+  {
+    // Segunda ticketera, independiente de Portaldisc: sus fichas publican
+    // schema.org/Event con fecha, zona horaria, ciudad y estado. Se leen solo
+    // las del sitemap cuyo slug nombra una comuna de la región, máximo 20 por
+    // corrida, y la ciudad se confirma con el propio JSON-LD.
+    id: 'ticketplus-region',
+    name: 'TicketPlus · eventos en la Región de Valparaíso',
+    sourceType: 'TICKET_PLATFORM',
+    adapter: jsonldEvents.id,
+    publicUrl: 'https://ticketplus.cl',
+    commune: 'Valparaíso',
+    zone: null,
+    trust: 'strict',
+    family: 'TICKET_PLATFORM',
+    tier: 'B',
+    accessMode: 'html',
+    refreshHours: 24,
+    config: {
+      sitemap: 'https://ticketplus.cl/sitemap.xml',
+      pattern: '/events/[^<]*(valparaiso|valpo|vina|quilpue|villa-alemana|concon|renaca|quillota|limache|olmue|la-calera|quintero|puchuncavi|maitencillo)',
+      maxPages: '20',
+    },
+  },
 ];
 /**
  * Fuentes públicas que vale la pena mirar a mano pero que no leemos con un
@@ -230,6 +257,24 @@ export const MANUAL_SOURCES: ManualSource[] = [
     family: 'UNIVERSITY_OFFICIAL',
     accessMode: 'manual',
     notes: 'Usa The Events Calendar pero estaba vacío al revisarlo (oct 2026). Si se llena, pasa al adaptador tribe-events.',
+  },
+  {
+    id: 'baburizza-agenda',
+    name: 'Museo Baburizza · agenda (ICS)',
+    publicUrl: 'https://www.museobaburizza.cl/agenda/?ical=1',
+    commune: 'Valparaíso',
+    family: 'CULTURAL_CENTER',
+    accessMode: 'manual',
+    notes: 'Tiene calendario ICS legible con el adaptador ics-calendar, pero en octubre de 2026 todo era diurno (talleres, seminarios). Activar si publica noches.',
+  },
+  {
+    id: 'eventbrite-valparaiso',
+    name: 'Eventbrite · Valparaíso',
+    publicUrl: 'https://www.eventbrite.cl/d/chile--valpara%C3%ADso/events/',
+    commune: 'Valparaíso',
+    family: 'TICKET_PLATFORM',
+    accessMode: 'manual',
+    notes: 'Publica schema.org/Event, pero sus términos prohíben la extracción automatizada. Solo consulta manual.',
   },
   {
     id: 'puntos-cultura',

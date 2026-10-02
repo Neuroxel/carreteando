@@ -3123,3 +3123,7 @@ body { background: var(--bg); }
 .escenas::-webkit-scrollbar { display: none; }
 .escenas .chip { white-space: nowrap; flex: 0 0 auto; }
 .chip-n { opacity: 0.7; font-variant-numeric: tabular-nums; margin-left: 0.2rem; }
+.auto-cifras { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.75rem; margin: 1rem 0; }
+.auto-cifras div { padding: 0.75rem; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 10px; }
+.auto-cifras dt { font-size: 0.8rem; opacity: 0.75; }
+.auto-cifras dd { margin: 0.2rem 0 0; font-size: 1.6rem; font-weight: 700; font-variant-numeric: tabular-nums; }

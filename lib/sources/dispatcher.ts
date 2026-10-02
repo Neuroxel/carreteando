@@ -176,6 +176,9 @@ export async function runSource(
     return true;
   });
   const venueId = source.venueSlug ? await lookupVenueId(db, source.venueSlug) : null;
+  // Una fuente que habla de muchos locales (ticketera, directorio): el lugar se
+  // reconoce solo si el nombre calza con uno del registro, en la misma ciudad.
+  const registro = source.venueSlug ? [] : await knownVenues(db);
   for (const candidate of unique) {
     // El nombre del local no dice nada del evento: "Teatro Mauri" haría pasar
     // por teatro cualquier cosa que ocurra ahí.
@@ -212,7 +215,7 @@ export async function runSource(
       date_text: candidate.date,
       event_time: candidate.time,
       venue: candidate.venue,
-      venue_id: venueId,
+      venue_id: venueId ?? venueByName(registro, candidate.venue, candidate.city),
       city: candidate.city,
       location: `${candidate.venue || source.name} · ${candidate.city}`,
       instagram_url: candidate.detailUrl,
@@ -258,6 +261,21 @@ export async function runSource(
   }
   report.durationMs = Date.now() - started;
   return report;
+}
+async function knownVenues(db: Db): Promise<{ id: number; name: string; city: string }[]> {
+  const { data } = await db.from('venues').select('id,name,city').eq('is_active', true).eq('moderation_status', 'approved').limit(1000);
+  return data || [];
+}
+export function venueByName(registro: { id: number; name: string; city: string }[], nombre: string | null, ciudad: string) {
+  if (!nombre) return null;
+  const n = normalizedTitle(nombre);
+  const hit = registro.find((v) => {
+    const r = normalizedTitle(v.name);
+    if (r === n) return true;
+    // Contención solo con nombres largos y en la misma ciudad: "Teatro" no basta.
+    return v.city === ciudad && Math.min(r.length, n.length) >= 10 && (r.includes(n) || n.includes(r));
+  });
+  return hit ? hit.id : null;
 }
 async function lookupVenueId(db: Db, slug: string): Promise<number | null> {
   const { data } = await db.from('venues').select('id').eq('slug', slug).limit(1);
@@ -314,7 +332,10 @@ export function evidenceRow(eventId: number, source: SourceDefinition, candidate
       start_time: candidate.time,
       venue: candidate.venue,
       city: candidate.city,
-      status: statusFromText(`${candidate.title} ${candidate.description || ''}`),
+      status:
+        candidate.status && candidate.status !== 'scheduled'
+          ? candidate.status
+          : statusFromText(`${candidate.title} ${candidate.description || ''}`),
       date_verified: candidate.confidence === 'high',
     },
     p_structured: ESTRUCTURADOS.has(source.adapter) || candidate.confidence === 'high',

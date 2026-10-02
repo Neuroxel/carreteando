@@ -236,7 +236,15 @@ las 80 candidaturas que trajo no terminaron en ninguna publicación.
 
 ## 9c. Automatización 3.0 (motor de evidencia)
 
-Lee `docs/AUTOMATION.md`. Lo que te importa como moderador:
+Lee `docs/AUTOMATION.md` (sección "Cómo mantener esto"). En corto:
+
+**Dónde corre.** `pg_cron` en Supabase llama 3 veces al día a
+`/api/cron/scrape` en producción (Vercel). Ahí corren los adaptadores, se
+guarda la evidencia y el evaluador de `lib/sources/evidence.ts` aplica **siete
+reglas fijas**. **No hay IA, LLM ni embeddings**: es TypeScript común, y cada
+decisión guarda qué regla la tomó.
+
+Lo que te importa como moderador:
 
 - En `/admin`, la sección **"Necesitan una persona"** está ordenada por
   urgencia (contradicciones, hoy, mañana) y cada ítem dice **por qué** el

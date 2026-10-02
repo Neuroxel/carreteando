@@ -9,81 +9,76 @@ En septiembre la ingesta funcionó todos los días, pero 19 de 24 fuentes
 mandaban todo a revisión y nadie revisó. 193 eventos se vencieron esperando.
 El problema no era encontrar eventos: era decidir sobre ellos.
 
-## Cómo piensa
+## Dónde corre (sin IA)
 
-Un evento no es "una fila de una fuente". Es todo lo que distintas fuentes
-afirman sobre él. Cada vez que una fuente lo menciona deja **evidencia**
-(`event_evidence`): qué dice (título, fecha, hora, lugar, estado), desde dónde
-(`origin_group`), con qué autoridad, y cuándo se leyó.
+```
+Supabase pg_cron (11:00, 17:00 y 21:00 de Chile)
+  → GET https://carreteando.vercel.app/api/cron/scrape   (pase de un solo uso)
+    → adaptadores de fuentes        lib/sources/adapters/*
+    → evidencia                     tabla event_evidence
+    → evaluador determinista        lib/sources/evidence.ts  (7 reglas)
+    → publicar / descartar / persona  (lib/sources/automation.ts aplica)
+```
 
-### Autoridad (de mayor a menor)
+**No hay IA, ni modelos de lenguaje, ni embeddings.** El evaluador es
+TypeScript común: comparaciones de fechas, nombres y niveles fijos. La misma
+entrada da siempre la misma salida, y cada decisión guarda la regla que la
+tomó.
 
-| Autoridad | Quién | Ejemplos |
+## Las 7 reglas
+
+| # | Regla | Resultado |
 |---|---|---|
-| `human` | Ficha revisada por una persona | selección editorial, moderador |
-| `first_party` | El que organiza o el lugar | calendario oficial del local, del artista, de la universidad |
-| `transactional` | Quien vende la entrada | ticketera |
-| `directory` | Agenda de terceros | Valpo Cultura, municipios |
-| `community` | Aporte del público | `/publicar` |
-| `lead` | Pista sin confirmar | post o comentario en redes |
+| 1 | Fuente oficial (nivel A), estructurada, lugar conocido, sin contradicción | publicar |
+| 2 | Ticketera (nivel B), fecha verificada (año y día de la semana, o estructurada), hora escrita, lugar conocido | publicar |
+| 3 | Dos orígenes fuertes e independientes coinciden | publicar |
+| 4 | Pasado, duplicado (misma ficha o mismo evento ya publicado), académico explícito, fuera de la región | vencer / descartar |
+| 5 | Una fuente fuerte dice "cancelado" | cancelar |
+| 6 | Contradicción en fecha, lugar, hora (más de 90 min) o reprogramación | persona; si estaba publicado, se retira |
+| 7 | Todo lo demás | persona, con el motivo escrito |
 
-Un moderador con nombre siempre manda: la automatización **nunca cambia** una
-fila que una persona tocó; solo anota la duda.
+Condiciones comunes para publicar: evidencia leída en las **últimas 72 horas**
+(caso real: un show se movió del 9 al 11 y la cola guardaba la fecha vieja) y
+hora no diurna (antes de las 17:00 decide una persona).
 
-### Orígenes, no URLs
+**Datos críticos** (deben ser correctos): que el evento exista, fecha, lugar,
+ciudad, cancelación. **No críticos** (pueden faltar o estar incompletos):
+estilo, ambiente, precio, imagen, descripción. Nunca se rechaza un evento real
+porque falte el estilo o el precio.
 
-Dos URLs no son dos fuentes. Las 20 carteleras de la ticketera son un origen
-(`portaldisc`); una ficha editorial copiada de la ticketera también. Un
-directorio puede estar copiando a cualquiera, así que **nunca cuenta como
-confirmación independiente**. Confirmación independiente = dos orígenes
-distintos con autoridad `first_party` o `transactional`.
+**Niveles fijos**, declarados en `lib/sources/registry.ts`: A oficial,
+B ticketera, C directorio o institución, D red social o pista. No cambian
+solos. La precisión medida por fuente se muestra en el panel como
+diagnóstico, para revisarla con datos reales de octubre.
 
-### Decisiones
+**Lo editado por una persona** no se cambia nunca. Si después una fuente con
+autoridad contradice un dato crítico, el evento se **retira** a revisión (no
+se corrige solo): la persona decide el valor correcto.
 
-`evaluateEventEvidence()` en `lib/sources/evidence.ts`, función pura:
+### Autoridad y orígenes
 
-| Decisión | Cuándo |
+| Autoridad | Quién |
 |---|---|
-| `AUTO_EXPIRE` | la fecha pasó |
-| `AUTO_CANCEL` | una fuente con autoridad escribe "cancelado/suspendido" |
-| `REVIEW_CONFLICT` | fuentes con autoridad discrepan en fecha, lugar o hora (>90 min); la fuente cambió la fecha; una cartelera completa dejó de mostrarlo; reprogramación. Si estaba publicado, **se retira** hasta que una persona lo vea |
-| `AUTO_REJECT` | señal académica explícita (seminario, taller, charla…); misma ficha que otra fila; ya publicado con otro título; fuera de la región |
-| `AUTO_PUBLISH` / `AUTO_PROMOTE_FROM_REVIEW` | ver abajo |
-| `REVIEW_INSUFFICIENT` | todo lo demás, con el motivo escrito |
+| `first_party` | el local, el organizador, el artista, la universidad |
+| `transactional` | la ticketera que vende la entrada |
+| `directory` | agendas de terceros, municipios |
+| `community` | aportes del público |
+| `lead` | posts y pistas de redes |
+| `human` | ficha revisada por una persona (solo para medir, no para decidir) |
 
-**Publica sin persona** si se cumple una de estas, con evidencia leída en las
-**últimas 72 horas**:
+Dos URLs no son dos fuentes: las 20 carteleras de Portaldisc son un solo
+origen. Confirmación independiente = dos orígenes distintos con autoridad
+`first_party` o `transactional`.
 
-- A. Calendario oficial del lugar, estructurado, fuente con nivel `auto`,
-  lugar conocido, no diurno.
-- B. Ticketera con nivel `strict` o mejor, año y día de la semana coinciden
-  con la fecha, lugar conocido, hora ≥ 18:00.
-- C. Dos orígenes independientes coinciden.
-- D. Ficha humana sin contradicción.
+### Lo que se sacó o se dejó para después
 
-Contradicciones no se promedian. Falla hacia lo privado.
-
-## Confianza que se aprende
-
-Por origen, se compara lo que dijo la fuente con lo que una persona verificó:
-
-- **Coincide** (fecha y lugar) → confirmado.
-- **Discrepa** cuando la fuente lo dijo antes o hasta 2 días después de la
-  ficha → error grave.
-- **Discrepa** más de 2 días después → no se cuenta (puede ser una
-  reprogramación real; la detecta el motor de contradicciones).
-
-Precisión = **límite inferior de Wilson al 95 %**: 2 de 2 no es 100 %.
-
-| Nivel | Para subir | Para bajar |
+| Mecanismo | Estado | Por qué |
 |---|---|---|
-| `review` → `strict` | ≥ 15 verificados, límite ≥ 80 %, ≤ 3 % errores graves | — |
-| `strict` → `auto` | ≥ 40 verificados, límite ≥ 95 %, 0 errores graves | — |
-| `auto` → `strict` | — | límite < 90 % o cualquier error grave (con ≥ 10) |
-| `strict` → `review` | — | límite < 70 % o > 6 % errores graves (con ≥ 10) |
-| cualquiera → `review` | — | la fuente falló 2 veces seguidas o cambió de forma |
-
-Cada nivel tiene techo: A → `auto`, B y C → `strict`, D → `review`.
+| Subir y bajar niveles automáticamente según la precisión | quitado de las decisiones; queda como diagnóstico | no resolvía un fallo observado; se revisa con datos de octubre |
+| "La cartelera ya no lo muestra" → retirar | diferido | ningún caso real lo pidió |
+| Publicar por la ficha humana | quitado | lo humano ya está publicado; no aporta |
+| Comentarios de redes | no se hace | ruido, riesgo de plataforma, sin acceso legítimo |
+| Grafo de promotores, artistas y colectivos | diferido | hasta que las fuentes muestren que hace falta |
 
 ## Backtest (2 de octubre de 2026)
 
@@ -152,6 +147,22 @@ Nunca más seguido.
 
 Carreteando usa una mezcla porque no tiene ninguna de sus ventajas: ni una
 base de artistas que se registren, ni volumen para moderar todo a mano.
+
+## Cómo mantener esto
+
+| Quiero… | Dónde |
+|---|---|
+| Ver o cambiar las reglas | `lib/sources/evidence.ts`, función `evaluateEventEvidence` (unas 110 líneas) |
+| Ver cómo se aplican | `lib/sources/automation.ts`, función `reevaluate` |
+| Ver los adaptadores | `lib/sources/adapters/` (`wordpress`, `portaldisc`, `tribe`, `usm`, `jsonld`, `ics`) |
+| **Agregar una fuente** | una entrada en `SOURCES` de `lib/sources/registry.ts` con `family`, `tier`, `adapter` y `config`. Si publica Event en JSON-LD o tiene `.ics`, no hace falta código nuevo |
+| **Desactivar una fuente** | sacarla de `SOURCES` (o pasarla a `MANUAL_SOURCES`), o en la base: `update event_sources set active = false where id = '…';` |
+| Ver por qué se publicó un evento | panel `/admin` (cada evento muestra su regla y evidencia), o `select * from automation_decisions where event_id = …;` y `select * from event_evidence where event_id = …;` |
+| Deshacer una decisión | la columna `previous` de `automation_decisions` guarda el estado anterior; se aprueba o retira desde el panel |
+| **Volver a modo sombra** | `update automation_config set value = 'shadow' where key = 'engine_mode';` (sin desplegar) |
+| Correr el motor sin esperar | `/api/cron/automatizacion` (con pase) |
+| Repetir el backtest | `/api/cron/automatizacion?modo=backtest` (con pase); escribe en modo `backtest`, no cambia eventos |
+| Pruebas | `npm test` (`tests/evidencia.test.ts`, `tests/adaptadores-genericos.test.ts`) |
 
 ## Hacia dónde va: "Reclama este lugar"
 

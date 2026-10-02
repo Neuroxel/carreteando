@@ -443,7 +443,7 @@ export default async function Admin({
   const actor = await currentActor();
   const db = getAdminDb();
   const hace30 = new Date(Date.now() - 30 * 86_400_000).toISOString();
-  const [decisiones, modo, vencidosEsperando, masAntiguo] = await Promise.all([
+  const [decisiones, modo, vencidosEsperando] = await Promise.all([
     db
       ?.from('automation_decisions')
       .select('event_id,decision,applied,mode,created_at')
@@ -458,12 +458,6 @@ export default async function Admin({
       .eq('disposition', 'expired')
       .eq('disposition_note', 'La fecha pasó sin que nadie lo revisara.')
       .gte('disposition_at', hace30),
-    db
-      ?.from('events')
-      .select('scraped_at')
-      .eq('disposition', 'review')
-      .order('scraped_at')
-      .limit(1),
   ]);
   const [queue, events, audit, metrics, venues, sourceRows, runs] = await Promise.all([
     db
@@ -637,7 +631,8 @@ export default async function Admin({
             decisions={decisiones?.data || []}
             sources={sourceRows?.data || []}
             expiredWaiting={vencidosEsperando?.count || 0}
-            oldestPending={masAntiguo?.data?.[0]?.scraped_at ? String(masAntiguo.data[0].scraped_at) : null}
+            publicNow={current.filter((r) => r.disposition === 'public').length}
+            reviewNow={current.filter((r) => r.disposition === 'review').length}
           />
           <h2>Estado del producto</h2>
           <AdminStats

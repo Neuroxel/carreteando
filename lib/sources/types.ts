@@ -85,6 +85,8 @@ export interface EventCandidate {
   reasons: string[];
   categories?: string[];
   endTime?: string | null;
+  /** Estado escrito por la fuente en forma estructurada (schema.org eventStatus, ICS STATUS). */
+  status?: 'scheduled' | 'cancelled' | 'postponed';
 }
 export interface AdapterResult {
   itemsFound: number;
