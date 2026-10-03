@@ -1,4 +1,82 @@
-# Cobertura de fuentes — auditoría del 3 de octubre de 2026
+# Cobertura de fuentes — 3 de octubre de 2026
+
+## Cierre del sábado 3 (tarde)
+
+| | Mañana (02:30) | Cierre (tarde) |
+|---|---|---|
+| Públicos hoy | 4 | **10** (7 de noche) |
+| En revisión hoy | 8 | 3 |
+| Públicos vigentes | 55 | **86** |
+| En revisión vigentes | 41 | 32 |
+| Fin de semana (sáb–dom) | — | 14 |
+| Próximos 7 / 14 días | — | 23 / 35 |
+| Con afiche oficial | — | 98 % |
+| Familia más grande | — | PortalTickets, 55 % |
+
+Lo que cambió en la tarde:
+
+- **Lo diurno con señal de salida ya no espera**: un festival, un carnaval o
+  una tarde de rock (Café Rock 12:00) sigue las mismas reglas que lo
+  nocturno. Lo diurno sin señal sigue yendo a una persona.
+- **Mil Tambores, completo y desde la fuente oficial**: Pasacalles barriales
+  (7 territorios, 59 agrupaciones, sábado desde las 12:00), Fiesta oficial
+  (Club Segundo Piso, 22:00) y Gran Pasacalle Latinoamericano (domingo
+  10:00). Comparten el momento `mil-tambores-2026` y usan el arte oficial.
+- **Puente manual de Passline**, solo con lo corroborado por más de una fuente:
+  Eduardo Gatti + Orquesta Sinfónica Popular (Quilpué, 20:00) y Pulso
+  Naranja (Quinta Vergara, 18:00). Columbia (Las Salinas) y Tributo Grupo
+  Firme (El Parque Quilpué) quedan **sin verificar**: solo aparecen en un
+  fragmento del índice de búsqueda.
+- **Locales resueltos con evidencia pública**: aprobados Aula Magna USM,
+  Teatro IPA, Cine Arte Viña, Valparaíso Profundo, Enjoy Viña y Barbones
+  Comedy (venta vigente en ticketera o dirección publicada en prensa);
+  descartados 4 duplicados y 2 estadios. Los alias reconocen las distintas
+  formas de escribir el mismo local.
+- **Correcciones**: José Alfredo Fuentes pasa a su fecha real (11-oct 18:00);
+  FALSOCLUB a 23:00. La ficha de la ticketera decía 19:00 en el campo de
+  fecha, pero su descripción dice 23:00–04:00, igual que el afiche.
+  *Limitación conocida:* la hora estructurada de PortalTickets a veces es la
+  de puertas o de venta, no la del show.
+- **Decididos a mano hoy**: Octubrazo publicado (festival de 6 bandas,
+  16:00–21:30); Orquesta Cinzano publicada (agenda oficial, hora por
+  confirmar); "Programación Octubre" de Valparaíso Profundo rechazada (es la
+  agenda del mes, no un evento).
+- **Quedan en revisión hoy, con su motivo**: "Contar el mar(itorio)" (muestra
+  de museo, 10:00); "La Contadora de Películas" en el Aula Magna (solo el
+  directorio lo confirma); Patricia Maldonado en Veranda Hotel (local no
+  verificado).
+
+### Tres cosas distintas que no hay que confundir
+
+- **A. Lo conocido pero retenido** (hoy, 3): está en la cola con su motivo.
+- **B. Lo que no descubrimos**: casi todo está en **Passline**, que bloquea la
+  lectura automática; el resto son locales que solo publican en Instagram.
+- **C. Lugares abiertos sin evento especial**: 99 lugares publicados. La
+  portada los ofrece como "lugares para salir", **sin decir "abierto ahora"**
+  porque no hay horarios verificados.
+
+## Piloto de Instagram: plan, no activado
+
+Universo real: **16 locales de la zona núcleo (21 en la región)** que solo
+existen en Instagram (lista en `docs/FUENTES_LOCALES.md`), más 4–9
+productoras y colectivos que solo publican ahí.
+
+| | Estimación |
+|---|---|
+| Cuentas | 25 |
+| Frecuencia | 1 vez al día, posts de las últimas 48 h |
+| Duración | 14 días |
+| Posts leídos | ~1.000–1.400 |
+| Costo | **US$ 2–3** (septiembre: US$ 0,08 por 38 posts); tope duro de US$ 10 |
+| Candidatos | ~100, de los cuales ~30–50 eventos únicos |
+| Duplicados con ticketeras | bajos: se eligen cuentas sin ticketera |
+| Carga de revisión | todo a revisión (nivel D, nunca publica solo): ~2–3 h en 2 semanas |
+
+**Recomendación:** hacerlo después de la revisión de Carlos y con aprobación
+explícita del dueño. Medir el costo por evento único publicado. Si no supera
+a fuentes gratuitas, se apaga.
+
+## Auditoría de la madrugada del 3 de octubre
 
 Pregunta del dueño: el sábado 3 la portada mostraba 3 eventos. ¿Es lo que
 hay, lo que está atascado o lo que no encontramos?
