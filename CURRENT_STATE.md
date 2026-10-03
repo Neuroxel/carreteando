@@ -125,6 +125,19 @@ Detalle y mantenimiento en `docs/AUTOMATION.md`.
 Cartelera pública al 02-10: 3 hoy, 6 este fin de semana, 7 en 7 días, 11 en
 14 días; 44 vigentes en cola.
 
+## Cobertura (3 de octubre)
+
+Ver `docs/COBERTURA.md`. Motor **activo** desde el 3-oct 02:22 (lo activó
+el dueño). Primera ingesta activa: 33 publicados desde la cola, 3
+descartados, 1 retirado por contradicción (José Alfredo). Públicos
+vigentes: 23 → 55.
+
+Fuentes nuevas: listado regional de PortalTickets (82 eventos, una
+página), Evently y PuntoTicket (schema.org/Event). Manuales: Passline
+(Cloudflare 403, no se salta), Vesti, Mil Tambores, Eventbrite. Los locales
+que nombra una ticketera y no están en el registro quedan propuestos para
+aprobarse una vez.
+
 ## Lectura pública: el teléfono filtra, el servidor casi no trabaja
 
 - Portada y Explorar son **páginas estáticas** que se regeneran como mucho

@@ -295,6 +295,18 @@ mucho, lo primero que cuesta es el ancho de banda de la CDN y las imágenes.
   ingesta o aprueba algo en el panel. Los eventos pasados nunca reaparecen:
   la fecha de hoy la calcula el teléfono.
 
+## 9e. Cobertura y locales propuestos
+
+`docs/COBERTURA.md` tiene la auditoría del 3-oct. Lo que te toca:
+
+- En `/admin`, sección Lugares: aparecen **locales propuestos** por las
+  ticketeras ("Propuesto automáticamente porque una ticketera vende un
+  evento ahí"). Confirma que existen, su dirección y tipo, y apruébalos:
+  desde ahí sus eventos se publican solos con la regla 2.
+- **Passline** no se puede leer automáticamente (bloqueo de Cloudflare). Una
+  pasada manual por semana sobre la región, y lo valioso entra por
+  `/publicar` o la selección editorial.
+
 ## 10. Respaldos
 
 El plan Free de Supabase **no hace respaldos automáticos de ningún tipo**.

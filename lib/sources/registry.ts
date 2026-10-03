@@ -141,7 +141,8 @@ export const SOURCES: SourceDefinition[] = [
     family: 'MUNICIPALITY',
     tier: 'C',
     accessMode: 'api',
-    refreshHours: 48,
+    // 124 avisos leídos y 0 eventos nuevos en la semana del 26-sep al 3-oct.
+    refreshHours: 120,
     config: { postType: 'posts', perPage: '30' },
   },
   {
@@ -156,7 +157,8 @@ export const SOURCES: SourceDefinition[] = [
     family: 'MUNICIPALITY',
     tier: 'C',
     accessMode: 'api',
-    refreshHours: 48,
+    // 124 avisos leídos y 0 eventos nuevos en la semana del 26-sep al 3-oct.
+    refreshHours: 120,
     config: { postType: 'avisos', perPage: '30' },
   },
   {
