@@ -3,7 +3,7 @@
 **Este documento es la única verdad vigente.** Los informes de fase anteriores
 son evidencia histórica y pueden contradecirlo; si difieren, manda este.
 
-Última verificación: **2 de octubre de 2026**.
+Última verificación: **3 de octubre de 2026, tarde** (release candidate `release/october-final`).
 
 ## Qué es
 
@@ -125,7 +125,24 @@ Detalle y mantenimiento en `docs/AUTOMATION.md`.
 Cartelera pública al 02-10: 3 hoy, 6 este fin de semana, 7 en 7 días, 11 en
 14 días; 44 vigentes en cola.
 
-## Cobertura (3 de octubre)
+## Release candidate (3 de octubre)
+
+- Rama `release/october-final` = `main` (datos, fuentes, motor, snapshot)
+  + `feat/frontend-final-october` (frontend final de Astra). **No está en
+  `main` todavía**: es la versión que revisa Carlos, en un solo preview.
+- Motor de 7 reglas **activo** (lo activó el dueño el 3-oct).
+- Hoy (sábado 3): **10 públicos** (7 de noche), 3 en revisión con su
+  motivo. Fin de semana: 14. Próximos 7 / 14 días: 23 / 35.
+- Vigentes: **86 públicos**, 32 en revisión, 98 % con afiche oficial.
+  Familia más grande: PortalTickets, 55 %.
+- Lugares publicados: **99**; 43 con Instagram, 20 con web, 34 con fuente de
+  programación, **0 con horario de sábado verificado**.
+- Mil Tambores representado desde la fuente oficial (pasacalles, fiesta,
+  gran pasacalle) con el momento `mil-tambores-2026`.
+
+Detalle en `docs/COBERTURA.md`, `docs/FUENTES_LOCALES.md` y `ROADMAP.md`.
+
+## Cobertura (3 de octubre, madrugada)
 
 Ver `docs/COBERTURA.md`. Motor **activo** desde el 3-oct 02:22 (lo activó
 el dueño). Primera ingesta activa: 33 publicados desde la cola, 3

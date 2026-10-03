@@ -1,4 +1,30 @@
-# Carreteando — handoff final frontend para Carlos y Claude/Opus
+# Carreteando — release candidate de octubre: la única URL a revisar
+
+**Revisa solo esta URL:** https://carreteando-git-release-october-final-neuroxel.vercel.app
+
+Es la rama `release/october-final`: el frontend final de Astra
+(`feat/frontend-final-october`, 399b7a2) integrado sobre `main` con todo lo
+de datos, fuentes, motor y snapshot. La URL sigue a la rama: cada commit
+nuevo la actualiza. Está protegida por Vercel: entra con tu cuenta del
+equipo `neuroxel`.
+
+Integración (3-oct):
+
+- Fusión sin conflictos de texto. Se conservaron los adaptadores nuevos, los
+  dominios de imágenes, `placement`, `moment`, alias de locales, el motor
+  activo y el snapshot del lado del teléfono.
+- Las dos observaciones de datos del informe de Astra quedaron resueltas:
+  **José Alfredo Fuentes** ya no aparece el 3-oct (su fecha real es el
+  11-oct, 18:00) y **FALSOCLUB** pasó a 23:00, que es lo que dicen el afiche y
+  la descripción de la ticketera.
+- **Para evaluar**: la búsqueda quedó detrás de "Buscar y filtrar". Fíjate si
+  alguien que llega por primera vez la descubre. Es una decisión de diseño a
+  validar, no un error.
+
+---
+
+## Handoff del frontend (Astra)
+
 
 El frontend nuevo tiene una sola fuente canónica: `feat/frontend-final-october`.
 

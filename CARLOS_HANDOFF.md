@@ -307,6 +307,26 @@ mucho, lo primero que cuesta es el ancho de banda de la CDN y las imágenes.
   pasada manual por semana sobre la región, y lo valioso entra por
   `/publicar` o la selección editorial.
 
+## 9f. Release candidate para tu revisión
+
+**Revisas una sola cosa:** la rama `release/october-final` en su preview de
+Vercel (la URL está en `docs/CARLOS_FRONTEND_REVIEW.md`). Trae el frontend
+final de Astra encima de todo lo de datos. No compares builds separados.
+
+Qué mirar en especial:
+
+1. **Búsqueda**: Astra la puso detrás de "Buscar y filtrar". Prueba si alguien
+   que llega por primera vez la encuentra. Es una decisión de diseño a
+   validar, no un error.
+2. **Densidad del sábado**: 10 planes hoy y los lugares disponibles aunque no
+   tengan evento.
+3. **Mil Tambores**: tres entradas oficiales relacionadas.
+4. `/admin`: "Necesitan una persona", locales propuestos y el panel de
+   automatización.
+
+Lo que falta y es tuyo: aprobar los 9 locales propuestos cuando tengas su
+dirección (`docs/FUENTES_LOCALES.md`) y una pasada semanal por Passline.
+
 ## 10. Respaldos
 
 El plan Free de Supabase **no hace respaldos automáticos de ningún tipo**.
