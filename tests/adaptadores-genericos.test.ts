@@ -138,3 +138,16 @@ test('un local de una ticketera se reconoce por nombre solo si calza de verdad',
   assert.equal(venueByName(registro, 'Teatro Quilpué', 'Viña del Mar'), 2, 'nombre exacto vale en cualquier ciudad');
   assert.equal(venueByName(registro, null, 'Viña del Mar'), null);
 });
+
+test('Evently: comuna desde la dirección, sin confundir la región con la ciudad', async () => {
+  const { ciudadEnTexto, fechaDeSlug, enlacesDeListas } = await import('../lib/sources/adapters/jsonld');
+  assert.equal(ciudadEnTexto('Av. Borgoño 12041, Viña del Mar, Región de Valparaíso, Chile'), 'Viña del Mar');
+  assert.equal(ciudadEnTexto('Blanco 1253, Valparaíso, Región de Valparaíso, Chile'), 'Valparaíso');
+  assert.equal(ciudadEnTexto('Estadio Mirasol, Algarrobo, Valparaíso, Chile'), null);
+  assert.equal(ciudadEnTexto('Club Patio, La Ligua, Región de Valparaíso'), null);
+  assert.equal(ciudadEnTexto('Linderos, Buin, Región Metropolitana'), null);
+  assert.equal(fechaDeSlug('https://x.evently.cl/ENDO-EN-LA-LIGUA-CLUB-PATIO-03-10-2026'), '2026-10-03');
+  const html = '<a href="https://a.evently.cl/Fiesta-Vina-01-10-2026">x</a><a href="https://b.evently.cl/Show-Santiago-10-10-2026">y</a><a href="https://c.evently.cl/Noche-Valparaiso-10-10-2026">z</a><a href="https://app.evently.cl/sign-in">no</a>';
+  const links = enlacesDeListas([html], /^https:\/\/(?!app\.|admin\.)[a-z0-9-]+\.evently\.cl\/[A-Za-z0-9-]{6,}$/, '2026-10-03', 5);
+  assert.deepEqual(links, ['https://c.evently.cl/Noche-Valparaiso-10-10-2026', 'https://b.evently.cl/Show-Santiago-10-10-2026']);
+});

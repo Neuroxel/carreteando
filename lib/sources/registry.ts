@@ -207,11 +207,41 @@ export const SOURCES: SourceDefinition[] = [
     family: 'TICKET_PLATFORM',
     tier: 'B',
     accessMode: 'html',
+    relevanceFilter: true,
     refreshHours: 24,
     config: {
       sitemap: 'https://ticketplus.cl/sitemap.xml',
       pattern: '/events/[^<]*(valparaiso|valpo|vina|quilpue|villa-alemana|concon|renaca|quillota|limache|olmue|la-calera|quintero|puchuncavi|maitencillo)',
       maxPages: '20',
+    },
+  },
+  {
+    // Ticketera de fiestas y productoras independientes. Sus fichas publican
+    // schema.org/Event; no tiene sitemap de eventos, así que se leen su
+    // portada y las páginas de productoras de la región que ya conocemos.
+    id: 'evently-region',
+    name: 'Evently · productoras y eventos en la región',
+    sourceType: 'TICKET_PLATFORM',
+    adapter: jsonldEvents.id,
+    publicUrl: 'https://evently.cl',
+    commune: 'Valparaíso',
+    zone: null,
+    trust: 'strict',
+    family: 'TICKET_PLATFORM',
+    tier: 'B',
+    accessMode: 'html',
+    // Vende de todo (deportes, ferias): lo diurno sin señal de salida no entra.
+    relevanceFilter: true,
+    refreshHours: 24,
+    config: {
+      listUrls: [
+        'https://evently.cl/?c=CL&lang=es',
+        'https://fiestabandida.evently.cl/',
+        'https://openplazaconcon.evently.cl/',
+        'https://caferock.evently.cl/',
+      ].join(','),
+      linkPattern: '^https://(?!app\\.|admin\\.)[a-z0-9-]+\\.evently\\.cl/[A-Za-z0-9-]{6,}$',
+      maxPages: '25',
     },
   },
 ];
@@ -266,6 +296,33 @@ export const MANUAL_SOURCES: ManualSource[] = [
     family: 'CULTURAL_CENTER',
     accessMode: 'manual',
     notes: 'Tiene calendario ICS legible con el adaptador ics-calendar, pero en octubre de 2026 todo era diurno (talleres, seminarios). Activar si publica noches.',
+  },
+  {
+    id: 'passline-region',
+    name: 'Passline · eventos en la región',
+    publicUrl: 'https://www.passline.com/busqueda?cat=93',
+    commune: 'Valparaíso',
+    family: 'TICKET_PLATFORM',
+    accessMode: 'blocked',
+    notes: 'Cloudflare responde 403 con desafío a un agente identificado y el sitemap también. No se salta. Revisión manual semanal de la región; lo valioso entra por /publicar o la selección editorial.',
+  },
+  {
+    id: 'vesti-region',
+    name: 'Vesti · eventos',
+    publicUrl: 'https://vesti.cl/events',
+    commune: 'Valparaíso',
+    family: 'TICKET_PLATFORM',
+    accessMode: 'manual',
+    notes: 'La cartelera se arma con JavaScript desde una API no pública; el sitemap no lista eventos. Solo revisión manual.',
+  },
+  {
+    id: 'miltambores',
+    name: 'Carnaval Mil Tambores · programación oficial',
+    publicUrl: 'https://miltambores.cl/programacion-2026/',
+    commune: 'Valparaíso',
+    family: 'COLLECTIVE',
+    accessMode: 'manual',
+    notes: 'Fuente de primera parte. Tiene WordPress con tipo "programacion", pero el programa 2026 está en una página HTML sin datos estructurados. Revisar a mano cada año (2–4 de octubre en 2026).',
   },
   {
     id: 'eventbrite-valparaiso',
