@@ -115,7 +115,7 @@ export async function GET(request: Request) {
     // Con el motor activo, la ingesta solo reúne evidencia y el motor decide;
     // en modo sombra la política anterior sigue publicando y el motor anota.
     const modoMotor = await engineMode(db);
-    const dispatch = await dispatchSources(db, 8, undefined, undefined, { deferToEngine: modoMotor === 'active' });
+    const dispatch = await dispatchSources(db, 16, undefined, undefined, { deferToEngine: modoMotor === 'active' });
     metrics.sources_due = dispatch.due;
     metrics.sources_ran = dispatch.ran;
     metrics.sources_ok = dispatch.reports.filter((r) => r.ok).length;

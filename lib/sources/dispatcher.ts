@@ -388,7 +388,15 @@ export function dueSources(
   const due = rows
     .filter((row) => row.active && (new Date(row.next_check_at).getTime() <= limite || urgente(row)))
     // Primero lo que tiene eventos encima; después, por antigüedad.
-    .sort((a, b) => Number(urgente(b)) - Number(urgente(a)) || a.next_check_at.localeCompare(b.next_check_at))
+    // Primero lo que tiene un evento más cerca (6 h antes que 12 h), y entre
+    // ellas la que lleva más tiempo sin leerse; después, el turno normal.
+    .sort(
+      (a, b) =>
+        Number(urgente(b)) - Number(urgente(a)) ||
+        (urgentes.get(a.id) || 99) - (urgentes.get(b.id) || 99) ||
+        (urgente(a) ? (a.last_checked_at || '').localeCompare(b.last_checked_at || '') : 0) ||
+        a.next_check_at.localeCompare(b.next_check_at),
+    )
     .slice(0, limit);
   return due
     .map((row) => SOURCES.find((source) => source.id === row.id))

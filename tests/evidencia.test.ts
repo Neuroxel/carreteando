@@ -209,3 +209,14 @@ test('el tipo se infiere del texto y las escenas solo aparecen con oferta', asyn
   ] as never);
   assert.deepEqual(escenas.map((e) => e.slug).sort(), ['en-vivo', 'karaoke', 'under']);
 });
+
+test('con el presupuesto lleno, primero la fuente con evento esta noche que lleva más tiempo sin leerse', () => {
+  const now = new Date('2026-10-03T05:00:00Z');
+  const rows = [
+    { id: 'pcdv-agenda', active: true, next_check_at: '2026-10-03T06:00:00Z', last_checked_at: '2026-10-02T23:00:00Z' },
+    { id: 'cinzano-agenda', active: true, next_check_at: '2026-10-04T14:00:00Z', last_checked_at: '2026-10-02T14:00:00Z' },
+    { id: 'portaldisc-cassot', active: true, next_check_at: '2026-10-04T18:00:00Z', last_checked_at: '2026-10-02T18:00:00Z' },
+  ];
+  const urgentes = new Map([['cinzano-agenda', 6], ['portaldisc-cassot', 12]]);
+  assert.deepEqual(dueSources(rows, now, 1, urgentes).map((s) => s.id), ['cinzano-agenda']);
+});
