@@ -1,0 +1,26 @@
+{
+  "home": {
+    "performance": 100,
+    "accessibility": 100,
+    "best-practices": 96,
+    "seo": 100
+  },
+  "explore": {
+    "performance": 100,
+    "accessibility": 100,
+    "best-practices": 96,
+    "seo": 100
+  },
+  "event": {
+    "performance": 100,
+    "accessibility": 100,
+    "best-practices": 96,
+    "seo": 100
+  },
+  "preview-home": {
+    "performance": 99,
+    "accessibility": 100,
+    "best-practices": 100,
+    "seo": 58
+  }
+}

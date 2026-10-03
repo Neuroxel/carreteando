@@ -1,0 +1,38 @@
+{
+  "home": {
+    "performance": 96,
+    "accessibility": 100,
+    "best-practices": 96,
+    "seo": 100
+  },
+  "explore": {
+    "performance": 98,
+    "accessibility": 100,
+    "best-practices": 96,
+    "seo": 100
+  },
+  "event": {
+    "performance": 100,
+    "accessibility": 100,
+    "best-practices": 96,
+    "seo": 100
+  },
+  "preview-home": {
+    "performance": 96,
+    "accessibility": 100,
+    "best-practices": 100,
+    "seo": 58
+  },
+  "preview-explore": {
+    "performance": 96,
+    "accessibility": 100,
+    "best-practices": 100,
+    "seo": 58
+  },
+  "preview-event": {
+    "performance": 99,
+    "accessibility": 100,
+    "best-practices": 100,
+    "seo": 61
+  }
+}

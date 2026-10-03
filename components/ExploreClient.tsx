@@ -7,7 +7,7 @@ import { parseFilters } from '../lib/filters';
 import { CIUDADES_NUCLEO, type FiltrosEvento } from '../lib/types';
 import { escenasConOferta } from '../lib/escenas';
 import { buscarLugares, buscarZonas, zonaSlug } from '../lib/venues';
-import { puntosDeMapa } from '../lib/map';
+import { normalizar, puntosDeMapa } from '../lib/map';
 import type { PublicSnapshot } from '../lib/snapshot';
 import EventCard from './EventCard';
 import VenueCard from './VenueCard';
@@ -163,17 +163,23 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
         .slice(0, 3),
     };
   }, [todos, snap.venues, filtros, today]);
-  // El mapa muestra lo mismo que la lista: la ciudad y, si hay búsqueda, lo que calza.
-  const lugaresVisibles = useMemo(
-    () =>
-      filtros.busqueda
-        ? derivados.lugaresHallados.filter((l) => filtros.ciudad === 'todos' || l.ciudad === filtros.ciudad)
-        : derivados.lugaresZona,
-    [filtros.busqueda, filtros.ciudad, derivados.lugaresHallados, derivados.lugaresZona],
-  );
+  const lugaresVisibles = useMemo(() => {
+    const coincidencias = new Set(events.map((e) => normalizar(e.lugar || '')));
+    const refinar = [filtros.escena, filtros.precio, filtros.tipo, filtros.categoria].some((v) => v && v !== 'todos');
+    return derivados.lugaresZona.filter((l) => {
+      const coincideLugar = !filtros.busqueda || derivados.lugaresHallados.some((x) => x.slug === l.slug);
+      return coincideLugar && (!refinar || coincidencias.has(normalizar(l.nombre)));
+    });
+  }, [events, filtros, derivados.lugaresZona, derivados.lugaresHallados]);
+  const lugaresMapa = useMemo(() => {
+    if (ver === 'lugares') return lugaresVisibles;
+    const nombres = new Set(events.map((e) => normalizar(e.lugar || '')));
+    const elegidos = new Set(lugaresVisibles.map((l) => l.slug));
+    return derivados.lugaresZona.filter((l) => nombres.has(normalizar(l.nombre)) || (ver === 'todo' && elegidos.has(l.slug)));
+  }, [ver, events, lugaresVisibles, derivados.lugaresZona]);
   const puntos = useMemo(
-    () => (vista === 'mapa' ? puntosDeMapa(lugaresVisibles, todos, today) : []),
-    [vista, lugaresVisibles, todos, today],
+    () => vista === 'mapa' ? puntosDeMapa(lugaresMapa, events, today) : [],
+    [vista, lugaresMapa, events, today],
   );
   const vigentes = todos.filter((e) => e.fecha >= today).length;
   const viejo = ahora - Date.parse(snap.generatedAt) > VIEJO_MS;
@@ -205,7 +211,7 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
           {/* Dónde estás es la primera pregunta. Selección manual; nunca se pide ubicación. */}
           <div className="lugar-selector" role="group" aria-label="Elegir ciudad">
             <a {...enlace({ ciudad: 'todos' })} className={filtros.ciudad === 'todos' ? 'activa' : ''} aria-current={filtros.ciudad === 'todos' ? 'true' : undefined}>
-              Toda la costa
+              Toda la región
             </a>
             {derivados.ciudadesConOferta.map((c) => (
               <a key={c} {...enlace({ ciudad: c })} className={filtros.ciudad === c ? 'activa' : ''} aria-current={filtros.ciudad === c ? 'true' : undefined}>
@@ -216,7 +222,23 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
           </div>
         </div>
       </section>
-      <section className="container discovery" id="cartelera" aria-label="Cartelera">
+      <section className={`container discovery ${home ? 'discovery-home' : ''}`} id="cartelera" aria-label="Cartelera">
+        <div className="date-tabs" aria-label="Cuándo">
+          {(
+            [
+              ['hoy', 'Esta noche', derivados.todayCount],
+              ['manana', 'Mañana', derivados.mananaCount],
+              ['finde', 'Este finde', 0],
+              ['futuro', 'Más adelante', 0],
+            ] as const
+          ).map(([v, label, n]) => (
+            <a key={v} {...enlace({ fecha: v })} className={filtros.fecha === v ? 'selected' : ''} aria-current={filtros.fecha === v ? 'true' : undefined}>
+              {label}
+              {n > 0 && <span>{n}</span>}
+            </a>
+          ))}
+        </div>
+        <details className="discovery-options"><summary>Buscar y filtrar{(filtros.busqueda || filtros.escena !== 'todos' || filtros.precio === 'gratis' || ver !== 'todo' || vista !== 'lista') ? ' · filtros activos' : ''}</summary>
         <form
           className="search-form"
           role="search"
@@ -237,7 +259,7 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
             maxLength={120}
             value={filtros.busqueda || ''}
             onChange={(e) => ir({ busqueda: e.target.value.slice(0, 120) }, true)}
-            placeholder="Un evento, un lugar, un artista, un cerro…"
+            placeholder="Buscar lugar, evento, artista o zona"
           />
           {filtros.busqueda ? (
             <button type="button" aria-label="Borrar búsqueda" onClick={() => ir({ busqueda: '' })}>
@@ -249,21 +271,6 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
             </button>
           )}
         </form>
-        <div className="date-tabs" aria-label="Cuándo">
-          {(
-            [
-              ['hoy', 'Esta noche', derivados.todayCount],
-              ['manana', 'Mañana', derivados.mananaCount],
-              ['finde', 'Este finde', 0],
-              ['futuro', 'Más adelante', 0],
-            ] as const
-          ).map(([v, label, n]) => (
-            <a key={v} {...enlace({ fecha: v })} className={filtros.fecha === v ? 'selected' : ''} aria-current={filtros.fecha === v ? 'true' : undefined}>
-              {label}
-              {n > 0 && <span>{n}</span>}
-            </a>
-          ))}
-        </div>
         {derivados.escenas.length > 0 && (
           <div className="escenas" aria-label="Escenas">
             {derivados.escenas.map((x) => {
@@ -306,6 +313,7 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
             ))}
           </div>
         </div>
+        </details>
         {viejo && (
           <p className="trust-note" role="status">
             Estos datos tienen más de 6 horas. Siguen siendo útiles, pero confirma en la fuente antes de salir.
@@ -319,7 +327,7 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
               <p className="empty-state">Ninguno de estos lugares tiene todavía una ubicación verificada.</p>
             )}
             <p className="trust-note">
-              {puntos.length} de {lugaresVisibles.length} lugares con ubicación verificada. Los demás siguen en la
+              {puntos.length} de {lugaresMapa.length} lugares con ubicación verificada. Los demás siguen en la
               lista: preferimos no ponerlos en la esquina equivocada.
             </p>
           </>
@@ -363,7 +371,7 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
                       ? 'No tenemos nada confirmado para esta noche acá.'
                       : 'No encontramos nada con estos filtros.'}
                 </h3>
-                <p>Prueba otra noche u otra comuna, o mira los lugares que están abiertos igual.</p>
+                <p>Prueba otra noche u otra comuna, o revisa los lugares para salir.</p>
                 <div className="actions">
                   <a className="button button-primary" {...enlace({ ver: 'lugares' })}>
                     Lugares para salir
@@ -392,7 +400,7 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
             )}
           </>
         )}
-        {vista === 'lista' && ver !== 'lugares' && filtros.busqueda && (derivados.lugaresHallados.length > 0 || derivados.zonasHalladas.length > 0) && (
+        {vista === 'lista' && ver === 'todo' && filtros.busqueda && (derivados.lugaresHallados.length > 0 || derivados.zonasHalladas.length > 0) && (
           <div className="alternative-plans">
             <div className="section-heading">
               <h3>
@@ -403,20 +411,20 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
             {derivados.zonasHalladas.length > 0 && (
               <div className="category-filters">
                 {derivados.zonasHalladas.map((z) => (
-                  <Link key={z.zona} className="chip" href={`/zonas/${zonaSlug(z.zona)}`}>
+                  <Link prefetch={false} key={z.zona} className="chip" href={`/zonas/${zonaSlug(z.zona)}`}>
                     {z.zona} · {z.lugares.length}
                   </Link>
                 ))}
               </div>
             )}
             <div className="venue-grid">
-              {derivados.lugaresHallados.slice(0, 9).map((l) => (
+              {lugaresVisibles.slice(0, 9).map((l) => (
                 <VenueCard key={l.slug} lugar={l} proximos={derivados.conteoLugar.get(l.nombre) || 0} hoy={derivados.hoyPorLugar.get(l.nombre) || null} />
               ))}
             </div>
           </div>
         )}
-        {vista === 'lista' && ver !== 'eventos' && derivados.lugaresZona.length > 0 && !(filtros.busqueda && ver !== 'lugares') && (
+        {vista === 'lista' && ver !== 'eventos' && !(filtros.busqueda && ver !== 'lugares') && (
           <div className={ver === 'lugares' ? '' : 'alternative-plans'}>
             <div className="section-heading">
               <h3>
@@ -424,16 +432,17 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
               </h3>
               {ver === 'lugares' ? (
                 <span className="result-count">
-                  {derivados.lugaresZona.length} {derivados.lugaresZona.length === 1 ? 'lugar' : 'lugares'}
+                  {lugaresVisibles.length} {lugaresVisibles.length === 1 ? 'lugar' : 'lugares'}
                 </span>
               ) : (
                 <a className="result-count" {...enlace({ ver: 'lugares' })}>
-                  Ver los {derivados.lugaresZona.length} ↗
+                  Ver los {lugaresVisibles.length} ↗
                 </a>
               )}
             </div>
+            {lugaresVisibles.length === 0 && <div className="empty-state"><h3>No encontramos lugares con estos filtros.</h3><a className="button button-outline" {...enlace({ busqueda: '', escena: 'todos', precio: 'todos', ciudad: 'todos' })}>Ver otros lugares</a></div>}
             <div className="venue-grid">
-              {(ver === 'lugares' ? lugaresVisibles : derivados.lugaresZona.slice(0, 6)).map((l) => (
+              {(ver === 'lugares' ? lugaresVisibles : lugaresVisibles.slice(0, 6)).map((l) => (
                 <VenueCard key={l.slug} lugar={l} proximos={derivados.conteoLugar.get(l.nombre) || 0} hoy={derivados.hoyPorLugar.get(l.nombre) || null} />
               ))}
             </div>
@@ -451,7 +460,7 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
           <h2>¿Organizas algo?</h2>
           <p>Mándanos el evento y su publicación original. Lo revisamos antes de sumarlo.</p>
         </div>
-        <Link href="/publicar" className="button button-light">
+        <Link prefetch={false} href="/publicar" className="button button-light">
           Proponer un evento ↗
         </Link>
       </section>

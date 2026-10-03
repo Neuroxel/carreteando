@@ -1,0 +1,110 @@
+[
+  {
+    "path": "/",
+    "before": {
+      "status": 200,
+      "title": "Carreteando · ¿Dónde se carretea hoy?",
+      "canonical": "https://carreteando.vercel.app",
+      "description": "¿Dónde se carretea hoy? Fiestas, techno, cumbia y noches en vivo en Valparaíso, Viña del Mar y alrededores. Compara y consulta la fuente antes de salir.",
+      "schemas": []
+    },
+    "after": {
+      "status": 200,
+      "title": "Carreteando · ¿Dónde se carretea hoy?",
+      "canonical": "https://carreteando.vercel.app",
+      "description": "¿Dónde se carretea hoy? Fiestas, techno, cumbia y noches en vivo en Valparaíso, Viña del Mar y alrededores. Compara y consulta la fuente antes de salir.",
+      "schemas": []
+    },
+    "equal": true
+  },
+  {
+    "path": "/explorar",
+    "before": {
+      "status": 200,
+      "title": "Explorar la noche en la Región de Valparaíso · Carreteando",
+      "canonical": "https://carreteando.vercel.app/explorar",
+      "description": "Eventos y lugares para salir en Valpo, Viña y alrededores. Filtra por noche, comuna, escena y precio, en lista o en el mapa.",
+      "schemas": []
+    },
+    "after": {
+      "status": 200,
+      "title": "Explorar la noche en la Región de Valparaíso · Carreteando",
+      "canonical": "https://carreteando.vercel.app/explorar",
+      "description": "Eventos y lugares para salir en Valpo, Viña y alrededores. Filtra por noche, comuna, escena y precio, en lista o en el mapa.",
+      "schemas": []
+    },
+    "equal": true
+  },
+  {
+    "path": "/evento/curated-pd-pielmacrobia-1003",
+    "before": {
+      "status": 200,
+      "title": "Piel + Macrobia · Carreteando",
+      "canonical": "https://carreteando.vercel.app/evento/curated-pd-pielmacrobia-1003",
+      "description": "2026-10-03 · 20:00 · Bar Vienés · Desde $3.000 + cargos. Consulta la fuente original.",
+      "schemas": [
+        "Event",
+        "BreadcrumbList"
+      ]
+    },
+    "after": {
+      "status": 200,
+      "title": "Piel + Macrobia · Carreteando",
+      "canonical": "https://carreteando.vercel.app/evento/curated-pd-pielmacrobia-1003",
+      "description": "2026-10-03 · 20:00 · Bar Vienés · Desde $3.000 + cargos. Consulta la fuente original.",
+      "schemas": [
+        "Event",
+        "BreadcrumbList"
+      ]
+    },
+    "equal": true
+  },
+  {
+    "path": "/lugar/teatro-mauri-scd",
+    "before": {
+      "status": 200,
+      "title": "Teatro Mauri SCD · Valparaíso · Carreteando",
+      "canonical": "https://carreteando.vercel.app/lugar/teatro-mauri-scd",
+      "description": "Sala en vivo en Cerro Bellavista, Av. Alemania 6985. Próximas fechas y cómo llegar.",
+      "schemas": [
+        "MusicVenue",
+        "BreadcrumbList"
+      ]
+    },
+    "after": {
+      "status": 200,
+      "title": "Teatro Mauri SCD · Valparaíso · Carreteando",
+      "canonical": "https://carreteando.vercel.app/lugar/teatro-mauri-scd",
+      "description": "Sala en vivo en Cerro Bellavista, Av. Alemania 6985. Próximas fechas y cómo llegar.",
+      "schemas": [
+        "MusicVenue",
+        "BreadcrumbList"
+      ]
+    },
+    "equal": true
+  },
+  {
+    "path": "/robots.txt",
+    "before": {
+      "status": 200,
+      "schemas": []
+    },
+    "after": {
+      "status": 200,
+      "schemas": []
+    },
+    "equal": true
+  },
+  {
+    "path": "/sitemap.xml",
+    "before": {
+      "status": 200,
+      "schemas": []
+    },
+    "after": {
+      "status": 200,
+      "schemas": []
+    },
+    "equal": true
+  }
+]

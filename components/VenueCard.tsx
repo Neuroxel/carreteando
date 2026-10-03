@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import VenueMedia from './VenueMedia';
 import { Lugar } from '../lib/venues';
 import { acentoDe } from '../lib/types';
 /**
@@ -22,6 +23,7 @@ export default function VenueCard({
   return (
     <article className="venue-card" style={{ ['--ciudad' as string]: acentoDe(l.ciudad) }}>
       <Link href={`/lugar/${l.slug}`} className="venue-card-link" prefetch={false}>
+        {l.imagen_url && <VenueMedia src={l.imagen_url} name={l.nombre} />}
         <p className="eyebrow venue-kind">
           <span className="venue-tipo">{l.tipo_label}</span>
           <span>{l.zona || l.ciudad}</span>

@@ -1,0 +1,791 @@
+
+> carreteando@0.1.0 test
+> node --conditions=react-server --import tsx --test tests/*.test.ts
+
+TAP version 13
+# (node:81664) ExperimentalWarning: The MockTimers API is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: JSON-LD: fecha con zona horaria pasa a hora de Chile
+ok 1 - JSON-LD: fecha con zona horaria pasa a hora de Chile
+  ---
+  duration_ms: 28.975125
+  type: 'test'
+  ...
+# Subtest: JSON-LD: encuentra Event dentro de @graph y listas, e ignora bloques rotos
+ok 2 - JSON-LD: encuentra Event dentro de @graph y listas, e ignora bloques rotos
+  ---
+  duration_ms: 0.299042
+  type: 'test'
+  ...
+# Subtest: JSON-LD por sitemap: solo comunas de la región, como máximo N páginas, y el estado viaja
+ok 3 - JSON-LD por sitemap: solo comunas de la región, como máximo N páginas, y el estado viaja
+  ---
+  duration_ms: 10.827125
+  type: 'test'
+  ...
+# Subtest: ICS: líneas plegadas, fechas de día completo y la hora de pared de The Events Calendar
+ok 4 - ICS: líneas plegadas, fechas de día completo y la hora de pared de The Events Calendar
+  ---
+  duration_ms: 0.863417
+  type: 'test'
+  ...
+# Subtest: ICS: el adaptador lee el calendario y marca cancelados
+ok 5 - ICS: el adaptador lee el calendario y marca cancelados
+  ---
+  duration_ms: 1.046875
+  type: 'test'
+  ...
+# Subtest: un local de una ticketera se reconoce por nombre solo si calza de verdad
+ok 6 - un local de una ticketera se reconoce por nombre solo si calza de verdad
+  ---
+  duration_ms: 0.846208
+  type: 'test'
+  ...
+# Subtest: normalizeSecret survives the shapes a secret manager produces
+ok 7 - normalizeSecret survives the shapes a secret manager produces
+  ---
+  duration_ms: 3.121542
+  type: 'test'
+  ...
+# Subtest: every login failure names its own cause
+ok 8 - every login failure names its own cause
+  ---
+  duration_ms: 0.398042
+  type: 'test'
+  ...
+# Subtest: a stale deployment rejects the current clave
+ok 9 - a stale deployment rejects the current clave
+  ---
+  duration_ms: 0.124709
+  type: 'test'
+  ...
+# Subtest: the quota is spent before the clave is compared
+ok 10 - the quota is spent before the clave is compared
+  ---
+  duration_ms: 0.067541
+  type: 'test'
+  ...
+# Subtest: sameSecret compares without leaking length through a throw
+ok 11 - sameSecret compares without leaking length through a throw
+  ---
+  duration_ms: 0.120958
+  type: 'test'
+  ...
+# Subtest: a session cookie is only valid signed, unexpired and well formed
+ok 12 - a session cookie is only valid signed, unexpired and well formed
+  ---
+  duration_ms: 0.970333
+  type: 'test'
+  ...
+# Subtest: la sesión dice quién modera, y no se puede falsificar
+ok 13 - la sesión dice quién modera, y no se puede falsificar
+  ---
+  duration_ms: 7.667583
+  type: 'test'
+  ...
+# Subtest: un moderador con nombre entra sin ser el propietario
+ok 14 - un moderador con nombre entra sin ser el propietario
+  ---
+  duration_ms: 0.097125
+  type: 'test'
+  ...
+# Subtest: publication awaits private inbox, rejects invalid bodies/origin, and propagates failure without secrets
+ok 15 - publication awaits private inbox, rejects invalid bodies/origin, and propagates failure without secrets
+  ---
+  duration_ms: 25.155166
+  type: 'test'
+  ...
+# Subtest: cron fails closed in every environment and cooldown cannot incur Apify cost
+ok 16 - cron fails closed in every environment and cooldown cannot incur Apify cost
+  ---
+  duration_ms: 3.366083
+  type: 'test'
+  ...
+# [ingestion] {"run_id":"test-run","error_code":"APIFY_HTTP_503"}
+# Subtest: provider outage records failed run without leaking response or claiming scrape success
+ok 17 - provider outage records failed run without leaking response or claiming scrape success
+  ---
+  duration_ms: 14.65425
+  type: 'test'
+  ...
+# Subtest: public model rejects missing dates and moderation; never uses scraped_at
+ok 18 - public model rejects missing dates and moderation; never uses scraped_at
+  ---
+  duration_ms: 2.678625
+  type: 'test'
+  ...
+# Subtest: all filters exclude expired and quarantined events, including weekend Sunday
+ok 19 - all filters exclude expired and quarantined events, including weekend Sunday
+  ---
+  duration_ms: 7.985875
+  type: 'test'
+  ...
+# Subtest: 2 de 2 no es 100 %: el límite inferior castiga las muestras chicas
+ok 20 - 2 de 2 no es 100 %: el límite inferior castiga las muestras chicas
+  ---
+  duration_ms: 0.585291
+  type: 'test'
+  ...
+# Subtest: la ticketera confiable con fecha verificada publica sola una noche
+ok 21 - la ticketera confiable con fecha verificada publica sola una noche
+  ---
+  duration_ms: 1.035083
+  type: 'test'
+  ...
+# Subtest: sin fecha verificada, sin historial o de tarde, la ticketera no basta
+ok 22 - sin fecha verificada, sin historial o de tarde, la ticketera no basta
+  ---
+  duration_ms: 0.254709
+  type: 'test'
+  ...
+# Subtest: el calendario oficial del lugar publica solo; una pista social nunca
+ok 23 - el calendario oficial del lugar publica solo; una pista social nunca
+  ---
+  duration_ms: 0.715834
+  type: 'test'
+  ...
+# Subtest: dos orígenes independientes confirman aunque ninguno tenga historial; un espejo no suma
+ok 24 - dos orígenes independientes confirman aunque ninguno tenga historial; un espejo no suma
+  ---
+  duration_ms: 0.618292
+  type: 'test'
+  ...
+# Subtest: una fecha que cambió en el origen no se promedia: se retira y la ve una persona
+ok 25 - una fecha que cambió en el origen no se promedia: se retira y la ve una persona
+  ---
+  duration_ms: 0.39
+  type: 'test'
+  ...
+# Subtest: lugar distinto u hora muy distinta también es contradicción; diferencia menor no
+ok 26 - lugar distinto u hora muy distinta también es contradicción; diferencia menor no
+  ---
+  duration_ms: 0.461167
+  type: 'test'
+  ...
+# Subtest: una cancelación escrita por quien manda cancela; lo editado por una persona solo se marca
+ok 27 - una cancelación escrita por quien manda cancela; lo editado por una persona solo se marca
+  ---
+  duration_ms: 0.142875
+  type: 'test'
+  ...
+# Subtest: estado leído del texto de la fuente
+ok 28 - estado leído del texto de la fuente
+  ---
+  duration_ms: 1.470291
+  type: 'test'
+  ...
+# Subtest: lo pasado se vence, lo académico se descarta, lo humano no se toca salvo contradicción crítica
+ok 29 - lo pasado se vence, lo académico se descarta, lo humano no se toca salvo contradicción crítica
+  ---
+  duration_ms: 0.573333
+  type: 'test'
+  ...
+# Subtest: la precisión se mide contra la ficha humana y no castiga un cambio posterior del origen
+ok 30 - la precisión se mide contra la ficha humana y no castiga un cambio posterior del origen
+  ---
+  duration_ms: 1.606417
+  type: 'test'
+  ...
+# Subtest: el origen agrupa espejos y separa cuentas
+ok 31 - el origen agrupa espejos y separa cuentas
+  ---
+  duration_ms: 0.229417
+  type: 'test'
+  ...
+# Subtest: una fuente con eventos encima se revisa antes de su turno, sin martillar
+ok 32 - una fuente con eventos encima se revisa antes de su turno, sin martillar
+  ---
+  duration_ms: 0.372792
+  type: 'test'
+  ...
+# Subtest: no se publica con evidencia vieja: la fuente tiene que haberlo mostrado en 72 horas
+ok 33 - no se publica con evidencia vieja: la fuente tiene que haberlo mostrado en 72 horas
+  ---
+  duration_ms: 0.139417
+  type: 'test'
+  ...
+# Subtest: una versión anterior reemplazada por la misma fuente no es contradicción
+ok 34 - una versión anterior reemplazada por la misma fuente no es contradicción
+  ---
+  duration_ms: 0.35375
+  type: 'test'
+  ...
+# Subtest: la ticketera sin año escrito lo dice como motivo
+ok 35 - la ticketera sin año escrito lo dice como motivo
+  ---
+  duration_ms: 0.391291
+  type: 'test'
+  ...
+# Subtest: dos filas con la misma ficha: queda la pública o la que coincide con la última fecha
+ok 36 - dos filas con la misma ficha: queda la pública o la que coincide con la última fecha
+  ---
+  duration_ms: 2.53275
+  type: 'test'
+  ...
+# Subtest: "previa inscripción" no es una previa
+ok 37 - "previa inscripción" no es una previa
+  ---
+  duration_ms: 33.850958
+  type: 'test'
+  ...
+# Subtest: el tipo se infiere del texto y las escenas solo aparecen con oferta
+ok 38 - el tipo se infiere del texto y las escenas solo aparecen con oferta
+  ---
+  duration_ms: 13.491084
+  type: 'test'
+  ...
+# Subtest: missing/invalid publication timestamps never become today
+ok 39 - missing/invalid publication timestamps never become today
+  ---
+  duration_ms: 1.671083
+  type: 'test'
+  ...
+# Subtest: explicit dates, weekdays and Chile midnight
+ok 40 - explicit dates, weekdays and Chile midnight
+  ---
+  duration_ms: 17.030542
+  type: 'test'
+  ...
+# Subtest: ambiguity, impossible dates and mismatched weekdays are rejected
+ok 41 - ambiguity, impossible dates and mismatched weekdays are rejected
+  ---
+  duration_ms: 1.446292
+  type: 'test'
+  ...
+# Subtest: expired month is not silently rolled forward a year
+ok 42 - expired month is not silently rolled forward a year
+  ---
+  duration_ms: 0.143542
+  type: 'test'
+  ...
+# Subtest: time extraction does not read decimal prices or numeric dates as hours
+ok 43 - time extraction does not read decimal prices or numeric dates as hours
+  ---
+  duration_ms: 0.499333
+  type: 'test'
+  ...
+# Subtest: nightlife is not cultural or generic promotion
+ok 44 - nightlife is not cultural or generic promotion
+  ---
+  duration_ms: 1.752667
+  type: 'test'
+  ...
+# Subtest: unknown city remains unknown and Reñaca is more specific than Viña
+ok 45 - unknown city remains unknown and Reñaca is more specific than Viña
+  ---
+  duration_ms: 0.59425
+  type: 'test'
+  ...
+# Subtest: price is admission, not drink offers or conditional free access
+ok 46 - price is admission, not drink offers or conditional free access
+  ---
+  duration_ms: 4.126708
+  type: 'test'
+  ...
+# Subtest: source freshness distinguishes failure, stalled run and missing evidence
+ok 47 - source freshness distinguishes failure, stalled run and missing evidence
+  ---
+  duration_ms: 0.890708
+  type: 'test'
+  ...
+# (node:81671) ExperimentalWarning: The MockTimers API is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: el clasificador separa la noche de la vida académica
+ok 48 - el clasificador separa la noche de la vida académica
+  ---
+  duration_ms: 3.247542
+  type: 'test'
+  ...
+# Subtest: la fecha de la ticketera se lee dos veces antes de confiar
+ok 49 - la fecha de la ticketera se lee dos veces antes de confiar
+  ---
+  duration_ms: 0.340916
+  type: 'test'
+  ...
+# Subtest: nivel B publica solo noches inequívocas de un local conocido
+ok 50 - nivel B publica solo noches inequívocas de un local conocido
+  ---
+  duration_ms: 0.134959
+  type: 'test'
+  ...
+# Subtest: un directorio nunca publica solo y bota lo claramente ajeno
+ok 51 - un directorio nunca publica solo y bota lo claramente ajeno
+  ---
+  duration_ms: 0.100625
+  type: 'test'
+  ...
+# Subtest: la ticketera marca alta confianza solo con fecha verificada
+ok 52 - la ticketera marca alta confianza solo con fecha verificada
+  ---
+  duration_ms: 31.9735
+  type: 'test'
+  ...
+# Subtest: el adaptador Tribe lee hora, recinto y costo sin tomar la imagen
+ok 53 - el adaptador Tribe lee hora, recinto y costo sin tomar la imagen
+  ---
+  duration_ms: 1.154375
+  type: 'test'
+  ...
+# Subtest: un calendario Tribe vacío no es una fuente rota; una ruta inexistente sí
+ok 54 - un calendario Tribe vacío no es una fuente rota; una ruta inexistente sí
+  ---
+  duration_ms: 0.399333
+  type: 'test'
+  ...
+# Subtest: la USM aporta solo campus de la región y nunca lo académico de día
+ok 55 - la USM aporta solo campus de la región y nunca lo académico de día
+  ---
+  duration_ms: 0.786458
+  type: 'test'
+  ...
+# Subtest: cada fuente declara familia y nivel, y lo ruidoso pasa por el clasificador
+ok 56 - cada fuente declara familia y nivel, y lo ruidoso pasa por el clasificador
+  ---
+  duration_ms: 0.817917
+  type: 'test'
+  ...
+# Subtest: la lista de dominios y la configuración de imágenes no pueden derivar
+ok 57 - la lista de dominios y la configuración de imágenes no pueden derivar
+  ---
+  duration_ms: 1.434083
+  type: 'test'
+  ...
+# Subtest: sólo se muestran imágenes de dominios declarados y por https
+ok 58 - sólo se muestran imágenes de dominios declarados y por https
+  ---
+  duration_ms: 0.393333
+  type: 'test'
+  ...
+# Subtest: el import editorial nunca manda una imagen sin origen
+ok 59 - el import editorial nunca manda una imagen sin origen
+  ---
+  duration_ms: 31.914875
+  type: 'test'
+  ...
+# Subtest: only actual allowlisted owners pass; parent/collaborator do not grant access
+ok 60 - only actual allowlisted owners pass; parent/collaborator do not grant access
+  ---
+  duration_ms: 2.508917
+  type: 'test'
+  ...
+# Subtest: candidate is inactive, pending, with no invented verification
+ok 61 - candidate is inactive, pending, with no invented verification
+  ---
+  duration_ms: 42.379125
+  type: 'test'
+  ...
+# Subtest: reject expired, ambiguous, external region, and campaign posts
+ok 62 - reject expired, ambiguous, external region, and campaign posts
+  ---
+  duration_ms: 3.170542
+  type: 'test'
+  ...
+# Subtest: different posts and venue aliases on same night do not multiply cards
+ok 63 - different posts and venue aliases on same night do not multiply cards
+  ---
+  duration_ms: 4.419167
+  type: 'test'
+  ...
+# Subtest: cost limit input cannot become NaN, infinity or an excessive result count
+ok 64 - cost limit input cannot become NaN, infinity or an excessive result count
+  ---
+  duration_ms: 0.096
+  type: 'test'
+  ...
+# Subtest: un lugar sin coordenada fiable no llega al mapa
+ok 65 - un lugar sin coordenada fiable no llega al mapa
+  ---
+  duration_ms: 0.969875
+  type: 'test'
+  ...
+# Subtest: el estado del punto refleja lo que pasa esta noche
+ok 66 - el estado del punto refleja lo que pasa esta noche
+  ---
+  duration_ms: 0.274625
+  type: 'test'
+  ...
+# Subtest: los eventos de mañana no se muestran como los de hoy
+ok 67 - los eventos de mañana no se muestran como los de hoy
+  ---
+  duration_ms: 0.071625
+  type: 'test'
+  ...
+# Subtest: el evento se asocia al lugar aunque el nombre venga con acentos distintos
+ok 68 - el evento se asocia al lugar aunque el nombre venga con acentos distintos
+  ---
+  duration_ms: 0.461166
+  type: 'test'
+  ...
+# Subtest: el encuadre contiene todos los puntos
+ok 69 - el encuadre contiene todos los puntos
+  ---
+  duration_ms: 0.40525
+  type: 'test'
+  ...
+# (node:81677) ExperimentalWarning: The MockTimers API is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: aprobar una fila de adaptador sin organizador funciona
+ok 70 - aprobar una fila de adaptador sin organizador funciona
+  ---
+  duration_ms: 26.291
+  type: 'test'
+  ...
+# Subtest: aprobar sin descripción tampoco es un error de moderación
+ok 71 - aprobar sin descripción tampoco es un error de moderación
+  ---
+  duration_ms: 0.642583
+  type: 'test'
+  ...
+# Subtest: lo que sí debe seguir bloqueando una aprobación
+ok 72 - lo que sí debe seguir bloqueando una aprobación
+  ---
+  duration_ms: 2.161167
+  type: 'test'
+  ...
+# Subtest: la casilla de revisión y la nota siguen siendo obligatorias
+ok 73 - la casilla de revisión y la nota siguen siendo obligatorias
+  ---
+  duration_ms: 3.300417
+  type: 'test'
+  ...
+# Subtest: retirar y rechazar sólo necesitan la nota
+ok 74 - retirar y rechazar sólo necesitan la nota
+  ---
+  duration_ms: 0.595
+  type: 'test'
+  ...
+# Subtest: un error de campo dice qué campo es
+ok 75 - un error de campo dice qué campo es
+  ---
+  duration_ms: 0.247042
+  type: 'test'
+  ...
+# Subtest: el aporte del público conserva sus reglas estrictas
+ok 76 - el aporte del público conserva sus reglas estrictas
+  ---
+  duration_ms: 17.865166
+  type: 'test'
+  ...
+# Subtest: older announcement can describe a future event; old event stays expired
+ok 77 - older announcement can describe a future event; old event stays expired
+  ---
+  duration_ms: 22.761959
+  type: 'test'
+  ...
+# Subtest: two independent events at one venue/date survive; exact reminders dedupe
+ok 78 - two independent events at one venue/date survive; exact reminders dedupe
+  ---
+  duration_ms: 1.090916
+  type: 'test'
+  ...
+# Subtest: bounded dated agenda splits source evidence without sharing unknown fields
+ok 79 - bounded dated agenda splits source evidence without sharing unknown fields
+  ---
+  duration_ms: 6.457167
+  type: 'test'
+  ...
+# Subtest: reviewed unknown time and corrupt timestamps never become guessed hours or crash detail
+ok 80 - reviewed unknown time and corrupt timestamps never become guessed hours or crash detail
+  ---
+  duration_ms: 0.537375
+  type: 'test'
+  ...
+# Subtest: editorial adapter retains provenance, explicit approval and lifecycle boundaries
+ok 81 - editorial adapter retains provenance, explicit approval and lifecycle boundaries
+  ---
+  duration_ms: 1.452209
+  type: 'test'
+  ...
+# Subtest: owner session rejects tampering, expiry, future lifetime and rotation
+ok 82 - owner session rejects tampering, expiry, future lifetime and rotation
+  ---
+  duration_ms: 0.907333
+  type: 'test'
+  ...
+# Subtest: shared city slugs preserve filters without mutating caller parameters
+ok 83 - shared city slugs preserve filters without mutating caller parameters
+  ---
+  duration_ms: 0.322208
+  type: 'test'
+  ...
+# Subtest: 48 hours without a reviewer leaves uncertain private and approved upcoming visible
+ok 84 - 48 hours without a reviewer leaves uncertain private and approved upcoming visible
+  ---
+  duration_ms: 18.149417
+  type: 'test'
+  ...
+# Subtest: metrics reject cross-origin, personal payloads and unbounded bodies; honor privacy headers
+ok 85 - metrics reject cross-origin, personal payloads and unbounded bodies; honor privacy headers
+  ---
+  duration_ms: 14.277042
+  type: 'test'
+  ...
+# Subtest: review actions travel as bound arguments and each rejection names its own cause
+ok 86 - review actions travel as bound arguments and each rejection names its own cause
+  ---
+  duration_ms: 1.816375
+  type: 'test'
+  ...
+# Subtest: a venue is a place, not a date, and never leaks an unapproved row
+ok 87 - a venue is a place, not a date, and never leaks an unapproved row
+  ---
+  duration_ms: 0.309292
+  type: 'test'
+  ...
+# Subtest: one venue cannot take the whole first screen, and far dates never jump ahead
+ok 88 - one venue cannot take the whole first screen, and far dates never jump ahead
+  ---
+  duration_ms: 0.207292
+  type: 'test'
+  ...
+# Subtest: a fonda reads as a fonda, and the Dieciocho surface opens and closes by date
+ok 89 - a fonda reads as a fonda, and the Dieciocho surface opens and closes by date
+  ---
+  duration_ms: 0.459542
+  type: 'test'
+  ...
+# Subtest: a live status needs agreement and freshness, and never claims to be a measurement
+ok 90 - a live status needs agreement and freshness, and never claims to be a measurement
+  ---
+  duration_ms: 0.327541
+  type: 'test'
+  ...
+# Subtest: search covers the whole graph, not only event titles
+ok 91 - search covers the whole graph, not only event titles
+  ---
+  duration_ms: 0.679625
+  type: 'test'
+  ...
+# Subtest: si el cron no corre en días, lo viejo igual desaparece
+ok 92 - si el cron no corre en días, lo viejo igual desaparece
+  ---
+  duration_ms: 24.266208
+  type: 'test'
+  ...
+# Subtest: una fuente caída se reporta, no tumba la pasada
+ok 93 - una fuente caída se reporta, no tumba la pasada
+  ---
+  duration_ms: 0.846458
+  type: 'test'
+  ...
+# Subtest: una fuente que devuelve basura cuenta fallos de lectura, no inventa eventos
+ok 94 - una fuente que devuelve basura cuenta fallos de lectura, no inventa eventos
+  ---
+  duration_ms: 0.700291
+  type: 'test'
+  ...
+# Subtest: una fuente atrasada varios días entra en la siguiente pasada
+ok 95 - una fuente atrasada varios días entra en la siguiente pasada
+  ---
+  duration_ms: 0.47475
+  type: 'test'
+  ...
+# Subtest: structured data does not invent prices, availability, time or location; script safe
+ok 96 - structured data does not invent prices, availability, time or location; script safe
+  ---
+  duration_ms: 6.136583
+  type: 'test'
+  ...
+# Subtest: la hora del evento lleva el desfase de Chile de esa fecha
+ok 97 - la hora del evento lleva el desfase de Chile de esa fecha
+  ---
+  duration_ms: 30.584542
+  type: 'test'
+  ...
+# Subtest: el lugar declara su tipo y sus perfiles, sin coordenadas imprecisas ni reseñas
+ok 98 - el lugar declara su tipo y sus perfiles, sin coordenadas imprecisas ni reseñas
+  ---
+  duration_ms: 3.393042
+  type: 'test'
+  ...
+# Subtest: migas de pan absolutas y en orden
+ok 99 - migas de pan absolutas y en orden
+  ---
+  duration_ms: 0.192958
+  type: 'test'
+  ...
+# Subtest: la dirección del sitio es configurable pero no rompible
+ok 100 - la dirección del sitio es configurable pero no rompible
+  ---
+  duration_ms: 0.366958
+  type: 'test'
+  ...
+# Subtest: las URLs con filtros no se indexan; la limpia sí
+ok 101 - las URLs con filtros no se indexan; la limpia sí
+  ---
+  duration_ms: 0.165959
+  type: 'test'
+  ...
+# Subtest: IndexNow anuncia solo URLs propias, sin repetir y con la clave publicada
+ok 102 - IndexNow anuncia solo URLs propias, sin repetir y con la clave publicada
+  ---
+  duration_ms: 0.408125
+  type: 'test'
+  ...
+# Subtest: successful empty response stays canonical even after a populated request
+ok 103 - successful empty response stays canonical even after a populated request
+  ---
+  duration_ms: 43.464417
+  type: 'test'
+  ...
+# Subtest: venue sharing opens the venue route, not an encoded event id
+ok 104 - venue sharing opens the venue route, not an encoded event id
+  ---
+  duration_ms: 0.436125
+  type: 'test'
+  ...
+# Subtest: event identifiers cannot escape the event route
+ok 105 - event identifiers cannot escape the event route
+  ---
+  duration_ms: 0.05975
+  type: 'test'
+  ...
+# Subtest: la versión del snapshot solo cambia si cambia el contenido
+ok 106 - la versión del snapshot solo cambia si cambia el contenido
+  ---
+  duration_ms: 0.358792
+  type: 'test'
+  ...
+# Subtest: la búsqueda local ignora acentos y mayúsculas, busca en lugar, comuna, estilo y sinónimos
+ok 107 - la búsqueda local ignora acentos y mayúsculas, busca en lugar, comuna, estilo y sinónimos
+  ---
+  duration_ms: 0.292208
+  type: 'test'
+  ...
+# Subtest: un snapshot viejo nunca revive eventos pasados: la fecha la pone el teléfono
+ok 108 - un snapshot viejo nunca revive eventos pasados: la fecha la pone el teléfono
+  ---
+  duration_ms: 0.147459
+  type: 'test'
+  ...
+# (node:81685) ExperimentalWarning: The MockTimers API is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: cada fuente del registro apunta a un adaptador que existe
+ok 109 - cada fuente del registro apunta a un adaptador que existe
+  ---
+  duration_ms: 1.004167
+  type: 'test'
+  ...
+# Subtest: solo publica sin revisión una fuente oficial con fecha estructurada
+ok 110 - solo publica sin revisión una fuente oficial con fecha estructurada
+  ---
+  duration_ms: 0.172417
+  type: 'test'
+  ...
+# Subtest: una exposición de 10:00 no entra sola a la cartelera
+ok 111 - una exposición de 10:00 no entra sola a la cartelera
+  ---
+  duration_ms: 0.094833
+  type: 'test'
+  ...
+# Subtest: una fecha lejana leída de un texto débil se descarta
+ok 112 - una fecha lejana leída de un texto débil se descarta
+  ---
+  duration_ms: 0.058084
+  type: 'test'
+  ...
+# Subtest: fechas y horas en castellano
+ok 113 - fechas y horas en castellano
+  ---
+  duration_ms: 0.507458
+  type: 'test'
+  ...
+# Subtest: dos listados de la misma noche se reconocen
+ok 114 - dos listados de la misma noche se reconocen
+  ---
+  duration_ms: 0.146
+  type: 'test'
+  ...
+# Subtest: la clave de un candidato es estable y separa lugares
+ok 115 - la clave de un candidato es estable y separa lugares
+  ---
+  duration_ms: 0.355209
+  type: 'test'
+  ...
+# Subtest: el adaptador de agenda oficial lee la fecha estructurada
+ok 116 - el adaptador de agenda oficial lee la fecha estructurada
+  ---
+  duration_ms: 12.481667
+  type: 'test'
+  ...
+# Subtest: el adaptador de slug fechado confía más cuando título y enlace coinciden
+ok 117 - el adaptador de slug fechado confía más cuando título y enlace coinciden
+  ---
+  duration_ms: 0.7555
+  type: 'test'
+  ...
+# Subtest: los comunicados municipales solo aportan lo que menciona la noche
+ok 118 - los comunicados municipales solo aportan lo que menciona la noche
+  ---
+  duration_ms: 0.866625
+  type: 'test'
+  ...
+# Subtest: la cartelera de la ticketera no pierde el único evento de la página
+ok 119 - la cartelera de la ticketera no pierde el único evento de la página
+  ---
+  duration_ms: 0.814167
+  type: 'test'
+  ...
+# Subtest: una página que cambió de forma falla fuerte en vez de inventar
+ok 120 - una página que cambió de forma falla fuerte en vez de inventar
+  ---
+  duration_ms: 0.280541
+  type: 'test'
+  ...
+# Subtest: una fuente recién registrada sí entra en el primer despacho
+ok 121 - una fuente recién registrada sí entra en el primer despacho
+  ---
+  duration_ms: 0.59975
+  type: 'test'
+  ...
+# Subtest: la tolerancia de reloj no adelanta una fuente de verdad futura
+ok 122 - la tolerancia de reloj no adelanta una fuente de verdad futura
+  ---
+  duration_ms: 0.062417
+  type: 'test'
+  ...
+# Subtest: una fuente pausada nunca se despacha y el presupuesto se respeta
+ok 123 - una fuente pausada nunca se despacha y el presupuesto se respeta
+  ---
+  duration_ms: 0.127708
+  type: 'test'
+  ...
+# Subtest: submissions accept local today with unknown price, ignore client_id
+ok 124 - submissions accept local today with unknown price, ignore client_id
+  ---
+  duration_ms: 12.605375
+  type: 'test'
+  ...
+# Subtest: reject malformed, oversized, past, out of region, unsafe URLs and spam
+ok 125 - reject malformed, oversized, past, out of region, unsafe URLs and spam
+  ---
+  duration_ms: 1.81225
+  type: 'test'
+  ...
+# Subtest: identity normalizes case and accent
+ok 126 - identity normalizes case and accent
+  ---
+  duration_ms: 0.219166
+  type: 'test'
+  ...
+# Subtest: reports require event id and a useful correction
+ok 127 - reports require event id and a useful correction
+  ---
+  duration_ms: 0.094625
+  type: 'test'
+  ...
+# Subtest: images and links have separate boundaries
+ok 128 - images and links have separate boundaries
+  ---
+  duration_ms: 0.149292
+  type: 'test'
+  ...
+1..128
+# tests 128
+# suites 0
+# pass 128
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1066.608375

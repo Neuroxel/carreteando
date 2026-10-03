@@ -1,0 +1,18 @@
+{
+  "testedAt": "2026-10-03T13:42:30.429Z",
+  "method": "same-origin recording reverse proxy; initial loading excluded",
+  "actions": [
+    "Valpo",
+    "Este finde",
+    "open filters",
+    "search mauri",
+    "Lugares",
+    "Mapa: 1 matching venue",
+    "Lista",
+    "clear search",
+    "back",
+    "forward"
+  ],
+  "requests": [],
+  "dataRequests": 0
+}

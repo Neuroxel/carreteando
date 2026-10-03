@@ -66,8 +66,8 @@ export default function ZoneRail({
         })}
       </ul>
       <p className="zone-rail-pie">
-        <Link href="/zonas" prefetch={false}>Ver todas las zonas</Link>
-        <Link href="/explorar?vista=mapa" prefetch={false}>Verlas en el mapa</Link>
+        <Link prefetch={false} href="/zonas">Ver todas las zonas</Link>
+        <Link prefetch={false} href="/explorar?vista=mapa">Verlas en el mapa</Link>
       </p>
     </section>
   );

@@ -1,7 +1,7 @@
 'use client';
 import { track } from '../lib/metrics';
 import { useState } from 'react';
-import { SITE_URL } from '../lib/site';
+import { shareUrl } from '../lib/share';
 export default function ShareButton({
   id,
   title,
@@ -15,17 +15,7 @@ export default function ShareButton({
 }) {
   const [message, setMessage] = useState('');
   const [fallback, setFallback] = useState(false);
-  const url = `${SITE_URL}/evento/${encodeURIComponent(id)}`;
-  async function copy() {
-    track('share');
-    try {
-      await navigator.clipboard.writeText(url);
-      setMessage('Enlace copiado');
-    } catch {
-      setFallback(true);
-      setMessage('Copia el enlace para compartir');
-    }
-  }
+  const url = shareUrl(id);
   async function share() {
     track('share');
     try {
@@ -55,29 +45,13 @@ export default function ShareButton({
         <span aria-hidden="true">↗</span>
         {!compact && ' Compartir'}
       </button>
-      {!compact && (
-        <>
-          <button className="button button-outline" type="button" onClick={copy}>
-            Copiar enlace
-          </button>
-          <a
-            className="button button-outline"
-            onClick={() => track('share')}
-            href={`https://wa.me/?text=${encodeURIComponent(`${title} · ${details} · Carreteando ${url}`)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            WhatsApp
-          </a>
-        </>
-      )}
       <span className="share-status" role="status">
         {message}
       </span>
       {fallback && (
         <input
           readOnly
-          aria-label="Enlace del evento"
+          aria-label="Enlace para compartir"
           value={url}
           onFocus={(e) => e.currentTarget.select()}
         />
