@@ -31,9 +31,22 @@ export function versionOf(value: unknown) {
   for (let i = 0; i < text.length; i++) h = ((h << 5) + h + text.charCodeAt(i)) | 0;
   return (h >>> 0).toString(36);
 }
-async function build(): Promise<PublicSnapshot> {
+async function leer() {
   const [events, venues, freshness] = await Promise.all([readEvents(), getPublicVenues(), getSourceFreshness()]);
-  const status = events.status === 'ok' && venues.status === 'ok' ? 'ok' : 'error';
+  return { events, venues, freshness, ok: events.status === 'ok' && venues.status === 'ok' };
+}
+async function build(): Promise<PublicSnapshot> {
+  let r = await leer();
+  if (!r.ok) {
+    await new Promise((res) => setTimeout(res, 1000));
+    r = await leer();
+  }
+  // Si la base falla dos veces, no se guarda un snapshot de error: se lanza,
+  // la caché no lo retiene y Next sigue sirviendo la última página buena.
+  // Sin base configurada (CI) se devuelve el estado de error y listo.
+  if (!r.ok && process.env.NEXT_PUBLIC_SUPABASE_URL) throw new Error('SNAPSHOT_BACKEND_UNAVAILABLE');
+  const { events, venues, freshness } = r;
+  const status = r.ok ? 'ok' : 'error';
   const contenido = { events: events.events, venues: venues.lugares };
   return {
     version: versionOf(contenido),
