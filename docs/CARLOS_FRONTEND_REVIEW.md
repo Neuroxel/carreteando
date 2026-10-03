@@ -1,29 +1,19 @@
-# Carreteando · Noche editorial
+# Carreteando — handoff final frontend para Carlos y Claude/Opus
 
-**Lista para revisión de Carlos — 2 de octubre de 2026.** No está aprobada para merge.
+El frontend nuevo tiene una sola fuente canónica: `feat/frontend-final-october`.
 
-- [Preview](https://carreteando-6yhfvnvx3-neuroxel.vercel.app) · [Producción actual](https://carreteando.vercel.app).
-- El enlace temporal sin login se entrega en la conversación y caduca el 9 de octubre. No lo guardamos en Git. La URL normal requiere acceso Vercel.
-- Rama: `feat/frontend-final-october`. SHA del frontend desplegado: `a12d0147444404faad6d39e86e174f27c4c328be`.
-- [Galería de capturas](frontend-review/index.html): móvil y escritorio, mapa, evento y lugar.
+- Código desplegado: `0da36647a5b9686cb9f27204ec37bbd02c42555b`.
+- Preview READY: https://carreteando-d06kp4d7y-neuroxel.vercel.app
+- [Comparativas antes/después — 390×844 y 1440×1000](frontend-review/pass-2/index.html).
+- [QA, alcance, informes y exclusiones de esta pasada](frontend-review/pass-2/README.md).
+- [Primera pasada, conservada como antecedente](frontend-review/QA.md).
 
-Negro azulado, crema y amarillo cálido. Flyers oficiales completos, tarjetas de lugar tipográficas, búsqueda central y cuatro fechas claras. Inicio deja las opciones secundarias en «Más opciones». Las fichas priorizan qué, cuándo, dónde y precio. Compartir lugares ahora genera el enlace correcto.
+Cuatro cambios visuales: cabecera editorial clara, filtros secundarios agrupados, afiches oficiales dominantes con fichas claras y lugares como fichas tipográficas abiertas. No se agregaron funciones ni se modificó backend, scraping o arquitectura.
 
-## Cinco minutos en el teléfono
+128 tests, lint, typecheck y build correctos. Cero solicitudes adicionales en la secuencia de filtros/búsqueda/lugares/mapa/atrás/adelante registrada. Sin desbordamiento de documento en ocho anchos revisados. SEO comparado antes/después sin cambios de metadatos en las páginas medidas.
 
-1. ¿En 5 segundos entiendo qué hacer?
-2. ¿Se siente como una app de carrete, no como una base de datos?
-3. ¿Los flyers tienen suficiente protagonismo?
-4. ¿Encuentro rápidamente Esta noche?
-5. ¿Elijo una ciudad fácilmente?
-6. ¿Las tarjetas tienen demasiada información?
-7. ¿Mapa y lista se entienden?
-8. ¿Los lugares sin evento siguen siendo útiles?
-9. ¿Hay algo visual que parezca genérico/IA?
-10. ¿La usarías en el teléfono antes de salir?
+Lighthouse local, portada/explorar/evento disponible: **100/100/96/100** (rendimiento/accesibilidad/buenas prácticas/SEO). Preview alojado, portada: **99/100/100/58**; el SEO del preview está limitado por protección y noindex, no se desactivaron para maquillar la medición.
 
-Prueba Valpo → Esta noche → un evento → volver → Lugares → Mapa. Anota qué te hace dudar, no sólo qué te gusta.
+Limitaciones relevantes: no estuvieron disponibles las dos imágenes originales de referencia, sólo su descripción. Se observó una ficha de José Alfredo Fuentes con 404 en ambos builds y una diferencia de horario entre afiche y datos de FALSOCLUB en el preview; el informe detalla ambas para integración de datos. No se ocultaron avisos de frescura.
 
-## Límites conocidos
-
-No hay fotos oficiales de lugares: es una elección tipográfica intencional. Algunos no tienen coordenadas ni cuenta oficial; no inventamos enlaces. La cartelera revisada tiene flyers cuadrados y verticales, pero no horizontales ni eventos sin hora: esos dos casos no tienen validación visual con contenido real. Vercel añade su botón de revisión y bloquea la indexación de previews. La producción sigue intacta.
+Todo el trabajo útil está versionado. Esta sesión no hizo merge ni promoción a producción. Claude/Opus hará la integración posterior con backend/datos; los commits de backend retirados por otro trabajo durante la sesión no están incluidos en el preview. El HEAD final de la rama incluye este handoff y la evidencia; el código desplegado es el SHA indicado arriba.
