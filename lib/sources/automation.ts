@@ -53,6 +53,7 @@ function stateFrom(r: Row, locked: Set<number>): EventState {
     disposition: r.disposition,
     relevance: (r.relevance as Relevancia) || k.relevancia,
     academic: k.academico,
+    daySignal: k.salida,
     humanLocked: locked.has(r.id),
     eventStatus: r.event_status || 'scheduled',
   };

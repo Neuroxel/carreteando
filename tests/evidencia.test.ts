@@ -220,3 +220,13 @@ test('con el presupuesto lleno, primero la fuente con evento esta noche que llev
   const urgentes = new Map([['cinzano-agenda', 6], ['portaldisc-cassot', 12]]);
   assert.deepEqual(dueSources(rows, now, 1, urgentes).map((s) => s.id), ['cinzano-agenda']);
 });
+
+test('lo diurno con señal de salida sigue las reglas normales; sin señal lo mira una persona', async () => {
+  const { clasificar } = await import('../lib/sources/relevance');
+  assert.equal(clasificar({ titulo: 'Café Rock 2026', hora: '12:00' }).salida, true);
+  assert.equal(clasificar({ titulo: 'Pasacalles barriales del carnaval', hora: '14:00' }).salida, true);
+  assert.equal(clasificar({ titulo: 'Seminario de gestión', hora: '10:00' }).salida, false);
+  const dia = { time: '16:00' } as const;
+  assert.equal(evaluateEventEvidence(evento({ ...dia, daySignal: true }), [ev({}, { start_time: '16:00' })], confianza('strict'), HOY).decision, 'AUTO_PROMOTE_FROM_REVIEW');
+  assert.equal(evaluateEventEvidence(evento({ ...dia, daySignal: false }), [ev({}, { start_time: '16:00' })], confianza('strict'), HOY).decision, 'REVIEW_INSUFFICIENT');
+});

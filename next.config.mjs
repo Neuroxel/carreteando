@@ -10,6 +10,7 @@ const nextConfig = {
       { protocol: 'https', hostname: 'imagenes.passline.com' },
       { protocol: 'https', hostname: 'ticketing-uploads-1.ticketplus.global' },
       { protocol: 'https', hostname: 'static.ptocdn.net' },
+      { protocol: 'https', hostname: 'miltambores.cl' },
       { protocol: 'https', hostname: 'kn6kang47jzl4ttd.public.blob.vercel-storage.com' },
       { protocol: 'https', hostname: 'events-cdn.vesti.cl' },
       { protocol: 'https', hostname: 'images.portaldisc.com' },

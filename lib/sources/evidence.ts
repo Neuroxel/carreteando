@@ -13,8 +13,9 @@
  *
  * Las reglas 4–6 se evalúan primero porque protegen los datos críticos
  * (existencia, fecha, lugar, ciudad, cancelación). Para publicar (1–3) la
- * evidencia tiene que haberse leído en las últimas 72 horas y la hora no puede
- * ser diurna (antes de las 17:00): lo de día lo mira una persona.
+ * evidencia tiene que haberse leído en las últimas 72 horas, y lo diurno
+ * (antes de las 17:00) solo pasa si tiene señal de salida (música, festival,
+ * carnaval, tocata, DJ); si no, lo mira una persona.
  * Duplicados y región se resuelven en automation.ts porque necesitan mirar
  * otras filas.
  */
@@ -58,6 +59,8 @@ export interface EventState {
   academic?: boolean;
   /** Una persona editó este evento: la automatización no cambia sus datos. */
   humanLocked: boolean;
+  /** Tiene señal de salida (música, festival, carnaval...): lo de día vale igual. */
+  daySignal?: boolean;
   eventStatus: EventStatus | 'rescheduled';
 }
 export type Decision =
@@ -246,7 +249,9 @@ export function evaluateEventEvidence(
       event.disposition === 'public' ? 'KEEP' : event.disposition === 'review' ? 'AUTO_PROMOTE_FROM_REVIEW' : 'AUTO_PUBLISH',
       rule,
     );
-  const diurno = event.time !== null && event.time < '17:00';
+  // De día y sin señal de salida decide una persona; con señal (un festival a
+  // las 16:00, un carnaval) sigue las mismas reglas que lo nocturno.
+  const diurno = event.time !== null && event.time < '17:00' && !event.daySignal;
   const frescas = fuertes.filter((e) => now.getTime() - Date.parse(e.retrievedAt) <= FRESCURA_MS);
   if (!diurno && event.venueKnown) {
     const oficial = frescas.find((e) => e.authority === 'first_party' && e.structured && tierOf(e.sourceId) === 'A');

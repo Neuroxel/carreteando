@@ -159,3 +159,10 @@ test('un local propuesto por una ticketera lleva slug estable y un tipo solo si 
   assert.equal(tipoLocal('Club Patio'), 'club');
   assert.equal(tipoLocal('Casa Polanco'), 'bar');
 });
+
+test('un local se reconoce también por sus alias', async () => {
+  const { venueByName } = await import('../lib/sources/dispatcher');
+  const registro = [{ id: 27, name: 'Teatro Aula Magna USM', city: 'Valparaíso', aliases: ['Aula Magna - Universidad Federico Santa María'] }];
+  assert.equal(venueByName(registro, 'Aula Magna - Universidad Federico Santa María', 'Valparaíso'), 27);
+  assert.equal(venueByName(registro, 'Aula', 'Valparaíso'), null);
+});

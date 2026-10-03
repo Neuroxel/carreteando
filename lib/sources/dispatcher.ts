@@ -303,20 +303,32 @@ async function proponerLocal(db: Db, c: EventCandidate, hechos: Set<string>) {
     { onConflict: 'slug', ignoreDuplicates: true },
   );
 }
-async function allVenues(db: Db): Promise<{ id: number; name: string; city: string }[]> {
-  const { data } = await db.from('venues').select('id,name,city').limit(2000);
+type VenueRef = { id: number; name: string; city: string; aliases?: string[] | null };
+async function allVenues(db: Db): Promise<VenueRef[]> {
+  const { data } = await db.from('venues').select('id,name,city,aliases').limit(2000);
   return data || [];
 }
-async function knownVenues(db: Db): Promise<{ id: number; name: string; city: string }[]> {
-  const { data } = await db.from('venues').select('id,name,city').eq('is_active', true).eq('moderation_status', 'approved').limit(1000);
+async function knownVenues(db: Db): Promise<VenueRef[]> {
+  const { data } = await db
+    .from('venues')
+    .select('id,name,city,aliases')
+    .eq('is_active', true)
+    .eq('moderation_status', 'approved')
+    .limit(1000);
   return data || [];
 }
-export function venueByName(registro: { id: number; name: string; city: string }[], nombre: string | null, ciudad: string) {
+export function venueByName(
+  registro: { id: number; name: string; city: string; aliases?: string[] | null }[],
+  nombre: string | null,
+  ciudad: string,
+) {
   if (!nombre) return null;
   const n = normalizedTitle(nombre);
   const hit = registro.find((v) => {
     const r = normalizedTitle(v.name);
     if (r === n) return true;
+    // Los nombres con que cada ticketera escribe el mismo local.
+    if ((v.aliases || []).some((a) => normalizedTitle(a) === n)) return true;
     // Contención solo con nombres largos y en la misma ciudad: "Teatro" no basta.
     return v.city === ciudad && Math.min(r.length, n.length) >= 10 && (r.includes(n) || n.includes(r));
   });

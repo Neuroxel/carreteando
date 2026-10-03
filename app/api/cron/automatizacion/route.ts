@@ -3,6 +3,7 @@ import { refrescarPublico } from '../../../../lib/snapshot';
 import { cronAutorizado } from '../../../../lib/cron-auth';
 import { getAdminDb } from '../../../../lib/server-db';
 import { backtest, reevaluate } from '../../../../lib/sources/automation';
+import { editorialRows } from '../../../../lib/editorial-feed';
 export const maxDuration = 300;
 export const dynamic = 'force-dynamic';
 const reply = (body: object, status = 200) =>
@@ -18,7 +19,18 @@ export async function GET(request: Request) {
   if (!(await cronAutorizado(request, db))) return reply({ error: 'Unauthorized' }, 401);
   const modo = new URL(request.url).searchParams.get('modo');
   if (modo === 'backtest') return reply(await backtest(db));
+  // La selección editorial (puente manual, programas oficiales) entra también
+  // aquí, sin esperar la próxima ingesta. Solo inserta: nunca pisa nada.
+  const editorial = editorialRows();
+  let editorialInsertados = 0;
+  if (editorial.length) {
+    const { data } = await db
+      .from('events')
+      .upsert(editorial, { onConflict: 'instagram_id', ignoreDuplicates: true })
+      .select('instagram_id');
+    editorialInsertados = data?.length || 0;
+  }
   const r = await reevaluate(db);
-  if (r.applied > 0) await refrescarPublico();
-  return reply(r);
+  if (r.applied > 0 || editorialInsertados > 0) await refrescarPublico();
+  return reply({ ...r, editorialInsertados });
 }

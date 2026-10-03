@@ -16,6 +16,7 @@ const CULTURA = [
   'octeto', 'orquesta', 'jazz', 'rock', 'punk', 'metal', 'folk', 'cueca', 'bolero', 'tango',
   'teatro', 'obra', 'stand up', 'standup', 'comedia', 'cine', 'ciclo', 'lanzamiento',
   'disco', 'gira', 'tributo', 'recital', 'noche', 'cabaret', 'drag',
+  'carnaval', 'pasacalle', 'pasacalles', 'comparsa', 'comparsas', 'murga', 'batucada',
 ];
 const ACADEMICO = [
   'seminario', 'congreso', 'conferencia', 'charla', 'taller', 'workshop', 'curso',
@@ -42,7 +43,7 @@ export function clasificar(input: {
   hora?: string | null;
   horaFin?: string | null;
   categorias?: string[];
-}): { relevancia: Relevancia; razones: string[]; academico: boolean } {
+}): { relevancia: Relevancia; razones: string[]; academico: boolean; salida: boolean } {
   const titulo = normalizedTitle(input.titulo);
   const todo = normalizedTitle(
     `${input.titulo} ${input.descripcion || ''} ${(input.categorias || []).join(' ')}`,
@@ -61,7 +62,10 @@ export function clasificar(input: {
   if (cultura.length) razones.push(`señal cultural: ${cultura.slice(0, 3).join(', ')}`);
   if (academico.length) razones.push(`señal académica: ${academico.slice(0, 3).join(', ')}`);
   if (hora) razones.push(`empieza ${hora}`);
-  const r = (relevancia: Relevancia) => ({ relevancia, razones, academico: academico.length > 0 && noche.length === 0 });
+  // Señal de salida: música, fiesta, festival, carnaval. Hace útil algo de día
+  // (un festival a las 16:00) sin volverlo "nocturno".
+  const salida = noche.length + cultura.length > 0 && !(academico.length > 0 && noche.length === 0);
+  const r = (relevancia: Relevancia) => ({ relevancia, razones, academico: academico.length > 0 && noche.length === 0, salida });
   // Académico de día: fuera, sin pasar por la cola.
   if (academico.length && !noche.length && (deDia || terminaTemprano || !hora))
     return r('IRRELEVANT');

@@ -23,6 +23,8 @@ export const IMAGE_HOSTS = [
   'www.municipalidaddevalparaiso.cl',
   'www.munivina.cl',
   'lacalera.cl',
+  // Organización oficial de Mil Tambores
+  'miltambores.cl',
 ];
 export function hostPermitido(hostname: string) {
   return (
