@@ -1,0 +1,8 @@
+{
+  "method": "Same-origin recording reverse proxy; start after 23 initial requests. Browser actions through the in-app browser.",
+  "sequence": "Valpo → Esta noche → rock → Lugares → Mapa → Lista → clear → En vivo → back → forward",
+  "initialRequests": 23,
+  "interactionRequests": [],
+  "dataRequests": [],
+  "external": "Map assets allowed. Supabase absent from client bundle (source inspection)."
+}

@@ -1,0 +1,58 @@
+
+> carreteando@0.1.0 build
+> next build
+
+   ▲ Next.js 15.5.25
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 1855ms
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/23) ...
+   Generating static pages (5/23) 
+   Generating static pages (11/23) 
+   Generating static pages (17/23) 
+ ✓ Generating static pages (23/23)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                 Size  First Load JS  Revalidate  Expire
+┌ ○ /                                      126 B         123 kB          5m      1y
+├ ○ /_not-found                            169 B         103 kB
+├ ƒ /admin                                 169 B         103 kB
+├ ƒ /api/ambiente                          169 B         103 kB
+├ ƒ /api/cron/automatizacion               169 B         103 kB
+├ ƒ /api/cron/scrape                       169 B         103 kB
+├ ƒ /api/eventos                           169 B         103 kB
+├ ƒ /api/medir                             169 B         103 kB
+├ ƒ /api/publicar                          169 B         103 kB
+├ ƒ /api/reportar                          169 B         103 kB
+├ ƒ /api/snapshot                          169 B         103 kB
+├ ƒ /buscar                                169 B         103 kB
+├ ○ /como-funciona                         169 B         106 kB
+├ ○ /confianza                             169 B         106 kB
+├ ● /evento/[id]                          3.1 kB         114 kB
+├ ƒ /evento/[id]/opengraph-image           169 B         103 kB
+├ ○ /explorar                              126 B         123 kB          5m      1y
+├ ○ /indexnow-key.txt                      169 B         103 kB
+├ ● /lugar/[slug]                        2.12 kB         108 kB
+├ ƒ /lugares                               169 B         103 kB
+├ ○ /mapa                                  169 B         103 kB
+├ ○ /opengraph-image                       169 B         103 kB
+├ ○ /publicar                            3.29 kB         109 kB          1h      1y
+├ ○ /radar                                 169 B         103 kB
+├ ○ /robots.txt                            169 B         103 kB
+├ ○ /sitemap.xml                           169 B         103 kB          5m      1y
+├ ○ /zonas                                 169 B         106 kB          5m      1y
+└ ● /zonas/[slug]                        1.52 kB         113 kB
++ First Load JS shared by all             103 kB
+  ├ chunks/255-37e0f0325134c4d7.js       46.4 kB
+  ├ chunks/4bd1b696-c023c6e3521b1417.js  54.2 kB
+  └ other shared chunks (total)          1.92 kB
+
+
+○  (Static)   prerendered as static content
+●  (SSG)      prerendered as static HTML (uses generateStaticParams)
+ƒ  (Dynamic)  server-rendered on demand
+

@@ -1,0 +1,146 @@
+[
+  {
+    "path": "/",
+    "status": 200,
+    "productionStatus": 200,
+    "local": {
+      "canonical": "https://carreteando.vercel.app",
+      "jsonLd": [],
+      "eventLinks": 3
+    },
+    "production": {
+      "canonical": "https://carreteando.vercel.app",
+      "jsonLd": [],
+      "eventLinks": 3
+    },
+    "gzipBytes": 17912
+  },
+  {
+    "path": "/explorar",
+    "status": 200,
+    "productionStatus": 200,
+    "local": {
+      "canonical": "https://carreteando.vercel.app/explorar",
+      "jsonLd": [],
+      "eventLinks": 26
+    },
+    "production": {
+      "canonical": "https://carreteando.vercel.app/explorar",
+      "jsonLd": [],
+      "eventLinks": 26
+    },
+    "gzipBytes": 21288
+  },
+  {
+    "path": "/evento/curated-pd-mauricioredolesenteatromauriscd-1002",
+    "status": 200,
+    "productionStatus": 200,
+    "local": {
+      "canonical": "https://carreteando.vercel.app/evento/curated-pd-mauricioredolesenteatromauriscd-1002",
+      "jsonLd": [
+        "Event",
+        "BreadcrumbList"
+      ],
+      "eventLinks": 0
+    },
+    "production": {
+      "canonical": "https://carreteando.vercel.app/evento/curated-pd-mauricioredolesenteatromauriscd-1002",
+      "jsonLd": [
+        "Event",
+        "BreadcrumbList"
+      ],
+      "eventLinks": 0
+    },
+    "gzipBytes": 5673
+  },
+  {
+    "path": "/lugar/teatro-mauri-scd",
+    "status": 200,
+    "productionStatus": 200,
+    "local": {
+      "canonical": "https://carreteando.vercel.app/lugar/teatro-mauri-scd",
+      "jsonLd": [
+        "MusicVenue",
+        "BreadcrumbList"
+      ],
+      "eventLinks": 9
+    },
+    "production": {
+      "canonical": "https://carreteando.vercel.app/lugar/teatro-mauri-scd",
+      "jsonLd": [
+        "MusicVenue",
+        "BreadcrumbList"
+      ],
+      "eventLinks": 9
+    },
+    "gzipBytes": 5352
+  },
+  {
+    "path": "/zonas/cerro-alegre",
+    "status": 200,
+    "productionStatus": 200,
+    "local": {
+      "canonical": "https://carreteando.vercel.app/zonas/cerro-alegre",
+      "jsonLd": [
+        "BreadcrumbList"
+      ],
+      "eventLinks": 0
+    },
+    "production": {
+      "canonical": "https://carreteando.vercel.app/zonas/cerro-alegre",
+      "jsonLd": [
+        "BreadcrumbList"
+      ],
+      "eventLinks": 0
+    },
+    "gzipBytes": 4666
+  },
+  {
+    "path": "/robots.txt",
+    "status": 200,
+    "productionStatus": 200,
+    "local": {
+      "canonical": null,
+      "jsonLd": [],
+      "eventLinks": 0
+    },
+    "production": {
+      "canonical": null,
+      "jsonLd": [],
+      "eventLinks": 0
+    },
+    "gzipBytes": 123
+  },
+  {
+    "path": "/sitemap.xml",
+    "status": 200,
+    "productionStatus": 200,
+    "local": {
+      "canonical": null,
+      "jsonLd": [],
+      "eventLinks": 0
+    },
+    "production": {
+      "canonical": null,
+      "jsonLd": [],
+      "eventLinks": 0
+    },
+    "gzipBytes": 2002
+  },
+  {
+    "path": "/indexnow-key.txt",
+    "status": 200,
+    "productionStatus": 200,
+    "local": {
+      "canonical": null,
+      "jsonLd": [],
+      "eventLinks": 0
+    },
+    "production": {
+      "canonical": null,
+      "jsonLd": [],
+      "eventLinks": 0
+    },
+    "gzipBytes": 52
+  }
+]
