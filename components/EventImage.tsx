@@ -11,7 +11,7 @@ export default function EventImage({ src, title, lugar, ciudad, priority = false
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
   return <div className="event-art">
     {src && failedSrc !== src ? <Image src={src} alt={`Flyer de ${title}`} fill
-      sizes="(max-width: 640px) calc(100vw - 36px), (max-width: 1000px) 46vw, 380px"
+      sizes="(max-width: 640px) calc(100vw - 36px), (max-width: 1000px) 46vw, 590px"
       priority={priority} loading={priority ? undefined : 'lazy'}
       onError={() => setFailedSrc(src)} referrerPolicy="no-referrer" /> :
       <div className="flyer-fallback">

@@ -223,6 +223,22 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
         </div>
       </section>
       <section className={`container discovery ${home ? 'discovery-home' : ''}`} id="cartelera" aria-label="Cartelera">
+        <div className="date-tabs" aria-label="Cuándo">
+          {(
+            [
+              ['hoy', 'Esta noche', derivados.todayCount],
+              ['manana', 'Mañana', derivados.mananaCount],
+              ['finde', 'Este finde', 0],
+              ['futuro', 'Más adelante', 0],
+            ] as const
+          ).map(([v, label, n]) => (
+            <a key={v} {...enlace({ fecha: v })} className={filtros.fecha === v ? 'selected' : ''} aria-current={filtros.fecha === v ? 'true' : undefined}>
+              {label}
+              {n > 0 && <span>{n}</span>}
+            </a>
+          ))}
+        </div>
+        <details className="discovery-options"><summary>Buscar y filtrar{(filtros.busqueda || filtros.escena !== 'todos' || filtros.precio === 'gratis' || ver !== 'todo' || vista !== 'lista') ? ' · filtros activos' : ''}</summary>
         <form
           className="search-form"
           role="search"
@@ -255,22 +271,6 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
             </button>
           )}
         </form>
-        <div className="date-tabs" aria-label="Cuándo">
-          {(
-            [
-              ['hoy', 'Esta noche', derivados.todayCount],
-              ['manana', 'Mañana', derivados.mananaCount],
-              ['finde', 'Este finde', 0],
-              ['futuro', 'Más adelante', 0],
-            ] as const
-          ).map(([v, label, n]) => (
-            <a key={v} {...enlace({ fecha: v })} className={filtros.fecha === v ? 'selected' : ''} aria-current={filtros.fecha === v ? 'true' : undefined}>
-              {label}
-              {n > 0 && <span>{n}</span>}
-            </a>
-          ))}
-        </div>
-        <details className="discovery-options" open={home ? undefined : true}><summary>Más opciones{(filtros.escena !== 'todos' || filtros.precio === 'gratis' || ver !== 'todo' || vista !== 'lista') ? ' · filtros activos' : ''}</summary>
         {derivados.escenas.length > 0 && (
           <div className="escenas" aria-label="Escenas">
             {derivados.escenas.map((x) => {
