@@ -94,7 +94,7 @@ export function confianzaPublica(row: EventRow): ConfianzaPublica {
   if (row.organizer_verified === true) return 'organizador';
   if (Number(row.independent_sources || 0) >= 2) return 'varias';
   if (typeof row.source_id === 'string' && OFICIALES.has(row.source_id)) return 'oficial';
-  if (typeof row.source_id === 'string' && row.source_id.startsWith('portaldisc-')) return 'ticketera';
+  if (typeof row.source_id === 'string' && /^(portaldisc|ticketplus|puntoticket|evently)-/.test(row.source_id)) return 'ticketera';
   if (row.source === 'manual') return 'comunidad';
   return 'revisado';
 }

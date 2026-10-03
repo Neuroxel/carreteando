@@ -33,3 +33,9 @@ test('un snapshot viejo nunca revive eventos pasados: la fecha la pone el teléf
   assert.equal(filterEvents([ev], { fecha: 'futuro' }, '2026-10-20').length, 1);
   assert.equal(filterEvents([ev], { fecha: 'futuro' }, '2026-10-25').length, 0);
 });
+
+test('toda ticketera se rotula como ticketera, no como revisado por nosotros', async () => {
+  const { confianzaPublica } = await import('../lib/events');
+  for (const id of ['portaldisc-region', 'ticketplus-region', 'puntoticket-region', 'evently-region'])
+    assert.equal(confianzaPublica({ source_id: id }), 'ticketera');
+});
