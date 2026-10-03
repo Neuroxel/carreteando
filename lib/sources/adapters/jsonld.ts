@@ -92,7 +92,8 @@ export function candidatoDeLd(ev: Ld, sourceId: string, pageUrl: string, today: 
     time: cuando.time,
     venue: str(loc.name) || null,
     city: ciudad,
-    detailUrl: str(ev.url) || pageUrl,
+    // Sin parámetros de seguimiento: la misma ficha es la misma URL.
+    detailUrl: (str(ev.url) || pageUrl).replace(/[?#].*$/, ''),
     imageUrl: imagen || null,
     description: [precio && /^\d+$/.test(precio) ? `Desde $${Number(precio).toLocaleString('es-CL')}` : '', stripTags(str(ev.description))]
       .filter(Boolean)
@@ -114,14 +115,30 @@ export function fechaDeSlug(url: string): string | null {
 }
 const REGIONAL = /valpara|valpo|vina|quilpu|villa-alemana|concon|renaca|quillota|limache|olmue|la-calera|quintero|puchuncavi|maitencillo/i;
 /** Enlaces a fichas desde páginas índice: vigentes, sin repetir, primero los que nombran la región. */
-export function enlacesDeListas(htmls: string[], patron: RegExp, today: string, max: number) {
+export function enlacesDeListas(
+  htmls: string[],
+  patron: RegExp,
+  today: string,
+  max: number,
+  base = 'https://example.invalid',
+  soloRegional = false,
+) {
   const todos = new Set<string>();
-  for (const h of htmls) for (const m of h.matchAll(/href="([^"]+)"/g)) if (patron.test(m[1])) todos.add(m[1]);
+  for (const h of htmls)
+    for (const m of h.matchAll(/href="([^"]+)"/g)) {
+      if (!patron.test(m[1])) continue;
+      try {
+        todos.add(new URL(m[1], base).toString());
+      } catch {
+        /* enlace roto */
+      }
+    }
   return [...todos]
     .filter((u) => {
       const f = fechaDeSlug(u);
       return !f || f >= today;
     })
+    .filter((u) => !soloRegional || REGIONAL.test(u))
     .sort((a, b) => Number(REGIONAL.test(b)) - Number(REGIONAL.test(a)))
     .slice(0, max);
 }
@@ -146,7 +163,14 @@ export const jsonldEvents: Adapter = {
         if (r && r.status === 200) htmls.push(r.body);
       }
       if (!htmls.length) throw new SourceError('SIN_INDICE');
-      paginas = enlacesDeListas(htmls, new RegExp(source.config.linkPattern || '.'), today, Number(source.config.maxPages || 25));
+      paginas = enlacesDeListas(
+        htmls,
+        new RegExp(source.config.linkPattern || '.'),
+        today,
+        Number(source.config.maxPages || 25),
+        source.config.listUrls.split(',')[0].trim(),
+        source.config.soloRegional === 'true',
+      );
     } else if (source.config?.sitemap) {
       const sm = await fetcher(source.config.sitemap);
       if (sm.status !== 200) throw new SourceError(`HTTP_${sm.status}`);

@@ -9,6 +9,8 @@ const nextConfig = {
       { protocol: 'https', hostname: 'images.unsplash.com' },
       { protocol: 'https', hostname: 'imagenes.passline.com' },
       { protocol: 'https', hostname: 'ticketing-uploads-1.ticketplus.global' },
+      { protocol: 'https', hostname: 'static.ptocdn.net' },
+      { protocol: 'https', hostname: 'kn6kang47jzl4ttd.public.blob.vercel-storage.com' },
       { protocol: 'https', hostname: 'events-cdn.vesti.cl' },
       { protocol: 'https', hostname: 'images.portaldisc.com' },
       // Sitios oficiales de los propios lugares y municipios: de ahí sale el

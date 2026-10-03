@@ -264,6 +264,30 @@ export const SOURCES: SourceDefinition[] = [
       maxPages: '25',
     },
   },
+  {
+    // Ticketera grande. Su listado /todos es nacional y sus fichas publican
+    // schema.org/Event con ciudad y coordenadas; solo se abren las que nombran
+    // una comuna de la región.
+    id: 'puntoticket-region',
+    name: 'PuntoTicket · eventos en la región',
+    sourceType: 'TICKET_PLATFORM',
+    adapter: jsonldEvents.id,
+    publicUrl: 'https://www.puntoticket.com/todos',
+    commune: 'Valparaíso',
+    zone: null,
+    trust: 'strict',
+    family: 'TICKET_PLATFORM',
+    tier: 'B',
+    accessMode: 'html',
+    relevanceFilter: true,
+    refreshHours: 24,
+    config: {
+      listUrls: 'https://www.puntoticket.com/todos',
+      linkPattern: '^/[a-z0-9-]{5,}$',
+      soloRegional: 'true',
+      maxPages: '20',
+    },
+  },
 ];
 /**
  * Fuentes públicas que vale la pena mirar a mano pero que no leemos con un
