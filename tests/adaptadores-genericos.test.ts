@@ -151,3 +151,11 @@ test('Evently: comuna desde la dirección, sin confundir la región con la ciuda
   const links = enlacesDeListas([html], /^https:\/\/(?!app\.|admin\.)[a-z0-9-]+\.evently\.cl\/[A-Za-z0-9-]{6,}$/, '2026-10-03', 5);
   assert.deepEqual(links, ['https://c.evently.cl/Noche-Valparaiso-10-10-2026', 'https://b.evently.cl/Show-Santiago-10-10-2026']);
 });
+
+test('un local propuesto por una ticketera lleva slug estable y un tipo solo si el nombre lo dice', async () => {
+  const { slugLocal, tipoLocal } = await import('../lib/sources/dispatcher');
+  assert.equal(slugLocal('Ferri Restobar', 'Viña del Mar'), 'ferri-restobar-vina-del-mar');
+  assert.equal(tipoLocal('Teatro IPA'), 'teatro');
+  assert.equal(tipoLocal('Club Patio'), 'club');
+  assert.equal(tipoLocal('Casa Polanco'), 'bar');
+});

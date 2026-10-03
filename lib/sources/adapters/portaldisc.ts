@@ -1,6 +1,7 @@
 import { toChileDateString } from '../../event-extraction';
 import { buildCandidate, fechaVerificada, parseSpanishDate, parseTime, stripTags } from '../normalize';
 import { SourceError, type Adapter, type AdapterResult } from '../types';
+import { ciudadDe } from './jsonld';
 const CARD_SEPARATOR = 'class="album"';
 const HREF = /href="(\/evento\/[A-Za-z0-9_-]+)"/;
 const IMG = /src="(https:\/\/images\.portaldisc\.com\/[^"']+)"/;
@@ -63,5 +64,69 @@ export const portaldiscCartelera: Adapter = {
       else parseFailures += 1;
     }
     return { itemsFound: cards.length, candidates, parseFailures };
+  },
+};
+
+/**
+ * El listado regional de la ticketera (/tickets/R05): una sola página con todo
+ * lo que vende en la región, incluidos locales que no tienen cartelera propia
+ * registrada. La ciudad sale de la línea "Local, Ciudad" y lo que cae fuera de
+ * las comunas cubiertas se descarta.
+ */
+export const portaldiscRegion: Adapter = {
+  id: 'portaldisc-region',
+  async run(source, fetcher): Promise<AdapterResult> {
+    const response = await fetcher(source.publicUrl);
+    if (response.status !== 200) throw new SourceError(`HTTP_${response.status}`);
+    const chunks = response.body.split('class="info_responsivo"');
+    if (chunks.length < 2) throw new SourceError('PAGINA_INESPERADA');
+    const today = toChileDateString();
+    const candidates = [];
+    let parseFailures = 0;
+    let fuera = 0;
+    for (let i = 1; i < chunks.length; i++) {
+      const card = chunks[i].slice(0, 2000);
+      const href = card.match(/href="(?:https:\/\/www\.portaldisc\.com)?(\/evento\/[A-Za-z0-9_-]+)/);
+      const lines = [...card.matchAll(PARAGRAPH)].map((m) => stripTags(m[1])).filter(Boolean);
+      const [title, whenLine, whereLine] = lines;
+      if (!href || !title || !whenLine || !whereLine) {
+        parseFailures += 1;
+        continue;
+      }
+      const date = parseSpanishDate(whenLine, today);
+      if (!date) {
+        parseFailures += 1;
+        continue;
+      }
+      if (date < today) continue;
+      const corte = whereLine.lastIndexOf(',');
+      const venue = (corte > 0 ? whereLine.slice(0, corte) : whereLine).trim();
+      const city = ciudadDe(corte > 0 ? whereLine.slice(corte + 1) : '');
+      if (!city) {
+        fuera += 1;
+        continue;
+      }
+      const imgs = [...chunks[i - 1].matchAll(new RegExp(IMG.source, 'g'))];
+      const verificada = fechaVerificada(whenLine, date);
+      const candidate = buildCandidate({
+        sourceId: source.id,
+        title,
+        date,
+        time: parseTime(whenLine),
+        venue,
+        city,
+        detailUrl: new URL(href[1], 'https://www.portaldisc.com').toString(),
+        imageUrl: imgs.length ? imgs[imgs.length - 1][1] : null,
+        description: [whenLine, whereLine].join(' · '),
+        confidence: verificada ? 'high' : 'medium',
+        reasons: [
+          'listado regional de la ticketera',
+          verificada ? 'año escrito y día de la semana coinciden con la fecha' : 'fecha escrita en texto, sin año verificable',
+        ],
+      });
+      if (candidate) candidates.push(candidate);
+      else parseFailures += 1;
+    }
+    return { itemsFound: chunks.length - 1 - fuera, candidates, parseFailures };
   },
 };

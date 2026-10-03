@@ -212,3 +212,20 @@ test('una fuente pausada nunca se despacha y el presupuesto se respeta', () => {
   assert.equal(despachadas.length, 3, 'el presupuesto por pasada acota el trabajo');
   assert.equal(dueSources(vencidas, new Date('2026-09-15T16:00:00Z'), 99).some((s) => s.id === 'muni-valparaiso'), false);
 });
+
+test('el listado regional de la ticketera saca local y ciudad de cada tarjeta y deja fuera otras comunas', async () => {
+  const { portaldiscRegion } = await import('../lib/sources/adapters/portaldisc');
+  const tarjeta = (slug: string, t: string, cuando: string, donde: string) =>
+    `<div class="cover img-container"><a href="https://www.portaldisc.com/evento/${slug}"><img src="https://images.portaldisc.com/l/eventos/360/${slug}.jpg"></a></div><div class="info_responsivo"><a href="https://www.portaldisc.com/evento/${slug}"><p>${t}</p><p>${cuando}</p><p>${donde}</p></a></div>`;
+  const html =
+    tarjeta('ferri', 'ROCKIN CHAIR EN FERRI RESTOBAR, VALPARAÍSO', 'Viernes 9 de octubre 2026, 21:00', 'Ferri Restobar, Viña del Mar') +
+    tarjeta('quisco', 'EVELYN CORNEJO EN EL QUISCO', 'Domingo 4 de octubre 2026, 18:30', 'Café Restaurant Ñañitas, El Quisco');
+  const r = await portaldiscRegion.run({ ...fuenteOficial, id: 'portaldisc-region', trust: 'strict' }, async () => ({ status: 200, body: html }));
+  assert.equal(r.candidates.length, 1);
+  const [c] = r.candidates;
+  assert.equal(c.venue, 'Ferri Restobar');
+  assert.equal(c.city, 'Viña del Mar', 'manda la línea del lugar, no el título');
+  assert.equal(c.date, '2026-10-09');
+  assert.equal(c.confidence, 'high');
+  assert.ok(c.imageUrl?.includes('ferri'));
+});

@@ -179,6 +179,9 @@ export async function runSource(
   // Una fuente que habla de muchos locales (ticketera, directorio): el lugar se
   // reconoce solo si el nombre calza con uno del registro, en la misma ciudad.
   const registro = source.venueSlug ? [] : await knownVenues(db);
+  const propuestos = new Set<string>();
+  // Todos los locales, aprobados o no: lo que ya está en el registro no se propone otra vez.
+  const todos = source.venueSlug || source.tier !== 'B' ? [] : await allVenues(db);
   for (const candidate of unique) {
     // El nombre del local no dice nada del evento: "Teatro Mauri" haría pasar
     // por teatro cualquier cosa que ocurra ahí.
@@ -199,6 +202,10 @@ export async function runSource(
       report.rejected += 1;
       continue;
     }
+    // Una ticketera nombra un local que no conocemos: queda propuesto, privado,
+    // para que una persona lo apruebe una sola vez. No se publica solo.
+    if (!source.venueSlug && source.tier === 'B' && candidate.venue && !venueByName(todos, candidate.venue, candidate.city))
+      await proponerLocal(db, candidate, propuestos);
     // Lo que ya existe no se duplica: se le agrega evidencia. Así una segunda
     // fuente confirma, y un cambio de fecha en el origen queda a la vista.
     const existente = await findExisting(db, candidate);
@@ -261,6 +268,44 @@ export async function runSource(
   }
   report.durationMs = Date.now() - started;
   return report;
+}
+export function slugLocal(nombre: string, ciudad: string) {
+  return normalizedTitle(`${nombre} ${ciudad}`).replace(/ /g, '-').slice(0, 80);
+}
+/** El tipo solo si el nombre lo dice; si no, "bar" queda marcado como dato por confirmar. */
+export function tipoLocal(nombre: string) {
+  const n = normalizedTitle(nombre);
+  if (/\bteatro\b/.test(n)) return 'teatro';
+  if (/\b(club|disco|discoteca)\b/.test(n)) return 'club';
+  if (/\b(centro cultural|casa de la cultura|cine|espacio|multiespacio)\b/.test(n)) return 'centro-cultural';
+  return 'bar';
+}
+async function proponerLocal(db: Db, c: EventCandidate, hechos: Set<string>) {
+  const slug = slugLocal(c.venue!, c.city);
+  if (hechos.has(slug) || slug.length < 4) return;
+  hechos.add(slug);
+  await db.from('venues').upsert(
+    [
+      {
+        slug,
+        name: c.venue,
+        city: c.city,
+        venue_type: tipoLocal(c.venue!),
+        source_type: 'ticketera',
+        source_url: c.detailUrl,
+        moderation_status: 'pending',
+        is_active: false,
+        evidence_missing: 'Propuesto automáticamente porque una ticketera vende un evento ahí: confirmar que el local existe, su dirección y su tipo.',
+        evidence_checked_at: new Date().toISOString(),
+        next_recheck_at: new Date(Date.now() + 7 * 86_400_000).toISOString(),
+      },
+    ],
+    { onConflict: 'slug', ignoreDuplicates: true },
+  );
+}
+async function allVenues(db: Db): Promise<{ id: number; name: string; city: string }[]> {
+  const { data } = await db.from('venues').select('id,name,city').limit(2000);
+  return data || [];
 }
 async function knownVenues(db: Db): Promise<{ id: number; name: string; city: string }[]> {
   const { data } = await db.from('venues').select('id,name,city').eq('is_active', true).eq('moderation_status', 'approved').limit(1000);

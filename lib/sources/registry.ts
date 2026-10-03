@@ -1,4 +1,4 @@
-import { portaldiscCartelera } from './adapters/portaldisc';
+import { portaldiscCartelera, portaldiscRegion } from './adapters/portaldisc';
 import { tribeEvents } from './adapters/tribe';
 import { jsonldEvents } from './adapters/jsonld';
 import { icsCalendar } from './adapters/ics';
@@ -10,6 +10,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   [wpDatedSlug.id]: wpDatedSlug,
   [wpNewsScan.id]: wpNewsScan,
   [portaldiscCartelera.id]: portaldiscCartelera,
+  [portaldiscRegion.id]: portaldiscRegion,
   [tribeEvents.id]: tribeEvents,
   [usmEventos.id]: usmEventos,
   [jsonldEvents.id]: jsonldEvents,
@@ -190,6 +191,25 @@ export const SOURCES: SourceDefinition[] = [
     accessMode: 'api',
     relevanceFilter: true,
     refreshHours: 48,
+  },
+  {
+    // Una página con todo lo que la ticketera vende en la región: cubre los
+    // locales sin cartelera propia registrada (Ferri, Castillo del Mar, Teatro
+    // IPA, Casa Polanco, Café Teatro VP...). Mismo origen que las carteleras
+    // por local: no se confirman entre sí.
+    id: 'portaldisc-region',
+    name: 'PortalTickets · todos los eventos de la región',
+    sourceType: 'TICKET_PLATFORM',
+    adapter: portaldiscRegion.id,
+    publicUrl: 'https://www.portaldisc.com/tickets/R05',
+    commune: 'Valparaíso',
+    zone: null,
+    trust: 'strict',
+    family: 'TICKET_PLATFORM',
+    tier: 'B',
+    accessMode: 'html',
+    relevanceFilter: true,
+    refreshHours: 24,
   },
   {
     // Segunda ticketera, independiente de Portaldisc: sus fichas publican
