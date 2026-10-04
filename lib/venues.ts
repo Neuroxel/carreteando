@@ -94,7 +94,9 @@ export function dbRowToLugar(row: VenueRow): Lugar | null {
     estado: str(row.status) || 'active',
     imagen_url: safeImageUrl(row.image_url),
     fuente_tipo: str(row.source_type) || 'fuente-publica',
-    fuente_url: safeWebUrl(row.source_url),
+    // Las fichas editoriales apuntan a nuestra propia página de confianza: se
+    // guarda relativa para que sobreviva al cambio de dominio.
+    fuente_url: propia(safeWebUrl(row.source_url)),
     ultima_revision: str(row.last_verified_at),
     ...coordenada(row),
     alias: Array.isArray(row.aliases) ? row.aliases.filter((t): t is string => typeof t === 'string').slice(0, 8) : [],
@@ -107,6 +109,9 @@ export function dbRowToLugar(row: VenueRow): Lugar | null {
         ? { nivel: row.price_tier as 1 | 2 | 3 | 4, fuente: str(row.price_source)!, verificado: str(row.price_verified_at)! }
         : null,
   };
+}
+function propia(url: string | null) {
+  return url?.startsWith('https://carreteando.vercel.app/') ? url.slice('https://carreteando.vercel.app'.length) : url;
 }
 // A point we are not sure about is worse than no point: it sends somebody to the
 // wrong corner at one in the morning.
