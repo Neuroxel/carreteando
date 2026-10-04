@@ -4,8 +4,8 @@ import { useCallback, useEffect, useMemo, useState, type MouseEvent } from 'reac
 import { diversifyByVenue, filterEvents } from '../lib/events';
 import { toChileDateString } from '../lib/event-extraction';
 import { parseFilters } from '../lib/filters';
-import { CIUDADES_NUCLEO, type FiltrosEvento } from '../lib/types';
-import { escenasConOferta } from '../lib/escenas';
+import { CIUDADES, type FiltrosEvento } from '../lib/types';
+import { escenasConLugares, lugarEnEscena } from '../lib/escenas';
 import { buscarLugares, buscarZonas, zonaSlug } from '../lib/venues';
 import { normalizar, puntosDeMapa } from '../lib/map';
 import type { PublicSnapshot } from '../lib/snapshot';
@@ -146,13 +146,21 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
       .sort((a, b) => (conteoLugar.get(b.nombre) || 0) - (conteoLugar.get(a.nombre) || 0));
     const porCiudad = new Map<string, number>();
     for (const e of todos) if (e.fecha >= today) porCiudad.set(e.ciudad, (porCiudad.get(e.ciudad) || 0) + 1);
+    // Una comuna con buenos lugares y sin eventos hoy sigue siendo un lugar donde salir.
+    const lugaresPorCiudad = new Map<string, number>();
+    for (const l of snap.venues) lugaresPorCiudad.set(l.ciudad, (lugaresPorCiudad.get(l.ciudad) || 0) + 1);
+    const peso = (c: string) => (porCiudad.get(c) || 0) + (lugaresPorCiudad.get(c) || 0);
     return {
       conteoLugar,
       hoyPorLugar,
       lugaresZona,
       porCiudad,
-      ciudadesConOferta: CIUDADES_NUCLEO.filter((c) => (porCiudad.get(c) || 0) > 0),
-      escenas: escenasConOferta(filterEvents(todos, { ...filtros, escena: 'todos' }, today)),
+      lugaresPorCiudad,
+      ciudadesConOferta: CIUDADES.filter((c) => peso(c) > 0).sort((a, b) => peso(b) - peso(a)),
+      escenas: escenasConLugares(
+        filterEvents(todos, { ...filtros, escena: 'todos' }, today),
+        filtros.ciudad === 'todos' ? snap.venues : snap.venues.filter((l) => l.ciudad === filtros.ciudad),
+      ),
       todayCount: filterEvents(todos, { fecha: 'hoy' }, today).length,
       mananaCount: filterEvents(todos, { fecha: 'manana' }, today).length,
       busquedaEventos: filtros.busqueda ? filterEvents(todos, { fecha: 'futuro', busqueda: filtros.busqueda }, today).length : 0,
@@ -166,10 +174,14 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
   }, [todos, snap.venues, filtros, today]);
   const lugaresVisibles = useMemo(() => {
     const coincidencias = new Set(events.map((e) => normalizar(e.lugar || '')));
-    const refinar = [filtros.escena, filtros.precio, filtros.tipo, filtros.categoria].some((v) => v && v !== 'todos');
+    const escena = filtros.escena && filtros.escena !== 'todos' ? filtros.escena : null;
+    const refinar = [filtros.precio, filtros.tipo, filtros.categoria].some((v) => v && v !== 'todos');
     return derivados.lugaresZona.filter((l) => {
       const coincideLugar = !filtros.busqueda || derivados.lugaresHallados.some((x) => x.slug === l.slug);
-      return coincideLugar && (!refinar || coincidencias.has(normalizar(l.nombre)));
+      const tieneEvento = coincidencias.has(normalizar(l.nombre));
+      // La escena sale primero de lo que el lugar es; un evento que calza también cuenta.
+      const coincideEscena = !escena || lugarEnEscena(l, escena) || tieneEvento;
+      return coincideLugar && coincideEscena && (!refinar || tieneEvento);
     });
   }, [events, filtros, derivados.lugaresZona, derivados.lugaresHallados]);
   const sinResultados = Boolean(filtros.busqueda) && derivados.busquedaEventos === 0 && derivados.lugaresHallados.length === 0 && derivados.zonasHalladas.length === 0;
@@ -206,7 +218,7 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
           <h1>
             {home ? (
               <>
-                ¿Qué hay <em>hoy?</em>
+                DÓNDE SALGO<span className="brand-q">?</span>
               </>
             ) : (
               <>
@@ -214,7 +226,7 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
               </>
             )}
           </h1>
-          {home && <p className="hero-lead">Eventos y lugares para salir cerca de ti.</p>}
+          {home && <p className="hero-lead">¿Qué hay hoy? Eventos y lugares para salir en la Región de Valparaíso.</p>}
           <form
             className="search-form"
             role="search"
@@ -255,7 +267,7 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
             {derivados.ciudadesConOferta.map((c) => (
               <a key={c} {...enlace({ ciudad: c })} className={filtros.ciudad === c ? 'activa' : ''} aria-current={filtros.ciudad === c ? 'true' : undefined}>
                 {SHORT[c] || c}
-                <span>{derivados.porCiudad.get(c)}</span>
+                {(derivados.porCiudad.get(c) || 0) > 0 && <span>{derivados.porCiudad.get(c)}</span>}
               </a>
             ))}
           </div>
@@ -265,7 +277,7 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
         <div className="date-tabs" aria-label="Cuándo">
           {(
             [
-              ['hoy', 'Esta noche', derivados.todayCount],
+              ['hoy', 'Hoy', derivados.todayCount],
               ['manana', 'Mañana', derivados.mananaCount],
               ['finde', 'Este finde', 0],
               ['futuro', 'Más adelante', 0],
@@ -346,7 +358,7 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
                 <p className="eyebrow">{filtros.ciudad === 'todos' ? 'VALPO Y ALREDEDORES' : filtros.ciudad}</p>
                 <h2>
                   {filtros.fecha === 'hoy'
-                    ? 'Esta noche'
+                    ? 'Hoy'
                     : filtros.fecha === 'finde'
                       ? 'Este finde'
                       : filtros.fecha === 'manana'
@@ -375,7 +387,7 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
                   {vigentes === 0
                     ? 'Todavía no tenemos planes confirmados.'
                     : filtros.fecha === 'hoy'
-                      ? 'No tenemos nada confirmado para esta noche acá.'
+                      ? 'No tenemos nada confirmado para hoy acá.'
                       : 'No encontramos nada con estos filtros.'}
                 </h3>
                 <p>Prueba otra noche u otra comuna, o revisa los lugares para salir.</p>

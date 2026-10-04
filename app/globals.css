@@ -1487,3 +1487,18 @@ body { background: var(--bg); }
  .search-form button[type="submit"] { display:none; }
  .hero .search-form { padding-right:12px; }
 }
+
+/* V1.1: la marca es el titular de la portada; "¿Qué hay hoy?" es una indicación. */
+.hero-home .eyebrow { display:none; }
+.hero-home h1 { font-family:Arial,Helvetica,sans-serif; font-weight:900; text-transform:uppercase; letter-spacing:-.045em; line-height:.95; font-size:clamp(38px,10.4vw,112px); }
+.hero-home h1 .brand-q { color:#b8860b; margin-left:0; }
+.hero-home .hero-lead { font-size:16px; color:var(--tinta); font-weight:600; margin-top:10px; }
+body:has(.hero-home) .site-header .brand { visibility:hidden; }
+@media (max-width:640px) {
+ .hero-home { padding-top:18px; }
+ .hero-home h1 { font-size:clamp(34px,12.2vw,60px); }
+ /* En el teléfono la navegación vive abajo: la portada empieza con la marca. */
+ body:has(.hero-home) .site-header { display:none; }
+ .hero-home { margin-top:0; }
+ .hero-home .hero-lead { font-size:14px; }
+}

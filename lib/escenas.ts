@@ -1,4 +1,5 @@
 import type { Evento } from './types';
+import type { Lugar } from './venues';
 const plano = (v: string) =>
   ` ${v
     .toLowerCase()
@@ -25,6 +26,35 @@ export function enEscena(e: Evento, slug: string) {
   const escena = ESCENAS.find((x) => x.slug === slug);
   if (!escena) return true;
   return escena.test(e, plano(`${e.nombre} ${e.descripcion || ''} ${e.lugar || ''}`));
+}
+/**
+ * Un lugar pertenece a una escena por lo que es (su tipo y sus etiquetas
+ * revisadas), no solo por lo que tiene anunciado esta semana: un bar de rock
+ * sigue siéndolo aunque hoy no tenga tocata.
+ */
+const ESCENA_LUGAR: Record<string, { tipos: string[]; tags: string[] }> = {
+  'en-vivo': { tipos: ['sala-en-vivo'], tags: ['en-vivo', 'tocatas', 'jazz', 'rock'] },
+  electronica: { tipos: ['club-electronico'], tags: ['electronica', 'techno', 'house', 'soundsystem'] },
+  under: { tipos: ['under'], tags: ['under', 'alternativo', 'autogestion'] },
+  universitario: { tipos: ['universitario'], tags: ['universitario'] },
+  rock: { tipos: [], tags: ['rock', 'metal', 'punk'] },
+  tropical: { tipos: [], tags: ['cumbia', 'salsa', 'tropical'] },
+  urbano: { tipos: [], tags: ['reggaeton', 'urbano', 'trap'] },
+  queer: { tipos: ['queer'], tags: ['queer', 'drag', 'lgbt'] },
+  karaoke: { tipos: ['karaoke'], tags: ['karaoke'] },
+  'escena-cultural': { tipos: ['teatro', 'centro-cultural'], tags: ['cultural', 'teatro'] },
+};
+export function lugarEnEscena(l: Pick<Lugar, 'tipo' | 'tags'>, slug: string) {
+  const m = ESCENA_LUGAR[slug];
+  if (!m) return false;
+  return m.tipos.includes(l.tipo) || l.tags.some((t) => m.tags.includes(t.toLowerCase()));
+}
+/** Escenas con oferta: eventos de este conjunto o lugares que son de esa escena. */
+export function escenasConLugares(eventos: Evento[], lugares: Pick<Lugar, 'tipo' | 'tags'>[]) {
+  return ESCENAS.map((x) => ({
+    ...x,
+    n: eventos.filter((e) => enEscena(e, x.slug)).length + lugares.filter((l) => lugarEnEscena(l, x.slug)).length,
+  })).filter((x) => x.n > 0);
 }
 /** Escenas con al menos un evento en este conjunto, con su cantidad. */
 export function escenasConOferta(eventos: Evento[]) {
