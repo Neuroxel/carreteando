@@ -3,8 +3,8 @@ export default function Navbar() {
   return (
     <header className="site-header">
       <div className="container nav-inner">
-        <Link prefetch={false} className="brand" href="/" aria-label="Carreteando, inicio">
-          CARRETEANDO<span className="brand-dot">✳</span>
+        <Link prefetch={false} className="brand" href="/" aria-label="Dónde Salgo?, inicio">
+          DÓNDE SALGO<span className="brand-q">?</span>
         </Link>
         <nav aria-label="Navegación principal">
           <Link prefetch={false} href="/explorar">Explorar</Link>

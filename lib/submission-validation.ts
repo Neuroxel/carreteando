@@ -82,6 +82,34 @@ export function submissionIdentity(value: ReturnType<typeof validateSubmission>)
     .replace(/\s+/g, ' ')
     .trim();
 }
+/**
+ * "¿Falta un lugar?" y "Reclama tu ficha": nombre, comuna y algo comprobable
+ * (Instagram o sitio). Entra al buzón; una persona lo contrasta antes de
+ * crear o cambiar una ficha. Nunca se publica solo.
+ */
+export function validateVenueProposal(value: unknown) {
+  if (!value || typeof value !== 'object' || Array.isArray(value))
+    throw new ValidationError('Solicitud inválida.');
+  const b = value as Record<string, unknown>;
+  if (text(b, 'website', 1000)) throw new ValidationError('Solicitud inválida.');
+  const nombre = text(b, 'nombre', 120, 2);
+  const ciudad = text(b, 'ciudad', 60, 1);
+  if (!(CIUDADES as readonly string[]).includes(ciudad)) throw new ValidationError('Elige una comuna de la lista.');
+  const fuente_url = url(b, 'fuente_url', true);
+  const relacion = text(b, 'relacion', 20, 1);
+  if (!['publico', 'dueno'].includes(relacion)) throw new ValidationError('Indica tu relación con el lugar.');
+  const ficha = text(b, 'ficha', 80);
+  if (ficha && !/^[a-z0-9-]{1,80}$/.test(ficha)) throw new ValidationError('Ficha inválida.');
+  return {
+    nombre,
+    ciudad,
+    direccion: text(b, 'direccion', 160),
+    fuente_url,
+    relacion,
+    ficha: ficha || null,
+    detalle: text(b, 'detalle', 1000),
+  };
+}
 export function validateReport(value: unknown) {
   if (!value || typeof value !== 'object' || Array.isArray(value))
     throw new ValidationError('Solicitud inválida.');

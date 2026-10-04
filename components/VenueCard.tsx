@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import VenueMedia from './VenueMedia';
-import { Lugar } from '../lib/venues';
+import { Lugar, NIVEL_PRECIO } from '../lib/venues';
 import { acentoDe } from '../lib/types';
 /**
  * Una tarjeta de lugar no es una tarjeta de evento sin fecha. No lleva flyer,
@@ -25,23 +25,31 @@ export default function VenueCard({
       <Link href={`/lugar/${l.slug}`} className="venue-card-link" prefetch={false}>
         {l.imagen_url && <VenueMedia src={l.imagen_url} name={l.nombre} />}
         <p className="eyebrow venue-kind">
-          <span className="venue-tipo">{l.tipo_label}</span>
-          <span>{l.zona || l.ciudad}</span>
+          <span>
+            {l.zona ? `${l.zona} · ` : ''}
+            {l.tipo_label}
+          </span>
+          {l.precio && (
+            <span className="venue-precio" title={`Precio de referencia según ${l.precio.fuente}`}>
+              {NIVEL_PRECIO[l.precio.nivel]}
+            </span>
+          )}
         </p>
         <h3>{l.nombre}</h3>
         <p className="venue-where">{l.direccion ? `${l.direccion} · ${l.ciudad}` : l.ciudad}</p>
+        {/* Un lugar sin evento anunciado no es un lugar cerrado: no se dice nada negativo. */}
         {hoy ? (
           <p className="venue-hoy">
             <span className="venue-hoy-punto" aria-hidden="true" />
-            Hoy: {hoy}
+            Evento hoy: {hoy}
           </p>
-        ) : (
+        ) : proximos ? (
           <p className="venue-agenda">
-            {proximos
-              ? `${proximos} ${proximos === 1 ? 'fecha anunciada' : 'fechas anunciadas'}`
-              : 'Sin fechas anunciadas ahora'}
+            {proximos} {proximos === 1 ? 'fecha anunciada' : 'fechas anunciadas'}
           </p>
-        )}
+        ) : l.horario ? (
+          <p className="venue-agenda">Horario publicado en la ficha</p>
+        ) : null}
       </Link>
       {(l.instagram_url || comoLlegar) && (
         <div className="venue-acciones">

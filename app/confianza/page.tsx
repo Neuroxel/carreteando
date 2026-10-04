@@ -18,7 +18,7 @@ export default function Trust() {
         <dt>Detectado · fuente revisada</dt>
         <dd>
           Encontramos el evento en una cuenta pública y revisamos su información. No significa que
-          el organizador lo haya confirmado directamente con Carreteando.
+          el organizador lo haya confirmado directamente con Dónde Salgo?.
         </dd>
         <dt>Curaduría · fuente revisada</dt>
         <dd>

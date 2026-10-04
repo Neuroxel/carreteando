@@ -66,6 +66,9 @@ test('el lugar declara su tipo y sus perfiles, sin coordenadas imprecisas ni res
     lat: -33.04,
     lng: -71.62,
     precision_mapa: 'calle',
+    alias: [],
+    horario: null,
+    precio: null,
   } as Lugar;
   const schema = venueJsonLd(l) as Record<string, unknown>;
   assert.equal(schema['@type'], 'BarOrPub');

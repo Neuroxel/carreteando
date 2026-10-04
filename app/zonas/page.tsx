@@ -6,7 +6,7 @@ import { CIUDADES } from '../../lib/types';
 // Cacheada: se regenera como mucho cada 5 minutos o al cambiar los datos públicos.
 export const revalidate = 300;
 export const metadata = {
-  title: 'Carretes por zona',
+  title: 'Dónde salir por zona',
   description:
     'Zonas reales de la Región de Valparaíso: cuántos lugares hay, qué se viene y cómo llegar.',
   alternates: { canonical: '/zonas' },

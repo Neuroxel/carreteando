@@ -33,8 +33,10 @@ export default function Metrics() {
       const comoLlegar =
         (url.hostname === 'www.google.com' && url.pathname.startsWith('/maps')) ||
         (url.hostname.endsWith('openstreetmap.org') && url.pathname.startsWith('/directions'));
-      const social = /(^|\.)(instagram|facebook|tiktok)\.com$/.test(url.hostname);
+      const instagram = /(^|\.)instagram\.com$/.test(url.hostname);
+      const social = /(^|\.)(facebook|tiktok)\.com$/.test(url.hostname);
       if (comoLlegar) track('directions');
+      else if (instagram) track('instagram_click');
       else if (social) track('social_click');
       else if (url.origin !== location.origin && url.hostname !== 'wa.me') track('source');
     };

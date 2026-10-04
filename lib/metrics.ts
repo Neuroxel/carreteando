@@ -15,6 +15,9 @@ export const METRICS = [
   'search',
   'social_click',
   'marker_open',
+  'instagram_click',
+  'zero_result_search',
+  'venue_proposal',
 ] as const;
 export type Metric = (typeof METRICS)[number];
 const pendientes = new Set<Metric>();
@@ -40,7 +43,28 @@ export function trackLater(name: Metric) {
     pendientes.clear();
   });
 }
-export function track(name: Metric) {
+let busquedaVacia: string | null = null;
+let escuchandoVacia = false;
+/**
+ * Lo que la gente busca y no encuentra es la lista de lo que falta. Se guarda
+ * solo la última búsqueda vacía de la visita, agregada por día y sin ninguna
+ * identidad; se manda una vez al salir, nunca por tecla.
+ */
+export function rememberEmptySearch(q: string | null) {
+  if (typeof window === 'undefined') return;
+  const t = q?.trim().toLowerCase().replace(/\s+/g, ' ') || '';
+  busquedaVacia = t.length >= 2 && t.length <= 60 && !/@|\d{6,}|https?:|www\./.test(t) ? t : null;
+  if (escuchandoVacia) return;
+  escuchandoVacia = true;
+  const enviar = () => {
+    if (!busquedaVacia) return;
+    track('zero_result_search', busquedaVacia);
+    busquedaVacia = null;
+  };
+  document.addEventListener('visibilitychange', () => document.visibilityState === 'hidden' && enviar());
+  window.addEventListener('pagehide', enviar);
+}
+export function track(name: Metric, q?: string) {
   if (
     typeof navigator === 'undefined' ||
     navigator.doNotTrack === '1' ||
@@ -50,7 +74,7 @@ export function track(name: Metric) {
   try {
     navigator.sendBeacon(
       '/api/medir',
-      new Blob([JSON.stringify({ name })], { type: 'application/json' }),
+      new Blob([JSON.stringify(q ? { name, q } : { name })], { type: 'application/json' }),
     );
   } catch {
     /* Metrics never interrupt a journey. */

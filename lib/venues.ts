@@ -1,3 +1,4 @@
+import { coincideTexto } from './busqueda';
 import { safeImageUrl, safeWebUrl } from './safety';
 // A venue is a stable place to go out. It exists whether or not something is
 // scheduled tonight, so it never carries a date.
@@ -23,7 +24,7 @@ export const FUENTES_LUGAR: Record<string, string> = {
   ticketera: 'Ticketera',
   'instagram-oficial': 'Cuenta oficial del lugar',
   'sitio-oficial': 'Sitio oficial del lugar',
-  'aporte-propietario': 'Registro editorial de Carreteando',
+  'aporte-propietario': 'Registro editorial de Dónde Salgo?',
   comunidad: 'Enviado por la comunidad',
 };
 export interface Lugar {
@@ -51,6 +52,17 @@ export interface Lugar {
   lat: number | null;
   lng: number | null;
   precision_mapa: 'exacta' | 'calle' | null;
+  /** Otros nombres con que aparece en carteleras y ticketeras. */
+  alias: string[];
+  /** Horario tal como lo publicó una fuente, con su fecha. Nunca se infiere "abierto ahora". */
+  horario: { texto: string; fuente: string; verificado: string } | null;
+  /** Nivel de precio ($–$$$$) solo con fuente y fecha; si no hay, no hay insignia. */
+  precio: { nivel: 1 | 2 | 3 | 4; fuente: string; verificado: string } | null;
+}
+export const NIVEL_PRECIO = ['', '$', '$$', '$$$', '$$$$'] as const;
+/** Fecha de verificación en formato local, sin hora: '2026-10-03' → '03-10-2026'. */
+export function fechaCorta(iso: string) {
+  return iso.slice(0, 10).split('-').reverse().join('-');
 }
 export type VenueRow = Record<string, unknown>;
 const str = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : null);
@@ -85,6 +97,15 @@ export function dbRowToLugar(row: VenueRow): Lugar | null {
     fuente_url: safeWebUrl(row.source_url),
     ultima_revision: str(row.last_verified_at),
     ...coordenada(row),
+    alias: Array.isArray(row.aliases) ? row.aliases.filter((t): t is string => typeof t === 'string').slice(0, 8) : [],
+    horario:
+      str(row.hours_text) && str(row.hours_source) && str(row.hours_verified_at)
+        ? { texto: str(row.hours_text)!, fuente: str(row.hours_source)!, verificado: str(row.hours_verified_at)! }
+        : null,
+    precio:
+      [1, 2, 3, 4].includes(row.price_tier as number) && str(row.price_source) && str(row.price_verified_at)
+        ? { nivel: row.price_tier as 1 | 2 | 3 | 4, fuente: str(row.price_source)!, verificado: str(row.price_verified_at)! }
+        : null,
   };
 }
 // A point we are not sure about is worse than no point: it sends somebody to the
@@ -126,9 +147,7 @@ export function buscarLugares(lugares: Lugar[], q: string): Lugar[] {
   const t = normalizar(q);
   if (!t) return [];
   return lugares.filter((l) =>
-    normalizar(
-      [l.nombre, l.ciudad, l.zona, l.direccion, l.tipo_label, ...l.tags].filter(Boolean).join(' '),
-    ).includes(t),
+    coincideTexto([l.nombre, l.ciudad, l.zona, l.direccion, l.tipo_label, ...l.tags, ...(l.alias || [])].filter(Boolean).join(' '), t),
   );
 }
 export function buscarZonas(lugares: Lugar[], q: string) {

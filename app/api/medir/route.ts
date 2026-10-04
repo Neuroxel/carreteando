@@ -30,8 +30,9 @@ export async function POST(request: Request) {
     if (
       !payload ||
       Array.isArray(payload) ||
-      Object.keys(payload).length !== 1 ||
-      !METRICS.includes(payload.name)
+      !METRICS.includes(payload.name) ||
+      Object.keys(payload).some((k) => k !== 'name' && !(k === 'q' && payload.name === 'zero_result_search')) ||
+      (payload.q !== undefined && (typeof payload.q !== 'string' || payload.q.length > 60))
     )
       return response(400);
     const ip = process.env.VERCEL
@@ -49,7 +50,9 @@ export async function POST(request: Request) {
     if (quota.error) return response(503);
     if (quota.data !== true) return response(429);
     const saved = await db.rpc('count_metric', { p_name: payload.name });
-    return response(saved.error ? 503 : 204);
+    if (saved.error) return response(503);
+    if (payload.q) await db.rpc('count_search_miss', { p_query: payload.q });
+    return response(204);
   } catch {
     return response(400);
   }

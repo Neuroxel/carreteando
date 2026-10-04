@@ -1,5 +1,5 @@
 import { ImageResponse } from 'next/og';
-export const alt = 'Carreteando · ¿Dónde se carretea hoy? · Región de Valparaíso';
+export const alt = 'Dónde Salgo? · Eventos y lugares para salir hoy · Región de Valparaíso';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 export default function Image() {
@@ -18,14 +18,14 @@ export default function Image() {
         }}
       >
         <div style={{ display: 'flex', fontSize: 30, letterSpacing: 4 }}>
-          CARRETEANDO / REGIÓN DE VALPARAÍSO
+          DÓNDE SALGO? / REGIÓN DE VALPARAÍSO
         </div>
         <div style={{ display: 'flex', fontSize: 100, fontWeight: 900, lineHeight: 1.05 }}>
-          ¿Dónde se
+          ¿Qué hay
           <br />
-          carretea hoy?
+          hoy?
         </div>
-        <div style={{ display: 'flex', color: '#ff775c', fontSize: 30 }}>LA NOCHE ES LOCAL. ↗</div>
+        <div style={{ display: 'flex', color: '#ff775c', fontSize: 30 }}>EVENTOS Y LUGARES PARA SALIR ↗</div>
       </div>
     ),
     size,

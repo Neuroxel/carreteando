@@ -17,4 +17,4 @@ export function siteUrlFrom(value: string | undefined) {
 }
 export const SITE_URL = siteUrlFrom(process.env.NEXT_PUBLIC_SITE_URL);
 export const SITE_DESCRIPTION =
-  '¿Dónde se carretea hoy? Fiestas, techno, cumbia y noches en vivo en Valparaíso, Viña del Mar y alrededores. Compara y consulta la fuente antes de salir.';
+  'Eventos y lugares para salir hoy en Valparaíso, Viña del Mar y alrededores: fiestas, bares, música en vivo y más, con la fuente de cada dato.';

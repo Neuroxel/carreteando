@@ -5,6 +5,7 @@ import { getAdminDb } from './server-db';
 import {
   submissionIdentity,
   validateReport,
+  validateVenueProposal,
   validateSubmission,
   ValidationError,
 } from './submission-validation';
@@ -13,7 +14,7 @@ const json = (body: object, status: number) =>
     status,
     headers: { 'Cache-Control': 'no-store', ...(status === 429 ? { 'Retry-After': '3600' } : {}) },
   });
-export async function receiveCommunity(request: Request, kind: 'submission' | 'report') {
+export async function receiveCommunity(request: Request, kind: 'submission' | 'report' | 'venue') {
   if (
     request.headers.get('origin') &&
     request.headers.get('origin') !== new URL(request.url).origin
@@ -42,7 +43,12 @@ export async function receiveCommunity(request: Request, kind: 'submission' | 'r
       chunks.push(value);
     }
     const raw = JSON.parse(Buffer.concat(chunks).toString('utf8'));
-    const payload = kind === 'submission' ? validateSubmission(raw) : validateReport(raw);
+    const payload =
+      kind === 'submission'
+        ? validateSubmission(raw)
+        : kind === 'venue'
+          ? validateVenueProposal(raw)
+          : validateReport(raw);
     const fingerprint = createHash('sha256')
       .update(
         kind +
@@ -79,7 +85,9 @@ export async function receiveCommunity(request: Request, kind: 'submission' | 'r
             ? 'Esta solicitud ya fue recibida; se mantiene su revisión anterior.'
             : kind === 'submission'
               ? 'Recibimos tu evento. Lo revisaremos antes de publicarlo.'
-              : 'Recibimos tu reporte para revisión.',
+              : kind === 'venue'
+                ? 'Recibimos el lugar. Lo contrastamos con su fuente antes de sumarlo.'
+                : 'Recibimos tu reporte para revisión.',
       },
       202,
     );

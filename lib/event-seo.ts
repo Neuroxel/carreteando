@@ -96,6 +96,8 @@ export function venueJsonLd(l: Lugar) {
       ? { geo: { '@type': 'GeoCoordinates', latitude: l.lat, longitude: l.lng } }
       : {}),
     ...(sameAs.length ? { sameAs } : {}),
+    // Solo con fuente y fecha; nunca un precio estimado.
+    ...(l.precio ? { priceRange: '$'.repeat(l.precio.nivel) } : {}),
   };
 }
 export function breadcrumbJsonLd(items: { name: string; path: string }[]) {

@@ -1177,63 +1177,6 @@ textarea::placeholder {
   color: #f4f1ea;
   border-bottom-color: rgba(255, 255, 255, 0.18);
 }
-.zone-rail-block { margin: 2.5rem auto 1rem; }
-.zone-rail {
-  list-style: none;
-  display: flex;
-  gap: 0;
-  margin: 0.5rem 0 0;
-  padding: 0 0 0.75rem;
-  overflow-x: auto;
-  scroll-snap-type: x proximity;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: thin;
-}
-.zone-rail > li { scroll-snap-align: start; flex: 0 0 auto; position: relative; }
-.zone-rail > li:not(:last-child)::after {
-  content: '';
-  position: absolute;
-  left: calc(50% + 0.6rem);
-  right: calc(-50% + 0.6rem);
-  top: 1.45rem;
-  height: 1px;
-  background: currentColor;
-  opacity: 0.22;
-}
-.zone-stop {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  min-width: 10.5rem;
-  max-width: 13rem;
-  padding: 0.9rem 1.1rem 1rem;
-  text-decoration: none;
-  color: inherit;
-  border-radius: 12px;
-  transition: background-color 0.2s ease, transform 0.2s ease;
-}
-.zone-stop:hover, .zone-stop:focus-visible { background: rgba(127, 127, 127, 0.1); }
-.zone-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: var(--acento, #9aa3b2);
-  box-shadow: 0 0 0 4px rgba(127, 127, 127, 0.14);
-  margin-bottom: 0.45rem;
-}
-.zone-stop-viva .zone-dot { box-shadow: 0 0 0 4px color-mix(in srgb, var(--acento) 35%, transparent); }
-.zone-name { font-weight: 650; font-size: 1.0625rem; line-height: 1.25; }
-.zone-meta { font-size: 0.8125rem; opacity: 0.72; }
-.zone-hoy {
-  margin-top: 0.35rem;
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--acento, inherit);
-}
-.zone-rail-pie { display: flex; gap: 1.25rem; margin: 0.25rem 0 0; font-size: 0.9375rem; }
 .bottom-nav { display: none; }
 @media (max-width: 767px) {
   .bottom-nav {
@@ -1361,7 +1304,6 @@ body { background: var(--bg); }
 
 /* Editorial masthead, quiet filters, full artwork and readable paper captions. */
 .site-header { background:var(--bg); }
-.brand-dot { width:9px; height:9px; border-radius:50%; background:var(--accent); font-size:0; }
 .hero { display:block; padding:28px 32px 20px; margin-block:24px 8px; background:var(--text); color:var(--tinta); }
 .hero .hero-copy { display:grid; grid-template-columns:1fr auto; align-items:end; column-gap:24px; }
 .hero .eyebrow { grid-column:1 / -1; color:#4d514f; }
@@ -1477,7 +1419,7 @@ body { background: var(--bg); }
  .hero-date { display:none; }
  .lugar-selector a { padding-inline:10px; font-size:12px; }
  .search-form { padding-left:12px; gap:7px; }
- .search-form input { font-size:13px; height:50px; }
+ .search-form input { font-size:16px; height:50px; }
  .search-form button { font-size:0; }
  .search-form button::after { content:'↵'; font-size:18px; }
  .search-form button[aria-label="Borrar búsqueda"]::after { content:'×'; }
@@ -1515,3 +1457,33 @@ body { background: var(--bg); }
 
 .venue-media { position:relative; width:96px; height:64px; margin-bottom:16px; }
 .venue-media img { object-fit:contain; object-position:left; }
+
+/* V1: portada con marca arriba, búsqueda visible y contenido real en el primer pantallazo. */
+.hero-home .hero-copy { display:block; }
+.hero-home h1 { font-size:clamp(40px,5vw,72px); }
+.hero-lead { margin:8px 0 0; color:#4d514f; font-size:15px; line-height:1.4; }
+.hero .search-form { margin:16px 0 6px; background:#fffdf6; border-color:#8d8f88; }
+.hero .search-form:focus-within { border-color:var(--tinta); box-shadow:0 0 0 2px var(--tinta); }
+.hero .search-form > span { color:var(--tinta); }
+.hero .search-form input { color:var(--tinta); }
+.hero .search-form input::placeholder { color:#5f625d; }
+.hero .search-form button { color:var(--tinta); }
+.contribution-strip > .actions { flex:none; display:flex; flex-wrap:wrap; gap:10px; }
+@media (max-width:640px) {
+ .hero-home { padding:14px 16px 6px; }
+ .hero-home h1 { font-size:38px; margin-bottom:0; }
+ .hero-lead { font-size:13px; margin-top:4px; }
+ .hero .search-form { margin:12px 0 4px; }
+}
+.venue-kind > span:first-child { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
+.venue-precio { flex:none; font-size:12px; letter-spacing:1px; color:var(--text); font-variant-numeric:tabular-nums; }
+.venue-facts { max-width:640px; }
+.venue-proposal { margin-bottom:28px; }
+.venue-proposal form { display:grid; gap:12px; }
+.venue-proposal label { display:grid; gap:6px; }
+.brand { gap:0; }
+.brand-q { color:var(--accent); margin-left:1px; }
+@media (max-width:640px) {
+ .search-form button[type="submit"] { display:none; }
+ .hero .search-form { padding-right:12px; }
+}

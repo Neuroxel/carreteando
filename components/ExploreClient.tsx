@@ -9,9 +9,9 @@ import { escenasConOferta } from '../lib/escenas';
 import { buscarLugares, buscarZonas, zonaSlug } from '../lib/venues';
 import { normalizar, puntosDeMapa } from '../lib/map';
 import type { PublicSnapshot } from '../lib/snapshot';
+import { rememberEmptySearch } from '../lib/metrics';
 import EventCard from './EventCard';
 import VenueCard from './VenueCard';
-import ZoneRail from './ZoneRail';
 import VenueMap from './VenueMap';
 
 const SHORT: Record<string, string> = { Valparaíso: 'Valpo', 'Viña del Mar': 'Viña' };
@@ -155,6 +155,7 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
       escenas: escenasConOferta(filterEvents(todos, { ...filtros, escena: 'todos' }, today)),
       todayCount: filterEvents(todos, { fecha: 'hoy' }, today).length,
       mananaCount: filterEvents(todos, { fecha: 'manana' }, today).length,
+      busquedaEventos: filtros.busqueda ? filterEvents(todos, { fecha: 'futuro', busqueda: filtros.busqueda }, today).length : 0,
       lugaresHallados: filtros.busqueda ? buscarLugares(snap.venues, filtros.busqueda) : [],
       zonasHalladas: filtros.busqueda ? buscarZonas(snap.venues, filtros.busqueda) : [],
       sugerencias: todos
@@ -171,6 +172,11 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
       return coincideLugar && (!refinar || coincidencias.has(normalizar(l.nombre)));
     });
   }, [events, filtros, derivados.lugaresZona, derivados.lugaresHallados]);
+  const sinResultados = Boolean(filtros.busqueda) && derivados.busquedaEventos === 0 && derivados.lugaresHallados.length === 0 && derivados.zonasHalladas.length === 0;
+  useEffect(() => {
+    if (sinResultados) rememberEmptySearch(filtros.busqueda || null);
+    else if (filtros.busqueda) rememberEmptySearch(null);
+  }, [sinResultados, filtros.busqueda]);
   const lugaresMapa = useMemo(() => {
     if (ver === 'lugares') return lugaresVisibles;
     const nombres = new Set(events.map((e) => normalizar(e.lugar || '')));
@@ -200,7 +206,7 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
           <h1>
             {home ? (
               <>
-                ¿Dónde <em>salgo?</em>
+                ¿Qué hay <em>hoy?</em>
               </>
             ) : (
               <>
@@ -208,6 +214,39 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
               </>
             )}
           </h1>
+          {home && <p className="hero-lead">Eventos y lugares para salir cerca de ti.</p>}
+          <form
+            className="search-form"
+            role="search"
+            action={path}
+            onSubmit={(e) => {
+              e.preventDefault();
+              ir({ busqueda: filtros.busqueda || '' });
+            }}
+          >
+            <label htmlFor="q" className="sr-only">
+              Buscar lugar, fiesta, artista o zona
+            </label>
+            <span aria-hidden="true">⌕</span>
+            <input
+              id="q"
+              name="q"
+              type="search"
+              maxLength={120}
+              value={filtros.busqueda || ''}
+              onChange={(e) => ir({ busqueda: e.target.value.slice(0, 120) }, true)}
+              placeholder="Buscar lugar, fiesta, artista o zona"
+            />
+            {filtros.busqueda ? (
+              <button type="button" aria-label="Borrar búsqueda" onClick={() => ir({ busqueda: '' })}>
+                ✕
+              </button>
+            ) : (
+              <button aria-label="Buscar" type="submit">
+                Buscar
+              </button>
+            )}
+          </form>
           {/* Dónde estás es la primera pregunta. Selección manual; nunca se pide ubicación. */}
           <div className="lugar-selector" role="group" aria-label="Elegir ciudad">
             <a {...enlace({ ciudad: 'todos' })} className={filtros.ciudad === 'todos' ? 'activa' : ''} aria-current={filtros.ciudad === 'todos' ? 'true' : undefined}>
@@ -238,39 +277,7 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
             </a>
           ))}
         </div>
-        <details className="discovery-options"><summary>Buscar y filtrar{(filtros.busqueda || filtros.escena !== 'todos' || filtros.precio === 'gratis' || ver !== 'todo' || vista !== 'lista') ? ' · filtros activos' : ''}</summary>
-        <form
-          className="search-form"
-          role="search"
-          action={path}
-          onSubmit={(e) => {
-            e.preventDefault();
-            ir({ busqueda: filtros.busqueda || '' });
-          }}
-        >
-          <label htmlFor="q" className="sr-only">
-            Buscar evento, lugar, artista o zona
-          </label>
-          <span aria-hidden="true">⌕</span>
-          <input
-            id="q"
-            name="q"
-            type="search"
-            maxLength={120}
-            value={filtros.busqueda || ''}
-            onChange={(e) => ir({ busqueda: e.target.value.slice(0, 120) }, true)}
-            placeholder="Buscar lugar, evento, artista o zona"
-          />
-          {filtros.busqueda ? (
-            <button type="button" aria-label="Borrar búsqueda" onClick={() => ir({ busqueda: '' })}>
-              ✕
-            </button>
-          ) : (
-            <button aria-label="Buscar" type="submit">
-              Buscar
-            </button>
-          )}
-        </form>
+        <details className="discovery-options"><summary>Filtros{(filtros.escena !== 'todos' || filtros.precio === 'gratis' || ver !== 'todo' || vista !== 'lista') ? ' · activos' : ''}</summary>
         {derivados.escenas.length > 0 && (
           <div className="escenas" aria-label="Escenas">
             {derivados.escenas.map((x) => {
@@ -454,15 +461,19 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
           </p>
         )}
       </section>
-      {home && !filtros.busqueda && vista === 'lista' && <ZoneRail lugares={snap.venues} eventos={todos} hoy={today} />}
       <section className="container contribution-strip">
         <div>
-          <h2>¿Organizas algo?</h2>
-          <p>Mándanos el evento y su publicación original. Lo revisamos antes de sumarlo.</p>
+          <h2>¿Falta algo?</h2>
+          <p>Mándanos un evento o un lugar que no esté, con su publicación o cuenta oficial. Lo revisamos antes de sumarlo.</p>
         </div>
-        <Link prefetch={false} href="/publicar" className="button button-light">
-          Proponer un evento ↗
-        </Link>
+        <div className="actions">
+          <Link prefetch={false} href="/publicar" className="button button-light">
+            Proponer un evento ↗
+          </Link>
+          <Link prefetch={false} href="/publicar?tipo=lugar#falta-un-lugar" className="button button-outline">
+            ¿Falta un lugar? ↗
+          </Link>
+        </div>
       </section>
     </>
   );

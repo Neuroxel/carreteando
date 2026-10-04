@@ -8,12 +8,13 @@ import BottomNav from '../components/BottomNav';
 import { SITE_URL, SITE_DESCRIPTION } from '../lib/site';
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: { default: 'Carreteando · ¿Dónde se carretea hoy?', template: '%s · Carreteando' },
+  title: { default: 'Dónde Salgo? | Eventos y lugares para salir hoy', template: '%s | Dónde Salgo?' },
+  applicationName: 'Dónde Salgo?',
   description: SITE_DESCRIPTION,
   openGraph: {
-    title: 'Carreteando · La noche es local',
+    title: 'Dónde Salgo? | Eventos y lugares para salir hoy',
     description: SITE_DESCRIPTION,
-    siteName: 'Carreteando',
+    siteName: 'Dónde Salgo?',
     locale: 'es_CL',
     type: 'website',
     images: [{ url: '/opengraph-image', width: 1200, height: 630 }],

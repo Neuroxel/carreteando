@@ -21,7 +21,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
       }}
     >
       <div style={{ display: 'flex', fontSize: 28, letterSpacing: 4, color: '#ff775c' }}>
-        CARRETEANDO / LA NOCHE ES LOCAL
+        DÓNDE SALGO? / VALPARAÍSO Y VIÑA
       </div>
       <div style={{ display: 'flex', fontSize: 68, fontWeight: 900, lineHeight: 1.1 }}>
         {e?.nombre.slice(0, 100) || 'Encuentra tu próxima noche.'}

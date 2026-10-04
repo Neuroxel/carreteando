@@ -4,12 +4,12 @@ export default function Footer() {
     <footer className="site-footer container">
       <div>
         <Link prefetch={false} href="/" className="brand">
-          CARRETEANDO<span className="brand-dot">✳</span>
+          DÓNDE SALGO<span className="brand-q">?</span>
         </Link>
         <p>
-          La noche es local.
+          Eventos y lugares para salir.
           <br />
-          Valpo, Viña y los circuitos de la costa.
+          Valpo, Viña y alrededores.
         </p>
       </div>
       <nav aria-label="Información">

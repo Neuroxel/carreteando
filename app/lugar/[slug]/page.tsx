@@ -5,7 +5,7 @@ import { getPublicVenue } from '../../../lib/server-venues';
 import { getPublicEvents } from '../../../lib/server-events';
 import { toChileDateString } from '../../../lib/event-extraction';
 import { eventDateLabel } from '../../../lib/events';
-import { FUENTES_LUGAR, zonaSlug } from '../../../lib/venues';
+import { FUENTES_LUGAR, NIVEL_PRECIO, fechaCorta, zonaSlug } from '../../../lib/venues';
 import ShareButton from '../../../components/ShareButton';
 import LiveReport from '../../../components/LiveReport';
 import { liveFor } from '../../../lib/server-live';
@@ -65,7 +65,39 @@ export default async function VenueDetail({ params }: Props) {
           </>
         )}
       </p>
-      <div className="venue-tonight"><span className="eyebrow">Esta noche</span><p>{agenda.filter((e) => e.fecha === today).map((e) => e.nombre).join(' · ') || 'Sin evento anunciado. Consulta al lugar antes de salir.'}</p></div>
+      <div className="venue-tonight">
+        <span className="eyebrow">Hoy</span>
+        <p>
+          {agenda.filter((e) => e.fecha === today).map((e) => e.nombre).join(' · ') ||
+            'No hay un evento anunciado para hoy. Puede abrir igual: revisa su horario o su Instagram antes de salir.'}
+        </p>
+      </div>
+      {(l.horario || l.precio) && (
+        <dl className="event-facts venue-facts">
+          {l.horario && (
+            <div>
+              <dt>HORARIO</dt>
+              <dd>
+                Según horario publicado: {l.horario.texto}
+                <small>
+                  {l.horario.fuente} · revisado el {fechaCorta(l.horario.verificado)}. Puede cambiar; confirma con el lugar.
+                </small>
+              </dd>
+            </div>
+          )}
+          {l.precio && (
+            <div>
+              <dt>PRECIO</dt>
+              <dd>
+                {NIVEL_PRECIO[l.precio.nivel]}
+                <small>
+                  Referencia según {l.precio.fuente} · {fechaCorta(l.precio.verificado)}.
+                </small>
+              </dd>
+            </div>
+          )}
+        </dl>
+      )}
       {l.descripcion && <p className="detail-description">{l.descripcion}</p>}
       {l.tags.length > 0 && (
         <p className="venue-tags">
@@ -192,12 +224,12 @@ export default async function VenueDetail({ params }: Props) {
       </p>
       <div className="contribution-strip">
         <div>
-          <p className="eyebrow">¿REPRESENTAS ESTE LUGAR?</p>
-          <h2>Pásanos la programación.</h2>
-          <p>Publicamos lo que podemos contrastar con una fuente. Revisamos antes de mostrarlo.</p>
+          <p className="eyebrow">¿ES TU LUGAR?</p>
+          <h2>Reclama tu ficha.</h2>
+          <p>Corrige horario, cuenta oficial o programación. Lo contrastamos con una fuente antes de mostrarlo; aparecer aquí no se paga.</p>
         </div>
-        <Link href="/publicar" className="button button-light">
-          Enviar o corregir ↗
+        <Link href={`/publicar?tipo=lugar&lugar=${encodeURIComponent(l.slug)}#falta-un-lugar`} className="button button-light">
+          Reclamar o corregir ↗
         </Link>
       </div>
       <script

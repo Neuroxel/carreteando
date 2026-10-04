@@ -10,7 +10,7 @@ export default function How() {
         <em>al encuentro.</em>
       </h1>
       <p className="lead">
-        Carreteando reúne vida nocturna de Valparaíso, Viña del Mar, Reñaca, Quilpué, Villa Alemana
+        Dónde Salgo? reúne vida nocturna de Valparaíso, Viña del Mar, Reñaca, Quilpué, Villa Alemana
         y Concón.
       </p>
       <h2>01 / Encuentra tu noche</h2>
@@ -21,7 +21,7 @@ export default function How() {
       <h2>02 / Revisa lo importante</h2>
       <p>
         Entra al evento para ver fecha, lugar, precio y su publicación original. Lo que no conocemos
-        aparece por confirmar. Carreteando no vende entradas ni garantiza acceso.
+        aparece por confirmar. Dónde Salgo? no vende entradas ni garantiza acceso.
       </p>
       <h2>03 / Junta al grupo</h2>
       <p>

@@ -117,7 +117,8 @@ function prioridad(row: Row, hoy: string, manana: string) {
 function Item({ row, kind, events }: { row: Row; kind: 'event' | 'inbox'; events: Row[] }) {
   const payload =
     kind === 'inbox' && row.payload && typeof row.payload === 'object' ? (row.payload as Row) : row;
-  const report = row.kind === 'report';
+  const report = row.kind === 'report' || row.kind === 'venue';
+  const lugar = row.kind === 'venue';
   const url = safeWebUrl(payload.instagram_url ?? payload.fuente_url);
   const duplicates = events.filter(
     (e) =>
@@ -130,7 +131,8 @@ function Item({ row, kind, events }: { row: Row; kind: 'event' | 'inbox'; events
     <details className="admin-item">
       <summary>
         {string(payload.title ?? payload.nombre) ||
-          (report ? `Reporte: ${string(payload.evento)}` : 'Candidato sin título')}{' '}
+          (lugar ? '' : report ? `Reporte: ${string(payload.evento)}` : 'Candidato sin título')}{' '}
+        {lugar && <span>· lugar propuesto{payload.ficha ? ` (reclamo de /lugar/${string(payload.ficha)})` : ''}</span>}{' '}
         <span>
           · {string(row.moderation_status ?? row.status)}{' '}
           {row.is_active === false ? '· privado' : ''}
@@ -155,7 +157,14 @@ function Item({ row, kind, events }: { row: Row; kind: 'event' | 'inbox'; events
           antes de aprobar.
         </p>
       )}
-      {report && (
+      {lugar && (
+        <p>
+          {string(payload.ciudad)} · {string(payload.direccion) || 'sin dirección'} · quien envía:{' '}
+          {payload.relacion === 'dueno' ? 'equipo del lugar' : 'público'}. {string(payload.detalle)} Contrasta con la
+          fuente, crea o corrige la ficha en Supabase y marca esto resuelto.
+        </p>
+      )}
+      {report && !lugar && (
         <p>
           Motivo: {string(payload.motivo)}. {string(payload.detalle)}. Corrige o retira el evento en
           la sección de cartelera antes de marcar este reporte resuelto.
