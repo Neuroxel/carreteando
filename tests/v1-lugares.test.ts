@@ -60,3 +60,11 @@ test('¿Falta un lugar? pide algo comprobable y una comuna real', () => {
   assert.throws(() => validateVenueProposal({ nombre: 'X bar', ciudad: 'Valparaíso', fuente_url: 'javascript:alert(1)', relacion: 'publico' }), ValidationError);
   assert.throws(() => validateVenueProposal({ nombre: 'X bar', ciudad: 'Valparaíso', fuente_url: 'https://a.cl', relacion: 'publico', website: 'spam' }), ValidationError);
 });
+
+test('la escena de un lugar sale de lo que es, no solo de su agenda', async () => {
+  const { lugarEnEscena } = await import('../lib/escenas');
+  assert.ok(lugarEnEscena({ tipo: 'karaoke', tags: [] }, 'karaoke'));
+  assert.ok(lugarEnEscena({ tipo: 'bar', tags: ['rock', 'en-vivo'] }, 'rock'));
+  assert.ok(lugarEnEscena({ tipo: 'teatro', tags: [] }, 'escena-cultural'));
+  assert.ok(!lugarEnEscena({ tipo: 'bar', tags: ['cerveza'] }, 'electronica'));
+});

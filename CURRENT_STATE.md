@@ -30,10 +30,11 @@ El nombre interno del código, del proyecto en Vercel y de la base sigue siendo
 
 | | |
 |---|---|
-| Lugares publicados | 101 |
-| Candidatos privados (falta evidencia) | 241, de ellos 142 de OpenStreetMap |
-| Lugares publicados con horario con fuente | 4 (Barrio Cumming) |
-| Lugares con nivel de precio publicado | 0 (calibración pendiente) |
+| Lugares publicados | 134 |
+| Candidatos pendientes | 3 (los otros 246 se resolvieron: ver el censo) |
+| Con coordenada en el mapa | 96 (72 %) |
+| Con horario con fuente propia | 10 |
+| Con nivel de precio | 0 (muestra de 6; se necesitan 30) |
 | Eventos públicos vigentes | 77 (4 hoy) |
 | Eventos vigentes en revisión | 31 |
 | Fuentes automáticas activas | 30, ninguna caída |
@@ -53,7 +54,7 @@ Detalle por comuna y zona: [`docs/CENSO_LOCALES.md`](docs/CENSO_LOCALES.md).
 
 ## Portada V1
 
-Marca → búsqueda visible y comuna → Hoy / Mañana / Este finde → eventos →
+DÓNDE SALGO? como titular → "¿Qué hay hoy?" → búsqueda y comuna (comunas con eventos o lugares) → Hoy / Mañana / Este finde → eventos →
 lugares → "¿Falta algo?". Filtros secundarios (escena, gratis, eventos/lugares,
 mapa) tras "Filtros". Se quitó la ruta de zonas ("camino del carrete").
 
@@ -74,8 +75,8 @@ en `/admin`. Nada se publica solo.
 
 1. Dominio sin registrar y marca sin búsqueda en INAPI: **revisión legal pendiente**.
 2. Precio sin calibrar: 0 niveles publicados.
-3. Horario en 4 de 101 lugares.
-4. 241 candidatos esperando evidencia; OSM tiene registros viejos.
+3. Horario en 10 de 134 lugares (solo fuentes propias).
+4. Cobertura media o baja por zona: la segunda pasada todavía encuentra locales.
 5. Sin MFA para moderadores; respaldo sin ensayo de restauración.
 6. Tiles de OpenStreetMap: pasar a un proveedor contratado antes de escalar.
 7. No se afirma cobertura total: se mide saturación por zona.

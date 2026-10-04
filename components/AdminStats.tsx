@@ -72,6 +72,14 @@ export default function AdminStats({
   const sinDisposicion = venues.filter((v) => !v.disposition);
   const vigentes = events.filter((e) => typeof e.date_text === 'string' && e.date_text >= hoy && e.is_active);
   const con = (campo: string) => publicados.filter((v) => v[campo] !== null && v[campo] !== undefined).length;
+  // "sin-fuente" es una marca de que se buscó y no hay: no cuenta como fuente.
+  const conProgramacion = publicados.filter(
+    (v) => typeof v.primary_programming_source === 'string' && v.primary_programming_source !== 'sin-fuente',
+  ).length;
+  // Una coordenada solo cuenta si está a nivel de dirección o de calle: es la que se dibuja en el mapa.
+  const conCoordenada = publicados.filter(
+    (v) => v.latitude !== null && v.latitude !== undefined && (v.geocode_accuracy === 'exacta' || v.geocode_accuracy === 'calle'),
+  ).length;
   const conIdentidad = publicados.filter(
     (v) => v.instagram_url || v.official_url || v.facebook_url || v.tiktok_url || v.contact_url,
   ).length;
@@ -114,7 +122,7 @@ export default function AdminStats({
       <h3>Qué tan completo está cada lugar público</h3>
       <ul className="stat-lista">
         <Barra label="Dirección" n={con('address')} total={total} />
-        <Barra label="Coordenada verificada" n={con('latitude')} total={total} />
+        <Barra label="Coordenada en el mapa" n={conCoordenada} total={total} />
         <Barra label="Zona" n={con('zone')} total={total} />
         <Barra label="Alguna identidad digital" n={conIdentidad} total={total} />
         <Barra label="Instagram" n={con('instagram_url')} total={total} />
@@ -123,18 +131,15 @@ export default function AdminStats({
         <Barra label="TikTok" n={con('tiktok_url')} total={total} />
         <Barra label="Contacto público" n={con('contact_url')} total={total} />
         <Barra label="Imagen propia" n={con('image_url')} total={total} />
-        <Barra label="Fuente de programación" n={con('primary_programming_source')} total={total} />
+        <Barra label="Fuente de programación" n={conProgramacion} total={total} />
+        <Barra label="Horario con fuente" n={con('hours_text')} total={total} />
+        <Barra label="Nivel de precio con fuente" n={con('price_tier')} total={total} />
       </ul>
       <h3>Agenda</h3>
       <ul className="stat-lista">
         <Barra label="Hoy" n={eventoPorFecha(hoy, hoy)} total={vigentes.length} />
         <Barra label="Mañana" n={eventoPorFecha(manana, manana)} total={vigentes.length} />
         <Barra label="Próximos 7 días" n={eventoPorFecha(hoy, en7)} total={vigentes.length} />
-        <Barra
-          label="Fondas del 17 al 20"
-          n={vigentes.filter((e) => e.event_type === 'fonda' && String(e.date_text) >= '2026-09-17' && String(e.date_text) <= '2026-09-20').length}
-          total={vigentes.length}
-        />
       </ul>
       <div className="stat-columnas">
         <Grupo titulo="Lugares por comuna" filas={cuenta(publicados, 'city')} />

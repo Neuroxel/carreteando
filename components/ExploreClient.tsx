@@ -381,6 +381,33 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
                   Volver a intentar
                 </a>
               </div>
+            ) : events.length === 0 && sinResultados ? (
+              <div className="empty-state">
+                <h3>No encontramos «{filtros.busqueda}».</h3>
+                <p>Revisa cómo se escribe o prueba con otra palabra: un barrio, un estilo o el nombre del lugar. Si es un lugar que falta, cuéntanos.</p>
+                <div className="actions">
+                  <a className="button button-primary" {...enlace({ busqueda: '' })}>
+                    Borrar la búsqueda
+                  </a>
+                  <Link prefetch={false} className="button button-outline" href="/publicar?tipo=lugar#falta-un-lugar">
+                    ¿Falta un lugar? ↗
+                  </Link>
+                </div>
+              </div>
+            ) : events.length === 0 && filtros.busqueda && derivados.busquedaEventos > 0 && filtros.fecha !== 'futuro' ? (
+              <div className="empty-state">
+                <h3>
+                  Para esta fecha no hay nada con «{filtros.busqueda}».
+                </h3>
+                <p>
+                  Hay {derivados.busquedaEventos} {derivados.busquedaEventos === 1 ? 'fecha anunciada' : 'fechas anunciadas'} más adelante.
+                </p>
+                <div className="actions">
+                  <a className="button button-primary" {...enlace({ fecha: 'futuro' })}>
+                    Ver más adelante
+                  </a>
+                </div>
+              </div>
             ) : events.length === 0 ? (
               <div className="empty-state">
                 <h3>

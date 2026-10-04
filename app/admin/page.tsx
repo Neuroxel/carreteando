@@ -496,7 +496,7 @@ export default async function Admin({
       .select('*')
       .order('moderation_status')
       .order('name')
-      .limit(400),
+      .limit(1000),
     db
       ?.from('event_sources')
       .select(
