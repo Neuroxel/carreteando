@@ -2,9 +2,11 @@ import { Suspense } from 'react';
 import Metrics from '../components/Metrics';
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
+import './theme3d.css';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import BottomNav from '../components/BottomNav';
+import Scene3D from '../components/Scene3D';
 import { SITE_URL, SITE_DESCRIPTION } from '../lib/site';
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -20,11 +22,12 @@ export const metadata: Metadata = {
   },
   twitter: { card: 'summary_large_image', images: ['/opengraph-image'] },
 };
-export const viewport: Viewport = { width: 'device-width', initialScale: 1, themeColor: '#151614' };
+export const viewport: Viewport = { width: 'device-width', initialScale: 1, themeColor: '#090B13' };
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es-CL">
       <body>
+        <Scene3D />
         <a className="skip-link" href="#contenido">
           Ir al contenido
         </a>
