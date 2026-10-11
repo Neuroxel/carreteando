@@ -4,7 +4,7 @@
 octubre, decisiones anteriores) está en [`docs/historia/`](docs/historia/). Si algo
 de allá contradice esto, manda esto.
 
-Última verificación: **4 de octubre de 2026** (rama `release/dondesalgo-v1`).
+Última verificación: **10 de octubre de 2026** (rama `release/dondesalgo-v1`).
 
 ## Qué es
 
@@ -57,6 +57,37 @@ Detalle por comuna y zona: [`docs/CENSO_LOCALES.md`](docs/CENSO_LOCALES.md).
 DÓNDE SALGO? como titular → "¿Qué hay hoy?" → búsqueda y comuna (comunas con eventos o lugares) → Hoy / Mañana / Este finde → eventos →
 lugares → "¿Falta algo?". Filtros secundarios (escena, gratis, eventos/lugares,
 mapa) tras "Filtros". Se quitó la ruta de zonas ("camino del carrete").
+
+## Presupuesto: “¿Dónde salgo con mi presupuesto?”
+
+Requisito central del producto desde el 10-10-2026 (pedido de Carlos: “falta que
+nuestra página busque cosas más baratas”).
+
+- `price_clp` = la entrada individual más barata **vigente** (no promociones de
+  grupo, no consumo de barra salvo que la fuente diga que es la entrada).
+  `price_text` = el texto público completo (“$10.000 + cargo”, “Entradas
+  agotadas”, “Precio por confirmar”).
+- Filtro en “Filtros”: Cualquiera · Gratis · Hasta $5.000 · Hasta $10.000 ·
+  Hasta $15.000 (`?precio=gratis|5000|10000|15000`; `pago` y `todos` siguen
+  funcionando). Orden opcional “Más barato” (`?orden=barato`): precios conocidos
+  de menor a mayor y los desconocidos al final. Todo en el teléfono, sin pedir
+  nada al servidor.
+- **Barato** = gratis o hasta $5.000 por entrada individual. El atajo “Barato hoy”
+  aparece solo si hay al menos un evento así.
+- Un precio desconocido **nunca** cuenta como barato ni gratis. El precio **no** es
+  requisito para publicar.
+- El nivel de precio de un **lugar** ($–$$$$, canasta cerveza + cóctel) es otra
+  cosa y sigue sin activarse (muestra de 6 locales).
+
+Indicadores (10-10-2026, 22:30):
+
+| | Hoy (11 públicos) | Vigentes públicos con ticketera (77) |
+|---|---|---|
+| Cobertura de precio | 6/11 (55 %) | 21/77 (27 %) |
+| Precio desconocido | 5/11 (45 %) | 56/77 (73 %) |
+| Gratis | 0 | 0 |
+| Barato (≤ $5.000) | 1 | 5 |
+| Hasta $10.000 | 4 | 11 |
 
 ## Lectura pública
 

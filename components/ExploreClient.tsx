@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState, type MouseEvent } from 'react';
-import { diversifyByVenue, filterEvents } from '../lib/events';
+import { diversifyByVenue, esBarato, filterEvents, ordenarPorPrecio } from '../lib/events';
 import { toChileDateString } from '../lib/event-extraction';
 import { parseFilters } from '../lib/filters';
 import { CIUDADES, type FiltrosEvento } from '../lib/types';
@@ -18,10 +18,12 @@ import { Logo } from './Logo';
 const SHORT: Record<string, string> = { Valparaíso: 'Valpo', 'Viña del Mar': 'Viña' };
 type Ver = 'todo' | 'eventos' | 'lugares';
 type Vista = 'lista' | 'mapa';
+type Orden = 'recomendados' | 'barato';
 interface Estado {
   filtros: FiltrosEvento;
   ver: Ver;
   vista: Vista;
+  orden: Orden;
 }
 /** Un snapshot más viejo que esto se avisa, sin bloquear nada. */
 const VIEJO_MS = 6 * 3600_000;
@@ -34,6 +36,7 @@ function leer(search: string, defecto: string): Estado {
     filtros: parseFilters(p, defecto),
     ver: p.get('ver') === 'eventos' ? 'eventos' : p.get('ver') === 'lugares' ? 'lugares' : 'todo',
     vista: p.get('vista') === 'mapa' ? 'mapa' : 'lista',
+    orden: p.get('orden') === 'barato' ? 'barato' : 'recomendados',
   };
 }
 /** URL limpia: solo lo que difiere del valor por defecto. */
@@ -48,6 +51,7 @@ function aUrl(e: Estado, path: string, defecto: string) {
   }
   if (e.ver !== 'todo') p.set('ver', e.ver);
   if (e.vista !== 'lista') p.set('vista', e.vista);
+  if (e.orden !== 'recomendados') p.set('orden', e.orden);
   const q = p.toString();
   return q ? `${path}?${q}` : path;
 }
@@ -98,13 +102,14 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
   }, [snap]);
 
   const ir = useCallback(
-    (cambio: Partial<FiltrosEvento> & { ver?: Ver; vista?: Vista }, reemplazar = false) => {
+    (cambio: Partial<FiltrosEvento> & { ver?: Ver; vista?: Vista; orden?: Orden }, reemplazar = false) => {
       setEstado((prev) => {
-        const { ver, vista, ...filtros } = cambio;
+        const { ver, vista, orden, ...filtros } = cambio;
         const next: Estado = {
           filtros: { ...prev.filtros, ...filtros },
           ver: ver ?? prev.ver,
           vista: vista ?? prev.vista,
+          orden: orden ?? prev.orden,
         };
         const url = aUrl(next, path, defecto);
         if (reemplazar) history.replaceState(null, '', url);
@@ -114,12 +119,13 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
     },
     [path, defecto],
   );
-  const enlace = (cambio: Partial<FiltrosEvento> & { ver?: Ver; vista?: Vista }) => ({
+  const enlace = (cambio: Partial<FiltrosEvento> & { ver?: Ver; vista?: Vista; orden?: Orden }) => ({
     href: aUrl(
       {
         filtros: { ...estado.filtros, ...cambio },
         ver: cambio.ver ?? estado.ver,
         vista: cambio.vista ?? estado.vista,
+        orden: cambio.orden ?? estado.orden,
       },
       path,
       defecto,
@@ -131,9 +137,12 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
     },
   });
 
-  const { filtros, ver, vista } = estado;
+  const { filtros, ver, vista, orden } = estado;
   const todos = snap.events;
-  const events = useMemo(() => diversifyByVenue(filterEvents(todos, filtros, today)), [todos, filtros, today]);
+  const events = useMemo(() => {
+    const lista = diversifyByVenue(filterEvents(todos, filtros, today));
+    return orden === 'barato' ? ordenarPorPrecio(lista) : lista;
+  }, [todos, filtros, today, orden]);
   const derivados = useMemo(() => {
     const conteoLugar = new Map<string, number>();
     const hoyPorLugar = new Map<string, string>();
@@ -163,6 +172,7 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
         filtros.ciudad === 'todos' ? snap.venues : snap.venues.filter((l) => l.ciudad === filtros.ciudad),
       ),
       todayCount: filterEvents(todos, { fecha: 'hoy' }, today).length,
+      baratos: filterEvents(todos, { ...filtros, precio: 'todos', escena: 'todos' }, today).filter(esBarato).length,
       mananaCount: filterEvents(todos, { fecha: 'manana' }, today).length,
       busquedaEventos: filtros.busqueda ? filterEvents(todos, { fecha: 'futuro', busqueda: filtros.busqueda }, today).length : 0,
       lugaresHallados: filtros.busqueda ? buscarLugares(snap.venues, filtros.busqueda) : [],
@@ -290,7 +300,7 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
             </a>
           ))}
         </div>
-        <details className="discovery-options"><summary>Filtros{(filtros.escena !== 'todos' || filtros.precio === 'gratis' || ver !== 'todo' || vista !== 'lista') ? ' · activos' : ''}</summary>
+        <details className="discovery-options"><summary>Filtros{(filtros.escena !== 'todos' || (filtros.precio && filtros.precio !== 'todos') || orden !== 'recomendados' || ver !== 'todo' || vista !== 'lista') ? ' · activos' : ''}</summary>
         {derivados.escenas.length > 0 && (
           <div className="escenas" aria-label="Escenas">
             {derivados.escenas.map((x) => {
@@ -301,11 +311,41 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
                 </a>
               );
             })}
-            <a {...enlace({ precio: filtros.precio === 'gratis' ? 'todos' : 'gratis' })} className={`chip free-filter ${filtros.precio === 'gratis' ? 'selected' : ''}`} aria-current={filtros.precio === 'gratis' ? 'true' : undefined}>
-              Gratis
-            </a>
           </div>
         )}
+        <div className="presupuesto" role="group" aria-label="Presupuesto por entrada">
+          <span className="presupuesto-label">Presupuesto</span>
+          {(
+            [
+              ['todos', 'Cualquiera'],
+              ['gratis', 'Gratis'],
+              ['5000', 'Hasta $5.000'],
+              ['10000', 'Hasta $10.000'],
+              ['15000', 'Hasta $15.000'],
+            ] as const
+          ).map(([v, label]) => {
+            const activa = (filtros.precio || 'todos') === v || (v === 'todos' && filtros.precio === 'pago');
+            return (
+              <a key={v} {...enlace({ precio: v })} className={activa ? 'activa' : ''} aria-current={activa ? 'true' : undefined}>
+                {label}
+              </a>
+            );
+          })}
+        </div>
+        <p className="presupuesto-nota">Solo cuenta el precio publicado por la fuente; si no se sabe, no aparece como barato.</p>
+        <div className="presupuesto" role="group" aria-label="Ordenar">
+          <span className="presupuesto-label">Ordenar</span>
+          {(
+            [
+              ['recomendados', 'Recomendados'],
+              ['barato', 'Más barato'],
+            ] as const
+          ).map(([v, label]) => (
+            <a key={v} {...enlace({ orden: v })} className={orden === v ? 'activa' : ''} aria-current={orden === v ? 'true' : undefined}>
+              {label}
+            </a>
+          ))}
+        </div>
         <div className="explore-controls">
           <div className="segmented" role="group" aria-label="Qué mostrar">
             {(
@@ -334,6 +374,11 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
           </div>
         </div>
         </details>
+        {derivados.baratos > 0 && (filtros.precio || 'todos') === 'todos' && (
+          <a className="barato-atajo" {...enlace({ precio: '5000' })}>
+            Barato {filtros.fecha === 'hoy' ? 'hoy' : 'en estas fechas'}: {derivados.baratos} gratis o hasta $5.000
+          </a>
+        )}
         {viejo && (
           <p className="trust-note" role="status">
             Estos datos tienen más de 6 horas. Siguen siendo útiles, pero confirma en la fuente antes de salir.

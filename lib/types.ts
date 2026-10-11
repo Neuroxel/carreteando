@@ -107,7 +107,8 @@ export interface FiltrosEvento {
   tipo?: TipoEvento | 'todos';
   categoria?: Categoria | 'todos';
   ciudad?: string | 'todos';
-  precio?: 'gratis' | 'pago' | 'todos';
+  /** Presupuesto: 'gratis', o un tope en CLP ('5000', '10000', '15000'). 'pago' queda por enlaces viejos. */
+  precio?: 'gratis' | 'pago' | 'todos' | '5000' | '10000' | '15000';
   fecha?: 'hoy' | 'manana' | 'finde' | 'futuro' | 'semana' | 'todos';
   escena?: string;
 }

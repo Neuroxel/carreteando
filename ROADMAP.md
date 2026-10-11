@@ -22,6 +22,16 @@ Simple por fuera, sofisticado por dentro.
 
 ## Ahora (octubre 2026)
 
+- **Presupuesto (requisito central):** que la pregunta sea también “¿dónde salgo
+  con mi presupuesto?”. Hecho: filtro por tope y orden “más barato”, con el precio
+  desconocido nunca tratado como barato. Falta: (1) leer el precio que las
+  ticketeras ya publican: hoy solo el 27 % de los eventos públicos lo tiene, y
+  varias fichas lo muestran en la fuente (p. ej. LALA Fest $5.000); (2) sumar
+  fuentes de eventos **gratis** o de bajo costo: hoy hay 0 gratis entre 117
+  eventos vigentes (agendas municipales, centros culturales, universidades,
+  bares sin cover). Medir cada semana: cobertura de precio, eventos baratos y
+  % de precio desconocido.
+
 - **Release candidate** `release/october-final`: frontend de Astra + datos y
   automatización. Revisión de Carlos sobre una sola URL.
 - **Densidad de fuentes**: PortalTickets regional, TicketPlus, PuntoTicket y

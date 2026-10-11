@@ -129,6 +129,35 @@ export function coincideBusqueda(e: Evento, busqueda: string) {
     .join(' ');
   return coincideTexto(texto, busqueda);
 }
+/**
+ * Un precio desconocido nunca es barato ni gratis: solo entra lo que la fuente
+ * publica. "Hasta $5.000" incluye lo gratis.
+ */
+export function dentroDelPresupuesto(e: Pick<Evento, 'precio' | 'precio_conocido'>, precio: NonNullable<FiltrosEvento['precio']>) {
+  if (precio === 'todos') return true;
+  if (e.precio_conocido !== true || typeof e.precio !== 'number' || e.precio < 0) return false;
+  if (precio === 'gratis') return e.precio === 0;
+  if (precio === 'pago') return e.precio > 0;
+  return e.precio <= Number(precio);
+}
+/** Barato, sin heurística escondida: gratis o hasta $5.000 por entrada individual. */
+export const TOPE_BARATO = 5000;
+export function esBarato(e: Pick<Evento, 'precio' | 'precio_conocido'>) {
+  return dentroDelPresupuesto(e, '5000');
+}
+/** Más barato primero; lo de precio desconocido va después, en su orden de siempre. */
+export function ordenarPorPrecio<T extends Pick<Evento, 'precio' | 'precio_conocido'>>(eventos: T[]): T[] {
+  const conocido = (e: T) => e.precio_conocido === true && typeof e.precio === 'number' && e.precio >= 0;
+  return eventos
+    .map((e, i) => ({ e, i }))
+    .sort((a, b) => {
+      const ca = conocido(a.e), cb = conocido(b.e);
+      if (ca !== cb) return ca ? -1 : 1;
+      if (ca && cb && a.e.precio !== b.e.precio) return (a.e.precio as number) - (b.e.precio as number);
+      return a.i - b.i;
+    })
+    .map((x) => x.e);
+}
 export function getChileTodayStr(): string {
   return toChileDateString(new Date());
 }
@@ -149,8 +178,7 @@ export function filterEvents(
       if (
         filters.precio &&
         filters.precio !== 'todos' &&
-        (e.precio_conocido !== true ||
-          (filters.precio === 'gratis' ? e.precio !== 0 : e.precio <= 0))
+        !dentroDelPresupuesto(e, filters.precio)
       )
         return false;
       if (filters.fecha === 'hoy' && e.fecha !== today) return false;

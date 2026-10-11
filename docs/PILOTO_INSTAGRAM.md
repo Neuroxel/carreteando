@@ -121,6 +121,27 @@ group by 1, 2 order by 1, 2;
 select created_at, summary from instagram_pilot_runs order by created_at;
 ```
 
+## Precio de lo único (agregado el 10-10-2026)
+
+Cada evento único se clasifica por su entrada individual más barata vigente
+(`instagram_pilot_items.price_bucket`): gratis · hasta $5.000 · hasta $10.000 ·
+más de $10.000 · desconocido. **Rendimiento barato** = únicos gratis o hasta
+$5.000 por corrida. Dice si Instagram ayuda específicamente a encontrar salidas
+baratas.
+
+| Corrida | Únicos | Gratis | ≤ $5.000 | ≤ $10.000 | > $10.000 | Desconocido | Rendimiento barato |
+|---|---|---|---|---|---|---|---|
+| Piloto 10-10 | 6 | 0 | 1 (Halloween Psiquis, preventa $4.000) | 2 (+ Máscara $8.000) | 0 | 4 | 1 de 6 |
+| Jue 15-10 | | | | | | | |
+| Sáb 17-10 | | | | | | | |
+| Jue 22-10 | | | | | | | |
+| Sáb 24-10 | | | | | | | |
+
+```sql
+select apify_run_id, price_bucket, count(*) from instagram_pilot_items
+where classification = 'UNIQUE_VALID_EVENT' group by 1, 2 order by 1, 2;
+```
+
 ## Cuándo decidir
 
 Al final de las dos semanas: si el promedio es de al menos 3 eventos únicos por

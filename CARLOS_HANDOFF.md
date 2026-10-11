@@ -327,6 +327,22 @@ Qué mirar en especial:
 Lo que falta y es tuyo: aprobar los 9 locales propuestos cuando tengas su
 dirección (`docs/FUENTES_LOCALES.md`) y una pasada semanal por Passline.
 
+## 9g. Presupuesto: “falta que busque cosas más baratas”
+
+Implementado en la rama `release/dondesalgo-v1` (10-10-2026):
+
+- Dentro de “Filtros”: Presupuesto (Cualquiera · Gratis · Hasta $5.000 · Hasta
+  $10.000 · Hasta $15.000) y Ordenar (Recomendados · Más barato). URL:
+  `?precio=5000`, `?orden=barato`.
+- Atajo “Barato hoy: N gratis o hasta $5.000”, solo si N > 0.
+- Código: `dentroDelPresupuesto`, `esBarato` y `ordenarPorPrecio` en
+  `lib/events.ts`; pruebas en `tests/presupuesto.test.ts`.
+- Regla: precio desconocido nunca es barato; `price_clp` es la entrada individual
+  más barata vigente (si las preventas se agotaron, sube: Club Segundo Piso pasó
+  de $10.000 a $15.000; José Alfredo Fuentes, a $45.000).
+- Lo que falta es de datos, no de pantalla: el 73 % de los eventos de ticketera no
+  trae precio numérico y no hay fuentes de eventos gratis. Ver `ROADMAP.md`.
+
 ## 10. Respaldos
 
 El plan Free de Supabase **no hace respaldos automáticos de ningún tipo**.
