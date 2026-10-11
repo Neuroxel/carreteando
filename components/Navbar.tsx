@@ -1,10 +1,11 @@
 import Link from 'next/link';
+import { Logo } from './Logo';
 export default function Navbar() {
   return (
     <header className="site-header">
       <div className="container nav-inner">
         <Link prefetch={false} className="brand" href="/" aria-label="Dónde Salgo?, inicio">
-          DÓNDE SALGO<span className="brand-q">?</span>
+          <Logo className="brand-logo" title="Dónde Salgo?" />
         </Link>
         <nav aria-label="Navegación principal">
           <Link prefetch={false} href="/explorar">Explorar</Link>

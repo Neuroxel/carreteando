@@ -1,10 +1,11 @@
 import Link from 'next/link';
+import { Logo } from './Logo';
 export default function Footer() {
   return (
     <footer className="site-footer container">
       <div>
         <Link prefetch={false} href="/" className="brand">
-          DÓNDE SALGO<span className="brand-q">?</span>
+          <Logo className="brand-logo" title="Dónde Salgo?" />
         </Link>
         <p>
           Eventos y lugares para salir.

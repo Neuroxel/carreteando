@@ -15,12 +15,12 @@ export default async function Image({ params }: { params: Promise<{ id: string }
         justifyContent: 'space-between',
         width: '100%',
         height: '100%',
-        background: '#151614',
-        color: '#f5f1e8',
+        background: '#100F0D',
+        color: '#F1EADB',
         padding: 64,
       }}
     >
-      <div style={{ display: 'flex', fontSize: 28, letterSpacing: 4, color: '#ff775c' }}>
+      <div style={{ display: 'flex', fontSize: 28, letterSpacing: 4, color: '#FF5B36' }}>
         DÓNDE SALGO? / VALPARAÍSO Y VIÑA
       </div>
       <div style={{ display: 'flex', fontSize: 68, fontWeight: 900, lineHeight: 1.1 }}>
@@ -31,7 +31,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
           ? `${e.fecha} · ${e.hora || 'Hora por confirmar'} · ${e.lugar || e.ciudad}`
           : 'Valpo, Viña y alrededores'}
       </div>
-      <div style={{ display: 'flex', fontSize: 26, color: '#ff775c' }}>
+      <div style={{ display: 'flex', fontSize: 26, color: '#FF5B36' }}>
         {e?.precio_texto || 'Consulta la cartelera y sus fuentes'} ↗
       </div>
     </div>,

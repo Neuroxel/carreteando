@@ -230,3 +230,12 @@ test('lo diurno con señal de salida sigue las reglas normales; sin señal lo mi
   assert.equal(evaluateEventEvidence(evento({ ...dia, daySignal: true }), [ev({}, { start_time: '16:00' })], confianza('strict'), HOY).decision, 'AUTO_PROMOTE_FROM_REVIEW');
   assert.equal(evaluateEventEvidence(evento({ ...dia, daySignal: false }), [ev({}, { start_time: '16:00' })], confianza('strict'), HOY).decision, 'REVIEW_INSUFFICIENT');
 });
+
+test('un título parecido en otra ciudad o en otro lugar no es duplicado', async () => {
+  const { mismoLugar } = await import('../lib/sources/automation');
+  const segundoPiso = { city: 'Valparaíso', venue: 'Club Segundo Piso', venue_id: 3 };
+  assert.equal(mismoLugar(segundoPiso, { city: 'Villa Alemana', venue: 'Café Rock', venue_id: 34 }), false);
+  assert.equal(mismoLugar(segundoPiso, { city: 'Valparaíso', venue: 'Máscara', venue_id: 82 }), false);
+  assert.equal(mismoLugar(segundoPiso, { city: 'Valparaíso', venue: 'Club Segundo Piso', venue_id: 3 }), true);
+  assert.equal(mismoLugar(segundoPiso, { city: 'Valparaíso', venue: null }), true);
+});

@@ -1,9 +1,5 @@
-// Tiny original pixel mark; binary ICO keeps browser favicon requests local.
+// El "?" de Dónde Salgo? en 32 px (PNG dentro de un ICO), servido localmente.
+const ICO = Buffer.from('AAABAAEAICAAAAEAIAAgBAAAFgAAAIlQTkcNChoKAAAADUlIRFIAAAAgAAAAIAgGAAAAc3p69AAAA9VJREFUeJzEV01s3EQU/ma8/ot31yXNTxuapFRFakOTRkDbFAlQBRKXnnpAQsAFVCEEHCpA4gBHBIJLgYDgAicuXKAFDgiBQISfKkVqlNAISpvQ0qYNu81m47Wz9q6H56UJBNvrTTeBT7uyPW9mvs9v3pvxS+EfSKfTuySGJ8GxBwL9jDEZawAhhAeGcfgYrQoMW5Y1sWRjS9dsNv0EPbxKpFojk0r0v8VUMZDVsEWXkdZT4CrHmbyDqUIZJ+YcOL6IErNIrU8Xi9ZbywJMM/Mc3bzUCDEn1zzaewOe7+tAVpJi+1WYwOfWIh4fOY95zw93EP6RQrF0lBmGMZCS2Ci9uYIE9GUUvD/Uja1qYtdllFTg4Mg0Tl1xQiYBdzeXJfZII+QPbMnim7u3rYo8gFEGPj2wDW2ZVMjEhPwUF2BDSZPsTCt4fXcXuZ/hetBi+Xjv0PZQe8DNGcOOpAleu7ULKRZBTus816PgTAeHp9UXN6iqMNMrvRBwc7qa9QZuUiXsyeqRtpk+Awc+/AV73/0JNx2bRJ77sfPoeQ9D/a3/bjY5ErCvtSXW9uW8jd9m/gqukidwdDIX25dXBDo2huMnUUCqjm3Rra54rlZEbF83IyFf8LBqAXbUZiIFE3K0Gys3yvt7srHz5LtVfD+WD7XXe8EafrjqYISWzuhUca5YxmTOwenLNqYu2jh/+e/cfrjbxGAmOlYCscM/5zC3UAnZ2AYzE++3BnFHq46P9/eCR2SKoKbvBjQceuUUXC9MleiBJHRSlnww1BNJXtE4xndpODw8EUkeIDEGkvACnQkGD09TpYPpx9tb8CCRz+TKseOb9sDBzdGBd3aHhodeHkOu4NYd37SAMqJde3K2lEi+JgK+shzcN9gGh7biC46HX4suJnI2vv6i0ND4prPA0CWYGRmXZoOUXP1h1bQH/LKPjbLA/q4sBjcZ6NugYquuYDOX8KJr4c3Pfse6Cvjozl7sjdqAyK93bTcTBTSdhlOOF2vrUZPfr2kB4384sbZ2JtEGhfUVcM6OTzWlVEVXu7a+As5a8bucYlVxY6ded3zTQThtexRv9HUXpCD9Kjp9nrXw2vWqzKDK9dcgJQRO0DmyD9cJl6L92fwcbt5p4vQVGxemF3GRPsGnL9mxB9ASatxmJv024+wx/A8QvngnKEz6qTA52UhtsKbkQrhVH7dJnufNappaoZW6F/8hGMQzxYXS8VpxVy673yqqMku395Anmg7MerhWnB6ZL5beCJ6Xq0sSMSrLyjEWtLFaDdpGYiSsAa6V52NUnh+n8vzwwoL1yZLtTwAAAP//EU96lQAAAAZJREFUAwDoxUjB5g5hOQAAAABJRU5ErkJggg==', 'base64');
 export function GET() {
- const size=16, bytes=Buffer.alloc(22+40+size*size*4+size*4);
- bytes.writeUInt16LE(1,2);bytes.writeUInt16LE(1,4);bytes[6]=size;bytes[7]=size;
- bytes.writeUInt16LE(1,10);bytes.writeUInt16LE(32,12);bytes.writeUInt32LE(bytes.length-22,14);bytes.writeUInt32LE(22,18);
- bytes.writeUInt32LE(40,22);bytes.writeInt32LE(size,26);bytes.writeInt32LE(size*2,30);bytes.writeUInt16LE(1,34);bytes.writeUInt16LE(32,36);
- for(let y=0;y<size;y++)for(let x=0;x<size;x++){const mark=(x>=6&&x<=9)||(y>=6&&y<=9);const i=62+(y*size+x)*4;bytes[i]=mark?137:20;bytes[i+1]=mark?239:22;bytes[i+2]=mark?217:21;bytes[i+3]=255;}
- return new Response(bytes,{headers:{'Content-Type':'image/x-icon','Cache-Control':'public, max-age=86400'}});
+  return new Response(ICO, { headers: { 'Content-Type': 'image/x-icon', 'Cache-Control': 'public, max-age=86400' } });
 }

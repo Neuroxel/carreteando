@@ -13,6 +13,7 @@ import { rememberEmptySearch } from '../lib/metrics';
 import EventCard from './EventCard';
 import VenueCard from './VenueCard';
 import VenueMap from './VenueMap';
+import { Logo } from './Logo';
 
 const SHORT: Record<string, string> = { Valparaíso: 'Valpo', 'Viña del Mar': 'Viña' };
 type Ver = 'todo' | 'eventos' | 'lugares';
@@ -218,7 +219,7 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
           <h1>
             {home ? (
               <>
-                DÓNDE SALGO<span className="brand-q">?</span>
+                <Logo className="hero-logo" title="Dónde Salgo?" />
               </>
             ) : (
               <>

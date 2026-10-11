@@ -242,7 +242,7 @@ export async function reevaluate(db: Db, now = new Date(), forced?: EngineMode):
     const copiaDe = copias.get(r.id);
     if (copiaDe && !st.humanLocked) res = { ...res, decision: 'AUTO_REJECT', rule: 4, reasons: [`misma ficha que el evento ${copiaDe}`], conflicting: [] };
     if (res.decision === 'AUTO_PROMOTE_FROM_REVIEW' || res.decision === 'AUTO_PUBLISH') {
-      const gemelo = publicos.find((p) => p.id !== r.id && p.date_text === r.date_text && looksLikeSameEvent(p.title || '', r.title || ''));
+      const gemelo = publicos.find((p) => p.id !== r.id && p.date_text === r.date_text && mismoLugar(p, r) && looksLikeSameEvent(p.title || '', r.title || ''));
       if (gemelo) res = { ...res, decision: 'AUTO_REJECT', rule: 4, reasons: [`ya publicado como el evento ${gemelo.id}`] };
     }
     report.counts[res.decision] = (report.counts[res.decision] || 0) + 1;
@@ -358,4 +358,20 @@ export async function parserCheck(db: Db, fetcher: Fetcher = httpFetcher) {
     }
   }
   return res;
+}
+
+/**
+ * Dos títulos parecidos ("Sábado 10 fiesta…") no son el mismo evento si pasan
+ * en ciudades o lugares distintos. Caso real: una fiesta en Café Rock (Villa
+ * Alemana) se descartó como copia de otra en Club Segundo Piso (Valparaíso).
+ */
+export function mismoLugar(
+  a: { city?: unknown; venue?: unknown; venue_id?: unknown },
+  b: { city?: unknown; venue?: unknown; venue_id?: unknown },
+) {
+  const norm = (v: unknown) => (typeof v === 'string' ? v.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim() : '');
+  if (norm(a.city) && norm(b.city) && norm(a.city) !== norm(b.city)) return false;
+  if (a.venue_id && b.venue_id) return a.venue_id === b.venue_id;
+  if (norm(a.venue) && norm(b.venue)) return norm(a.venue) === norm(b.venue);
+  return true;
 }
