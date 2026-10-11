@@ -18,8 +18,7 @@
   --indigo: #202746;
   --noche: #10152b;
   --tinta: #0d0f18;
-  /* El acento principal del sitio (antes amarillo) pasa a violeta: botones,
-     píldoras activas, pestañas, contadores y luces. */
+  /* El acento principal del sitio (antes amarillo) pasa a violeta. */
   --amarillo: #b49be2;
   --amarillo-hondo: #9d84cf;
   --acento-marca: #db506a;
@@ -31,15 +30,38 @@ html {
   background: #090b13;
 }
 
-/* El lienzo 3D vive detrás de todo el contenido. */
 body {
-  background:
-    radial-gradient(120% 80% at 50% -10%, #1a2140 0%, transparent 55%),
-    radial-gradient(90% 60% at 110% 10%, rgba(180, 155, 226, 0.12), transparent 60%),
-    radial-gradient(80% 50% at -10% 30%, rgba(219, 80, 106, 0.1), transparent 55%),
-    linear-gradient(180deg, #090b13 0%, #0c1020 45%, #090b13 100%);
-  background-attachment: fixed;
+  background: #090b13;
   color: var(--cream);
+  /* El contenido flota sobre la escena 3D y la aurora, que viven detrás. */
+}
+
+/* Aurora de pigmento: el "cielo" colorido que se ve incluso sin WebGL. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: -20% -10% -10% -10%;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(46% 38% at 12% 18%, rgba(180, 155, 226, 0.34), transparent 62%),
+    radial-gradient(40% 34% at 86% 10%, rgba(169, 216, 207, 0.22), transparent 60%),
+    radial-gradient(52% 42% at 82% 82%, rgba(219, 80, 106, 0.26), transparent 64%),
+    radial-gradient(44% 40% at 18% 86%, rgba(32, 39, 70, 0.85), transparent 60%),
+    linear-gradient(180deg, #0a0d1c 0%, #0d1226 45%, #090b13 100%);
+  filter: blur(18px);
+  transform: translateZ(0);
+  animation: aurora 22s ease-in-out infinite alternate;
+}
+@keyframes aurora {
+  from {
+    opacity: 0.75;
+    transform: translate3d(-1.5%, -1%, 0) scale(1.02);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(1.5%, 1.5%, 0) scale(1.06);
+  }
 }
 
 /* Grano analógico sobre todo, casi imperceptible. */
@@ -71,8 +93,15 @@ main,
   overflow: hidden;
   pointer-events: none;
 }
+.scene3d canvas,
+.scene3d > div {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
 
-/* Botón que activa la experiencia 3D (sensores + paralaje de capas). */
+/* Botón que activa el sensor en iOS (donde hace falta permiso). */
 .scene3d-toggle {
   position: fixed;
   right: 18px;
@@ -120,7 +149,7 @@ main,
 
 /* Cabecera translúcida: el espacio se ve a través de ella. */
 .site-header {
-  background: rgba(9, 11, 19, 0.72);
+  background: rgba(9, 11, 19, 0.62);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   border-bottom: 1px solid rgba(148, 137, 184, 0.22);
@@ -198,10 +227,10 @@ h2,
     radial-gradient(1.6px 1.6px at 86% 74%, rgba(169, 216, 207, 0.9) 40%, transparent 42%),
     radial-gradient(1.3px 1.3px at 94% 84%, rgba(180, 155, 226, 0.8) 40%, transparent 42%),
     radial-gradient(120% 70% at 50% 118%, rgba(180, 155, 226, 0.16), transparent 62%),
-    linear-gradient(180deg, rgba(9, 11, 19, 0.32) 0%, rgba(16, 21, 43, 0.5) 46%, rgba(9, 11, 19, 0.78) 100%);
+    linear-gradient(180deg, rgba(9, 11, 19, 0.28) 0%, rgba(16, 21, 43, 0.44) 46%, rgba(9, 11, 19, 0.72) 100%);
 }
 .hero-home::after {
-  opacity: 0.5;
+  opacity: 0.45;
 }
 
 /* --------------------------------------------------------------------------
@@ -301,7 +330,7 @@ h2,
   opacity: 0.75;
 }
 
-/* Estados "vacíos" y avisos: borde coral/violeta, fondo índigo. */
+/* Estados "vacíos" y avisos. */
 .empty-state:not(.error-state) {
   border-left: 4px solid var(--coral);
   background: rgba(16, 21, 43, 0.6);
@@ -367,30 +396,34 @@ summary:focus-visible {
 }
 
 /* --------------------------------------------------------------------------
-   Paralaje DOM: al activar la experiencia, unas pocas capas de contenido se
-   desplazan con la misma inclinación (sutil, nunca rompe el hover del card).
+   Paralaje DOM: al inclinar el teléfono, cada capa se mueve a distinta
+   profundidad. El titular rota levemente en 3D; las tarjetas y el resto se
+   desplazan. Sutil pero claramente perceptible, y sin romper el hover.
    -------------------------------------------------------------------------- */
 @media (prefers-reduced-motion: no-preference) {
   html.d3-on .hero-copy {
-    transform: translate3d(calc(var(--px, 0) * 6px), calc(var(--py, 0) * 5px), 0);
-    transition: transform 0.08s linear;
+    transform: perspective(900px) rotateX(calc(var(--py, 0) * 1.6deg)) rotateY(calc(var(--px, 0) * -1.6deg))
+      translate3d(calc(var(--px, 0) * 10px), calc(var(--py, 0) * 8px), 0);
+    will-change: transform;
   }
   html.d3-on .section-heading {
-    transform: translate3d(calc(var(--px, 0) * 3px), calc(var(--py, 0) * 2px), 0);
+    transform: translate3d(calc(var(--px, 0) * 6px), calc(var(--py, 0) * 4px), 0);
   }
   html.d3-on .event-grid,
   html.d3-on .venue-grid {
-    transform: translate3d(calc(var(--px, 0) * 3px), calc(var(--py, 0) * 2px), 0);
+    transform: translate3d(calc(var(--px, 0) * 7px), calc(var(--py, 0) * 5px), 0);
   }
   html.d3-on .contribution-strip {
-    transform: translate3d(calc(var(--px, 0) * 2px), calc(var(--py, 0) * 2px), 0);
+    transform: translate3d(calc(var(--px, 0) * 4px), calc(var(--py, 0) * 3px), 0);
+  }
+  html.d3-on .site-footer {
+    transform: translate3d(calc(var(--px, 0) * 3px), calc(var(--py, 0) * 2px), 0);
   }
 }
 
-/* Movimiento reducido: la escena se queda quieta (lo maneja Scene3D) y no se
-   fuerza ningún paralaje sobre el contenido. */
+/* Movimiento reducido: la aurora y la escena se quedan quietas. */
 @media (prefers-reduced-motion: reduce) {
-  body::after {
+  body::before {
     animation: none;
   }
 }
