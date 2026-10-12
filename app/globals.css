@@ -1601,14 +1601,14 @@ html[data-edicion="3d"] {
    texto funcional ni de los flyers: fondo de página, hero, bordes y separadores.
    ------------------------------------------------------------------------- */
 html[data-edicion="3d"] {
-  /* grano de fibra de papel, claro sobre tinta */
-  --tx-fibra: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='f'><feTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='3' seed='4' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .95  0 0 0 0 .9  0 0 0 0 .87  0 0 0 .55 -.18'/></filter><rect width='100%' height='100%' filter='url(%23f)'/></svg>");
-  /* manchas de densidad de tinta: zonas más y menos cargadas */
-  --tx-manchas: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><filter id='m'><feTurbulence type='fractalNoise' baseFrequency='.011' numOctaves='3' seed='9' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .05  0 0 0 0 .05  0 0 0 0 .1  0 0 0 1.6 -.62'/></filter><rect width='100%' height='100%' filter='url(%23m)'/></svg>");
-  /* motas de imprenta: puntos de tinta clara sueltos */
-  --tx-motas: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><filter id='s'><feTurbulence type='fractalNoise' baseFrequency='.55' numOctaves='1' seed='21' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .95  0 0 0 0 .88  0 0 0 0 .86  0 0 0 9 -7.6'/></filter><rect width='100%' height='100%' filter='url(%23s)'/></svg>");
+  /* MICRO (se repite): fibra fina de alta frecuencia en tile de 160 px; su patrón
+     está bajo la escala que el ojo agrupa, así que la repetición no se ve. */
+  --tx-fibra: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='f'><feTurbulence type='fractalNoise' baseFrequency='1.15' numOctaves='2' seed='4' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .95  0 0 0 0 .9  0 0 0 0 .87  0 0 0 .5 -.2'/></filter><rect width='100%' height='100%' filter='url(%23f)'/></svg>");
+  /* MACRO del hero (NO se repite): manchas de tinta + motas, una sola vez al tamaño
+     del hero (cover, sin repetición). Cuadrado + slice: nunca se deforma. */
+  --tx-hero: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 1200' preserveAspectRatio='xMidYMid slice'><filter id='m' x='0' y='0' width='100%25' height='100%25'><feTurbulence type='fractalNoise' baseFrequency='.004 .006' numOctaves='3' seed='9'/><feColorMatrix values='0 0 0 0 .04  0 0 0 0 .04  0 0 0 0 .09  0 0 0 1.5 -.55'/></filter><filter id='s' x='0' y='0' width='100%25' height='100%25'><feTurbulence type='fractalNoise' baseFrequency='.5' numOctaves='1' seed='21'/><feColorMatrix values='0 0 0 0 .95  0 0 0 0 .88  0 0 0 0 .86  0 0 0 9 -7.7'/></filter><rect width='1200' height='1200' filter='url(%23m)'/><rect width='1200' height='1200' filter='url(%23s)'/></svg>");
   /* grano oscuro sobre papel claro (tarjetas) */
-  --tx-grano-papel: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' seed='7' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .2  0 0 0 0 .16  0 0 0 0 .25  0 0 0 .5 -.2'/></filter><rect width='100%' height='100%' filter='url(%23g)'/></svg>");
+  --tx-grano-papel: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='2' seed='7' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .2  0 0 0 0 .16  0 0 0 0 .25  0 0 0 .5 -.2'/></filter><rect width='100%' height='100%' filter='url(%23g)'/></svg>");
   /* borde gastado del afiche (máscara) */
   --mk-borde: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 1000' preserveAspectRatio='none'><filter id='r' x='-5%25' y='-5%25' width='110%25' height='110%25'><feTurbulence type='fractalNoise' baseFrequency='.09' numOctaves='3' seed='2'/><feDisplacementMap in='SourceGraphic' scale='9'/></filter><rect x='5' y='5' width='990' height='990' fill='black' filter='url(%23r)'/></svg>");
   /* filete impreso irregular */
@@ -1617,8 +1617,20 @@ html[data-edicion="3d"] {
 /* Pared de afiches: fondo de tinta con fibra y manchas visibles. */
 html[data-edicion="3d"] body {
   background-color:var(--bg);
-  background-image:var(--tx-fibra), var(--tx-manchas);
-  background-size:240px 240px, 600px 600px;
+  /* Micro primero (repite, invisible); luego la composición macro: elipses grandes
+     de tinta, sin repetición, repartidas a lo largo de TODA la página (posiciones en %
+     de la altura del documento, tamaños en vw/vh). Una sola pared de afiches. */
+  background-image:
+    var(--tx-fibra),
+    radial-gradient(70vw 55vh at 12% 4%, rgba(46,48,78,.75), transparent 70%),
+    radial-gradient(55vw 50vh at 92% 14%, rgba(185,163,218,.10), transparent 70%),
+    radial-gradient(80vw 60vh at 78% 34%, rgba(8,8,14,.55), transparent 72%),
+    radial-gradient(60vw 55vh at 8% 50%, rgba(40,42,70,.7), transparent 70%),
+    radial-gradient(75vw 50vh at 88% 66%, rgba(46,48,78,.6), transparent 72%),
+    radial-gradient(65vw 60vh at 22% 84%, rgba(8,8,14,.5), transparent 70%),
+    radial-gradient(70vw 50vh at 70% 98%, rgba(185,163,218,.08), transparent 70%);
+  background-size:160px 160px, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
+  background-repeat:repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
 }
 /* El hero es un afiche: papel nocturno con manchas, motas y borde gastado. */
 [data-edicion="3d"] .hero {
@@ -1628,8 +1640,10 @@ html[data-edicion="3d"] body {
 }
 [data-edicion="3d"] .hero::before {
   content:""; position:absolute; inset:0; z-index:1; pointer-events:none; opacity:1; mix-blend-mode:normal;
-  background-image:var(--tx-motas), var(--tx-fibra), var(--tx-manchas);
-  background-size:300px 300px, 240px 240px, 600px 600px;
+  background-image:var(--tx-hero), var(--tx-fibra);
+  background-size:cover, 160px 160px;
+  background-repeat:no-repeat, repeat;
+  background-position:center, 0 0;
 }
 /* Trama de semitono en una esquina, corrida respecto del bloque. */
 [data-edicion="3d"] .hero::after {
@@ -1646,7 +1660,7 @@ html[data-edicion="3d"] body {
 /* Separadores impresos bajo los títulos de sección. */
 [data-edicion="3d"] .section-heading { padding-bottom:12px; background:var(--tx-filete) left bottom / 100% 10px no-repeat; }
 /* Tarjetas: piezas de papel montadas sobre la pared, con grano propio (no sobre el flyer). */
-[data-edicion="3d"] .event-card-body, [data-edicion="3d"] .empty-state { background-image:var(--tx-grano-papel); background-size:200px 200px; }
+[data-edicion="3d"] .event-card-body, [data-edicion="3d"] .empty-state { background-image:var(--tx-grano-papel); background-size:140px 140px; background-repeat:repeat; }
 [data-edicion="3d"] .event-card { box-shadow:6px 7px 0 var(--sombra-impresion), 0 1px 0 rgba(0,0,0,.4); }
 /* El afiche se ve completo en el teléfono (antes estaba al 70 %). */
 .poster-home { opacity:1; }
@@ -1658,3 +1672,19 @@ html[data-edicion="3d"] body {
 .pd-debug p { margin:0 0 4px; }
 .pd-debug label { display:grid; gap:2px; margin-top:6px; }
 .pd-debug input { width:100%; }
+
+/* Navegación: misma familia material, sin ensuciar el texto. */
+[data-edicion="3d"] .site-header {
+  border-bottom:0;
+  background-color:rgba(19,19,29,.92);
+  background-image:var(--tx-filete), var(--tx-fibra);
+  background-size:100% 6px, 160px 160px;
+  background-position:left bottom, 0 0;
+  background-repeat:no-repeat, repeat;
+}
+/* Un solo evento en escritorio: la tarjeta se arma en horizontal (flyer + ficha)
+   para que la fila no quede medio vacía. El flyer no se altera. */
+@media (min-width:1001px) {
+  [data-edicion="3d"] .event-grid > .event-card:only-child { grid-column:1 / -1; display:grid; grid-template-columns:minmax(0,1.05fr) minmax(0,1fr); }
+  [data-edicion="3d"] .event-grid > .event-card:only-child .event-card-body { border-top:0; border-left:4px solid var(--accent); display:flex; flex-direction:column; justify-content:center; }
+}
