@@ -262,15 +262,125 @@ El SEO de 66 en dondesalgo3d se debe al `noindex` deliberado del experimento; pr
 6. **En el computador:** abre https://dondesalgo3d.vercel.app a pantalla completa y recorre la página de arriba a abajo. El fondo no debe mostrar ningún cuadrado que se repita.
 7. **Si algo no responde**, abre https://dondesalgo3d.vercel.app/?3ddebug=1 y envía una captura del panel: muestra perfil, permiso y lecturas del sensor.
 
+## Pasada de referencia de Carlos (12-10-2026)
+
+### Sensor
+
+**REFERENCE_SENSOR_METHOD** (calculadora-3d-game.vercel.app, bundle `assets/index-*.js`, leído directamente):
+- Escucha **ambos** eventos en `window`, en modo pasivo.
+- `devicemotion` → `e.acceleration || e.accelerationIncludingGravity`, x/10 e y/10. Tiene prioridad: en cuanto llega una muestra de movimiento, se ignora la orientación.
+- `deviceorientation` → gamma/45 y (beta−45)/45, solo si nunca llegó una muestra de movimiento.
+- En iOS pide `DeviceMotionEvent.requestPermission()` (o la de orientación) dentro de un toque. En Android empieza a escuchar sin pedir nada.
+- La física usa el *cambio* entre lecturas como impulso angular del objeto.
+
+**DÓNDE_SALGO_SENSOR_METHOD** (`components/poster/sensor.ts`):
+- Un adaptador con fuente explícita: `ORIENTATION`, `MOTION_ACCELEROMETER`, `POINTER`, `DEBUG_SIMULATION` o `NONE`.
+- Escucha los dos eventos desde el principio, igual que la referencia.
+- Del movimiento usa `accelerationIncludingGravity`, el vector de gravedad. No usa `acceleration`, que solo cambia al sacudir: aquí la inclinación **sostenida** debe mantener la escena corrida.
+- Inclinación derivada: beta = atan2(y, z) y gamma = atan2(−x, √(y² + z²)), con filtro de paso bajo. El signo invertido de iOS se detecta en la primera lectura.
+- Gana la primera fuente que entrega números. Si ambas los entregan, se prefiere la orientación. Si la orientación se corta, el acelerómetro toma el control solo.
+- Si en 1,5 s no llega ninguna muestra numérica, el estado pasa a `sin-datos` y reaparece **Activar profundidad**. En iOS el botón pide movimiento y orientación dentro del mismo toque.
+- Calibración: el cero es el promedio de las primeras 5 muestras y ya no hay recentrado automático. **Recalibrar** (panel de depuración, o tocar "Profundidad activa") fija un cero nuevo.
+
+**WHY CURRENT IMPLEMENTATION FAILED:**
+- La escena escuchaba solo `deviceorientation` y descartaba en silencio todo evento con beta/gamma nulos.
+- En Android, Chrome calcula esa orientación con el giroscopio. Sin ese sensor (o sin fusión disponible), entrega eventos con valores nulos. Por eso el panel de Carlos mostraba beta = — y gamma = —, mientras el panel decía "sensor disponible" y "permiso concedido": hablaba de la API, no de datos.
+- `devicemotion` → `accelerationIncludingGravity` solo necesita el acelerómetro. Es lo que hace funcionar la calculadora en el mismo teléfono.
+- No pude reproducirlo en un teléfono físico. El panel nuevo cuenta los eventos nulos, así que el video de Carlos lo confirmará (o lo refutará).
+
+**Pruebas:** `tests/sensor.test.ts` cubre:
+- Android sin giroscopio: orientación nula y acelerómetro válido toma el control;
+- 10° sostenidos siguen desplazados después de 200 muestras;
+- izquierda y derecha con signos opuestos;
+- la recalibración;
+- la preferencia por la orientación;
+- la simulación nunca se informa como sensor real.
+
+### Arte (maqueta de Carlos como referencia principal)
+
+> La imagen de la maqueta no llegó adjunta en este pase. Se trabajó con su descripción escrita, que enumera lo que funciona en ella. Hay que compararla con la maqueta real antes de cerrar.
+
+- **"?" gigante 3D: eliminado.** El "?" queda como puntuación del logo, plano y serigrafiado, en coral.
+- **Logo** apilado "DÓNDE / SALGO?" (`LogoApilado`):
+  - mismos trazos vectoriales, nombre accesible;
+  - tinta crema con poros escasos, densidad desigual y borde comido (un filtro SVG chico, solo sobre el logo);
+  - fuera de registro en violeta.
+- **Tipos:**
+  - Anton (OFL) para títulos de cartel, con máscara de poros;
+  - Special Elite (Apache 2.0) para lo secundario: bajada, fechas, rubros, comunas;
+  - el texto de lectura sigue en Arial y los títulos de evento en Georgia.
+- **Papel**, con el mayor peso en el hero:
+  - fibras blancas sueltas (`fibras.webp`, 384 px);
+  - motas de fotocopia (`motas-*.webp`, 269 px, tamaño coprimo);
+  - fibra fina y manchas.
+  - En la página van las mismas fibras, más suaves.
+  - Las fichas de evento son papel crema con grano y motas oscuras.
+  - Los flyers no se tocan.
+
+### Ciudad en capas (`components/poster/ciudad.ts`, vector original generado con semilla fija)
+
+| Capa | Contenido | Desplazamiento máx. |
+|---|---|---|
+| Z0 | trama de semitono, luna en semitono (deriva "líquida" leve) | 4 px |
+| Z1 | cerros lejanos, luces, torres bajas de la costa | 8 px |
+| Z2 | cerro con casas apiladas, ascensor, iglesia | 17 px |
+| Z3 | edificios cercanos **traslúcidos**: tinta plana al 13 % + semitono, ventanas **caladas** (evenodd) por donde se ve la ciudad de atrás | 30 px |
+| Z4 | cables (catenarias), aves, poste, marcas de registro, cinta | 42 px |
+| Interfaz | — | 0 px |
+
+- Con 10° de inclinación se llega al máximo; la diferencia entre Z4 y Z1 es de 34 px.
+- Todo el arte vive en `ciudadRegional()`. Para tener una ciudad por comuna (Valparaíso, Viña, Reñaca) bastaría con una función por comuna; en este pase no se construyó.
+
+### Lugares: riel horizontal
+
+- Selector de comunas ordenado por cantidad de lugares.
+- Una sola fila (`overflow-x` + `scroll-snap`): swipe nativo en el teléfono; trackpad y flechas discretas en escritorio.
+- No intercepta la rueda vertical.
+- Muestra hasta 12 tarjetas y, al final, "Ver los N lugares de …".
+- Con el sensor o el puntero activos, solo la sombra impresa detrás de cada tarjeta se corre (5 px como máximo). El texto y el área de toque no se mueven.
+- **Los eventos siguen en el flujo vertical normal**, sin scroll interno.
+
+### Rendimiento
+
+| Prueba (PageSpeed, móvil / escritorio) | Rendimiento | TBT |
+|---|---|---|
+| 2b72a4a (primera versión, escena en WebGL por software) | 62 / 100 | 8.420 / 30 ms |
+| d829674 (WebGL por software → STATIC; rescate temprano de la calibración) | 95 / 100 | 0 / 20 ms |
+
+- Lighthouse dibuja WebGL por software (SwiftShader): ~250 ms por cuadro con los planos de ciudad a tamaño completo. Un equipo sin GPU ahora recibe el afiche estático. Con GPU, la escena sigue montándose en FULL (verificado en el navegador del panel).
+- Sobre el 95 de PageSpeed: ahí la escena no corre. Mide la carga y el afiche estático, no el WebGL en un teléfono real.
+- Accesibilidad 100 y Recomendaciones 100.
+
+### Capturas (`docs/review-3d/v5-*`)
+
+| Archivo | Qué muestra |
+|---|---|
+| `v5-390-static.jpg` | 390 px, sin movimiento |
+| `v5-390-inclinado-izquierda.png` | 390 px, inclinación simulada −12° |
+| `v5-390-inclinado-derecha.png` | 390 px, inclinación simulada +12° |
+| `v5-390-debug-simulado.jpg` | panel: INPUT SOURCE: SIMULATED, sin muestras reales |
+| `v5-768-static.jpg` | 768 px |
+| `v5-1440-static.jpg` | 1440 px |
+| `v5-1440-riel-lugares.jpg` | riel de lugares en escritorio |
+
+No hay captura con sensor real: no había un teléfono físico disponible. Esa es la prueba que falta, y le toca a Carlos.
+
+### Cómo probarlo (Carlos, en el teléfono)
+
+1. Abre https://dondesalgo3d.vercel.app/?3ddebug=1 en Chrome (Android) o Safari (iPhone).
+2. **iPhone:** toca **Activar profundidad** y acepta "Movimiento y orientación". **Android:** espera unos 4 segundos. Si aparece el botón, tócalo.
+3. En el panel, **INPUT SOURCE** debe decir **REAL ACCELEROMETER** o **REAL ORIENTATION**, con muestras > 0/s, y "crudo x/y/z" o beta/gamma cambiando al mover el teléfono.
+4. Inclina unos 10° a cada lado **y mantén**. Los cables y edificios cercanos se corren más que los cerros, y la escena se queda corrida mientras sostienes la inclinación.
+5. **Recalibrar** fija la postura actual como el cero.
+6. Graba un video corto con el panel visible y mándalo.
+7. Después abre https://dondesalgo3d.vercel.app sin el panel y baja hasta **Lugares para salir**: cambia de comuna y desliza el riel.
+
 ## Preguntas para Carlos
 
-1. ¿Mantiene la simpleza?
-2. ¿Se entiende igual de rápido?
-3. ¿Tiene más personalidad?
-4. ¿Se siente más under/culto?
-5. ¿El efecto 3D aporta o distrae?
-6. ¿Mover el teléfono se siente elegante o gimmicky?
-7. ¿Los flyers siguen siendo protagonistas?
-8. ¿Algún texto se volvió más difícil de leer?
-9. ¿Lo dejarías activado normalmente?
-10. ¿Prefieres esta versión o la V1 plana?
+1. ¿Ahora el movimiento del celular se nota?
+2. ¿Se siente parecido al mecanismo de tu calculadora?
+3. ¿La profundidad aporta sin molestar?
+4. ¿La textura ahora parece papel/impresión real?
+5. ¿Te convence más el logo sin el gran ? tridimensional?
+6. ¿Te gusta el fondo de ciudad por capas?
+7. ¿Te gusta el carrusel horizontal de lugares?
