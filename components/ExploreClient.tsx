@@ -12,8 +12,9 @@ import type { PublicSnapshot } from '../lib/snapshot';
 import { rememberEmptySearch } from '../lib/metrics';
 import EventCard from './EventCard';
 import VenueCard from './VenueCard';
+import VenueRail from './VenueRail';
 import VenueMap from './VenueMap';
-import { Logo } from './Logo';
+import { Logo, LogoApilado } from './Logo';
 import PosterDecor from './poster/PosterDecor';
 import { EXPERIMENTO } from '../lib/experimento';
 
@@ -232,7 +233,7 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
           <h1>
             {home ? (
               <>
-                <Logo className="hero-logo" title="Dónde Salgo?" />
+                {EXPERIMENTO ? <LogoApilado className="hero-logo hero-logo-apilado" /> : <Logo className="hero-logo" title="Dónde Salgo?" />}
               </>
             ) : (
               <>
@@ -536,11 +537,21 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
               )}
             </div>
             {lugaresVisibles.length === 0 && <div className="empty-state"><h3>No encontramos lugares con estos filtros.</h3><a className="button button-outline" {...enlace({ busqueda: '', escena: 'todos', precio: 'todos', ciudad: 'todos' })}>Ver otros lugares</a></div>}
-            <div className="venue-grid">
-              {(ver === 'lugares' ? lugaresVisibles : lugaresVisibles.slice(0, 6)).map((l) => (
-                <VenueCard key={l.slug} lugar={l} proximos={derivados.conteoLugar.get(l.nombre) || 0} hoy={derivados.hoyPorLugar.get(l.nombre) || null} />
-              ))}
-            </div>
+            {EXPERIMENTO && ver !== 'lugares' ? (
+              <VenueRail
+                lugares={lugaresVisibles}
+                inicial={!filtros.ciudad || filtros.ciudad === 'todos' ? null : filtros.ciudad}
+                conteo={derivados.conteoLugar}
+                hoy={derivados.hoyPorLugar}
+                verTodos={(c) => enlace({ ver: 'lugares', ciudad: c })}
+              />
+            ) : (
+              <div className="venue-grid">
+                {(ver === 'lugares' ? lugaresVisibles : lugaresVisibles.slice(0, 6)).map((l) => (
+                  <VenueCard key={l.slug} lugar={l} proximos={derivados.conteoLugar.get(l.nombre) || 0} hoy={derivados.hoyPorLugar.get(l.nombre) || null} />
+                ))}
+              </div>
+            )}
           </div>
         )}
         {snap.status === 'ok' && snap.freshness !== 'fresh' && snap.freshness !== 'editorial' && (

@@ -5,7 +5,6 @@
  */
 export type Perfil = 'FULL' | 'LITE' | 'STATIC';
 export const AJUSTE = 'ds-profundidad'; // 'auto' | 'off'
-export const SENSOR = 'ds-sensor'; // 'granted' | 'denied'
 
 export function leer(clave: string) {
   try {
@@ -59,16 +58,6 @@ export const RESOLUCION = {
   LITE: { dpr: 1, pixeles: 800_000 },
 } as const;
 
-/** Solo en pantallas táctiles (iOS): ahí el permiso existe y tiene sentido pedirlo. */
-export function necesitaPermisoSensor() {
-  return (
-    typeof window !== 'undefined' &&
-    Boolean(window.matchMedia?.('(pointer: coarse)').matches) &&
-    typeof (window as unknown as { DeviceOrientationEvent?: { requestPermission?: unknown } }).DeviceOrientationEvent
-      ?.requestPermission === 'function'
-  );
-}
-
 /** Motivo por el que el perfil es STATIC (para el panel de depuración). */
 export function motivoEstatico(): string | null {
   if (typeof window === 'undefined') return 'servidor';
@@ -83,9 +72,4 @@ export function motivoEstatico(): string | null {
 /** QA: ?3ddebug=1 muestra el panel de sensor y permite simular la inclinación. */
 export function depuracion() {
   return typeof window !== 'undefined' && new URLSearchParams(location.search).get('3ddebug') === '1';
-}
-
-/** Hay sensor de orientación en este navegador (con o sin permiso explícito). */
-export function haySensor() {
-  return typeof window !== 'undefined' && 'DeviceOrientationEvent' in window;
 }

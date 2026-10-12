@@ -1698,3 +1698,116 @@ html[data-edicion="3d"] body {
   [data-edicion="3d"] .event-grid > .event-card:last-child:nth-child(odd) { grid-column:1 / -1; display:grid; grid-template-columns:minmax(0,1.05fr) minmax(0,1fr); }
   [data-edicion="3d"] .event-grid > .event-card:last-child:nth-child(odd) .event-card-body { border-top:0; border-left:4px solid var(--accent); display:flex; flex-direction:column; justify-content:center; }
 }
+
+/* ===========================================================================
+   PASADA "AFICHE DE CARLOS": serigrafía escaneada convertida en interfaz.
+   Tipos: Anton (OFL) para títulos de cartel y Special Elite (Apache 2.0) para
+   lo secundario, ambos servidos desde /fonts. El texto de lectura sigue en Arial.
+   Jerarquía material: hero = máxima; separadores = serigrafía; tarjetas =
+   papel; página = sutil; flyers y texto funcional = intactos y nítidos.
+   ========================================================================== */
+@font-face { font-family:'Anton'; src:url('/fonts/anton-latin.woff2') format('woff2'); font-display:swap; font-weight:400;
+  unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family:'Special Elite'; src:url('/fonts/special-elite-latin.woff2') format('woff2'); font-display:swap; font-weight:400;
+  unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+html[data-edicion="3d"] {
+  --f-cartel:'Anton', Impact, 'Arial Narrow', sans-serif;
+  --f-maquina:'Special Elite', 'Courier New', Courier, monospace;
+  --crema:#EFE3D3;
+  --tx-fibras:url('/textures/fibras.webp');
+  --tx-fibras-suaves:url('/textures/fibras-suaves.webp');
+  --tx-motas-claras:url('/textures/motas-claras.webp');
+  --tx-motas-oscuras:url('/textures/motas-oscuras.webp');
+  --mk-poros:url('/textures/poros.webp');
+}
+/* Página: fibras blancas sueltas, muy suaves. Dos tiles de tamaños coprimos
+   (384 y 269 px) además de la fibra fina: la combinación no tiene período visible. */
+html[data-edicion="3d"] body {
+  background-image:
+    var(--tx-fibra), var(--tx-fibras-suaves),
+    var(--tx-tinta-a), var(--tx-tinta-b), var(--tx-tinta-c),
+    radial-gradient(70vw 55vh at 12% 4%, rgba(46,48,78,.75), transparent 70%),
+    radial-gradient(55vw 50vh at 92% 14%, rgba(185,163,218,.10), transparent 70%),
+    radial-gradient(80vw 60vh at 78% 34%, rgba(8,8,14,.55), transparent 72%),
+    radial-gradient(60vw 55vh at 8% 50%, rgba(40,42,70,.7), transparent 70%),
+    radial-gradient(75vw 50vh at 88% 66%, rgba(46,48,78,.6), transparent 72%),
+    radial-gradient(65vw 60vh at 22% 84%, rgba(8,8,14,.5), transparent 70%),
+    radial-gradient(70vw 50vh at 70% 98%, rgba(185,163,218,.08), transparent 70%);
+  background-size:128px 128px, 384px 384px, 62vw 62vw, 54vw 54vw, 68vw 68vw, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
+  background-position:0 0, 37px 11px, 104% 12%, -10% 48%, 96% 86%, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0;
+  background-repeat:repeat, repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
+}
+
+/* ---- Hero: el afiche. La ciudad atrás, la marca serigrafiada adelante. ---- */
+[data-edicion="3d"] .hero-home { background:linear-gradient(180deg, #191A2B 0%, #15151F 55%, var(--bg) 100%); }
+[data-edicion="3d"] .hero::before {
+  background-image:var(--tx-hero), var(--tx-fibras), var(--tx-motas-claras), var(--tx-fibra);
+  background-size:cover, 384px 384px, 269px 269px, 128px 128px;
+  background-repeat:no-repeat, repeat, repeat, repeat;
+  background-position:center, 0 0, 61px 23px, 0 0;
+}
+/* Sombra de lectura bajo la búsqueda y las comunas: la ciudad no compite con la interfaz. */
+.poster-decor::after { content:""; position:absolute; inset:auto 0 0 0; height:58%; z-index:1; pointer-events:none;
+  background:linear-gradient(180deg, transparent, rgba(19,19,29,.78) 55%, rgba(19,19,29,.92)); }
+.pd-sensor { top:12px; bottom:auto; }
+[data-edicion="3d"] .hero-logo-apilado { width:clamp(250px, 40vw, 500px); color:var(--crema); filter:none; overflow:visible; }
+[data-edicion="3d"] .hero-home h1 { margin:6px 0 4px; }
+[data-edicion="3d"] .hero-home .hero-lead { font-family:var(--f-maquina); font-weight:400; color:var(--crema); font-size:17px; letter-spacing:.01em; max-width:34ch; }
+[data-edicion="3d"] .hero .eyebrow { font-family:var(--f-maquina); letter-spacing:.06em; }
+[data-edicion="3d"] .lugar-selector a { font-family:var(--f-maquina); }
+@media (min-width:1001px) {
+  [data-edicion="3d"] .hero-home { min-height:440px; padding-top:34px; }
+}
+@media (max-width:640px) {
+  [data-edicion="3d"] .hero-logo-apilado { width:min(86vw, 360px); }
+  [data-edicion="3d"] .hero-home .hero-lead { font-size:15px; }
+}
+
+/* ---- Títulos de sección: cartel en tinta crema con poros. ---- */
+[data-edicion="3d"] .section-heading h2, [data-edicion="3d"] .section-heading h3, [data-edicion="3d"] .alternative-plans > h3 {
+  font-family:var(--f-cartel); font-weight:400; text-transform:uppercase; letter-spacing:.01em; color:var(--crema);
+  text-shadow:2px 2px 0 rgba(140,152,214,.45);
+  -webkit-mask-image:var(--mk-poros); mask-image:var(--mk-poros); -webkit-mask-size:256px 256px; mask-size:256px 256px;
+}
+[data-edicion="3d"] .section-heading h2, [data-edicion="3d"] .section-heading h3 { font-size:clamp(34px, 4.4vw, 52px); line-height:1; }
+[data-edicion="3d"] .alternative-plans > h3 { font-size:clamp(24px, 3vw, 32px); }
+[data-edicion="3d"] .result-count, [data-edicion="3d"] .trust-note, [data-edicion="3d"] .date-tabs a { font-family:var(--f-maquina); }
+
+/* ---- Tarjetas de evento: papel crema con fibras y motas; borde gastado solo en la ficha (nunca en el flyer). ---- */
+[data-edicion="3d"] .event-card-body {
+  background-color:#ECE2D6;
+  background-image:var(--tx-grano-papel), var(--tx-motas-oscuras);
+  background-size:128px 128px, 269px 269px;
+  background-repeat:repeat, repeat;
+}
+[data-edicion="3d"] .card-category, [data-edicion="3d"] .card-category span, [data-edicion="3d"] .venue-kind { font-family:var(--f-maquina); letter-spacing:.02em; }
+
+/* ---- Lugares: riel horizontal por comuna. ---- */
+.venue-rail { margin-top:4px; }
+.venue-rail-top { display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+.venue-rail-comunas { display:flex; gap:8px; overflow-x:auto; scrollbar-width:none; flex:1; padding:2px; }
+.venue-rail-comunas::-webkit-scrollbar { display:none; }
+.venue-rail-comunas button { flex:none; min-height:40px; padding:0 14px; border:1px solid var(--line); border-radius:2px; background:transparent;
+  color:var(--muted); font:15px/1 var(--f-maquina, monospace); cursor:pointer; }
+.venue-rail-comunas button span { opacity:.7; font-size:12px; margin-left:4px; }
+.venue-rail-comunas button[aria-pressed="true"] { background:var(--crema, #EFE3D3); color:var(--tinta); border-color:var(--crema, #EFE3D3); }
+.venue-rail-comunas button:focus-visible, .venue-rail-flechas button:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+.venue-rail-flechas { display:none; gap:6px; }
+@media (hover:hover) and (pointer:fine) { .venue-rail-flechas { display:flex; } }
+.venue-rail-flechas button { width:40px; height:40px; border:1px solid var(--line); border-radius:50%; background:transparent; color:var(--text); font-size:18px; cursor:pointer; }
+.venue-rail-flechas button:disabled { opacity:.3; cursor:default; }
+.venue-rail-pista { list-style:none; margin:0 -16px; padding:6px 16px 18px; display:flex; gap:18px; overflow-x:auto; overscroll-behavior-x:contain;
+  scroll-snap-type:x mandatory; scroll-padding-inline:16px; scrollbar-width:thin; }
+.venue-rail-pista > li { flex:none; width:min(78vw, 300px); scroll-snap-align:start; position:relative; isolation:isolate; display:flex; }
+.venue-rail-pista > li > .venue-card { flex:1; position:relative; z-index:1; background:var(--surface); background-image:var(--tx-fibra, none); background-size:128px 128px; padding:0 14px 12px; }
+/* La sombra impresa (segunda tinta) es lo único que se corre con la inclinación. */
+.venue-rail-pista > li::before { content:""; position:absolute; inset:0; z-index:0; background:var(--sombra-impresion, rgba(140,152,214,.22));
+  transform:translate(calc(6px + var(--inc-x, 0) * 5px), calc(7px + var(--inc-y, 0) * 4px)); transition:transform .12s linear; }
+.venue-rail-mas { align-items:center; justify-content:center; }
+.venue-rail-mas a { display:flex; align-items:center; justify-content:center; flex:1; min-height:200px; padding:20px; border:1px dashed var(--line);
+  color:var(--text); font:20px/1.2 var(--f-cartel, sans-serif); text-transform:uppercase; text-align:center; position:relative; z-index:1; background:var(--bg); }
+@media (prefers-reduced-motion:reduce) { .venue-rail-pista > li::before { transition:none; transform:translate(6px, 7px); } }
+@media (min-width:1001px) { .venue-rail-pista { margin:0; padding-inline:0; scroll-padding-inline:0; } }
+.pd-debug-fuente { font-size:14px; }
+.pd-debug-acciones { display:flex; gap:8px; }
+.pd-debug button { min-height:32px; padding:0 10px; background:#2A2C45; color:#F1E6DE; border:1px solid #8C98D6; border-radius:4px; }

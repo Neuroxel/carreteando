@@ -47,3 +47,44 @@ Image.fromarray((borde * 255).astype(np.uint8), 'L').convert('RGBA').save(os.pat
 im = Image.open(os.path.join(out, 'borde.webp')); a = np.array(Image.fromarray((borde*255).astype(np.uint8),'L'))
 rgba = np.zeros((n, n, 4), np.uint8); rgba[..., 3] = a
 Image.fromarray(rgba, 'RGBA').save(os.path.join(out, 'borde.webp'), 'WEBP', quality=80); print('borde.webp', os.path.getsize(os.path.join(out, 'borde.webp')))
+
+# --- Pasada "afiche de Carlos": fibras blancas, motas de fotocopia y poros de tinta ---
+from PIL import ImageDraw
+def fibras(nombre, n_px, cantidad, seed, rgb, alfa):
+    """Fibras cortas y curvas, dibujadas al 3x y reducidas (antialias). Tile periódico:
+    cada fibra se dibuja también desplazada ±n para que cruce el borde sin costura."""
+    rng = np.random.default_rng(seed); S = 3; N = n_px * S
+    im = Image.new('L', (N, N), 0); d = ImageDraw.Draw(im)
+    for _ in range(cantidad):
+        x, y = rng.uniform(0, N, 2); ang = rng.uniform(0, np.pi); largo = rng.uniform(10, 34) * S
+        curva = rng.uniform(-.5, .5); pts = []
+        for t in np.linspace(0, 1, 8):
+            a = ang + curva * t
+            pts.append((x + np.cos(a) * largo * t, y + np.sin(a) * largo * t))
+        w = max(1, int(rng.uniform(.8, 1.5) * S))
+        for dx in (-N, 0, N):
+            for dy in (-N, 0, N):
+                d.line([(px + dx, py + dy) for px, py in pts], fill=int(255 * rng.uniform(.45, 1)), width=w)
+    a = np.array(im.resize((n_px, n_px), Image.LANCZOS)).astype(float) / 255 * alfa
+    guardar(nombre, rgb, a, q=82)
+fibras('fibras.webp', 768, 140, 12, (246, 238, 228), .55)
+def motas(nombre, n_px, cantidad, seed, rgb, alfa):
+    rng = np.random.default_rng(seed); S = 3; N = n_px * S
+    im = Image.new('L', (N, N), 0); d = ImageDraw.Draw(im)
+    for _ in range(cantidad):
+        x, y = rng.uniform(0, N, 2); r = rng.choice([.6, .8, 1, 1.4, 2.2], p=[.35, .3, .2, .1, .05]) * S
+        v = int(255 * rng.uniform(.4, 1))
+        for dx in (-N, 0, N):
+            for dy in (-N, 0, N):
+                d.ellipse([x + dx - r, y + dy - r, x + dx + r, y + dy + r], fill=v)
+    a = np.array(im.resize((n_px, n_px), Image.LANCZOS)).astype(float) / 255 * alfa
+    guardar(nombre, rgb, a, q=82)
+motas('motas-claras.webp', 538, 260, 31, (240, 228, 218), .8)
+motas('motas-oscuras.webp', 538, 220, 32, (16, 14, 24), .7)
+# Poros de tinta (máscara alfa): 1 = tinta, 0 = papel. Para títulos grandes.
+v = ruido(256, 30, 100, 41); huecos = np.clip((v - .62) * 9, 0, 1)
+borde = ruido(256, 4, 15, 42); claros = np.clip((borde - .7) * 3, 0, .35)
+alpha = np.clip(1 - huecos - claros, 0, 1)
+rgba = np.zeros((256, 256, 4), np.uint8); rgba[..., :3] = 0; rgba[..., 3] = (alpha * 255).astype(np.uint8)
+Image.fromarray(rgba, 'RGBA').save(os.path.join(out, 'poros.webp'), 'WEBP', quality=80, method=6); print('poros.webp', os.path.getsize(os.path.join(out, 'poros.webp')))
+fibras('fibras-suaves.webp', 768, 110, 13, (246, 238, 228), .24)

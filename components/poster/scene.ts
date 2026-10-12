@@ -5,10 +5,9 @@
  * nunca vive aquí: esto es fondo.
  *
  * Movimiento:
- * - Entrada: inclinación del teléfono (beta/gamma), puntero en escritorio y un
- *   poco de scroll. Zona muerta de 0,8°, escala completa a 12°.
- * - La postura "neutra" se recentra MUY lento (vida media ~15 s) y solo cuando
- *   el teléfono está quieto: una inclinación sostenida se mantiene visible.
+ * - Entrada: el adaptador `sensor.ts` (orientación, acelerómetro, puntero o
+ *   simulación), más un poco de scroll. La escena solo lee la inclinación
+ *   normalizada; no sabe de qué sensor viene.
  * - Cada capa tiene su propio resorte con inercia: las del fondo responden más
  *   lento, como tinta bajo papel. La capa más honda además se desplaza con un
  *   shader mínimo que solo se mueve mientras hay movimiento.
@@ -31,25 +30,21 @@ import {
   type Texture,
 } from 'three';
 import { RESOLUCION, UMBRAL, type Perfil } from './profile';
+import { lectura, suscribir, type Lectura } from './sensor';
 
 type Capa = { nodo: Element; svg: SVGSVGElement; amp: number; z: number; liquido: boolean };
-type Opciones = { sensor: boolean; alEstado?: (e: EstadoEscena) => void };
+type Opciones = { alEstado?: (e: EstadoEscena) => void };
 export type EstadoEscena = {
   perfil: Perfil;
-  sensor: 'apagado' | 'esperando' | 'activo';
-  beta: number | null;
-  gamma: number | null;
   fps: number;
-  offsets: { amp: number; px: number }[];
+  /** por plano: desplazamiento objetivo y real, en px */
+  offsets: { amp: number; objetivo: number; px: number }[];
 };
 
 const FOV = 30;
 const DIST = 10;
-const ZONA_MUERTA = 0.8; // grados
-const ESCALA = 12; // grados de inclinación que equivalen al máximo desplazamiento
-const RECENTRAR = 0.0008; // por evento (~60 Hz): vida media ~15 s, solo con el teléfono quieto
 const GIRO = { FULL: 1.5, LITE: 1.0 }; // grados
-const AMP_MAX = 32;
+const AMP_MAX = 42;
 
 /** El SVG suelto no ve las variables CSS de la página: se resuelven antes. */
 function resolverVariables(markup: string, estilo: CSSStyleDeclaration) {
@@ -214,60 +209,14 @@ export async function montar(decor: HTMLElement, host: HTMLElement, perfilInicia
     pedir();
   };
 
-  // ---- Entrada: inclinación (móvil), puntero (escritorio), scroll leve ----
+  // ---- Entrada: adaptador de sensores + scroll leve ----
   const objetivo = { x: 0, y: 0 };
-  const sensor = { bx: NaN, by: NaN, beta: null as number | null, gamma: null as number | null, ultimo: 0 };
-  let estadoSensor: EstadoEscena['sensor'] = 'apagado';
-  let usandoSensor = false;
-
-  const alPuntero = (e: PointerEvent) => {
-    if (e.pointerType !== 'mouse' || usandoSensor) return;
-    objetivo.x = (e.clientX / window.innerWidth) * 2 - 1;
-    objetivo.y = (e.clientY / window.innerHeight) * 2 - 1;
+  const alLeer = (l: Lectura) => {
+    objetivo.x = l.tilt.x;
+    objetivo.y = l.tilt.y;
     pedir();
   };
-  const conZona = (v: number) => {
-    const a = Math.abs(v);
-    if (a < ZONA_MUERTA) return 0;
-    return (Math.sign(v) * Math.min(a - ZONA_MUERTA, ESCALA)) / ESCALA;
-  };
-  /** beta/gamma en grados. También lo usa la simulación de QA. */
-  const aplicarInclinacion = (beta: number, gamma: number) => {
-    const angulo = screen.orientation?.angle ?? 0;
-    const [b, g] = angulo === 90 ? [-gamma, beta] : angulo === 270 ? [gamma, -beta] : [beta, gamma];
-    if (Number.isNaN(sensor.bx)) {
-      sensor.bx = b;
-      sensor.by = g;
-    }
-    const dx = g - sensor.by;
-    const dy = b - sensor.bx;
-    // Recentrar solo con el teléfono casi quieto: no se come la inclinación sostenida.
-    const quieto = Math.abs((sensor.gamma ?? g) - g) < 0.3 && Math.abs((sensor.beta ?? b) - b) < 0.3;
-    if (quieto) {
-      sensor.bx += dy * RECENTRAR;
-      sensor.by += dx * RECENTRAR;
-    }
-    sensor.beta = b;
-    sensor.gamma = g;
-    objetivo.x = conZona(dx);
-    objetivo.y = conZona(dy);
-    pedir();
-  };
-  const alInclinar = (e: DeviceOrientationEvent) => {
-    if (e.beta == null || e.gamma == null) return;
-    if (!usandoSensor) {
-      usandoSensor = true;
-      estadoSensor = 'activo';
-      avisar();
-    }
-    sensor.ultimo = performance.now();
-    aplicarInclinacion(e.beta, e.gamma);
-  };
-  const activarSensor = () => {
-    if (estadoSensor === 'apagado') estadoSensor = 'esperando';
-    window.addEventListener('deviceorientation', alInclinar);
-    avisar();
-  };
+  const soltar = suscribir(alLeer);
   let scrollY = 0;
   const alScroll = () => {
     const r = decor.getBoundingClientRect();
@@ -399,11 +348,12 @@ export async function montar(decor: HTMLElement, host: HTMLElement, perfilInicia
 
   const estado = (): EstadoEscena => ({
     perfil,
-    sensor: estadoSensor,
-    beta: sensor.beta == null ? null : Math.round(sensor.beta * 10) / 10,
-    gamma: sensor.gamma == null ? null : Math.round(sensor.gamma * 10) / 10,
     fps: Math.round(fps),
-    offsets: planos.map((p) => ({ amp: p.capa.amp, px: Math.round(Math.hypot(p.px, p.py) * p.capa.amp * 10) / 10 })),
+    offsets: planos.map((p) => ({
+      amp: p.capa.amp,
+      objetivo: Math.round(Math.hypot(objetivo.x, objetivo.y) * p.capa.amp * 10) / 10,
+      px: Math.round(Math.hypot(p.px, p.py) * p.capa.amp * 10) / 10,
+    })),
   });
   let avisoPendiente = false;
   const avisar = () => {
@@ -419,14 +369,11 @@ export async function montar(decor: HTMLElement, host: HTMLElement, perfilInicia
    * QA (?3ddebug=1): fija una inclinación sintética y deja las capas en su
    * posición de equilibrio, dibujando una vez aunque la pestaña esté oculta.
    */
-  const simular = (beta: number, gamma: number, asentar = true) => {
-    sensor.bx = 0;
-    sensor.by = 0;
-    sensor.beta = beta;
-    sensor.gamma = gamma;
-    objetivo.x = conZona(gamma);
-    objetivo.y = conZona(beta);
-    if (asentar) {
+  const asentar = (dibujarYa = true) => {
+    const l = lectura();
+    objetivo.x = l.tilt.x;
+    objetivo.y = l.tilt.y;
+    if (dibujarYa) {
       for (const p of planos) {
         p.px = objetivo.x;
         p.py = objetivo.y;
@@ -446,8 +393,7 @@ export async function montar(decor: HTMLElement, host: HTMLElement, perfilInicia
     clearTimeout(espera);
     io.disconnect();
     ro.disconnect();
-    window.removeEventListener('pointermove', alPuntero);
-    window.removeEventListener('deviceorientation', alInclinar);
+    soltar();
     window.removeEventListener('scroll', alScroll);
     document.removeEventListener('visibilitychange', alVisibilidad);
     limpiar();
@@ -473,10 +419,9 @@ export async function montar(decor: HTMLElement, host: HTMLElement, perfilInicia
     throw e;
   }
   ro.observe(decor);
-  window.addEventListener('pointermove', alPuntero, { passive: true });
   window.addEventListener('scroll', alScroll, { passive: true });
   document.addEventListener('visibilitychange', alVisibilidad);
-  if (op.sensor) activarSensor();
+  alLeer(lectura());
   alScroll();
-  return { cerrar, activarSensor, estado, simular };
+  return { cerrar, estado, asentar };
 }
