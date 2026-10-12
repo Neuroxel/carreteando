@@ -1568,7 +1568,6 @@ html[data-edicion="3d"] {
 .pd-sensor:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
 @media (max-width:640px) {
   [data-edicion="3d"] .hero-home { border-inline:0; }
-  .poster-home { opacity:.7; }
   .pd-sensor { bottom:auto; right:10px; top:10px; min-height:32px; font-size:11px; }
 }
 /* El botón del sensor tiene su propia franja, reservada desde el primer pintado
@@ -1595,3 +1594,67 @@ html[data-edicion="3d"] {
 .depth-toggle button { min-height:36px; padding:0 12px; border:1px solid var(--line); border-radius:99px; background:transparent; color:var(--muted); cursor:pointer; }
 .depth-toggle button[aria-pressed="true"] { border-color:var(--accent); color:var(--text); }
 .depth-toggle button:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+
+/* ---------------------------------------------------------------------------
+   PAPEL E IMPRENTA (pasada de Carlos): el sitio debe parecer un objeto impreso,
+   también en STATIC. Texturas procedurales (SVG feTurbulence), nunca encima del
+   texto funcional ni de los flyers: fondo de página, hero, bordes y separadores.
+   ------------------------------------------------------------------------- */
+html[data-edicion="3d"] {
+  /* grano de fibra de papel, claro sobre tinta */
+  --tx-fibra: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='f'><feTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='3' seed='4' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .95  0 0 0 0 .9  0 0 0 0 .87  0 0 0 .55 -.18'/></filter><rect width='100%' height='100%' filter='url(%23f)'/></svg>");
+  /* manchas de densidad de tinta: zonas más y menos cargadas */
+  --tx-manchas: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><filter id='m'><feTurbulence type='fractalNoise' baseFrequency='.011' numOctaves='3' seed='9' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .05  0 0 0 0 .05  0 0 0 0 .1  0 0 0 1.6 -.62'/></filter><rect width='100%' height='100%' filter='url(%23m)'/></svg>");
+  /* motas de imprenta: puntos de tinta clara sueltos */
+  --tx-motas: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><filter id='s'><feTurbulence type='fractalNoise' baseFrequency='.55' numOctaves='1' seed='21' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .95  0 0 0 0 .88  0 0 0 0 .86  0 0 0 9 -7.6'/></filter><rect width='100%' height='100%' filter='url(%23s)'/></svg>");
+  /* grano oscuro sobre papel claro (tarjetas) */
+  --tx-grano-papel: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' seed='7' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .2  0 0 0 0 .16  0 0 0 0 .25  0 0 0 .5 -.2'/></filter><rect width='100%' height='100%' filter='url(%23g)'/></svg>");
+  /* borde gastado del afiche (máscara) */
+  --mk-borde: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 1000' preserveAspectRatio='none'><filter id='r' x='-5%25' y='-5%25' width='110%25' height='110%25'><feTurbulence type='fractalNoise' baseFrequency='.09' numOctaves='3' seed='2'/><feDisplacementMap in='SourceGraphic' scale='9'/></filter><rect x='5' y='5' width='990' height='990' fill='black' filter='url(%23r)'/></svg>");
+  /* filete impreso irregular */
+  --tx-filete: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='10' preserveAspectRatio='none'><filter id='l'><feTurbulence type='fractalNoise' baseFrequency='.08' numOctaves='2' seed='6'/><feDisplacementMap in='SourceGraphic' scale='4'/></filter><rect x='0' y='3' width='600' height='3' fill='%23F0607A' filter='url(%23l)'/><rect x='4' y='5' width='600' height='2' fill='%238C98D6' opacity='.7' filter='url(%23l)'/></svg>");
+}
+/* Pared de afiches: fondo de tinta con fibra y manchas visibles. */
+html[data-edicion="3d"] body {
+  background-color:var(--bg);
+  background-image:var(--tx-fibra), var(--tx-manchas);
+  background-size:240px 240px, 600px 600px;
+}
+/* El hero es un afiche: papel nocturno con manchas, motas y borde gastado. */
+[data-edicion="3d"] .hero {
+  border:0;
+  -webkit-mask-image:var(--mk-borde); mask-image:var(--mk-borde);
+  -webkit-mask-size:100% 100%; mask-size:100% 100%;
+}
+[data-edicion="3d"] .hero::before {
+  content:""; position:absolute; inset:0; z-index:1; pointer-events:none; opacity:1; mix-blend-mode:normal;
+  background-image:var(--tx-motas), var(--tx-fibra), var(--tx-manchas);
+  background-size:300px 300px, 240px 240px, 600px 600px;
+}
+/* Trama de semitono en una esquina, corrida respecto del bloque. */
+[data-edicion="3d"] .hero::after {
+  content:""; position:absolute; left:-30px; bottom:-30px; width:min(46%,320px); height:180px; z-index:1; pointer-events:none;
+  background-image:radial-gradient(circle, rgba(240,96,122,.55) 1.6px, transparent 2.2px);
+  background-size:8px 8px;
+  -webkit-mask-image:radial-gradient(closest-side, #000 20%, transparent 100%); mask-image:radial-gradient(closest-side, #000 20%, transparent 100%);
+}
+[data-edicion="3d"] .hero .hero-copy { z-index:2; }
+.pd-sensor { z-index:3; }
+/* Fuera de registro en los títulos grandes (no en texto de lectura). */
+[data-edicion="3d"] .hero h1:not(:has(.hero-logo)) { text-shadow:3px 2px 0 rgba(140,152,214,.45), -2px -1px 0 rgba(240,96,122,.35); }
+[data-edicion="3d"] .hero-logo { filter:drop-shadow(5px 4px 0 rgba(140,152,214,.5)) drop-shadow(-2px -1px 0 rgba(240,96,122,.35)); }
+/* Separadores impresos bajo los títulos de sección. */
+[data-edicion="3d"] .section-heading { padding-bottom:12px; background:var(--tx-filete) left bottom / 100% 10px no-repeat; }
+/* Tarjetas: piezas de papel montadas sobre la pared, con grano propio (no sobre el flyer). */
+[data-edicion="3d"] .event-card-body, [data-edicion="3d"] .empty-state { background-image:var(--tx-grano-papel); background-size:200px 200px; }
+[data-edicion="3d"] .event-card { box-shadow:6px 7px 0 var(--sombra-impresion), 0 1px 0 rgba(0,0,0,.4); }
+/* El afiche se ve completo en el teléfono (antes estaba al 70 %). */
+.poster-home { opacity:1; }
+/* Sensor activo: aviso discreto, sin interacción. */
+.pd-sensor-activo { cursor:default; border-color:var(--accent); background:rgba(19,19,29,.82); }
+/* Panel de depuración: solo con ?3ddebug=1. */
+.pd-debug { position:fixed; left:8px; right:8px; bottom:76px; z-index:50; pointer-events:auto; padding:10px 12px;
+  background:rgba(10,10,16,.92); color:#F1E6DE; border:1px solid #F0607A; border-radius:8px; font:12px/1.45 ui-monospace,Menlo,monospace; }
+.pd-debug p { margin:0 0 4px; }
+.pd-debug label { display:grid; gap:2px; margin-top:6px; }
+.pd-debug input { width:100%; }

@@ -41,11 +41,13 @@ export function elegirPerfil(): Perfil {
   // QA: ?perfil=static|lite|full fija el perfil (nunca salta las comprobaciones de arriba).
   const forzado = new URLSearchParams(location.search).get('perfil')?.toUpperCase();
   if (forzado === 'STATIC' || forzado === 'LITE' || forzado === 'FULL') return forzado;
+  // Las señales de hardware solo eligen entre FULL y LITE: nunca apagan la
+  // profundidad por adivinanza. Lo que decide de verdad es el tiempo por cuadro
+  // medido en la escena (UMBRAL), que baja de perfil si hace falta.
   const memoria = nav.deviceMemory ?? 8;
   const nucleos = nav.hardwareConcurrency ?? 8;
-  if (memoria <= 2 || nucleos <= 2) return 'STATIC';
   const pixeles = window.innerWidth * window.innerHeight * Math.min(window.devicePixelRatio || 1, 3) ** 2;
-  if (memoria <= 4 || nucleos <= 4 || pixeles > 9_000_000) return 'LITE';
+  if (memoria < 4 || nucleos < 4 || pixeles > 9_000_000) return 'LITE';
   return 'FULL';
 }
 
@@ -65,4 +67,25 @@ export function necesitaPermisoSensor() {
     typeof (window as unknown as { DeviceOrientationEvent?: { requestPermission?: unknown } }).DeviceOrientationEvent
       ?.requestPermission === 'function'
   );
+}
+
+/** Motivo por el que el perfil es STATIC (para el panel de depuración). */
+export function motivoEstatico(): string | null {
+  if (typeof window === 'undefined') return 'servidor';
+  if (leer(AJUSTE) === 'off') return 'profundidad apagada por el usuario';
+  if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return 'movimiento reducido del sistema';
+  const nav = navigator as Navigator & { connection?: { saveData?: boolean } };
+  if (nav.connection?.saveData) return 'ahorro de datos';
+  if (!webglDisponible()) return 'sin WebGL';
+  return null;
+}
+
+/** QA: ?3ddebug=1 muestra el panel de sensor y permite simular la inclinación. */
+export function depuracion() {
+  return typeof window !== 'undefined' && new URLSearchParams(location.search).get('3ddebug') === '1';
+}
+
+/** Hay sensor de orientación en este navegador (con o sin permiso explícito). */
+export function haySensor() {
+  return typeof window !== 'undefined' && 'DeviceOrientationEvent' in window;
 }
