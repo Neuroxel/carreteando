@@ -42,6 +42,15 @@ El nombre interno del código, del proyecto en Vercel y de la base sigue siendo
 
 Detalle por comuna y zona: [`docs/CENSO_LOCALES.md`](docs/CENSO_LOCALES.md).
 
+**Valparaíso, censo final (12-10-2026):** 67 → **56** publicados, todos con evidencia
+de operación vigente (evento propio, cuenta o sitio oficial activo).
+- 17 pasaron a pendientes, 2 se cerraron y 1 se rechazó.
+- Hay 9 altas nuevas con evidencia A.
+- 30 quedan en cola, con lo que falta y fecha de recheque.
+
+Detalle, conflictos y monitoreo: [`docs/VALPARAISO_FINAL_CENSUS.md`](docs/VALPARAISO_FINAL_CENSUS.md).
+La investigación intensiva de Valparaíso queda cerrada; sigue Viña del Mar / Reñaca.
+
 ## Reglas que no se negocian
 
 - No se inventa precio, horario, género, dirección ni estado de apertura. Nunca

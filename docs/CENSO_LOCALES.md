@@ -1,5 +1,10 @@
 # Censo de locales
 
+> **Valparaíso tiene un censo final más reciente (12-10-2026):**
+> [`VALPARAISO_FINAL_CENSUS.md`](VALPARAISO_FINAL_CENSUS.md).
+> - Pasa de 67 a 56 publicados, todos con evidencia vigente, y 30 quedan en cola.
+> - Las cifras de Valparaíso de la V1.1 de abajo quedan como antecedente.
+
 ## V1.1 — resolución de candidatos (4 de octubre de 2026)
 
 **Esta sección es la vigente.** Lo de más abajo (V2, mañana del 4 de octubre)

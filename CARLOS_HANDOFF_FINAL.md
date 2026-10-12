@@ -30,6 +30,14 @@ npm run dev
 - **Antes de cada push:** `npm test`, `npm run lint` y `npx tsc --noEmit`.
 - **Feedback:** responde las 10 preguntas en un issue de GitHub titulado "Revisión 3D", o directo a David.
 
+## Datos de Valparaíso (12-10-2026)
+
+- El censo final quedó en 56 locales publicados, todos con evidencia vigente.
+- Hay 30 en cola "pendiente de evidencia" en `/admin`, cada uno con lo que falta.
+- Detalle en `docs/VALPARAISO_FINAL_CENSUS.md`.
+- Si confirmas uno de la cola (por ejemplo, un post reciente de su cuenta oficial),
+  apruébalo desde `/admin` con esa URL como fuente.
+
 ## Moderar (`/admin`)
 
 - Solo en la estable: https://dondesalgo.vercel.app/admin. En el 3D, `/admin` no existe.

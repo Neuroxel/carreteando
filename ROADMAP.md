@@ -22,6 +22,14 @@ Simple por fuera, sofisticado por dentro.
 
 ## Ahora (octubre 2026)
 
+- **Valparaíso: censo cerrado (12-10-2026).**
+  - Hay 56 locales publicados con evidencia vigente y 30 en cola.
+  - Desde aquí, solo mantenimiento:
+    - recheque mensual de la cola (prioridad: Pagano, Coyote Quemado, Delirio, Klanu, Lo Devi);
+    - monitoreo por Instagram según `docs/VALPARAISO_FINAL_CENSUS.md`.
+  - **Siguiente ciudad: Viña del Mar / Reñaca**, con la misma regla: evento, cuenta
+    o sitio oficial vigente; los directorios no publican.
+
 - **Presupuesto (requisito central):** que la pregunta sea también “¿dónde salgo
   con mi presupuesto?”. Hecho: filtro por tope y orden “más barato”, con el precio
   desconocido nunca tratado como barato. Falta: (1) leer el precio que las
