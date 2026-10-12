@@ -1603,10 +1603,15 @@ html[data-edicion="3d"] {
 html[data-edicion="3d"] {
   /* MICRO (se repite): fibra fina de alta frecuencia en tile de 160 px; su patrón
      está bajo la escala que el ojo agrupa, así que la repetición no se ve. */
-  --tx-fibra: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='f'><feTurbulence type='fractalNoise' baseFrequency='1.15' numOctaves='2' seed='4' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .95  0 0 0 0 .9  0 0 0 0 .87  0 0 0 .5 -.2'/></filter><rect width='100%' height='100%' filter='url(%23f)'/></svg>");
+  --tx-fibra: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='f'><feTurbulence type='fractalNoise' baseFrequency='1.15' numOctaves='2' seed='4' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .95  0 0 0 0 .9  0 0 0 0 .87  0 0 0 .62 -.22'/></filter><rect width='100%' height='100%' filter='url(%23f)'/></svg>");
   /* MACRO del hero (NO se repite): manchas de tinta + motas, una sola vez al tamaño
      del hero (cover, sin repetición). Cuadrado + slice: nunca se deforma. */
   --tx-hero: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 1200' preserveAspectRatio='xMidYMid slice'><filter id='m' x='0' y='0' width='100%25' height='100%25'><feTurbulence type='fractalNoise' baseFrequency='.004 .006' numOctaves='3' seed='9'/><feColorMatrix values='0 0 0 0 .04  0 0 0 0 .04  0 0 0 0 .09  0 0 0 1.5 -.55'/></filter><filter id='s' x='0' y='0' width='100%25' height='100%25'><feTurbulence type='fractalNoise' baseFrequency='.5' numOctaves='1' seed='21'/><feColorMatrix values='0 0 0 0 .95  0 0 0 0 .88  0 0 0 0 .86  0 0 0 9 -7.7'/></filter><rect width='1200' height='1200' filter='url(%23m)'/><rect width='1200' height='1200' filter='url(%23s)'/></svg>");
+  /* MACRO de página (NO se repite): tres parches únicos de densidad de tinta,
+     cada uno con su propia semilla y posición irregular. Ninguno se repite. */
+  --tx-tinta-a: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 600'><defs><radialGradient id='g'><stop offset='.35' stop-color='white'/><stop offset='1' stop-color='black'/></radialGradient><mask id='k'><rect width='600' height='600' fill='url(%23g)'/></mask><filter id='n' x='0' y='0' width='100%25' height='100%25'><feTurbulence type='fractalNoise' baseFrequency='.016 .022' numOctaves='2' seed='31'/><feColorMatrix values='0 0 0 0 0.03  0 0 0 0 0.03  0 0 0 0 0.05  0 0 0 1.7 -.68'/></filter></defs><rect width='600' height='600' filter='url(%23n)' mask='url(%23k)'/></svg>");
+  --tx-tinta-b: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 600'><defs><radialGradient id='g'><stop offset='.35' stop-color='white'/><stop offset='1' stop-color='black'/></radialGradient><mask id='k'><rect width='600' height='600' fill='url(%23g)'/></mask><filter id='n' x='0' y='0' width='100%25' height='100%25'><feTurbulence type='fractalNoise' baseFrequency='.02 .014' numOctaves='2' seed='57'/><feColorMatrix values='0 0 0 0 0.05  0 0 0 0 0.05  0 0 0 0 0.09  0 0 0 1.7 -.68'/></filter></defs><rect width='600' height='600' filter='url(%23n)' mask='url(%23k)'/></svg>");
+  --tx-tinta-c: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 600'><defs><radialGradient id='g'><stop offset='.35' stop-color='white'/><stop offset='1' stop-color='black'/></radialGradient><mask id='k'><rect width='600' height='600' fill='url(%23g)'/></mask><filter id='n' x='0' y='0' width='100%25' height='100%25'><feTurbulence type='fractalNoise' baseFrequency='.013 .019' numOctaves='2' seed='83'/><feColorMatrix values='0 0 0 0 0.03  0 0 0 0 0.03  0 0 0 0 0.05  0 0 0 1.7 -.68'/></filter></defs><rect width='600' height='600' filter='url(%23n)' mask='url(%23k)'/></svg>");
   /* grano oscuro sobre papel claro (tarjetas) */
   --tx-grano-papel: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='2' seed='7' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .2  0 0 0 0 .16  0 0 0 0 .25  0 0 0 .5 -.2'/></filter><rect width='100%' height='100%' filter='url(%23g)'/></svg>");
   /* borde gastado del afiche (máscara) */
@@ -1622,6 +1627,7 @@ html[data-edicion="3d"] body {
      de la altura del documento, tamaños en vw/vh). Una sola pared de afiches. */
   background-image:
     var(--tx-fibra),
+    var(--tx-tinta-a), var(--tx-tinta-b), var(--tx-tinta-c),
     radial-gradient(70vw 55vh at 12% 4%, rgba(46,48,78,.75), transparent 70%),
     radial-gradient(55vw 50vh at 92% 14%, rgba(185,163,218,.10), transparent 70%),
     radial-gradient(80vw 60vh at 78% 34%, rgba(8,8,14,.55), transparent 72%),
@@ -1629,8 +1635,9 @@ html[data-edicion="3d"] body {
     radial-gradient(75vw 50vh at 88% 66%, rgba(46,48,78,.6), transparent 72%),
     radial-gradient(65vw 60vh at 22% 84%, rgba(8,8,14,.5), transparent 70%),
     radial-gradient(70vw 50vh at 70% 98%, rgba(185,163,218,.08), transparent 70%);
-  background-size:160px 160px, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
-  background-repeat:repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
+  background-size:160px 160px, 62vw 62vw, 54vw 54vw, 68vw 68vw, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
+  background-position:0 0, 104% 12%, -10% 48%, 96% 86%, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0;
+  background-repeat:repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
 }
 /* El hero es un afiche: papel nocturno con manchas, motas y borde gastado. */
 [data-edicion="3d"] .hero {
