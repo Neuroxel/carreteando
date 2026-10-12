@@ -1868,6 +1868,8 @@ html[data-edicion="3d"] body {
 /* ---- Escritorio: el hero es un afiche compuesto, con el arte a la derecha. ---- */
 @media (min-width:641px) {
   .pd-nube-violeta { right:-3%; top:-6%; width:38%; }
+  /* En escritorio la nube no toca el canto del afiche: se esfuma antes. */
+  .pd-nube-violeta { -webkit-mask-image:radial-gradient(closest-side, #000 55%, transparent); mask-image:radial-gradient(closest-side, #000 55%, transparent); }
   .pd-luna { right:15%; top:30%; width:20%; }
   .pd-nube-coral { right:-3%; top:30%; width:14%; }
   [data-edicion="3d"] .hero-logo-apilado { width:clamp(320px, 42vw, 560px); }
