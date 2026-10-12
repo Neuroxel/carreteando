@@ -1867,9 +1867,9 @@ html[data-edicion="3d"] body {
 
 /* ---- Escritorio: el hero es un afiche compuesto, con el arte a la derecha. ---- */
 @media (min-width:641px) {
-  .pd-nube-violeta { right:-6%; top:-24%; width:46%; }
-  .pd-luna { right:14%; top:26%; width:19%; }
-  .pd-nube-coral { right:-2%; top:18%; width:16%; }
+  .pd-nube-violeta { right:-3%; top:-6%; width:38%; }
+  .pd-luna { right:15%; top:30%; width:20%; }
+  .pd-nube-coral { right:-3%; top:30%; width:14%; }
   [data-edicion="3d"] .hero-logo-apilado { width:clamp(320px, 42vw, 560px); }
 }
 @media (max-width:640px) {
@@ -1879,4 +1879,11 @@ html[data-edicion="3d"] body {
   [data-edicion="3d"] .lugar-selector a { padding:0 12px; font-size:14px; }
   /* La entrada queda en 16 px (iOS no hace zoom); solo la pista se achica para caber entera. */
   [data-edicion="3d"] .hero .search-form input::placeholder { font-size:14px; letter-spacing:-.02em; }
+}
+/* La fila de comunas se desliza igual (dedo, trackpad, teclado); sin barra gris encima del afiche. */
+[data-edicion="3d"] .lugar-selector { scrollbar-width:none; }
+[data-edicion="3d"] .lugar-selector::-webkit-scrollbar { display:none; }
+@media (max-width:380px) {
+  [data-edicion="3d"] .date-tabs a { padding:0 7px; font-size:14px; }
+  [data-edicion="3d"] .hero .search-form input::placeholder { font-size:12.5px; }
 }
