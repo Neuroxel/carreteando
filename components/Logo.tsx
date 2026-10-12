@@ -47,7 +47,7 @@ export function LogoApilado({ className, title = 'Dónde Salgo?' }: { className?
         <filter id="ds-serigrafia" x="-3%" y="-3%" width="106%" height="106%">
           {/* poros: la tinta no cubre todo el papel */}
           <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="1" seed="8" result="poros" />
-          <feColorMatrix in="poros" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -40 27.2" result="huecos" />
+          <feColorMatrix in="poros" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -60 42.5" result="huecos" />
           <feComposite in="SourceGraphic" in2="huecos" operator="in" result="poroso" />
           {/* borde comido, como tinta sobre papel absorbente */}
           <feTurbulence type="fractalNoise" baseFrequency="0.009" numOctaves="3" seed="3" result="borde" />
