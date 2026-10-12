@@ -191,6 +191,24 @@ El camino real del sensor se probó con eventos `deviceorientation` sintéticos:
 pasa a "activo", aparece el aviso, y una inclinación sostenida de 10° sigue aplicada
 tras 120 eventos. **No se probó en un teléfono físico.**
 
+**Rendimiento** (PageSpeed móvil, en vivo, `613dacf`):
+
+| Perfil | Rendimiento | Accesibilidad | Buenas prácticas | SEO | LCP | TBT | CLS |
+|---|---|---|---|---|---|---|---|
+| FULL | 99 | 100 | 100 | 66* | 2,0 s | 20 ms | 0 |
+| LITE | 99 | 100 | 100 | 66* | 2,0 s | 30 ms | 0 |
+| STATIC (`da6c3ba`) | 97 | 100 | 100 | 66* | 2,0 s | 30 ms | 0 |
+
+\* Por el noindex intencional.
+
+- La primera versión con papel medía 82: filtros SVG sobre capas completas y la escena compitiendo con el flyer del LCP.
+- Correcciones:
+  - sin filtros en las capas grandes;
+  - se cede el hilo entre planos;
+  - la escena se arma 3 s después de `load`; hasta entonces se ve el afiche estático, idéntico en reposo.
+- Three.js sigue en 134 kB gzip, diferido.
+- La carga inicial de la home pasa de 128 a 129 kB.
+
 ### Cómo probarlo (Carlos)
 
 1. Abre https://dondesalgo3d.vercel.app en el teléfono, en Safari (iPhone) o Chrome (Android).
