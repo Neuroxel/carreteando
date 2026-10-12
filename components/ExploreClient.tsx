@@ -14,6 +14,7 @@ import EventCard from './EventCard';
 import VenueCard from './VenueCard';
 import VenueMap from './VenueMap';
 import { Logo } from './Logo';
+import PosterDecor from './poster/PosterDecor';
 
 const SHORT: Record<string, string> = { Valparaíso: 'Valpo', 'Viña del Mar': 'Viña' };
 type Ver = 'todo' | 'eventos' | 'lugares';
@@ -222,6 +223,7 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
   return (
     <>
       <section className={`hero container ${home ? 'hero-home' : 'hero-small'}`}>
+        <PosterDecor variant={home ? 'home' : 'small'} />
         <div className="hero-copy">
           <p className="eyebrow">
             <span className="status-dot" /> REGIÓN DE VALPARAÍSO <span className="hero-date">/ {dateLabel}</span>
