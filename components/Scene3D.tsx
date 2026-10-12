@@ -1,17 +1,17 @@
 'use client';
 
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Float, Sparkles, Stars } from '@react-three/drei';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Float, Stars } from '@react-three/drei';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 
 /**
- * Fondo espacial de la interfaz. Usa @react-three/fiber + @react-three/drei
- * (MIT) en vez de reinventar la escena: estrellas, destellos y formas flotantes
- * ya resueltas. El paralaje responde al acelerómetro/giroscopio (auto-activado
- * donde no hace falta permiso) o al ratón en escritorio, y además mueve el DOM
- * (tarjetas y titulares) con la misma inclinación para que el efecto se note
- * incluso sin WebGL. Sin WebGL solo queda la aurora CSS + el paralaje DOM.
+ * Fondo 3D: Valparaíso de noche. Cerros con silueta recortada, edificios
+ * oscuros, ventanas iluminadas (las "luces de los cerros"), luna, estrellas y
+ * un toque de neón de carrete. Parallax por acelerómetro/giroscopio
+ * (deviceorientation con devicemotion de respaldo) o ratón; y el DOM se mueve
+ * con la misma inclinación. Textura de papel orgánica en CSS. Sin WebGL solo
+ * queda la aurora CSS + el paralaje DOM.
  */
 
 const PALETTE = {
@@ -19,10 +19,17 @@ const PALETTE = {
   coral: '#db506a',
   turquesa: '#a9d8cf',
   lavanda: '#9388b8',
+  ambar: '#ffb36b',
+  tinta: '#060810',
+  indigo: '#0a0d1c',
 };
 
 // Estado compartido de la inclinación (sin re-render por frame).
 const tilt = { curX: 0, curY: 0, targetX: 0, targetY: 0, sensorSeen: false };
+
+function clamp(v: number, m = 1) {
+  return Math.max(-m, Math.min(m, v));
+}
 
 function detectWebGL(): boolean {
   try {
@@ -33,76 +40,162 @@ function detectWebGL(): boolean {
   }
 }
 
+function mulberry(seed: number) {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
 /** Mueve la cámara con la inclinación (ya suavizada) para el paralaje 3D. */
 function Rig({ reduced }: { reduced: boolean }) {
   const camera = useThree((s) => s.camera);
   useFrame(() => {
     if (reduced) {
-      camera.lookAt(0, 0, 0);
+      camera.lookAt(0, -0.4, 0);
       return;
     }
-    camera.position.x += (tilt.curX * 0.55 - camera.position.x) * 0.08;
-    camera.position.y += (-tilt.curY * 0.42 - camera.position.y) * 0.08;
-    camera.lookAt(0, 0, 0);
+    camera.position.x += (tilt.curX * 0.95 - camera.position.x) * 0.09;
+    camera.position.y += (-tilt.curY * 0.75 - camera.position.y) * 0.09;
+    camera.lookAt(0, -0.4, 0);
   });
   return null;
 }
 
-/** Símbolos flotantes inspirados en el afiche LALA. */
-function FloatingShapes() {
+/** Silueta recortada de un cerro. */
+function makeCerroShape(width: number, height: number, seed: number): THREE.Shape {
+  const shape = new THREE.Shape();
+  const n = 16;
+  const rnd = mulberry(seed);
+  shape.moveTo(-width / 2, 0);
+  for (let i = 0; i <= n; i++) {
+    const x = -width / 2 + (width * i) / n;
+    const y = (0.3 + rnd() * 0.7) * height;
+    shape.lineTo(x, y);
+  }
+  shape.lineTo(width / 2, 0);
+  shape.closePath();
+  return shape;
+}
+
+function Cerro({ width, height, z, color, seed }: { width: number; height: number; z: number; color: string; seed: number }) {
+  const shape = useMemo(() => makeCerroShape(width, height, seed), [width, height, seed]);
+  return (
+    <mesh position={[0, -3.6, z]}>
+      <shapeGeometry args={[shape]} />
+      <meshBasicMaterial color={color} />
+    </mesh>
+  );
+}
+
+/** Edificios oscuros recortados contra el cielo. */
+function Buildings() {
+  const boxes: Array<[number, number, number, number]> = [
+    [-7, 0.5, 0.9, 1.4], // x, y-centro, w, h
+    [-5.6, 0.7, 0.7, 1.8],
+    [-3.9, 0.4, 0.8, 1.0],
+    [-2.2, 0.9, 0.7, 2.0],
+    [0.4, 0.6, 0.9, 1.5],
+    [2.6, 0.8, 0.7, 1.9],
+    [4.4, 0.5, 0.8, 1.2],
+    [6.4, 0.7, 0.7, 1.6],
+  ];
+  return (
+    <group position={[0, -3.6, -7]}>
+      {boxes.map(([x, yc, w, h], i) => (
+        <mesh key={i} position={[x, yc, 0]}>
+          <boxGeometry args={[w, h, w]} />
+          <meshBasicMaterial color={PALETTE.tinta} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+/** Las luces de los cerros: ventanas encendidas. */
+function CityLights({ count = 380 }: { count?: number }) {
+  const geometry = useMemo(() => {
+    const g = new THREE.BufferGeometry();
+    const pos = new Float32Array(count * 3);
+    const col = new Float32Array(count * 3);
+    const palette = [PALETTE.ambar, PALETTE.violeta, PALETTE.turquesa, PALETTE.coral];
+    const rnd = mulberry(20261011);
+    for (let i = 0; i < count; i++) {
+      pos[i * 3] = (rnd() - 0.5) * 26;
+      pos[i * 3 + 1] = -3.9 + rnd() * 3.6;
+      pos[i * 3 + 2] = -8.5 + rnd() * 4;
+      const c = new THREE.Color(palette[Math.floor(rnd() * palette.length)]);
+      col[i * 3] = c.r;
+      col[i * 3 + 1] = c.g;
+      col[i * 3 + 2] = c.b;
+    }
+    g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    return g;
+  }, [count]);
+  return (
+    <points geometry={geometry}>
+      <pointsMaterial size={0.07} vertexColors transparent opacity={0.95} depthWrite={false} sizeAttenuation />
+    </points>
+  );
+}
+
+/** Luna con halo coral. */
+function Moon() {
+  return (
+    <group position={[4.6, 2.7, -13]}>
+      <mesh>
+        <circleGeometry args={[0.95, 32]} />
+        <meshBasicMaterial color="#f4e3cf" />
+      </mesh>
+      <mesh>
+        <circleGeometry args={[1.7, 32]} />
+        <meshBasicMaterial color={PALETTE.coral} transparent opacity={0.16} />
+      </mesh>
+    </group>
+  );
+}
+
+/** Neón de carrete: aros sueltos como letreros de bar en la distancia. */
+function Neon() {
   return (
     <group>
-      <Float speed={1.4} rotationIntensity={0.7} floatIntensity={1.3}>
-        <mesh position={[-4.6, 2.4, -2]} rotation={[1, 0.4, 0.2]}>
-          <torusGeometry args={[1.7, 0.08, 12, 64]} />
-          <meshStandardMaterial color={PALETTE.violeta} roughness={0.35} metalness={0.2} flatShading />
+      <Float speed={1.6} floatIntensity={0.9} rotationIntensity={0.4}>
+        <mesh position={[-5.4, 0.6, -5.5]} rotation={[1.1, 0.3, 0.2]}>
+          <torusGeometry args={[0.85, 0.05, 8, 40]} />
+          <meshBasicMaterial color={PALETTE.coral} />
         </mesh>
       </Float>
-      <Float speed={1.7} rotationIntensity={0.5} floatIntensity={1.1}>
-        <mesh position={[5.2, -2.6, -1.5]} rotation={[0.4, -0.6, 0.2]}>
-          <torusGeometry args={[1, 0.06, 10, 48]} />
-          <meshStandardMaterial color={PALETTE.coral} roughness={0.4} metalness={0.15} flatShading />
+      <Float speed={1.3} floatIntensity={1.1} rotationIntensity={0.5}>
+        <mesh position={[5.6, 1.4, -6.5]} rotation={[0.5, -0.5, 0.2]}>
+          <torusGeometry args={[0.65, 0.045, 8, 32]} />
+          <meshBasicMaterial color={PALETTE.violeta} />
         </mesh>
       </Float>
-      <Float speed={1.2} rotationIntensity={0.9} floatIntensity={0.9}>
-        <mesh position={[3.2, 3.4, -4]}>
-          <icosahedronGeometry args={[0.85, 0]} />
-          <meshStandardMaterial color={PALETTE.turquesa} roughness={0.4} flatShading />
-        </mesh>
-      </Float>
-      <Float speed={1.6} rotationIntensity={0.6} floatIntensity={1.4}>
-        <mesh position={[-3.4, -3.1, -0.8]}>
-          <icosahedronGeometry args={[0.6, 1]} />
-          <meshStandardMaterial color={PALETTE.coral} roughness={0.45} flatShading />
-        </mesh>
-      </Float>
-      <Float speed={1.1} rotationIntensity={0.4} floatIntensity={0.8}>
-        <mesh position={[1.4, 1.3, -5]}>
-          <dodecahedronGeometry args={[0.7, 0]} />
-          <meshStandardMaterial color={PALETTE.lavanda} roughness={0.5} flatShading />
-        </mesh>
-      </Float>
-      <Float speed={0.9} rotationIntensity={0.3} floatIntensity={0.6}>
-        <mesh position={[-1.6, -1.4, -6]}>
-          <octahedronGeometry args={[0.5, 0]} />
-          <meshStandardMaterial color={PALETTE.turquesa} roughness={0.5} flatShading />
+      <Float speed={1.1} floatIntensity={0.7} rotationIntensity={0.3}>
+        <mesh position={[0.2, 2.2, -9]}>
+          <torusGeometry args={[0.5, 0.04, 8, 32]} />
+          <meshBasicMaterial color={PALETTE.turquesa} />
         </mesh>
       </Float>
     </group>
   );
 }
 
-function SceneContent() {
+function Cityscape() {
   return (
-    <>
-      <ambientLight intensity={0.75} />
-      <directionalLight position={[5, 6, 8]} intensity={1.7} color={PALETTE.violeta} />
-      <directionalLight position={[-6, -2, 4]} intensity={0.9} color={PALETTE.coral} />
-      <Stars radius={55} depth={40} count={2600} factor={4} saturation={0.4} fade speed={0.6} />
-      <Sparkles count={90} scale={[15, 11, 8]} size={2.6} speed={0.3} opacity={0.55} color={PALETTE.violeta} />
-      <Sparkles count={45} scale={[13, 9, 6]} size={3.2} speed={0.2} opacity={0.42} color={PALETTE.coral} />
-      <FloatingShapes />
-    </>
+    <group>
+      <Stars radius={50} depth={40} count={2200} factor={4} saturation={0.35} fade speed={0.5} />
+      <Moon />
+      <Cerro width={30} height={4.6} z={-9} color={PALETTE.indigo} seed={11} />
+      <Buildings />
+      <Cerro width={34} height={3.6} z={-5.5} color={PALETTE.tinta} seed={77} />
+      <CityLights />
+      <Neon />
+    </group>
   );
 }
 
@@ -123,12 +216,22 @@ export default function Scene3D() {
     const needsPerm = typeof DO?.requestPermission === 'function';
     setNeedsPermission(needsPerm);
 
+    let orientationSeen = false;
     const onOrientation = (e: DeviceOrientationEvent) => {
       if (e.beta == null || e.gamma == null) return;
-      const gamma = Math.max(-28, Math.min(28, e.gamma)) / 28;
-      const beta = Math.max(-25, Math.min(25, e.beta - 50)) / 25;
-      tilt.targetX = gamma;
-      tilt.targetY = beta;
+      orientationSeen = true;
+      tilt.targetX = clamp(e.gamma / 22);
+      tilt.targetY = clamp((e.beta - 50) / 22);
+      tilt.sensorSeen = true;
+    };
+    const onMotion = (e: DeviceMotionEvent) => {
+      if (orientationSeen) return;
+      const a = e.accelerationIncludingGravity;
+      if (!a) return;
+      const x = a.x ?? 0;
+      const y = a.y ?? 0;
+      tilt.targetX = clamp(x / 5);
+      tilt.targetY = clamp((y + 3) / 5);
       tilt.sensorSeen = true;
     };
     const onMouse = (e: MouseEvent) => {
@@ -137,17 +240,15 @@ export default function Scene3D() {
       tilt.targetY = (e.clientY / window.innerHeight) * 2 - 1;
     };
     window.addEventListener('deviceorientation', onOrientation as EventListener, { passive: true });
+    window.addEventListener('devicemotion', onMotion as EventListener, { passive: true });
     window.addEventListener('mousemove', onMouse, { passive: true });
 
-    // Sin permiso (Android, escritorio) se activa solo: la experiencia no debe
-    // esperar a un botón que nadie pide.
     if (!needsPerm) {
       enabledRef.current = true;
       setEnabled(true);
       document.documentElement.classList.add('d3-on');
     }
 
-    // Bucle propio para el paralaje DOM: funciona aunque WebGL no esté.
     let raf = 0;
     let last = performance.now();
     const loop = () => {
@@ -168,6 +269,7 @@ export default function Scene3D() {
     return () => {
       cancelAnimationFrame(raf);
       window.removeEventListener('deviceorientation', onOrientation as EventListener);
+      window.removeEventListener('devicemotion', onMotion as EventListener);
       window.removeEventListener('mousemove', onMouse);
       document.documentElement.classList.remove('d3-on');
       document.documentElement.style.removeProperty('--px');
@@ -201,13 +303,13 @@ export default function Scene3D() {
       <div className="scene3d" aria-hidden="true">
         {webgl && (
           <Canvas
-            camera={{ position: [0, 0, 5], fov: 50 }}
+            camera={{ position: [0, 0, 6], fov: 55 }}
             dpr={[1, 1.75]}
             gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
             style={{ position: 'absolute', inset: 0 }}
           >
             <Rig reduced={reducedRef.current} />
-            <SceneContent />
+            <Cityscape />
           </Canvas>
         )}
       </div>

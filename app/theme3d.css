@@ -64,16 +64,17 @@ body::before {
   }
 }
 
-/* Grano analógico sobre todo, casi imperceptible. */
+/* Textura de papel: grano fino y visible sobre toda la interfaz. */
 body::after {
   content: '';
   position: fixed;
   inset: 0;
   z-index: 60;
   pointer-events: none;
-  opacity: 0.04;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
-  background-size: 140px 140px;
+  opacity: 0.07;
+  mix-blend-mode: soft-light;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.4' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
 }
 
 main,
@@ -400,25 +401,23 @@ summary:focus-visible {
    profundidad. El titular rota levemente en 3D; las tarjetas y el resto se
    desplazan. Sutil pero claramente perceptible, y sin romper el hover.
    -------------------------------------------------------------------------- */
-@media (prefers-reduced-motion: no-preference) {
-  html.d3-on .hero-copy {
-    transform: perspective(900px) rotateX(calc(var(--py, 0) * 1.6deg)) rotateY(calc(var(--px, 0) * -1.6deg))
-      translate3d(calc(var(--px, 0) * 10px), calc(var(--py, 0) * 8px), 0);
-    will-change: transform;
-  }
-  html.d3-on .section-heading {
-    transform: translate3d(calc(var(--px, 0) * 6px), calc(var(--py, 0) * 4px), 0);
-  }
-  html.d3-on .event-grid,
-  html.d3-on .venue-grid {
-    transform: translate3d(calc(var(--px, 0) * 7px), calc(var(--py, 0) * 5px), 0);
-  }
-  html.d3-on .contribution-strip {
-    transform: translate3d(calc(var(--px, 0) * 4px), calc(var(--py, 0) * 3px), 0);
-  }
-  html.d3-on .site-footer {
-    transform: translate3d(calc(var(--px, 0) * 3px), calc(var(--py, 0) * 2px), 0);
-  }
+html.d3-on .hero-copy {
+  transform: perspective(900px) rotateX(calc(var(--py, 0) * 2.2deg)) rotateY(calc(var(--px, 0) * -2.2deg))
+    translate3d(calc(var(--px, 0) * 16px), calc(var(--py, 0) * 12px), 0);
+  will-change: transform;
+}
+html.d3-on .section-heading {
+  transform: translate3d(calc(var(--px, 0) * 8px), calc(var(--py, 0) * 6px), 0);
+}
+html.d3-on .event-grid,
+html.d3-on .venue-grid {
+  transform: translate3d(calc(var(--px, 0) * 12px), calc(var(--py, 0) * 9px), 0);
+}
+html.d3-on .contribution-strip {
+  transform: translate3d(calc(var(--px, 0) * 6px), calc(var(--py, 0) * 4px), 0);
+}
+html.d3-on .site-footer {
+  transform: translate3d(calc(var(--px, 0) * 4px), calc(var(--py, 0) * 3px), 0);
 }
 
 /* Movimiento reducido: la aurora y la escena se quedan quietas. */
