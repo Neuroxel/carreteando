@@ -1691,9 +1691,10 @@ html[data-edicion="3d"] body {
   background-position:left bottom, 0 0;
   background-repeat:no-repeat, repeat;
 }
-/* Un solo evento en escritorio: la tarjeta se arma en horizontal (flyer + ficha)
-   para que la fila no quede medio vacía. El flyer no se altera. */
-@media (min-width:1001px) {
-  [data-edicion="3d"] .event-grid > .event-card:only-child { grid-column:1 / -1; display:grid; grid-template-columns:minmax(0,1.05fr) minmax(0,1fr); }
-  [data-edicion="3d"] .event-grid > .event-card:only-child .event-card-body { border-top:0; border-left:4px solid var(--accent); display:flex; flex-direction:column; justify-content:center; }
+/* Un solo evento, o el último de una cantidad impar: en la grilla de dos columnas
+   la tarjeta se arma en horizontal (flyer + ficha) y ocupa la fila entera, para
+   que la fila no quede medio vacía. El flyer no se altera. */
+@media (min-width:641px) {
+  [data-edicion="3d"] .event-grid > .event-card:last-child:nth-child(odd) { grid-column:1 / -1; display:grid; grid-template-columns:minmax(0,1.05fr) minmax(0,1fr); }
+  [data-edicion="3d"] .event-grid > .event-card:last-child:nth-child(odd) .event-card-body { border-top:0; border-left:4px solid var(--accent); display:flex; flex-direction:column; justify-content:center; }
 }
