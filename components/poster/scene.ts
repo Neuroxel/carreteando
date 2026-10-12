@@ -202,6 +202,8 @@ export async function montar(decor: HTMLElement, host: HTMLElement, perfilInicia
       malla.position.set(x0, y0, capa.z);
       malla.renderOrder = capa.z;
       nuevos.push({ malla, capa, x0, y0, mundoPorPx, px: 0, py: 0, vx: 0, vy: 0 });
+      // Ceder el hilo entre plano y plano: ninguna tarea larga bloquea la página.
+      await new Promise((r) => setTimeout(r, 0));
     }
     limpiar();
     for (const p of nuevos) {

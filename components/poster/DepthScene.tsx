@@ -79,8 +79,13 @@ export default function DepthScene() {
     const w = window as Window & {
       requestIdleCallback?: (f: () => void, o?: { timeout: number }) => number;
     };
-    if (w.requestIdleCallback) w.requestIdleCallback(() => void iniciar(), { timeout: 1500 });
-    else setTimeout(() => void iniciar(), 800);
+    // Primero termina de cargar la página; luego, en un momento ocioso.
+    const arrancar = () => {
+      if (w.requestIdleCallback) w.requestIdleCallback(() => void iniciar(), { timeout: 2500 });
+      else setTimeout(() => void iniciar(), 1200);
+    };
+    if (document.readyState === 'complete') arrancar();
+    else window.addEventListener('load', arrancar, { once: true });
     const alCambiar = () => void iniciar();
     window.addEventListener(AJUSTE, alCambiar);
     return () => {

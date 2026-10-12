@@ -58,14 +58,11 @@ export default function PosterDecor({ variant }: { variant: 'home' | 'small' }) 
           </radialGradient>
           <mask id="pd-m1"><ellipse cx="170" cy="560" rx="460" ry="250" fill="url(#pd-fade)" /></mask>
           <mask id="pd-m2"><ellipse cx="900" cy="40" rx="340" ry="170" fill="url(#pd-fade)" /></mask>
-          <Rough id="pd-rough0" scale={22} freq={0.035} />
-          <Mottle id="pd-mottle0" />
         </defs>
-        <g filter="url(#pd-rough0)">
-          <rect width="1000" height="600" fill="url(#pd-dots)" mask="url(#pd-m1)" opacity="0.55" />
-          <rect width="1000" height="600" fill="url(#pd-dots)" mask="url(#pd-m2)" opacity="0.4" />
-        </g>
-        <g filter="url(#pd-mottle0)" opacity="0.55">
+        {/* Sin filtros en las capas de tamaño completo: el grano lo pone el CSS (más barato de pintar). */}
+        <rect width="1000" height="600" fill="url(#pd-dots)" mask="url(#pd-m1)" opacity="0.55" />
+        <rect width="1000" height="600" fill="url(#pd-dots)" mask="url(#pd-m2)" opacity="0.4" />
+        <g opacity="0.55">
           <path d="M-20 420 C 120 360, 260 470, 420 430 S 640 520, 760 600 L -20 620 Z" fill="#2A2C45" />
           <path d="M600 -20 C 700 60, 860 20, 1020 90 L 1020 -20 Z" fill="#2A2C45" />
         </g>
@@ -87,13 +84,10 @@ export default function PosterDecor({ variant }: { variant: 'home' | 'small' }) 
           </radialGradient>
           <mask id="pd-m3"><ellipse cx="690" cy="470" rx="220" ry="100" fill="url(#pd-fade2)" /></mask>
           <mask id="pd-m4"><ellipse cx="330" cy="70" rx="200" ry="80" fill="url(#pd-fade2)" /></mask>
-          <Rough id="pd-rough1" scale={14} freq={0.05} />
         </defs>
         <circle cx="800" cy="300" r="290" fill="url(#pd-halo)" />
-        <g filter="url(#pd-rough1)">
-          <rect width="1000" height="600" fill="url(#pd-dots2)" mask="url(#pd-m3)" opacity="0.32" />
-          <rect width="1000" height="600" fill="url(#pd-dots2)" mask="url(#pd-m4)" opacity="0.18" />
-        </g>
+        <rect width="1000" height="600" fill="url(#pd-dots2)" mask="url(#pd-m3)" opacity="0.32" />
+        <rect width="1000" height="600" fill="url(#pd-dots2)" mask="url(#pd-m4)" opacity="0.18" />
       </svg>
 
       {/* Z2 · formas grandes: el túnel de "?" que se aleja */}
