@@ -1750,7 +1750,7 @@ html[data-edicion="3d"] body {
 .poster-decor::after { content:""; position:absolute; inset:auto 0 0 0; height:58%; z-index:1; pointer-events:none;
   background:linear-gradient(180deg, transparent, rgba(19,19,29,.78) 55%, rgba(19,19,29,.92)); }
 .pd-sensor { top:12px; bottom:auto; }
-[data-edicion="3d"] .hero-logo-apilado { width:clamp(250px, 40vw, 500px); color:var(--crema); filter:none; overflow:visible; }
+[data-edicion="3d"] .hero-logo-apilado { width:clamp(250px, 44vw, 580px); color:var(--crema); filter:none; overflow:visible; }
 [data-edicion="3d"] .hero-home h1 { margin:6px 0 4px; }
 [data-edicion="3d"] .hero-home .hero-lead { font-family:var(--f-maquina); font-weight:400; color:var(--crema); font-size:17px; letter-spacing:.01em; max-width:34ch; }
 [data-edicion="3d"] .hero .eyebrow { font-family:var(--f-maquina); letter-spacing:.06em; }

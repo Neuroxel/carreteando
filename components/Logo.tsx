@@ -58,12 +58,12 @@ export function LogoApilado({ className, title = 'Dónde Salgo?' }: { className?
         </clipPath>
         <filter id="ds-serigrafia" x="-3%" y="-3%" width="106%" height="106%">
           {/* poros: la tinta no cubre todo el papel */}
-          <feTurbulence type="fractalNoise" baseFrequency="0.16" numOctaves="2" seed="8" result="poros" />
-          <feColorMatrix in="poros" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -12 7.3" result="huecos" />
+          <feTurbulence type="fractalNoise" baseFrequency="0.3" numOctaves="1" seed="8" result="poros" />
+          <feColorMatrix in="poros" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -27 17.2" result="huecos" />
           <feComposite in="SourceGraphic" in2="huecos" operator="in" result="poroso" />
           {/* densidad desigual: zonas con menos tinta */}
           <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="2" seed="4" result="manchas" />
-          <feColorMatrix in="manchas" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1.1 0.38" result="densidad" />
+          <feColorMatrix in="manchas" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.8 0.55" result="densidad" />
           <feComposite in="poroso" in2="densidad" operator="in" result="entintado" />
           {/* borde comido */}
           <feTurbulence type="fractalNoise" baseFrequency="0.045" numOctaves="2" seed="3" result="borde" />
