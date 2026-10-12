@@ -38,6 +38,9 @@ export function elegirPerfil(): Perfil {
   const nav = navigator as Navigator & { deviceMemory?: number; connection?: { saveData?: boolean } };
   if (nav.connection?.saveData) return 'STATIC';
   if (!webglDisponible()) return 'STATIC';
+  // QA: ?perfil=static|lite|full fija el perfil (nunca salta las comprobaciones de arriba).
+  const forzado = new URLSearchParams(location.search).get('perfil')?.toUpperCase();
+  if (forzado === 'STATIC' || forzado === 'LITE' || forzado === 'FULL') return forzado;
   const memoria = nav.deviceMemory ?? 8;
   const nucleos = nav.hardwareConcurrency ?? 8;
   if (memoria <= 2 || nucleos <= 2) return 'STATIC';
