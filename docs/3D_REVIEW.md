@@ -209,6 +209,45 @@ tras 120 eventos. **No se probó en un teléfono físico.**
 - Three.js sigue en 134 kB gzip, diferido.
 - La carga inicial de la home pasa de 128 a 129 kB.
 
+## Fondo de escritorio: mosaico corregido (12-10-2026)
+
+**Causa.**
+- La textura de página (`--tx-manchas`) era un tile de 600 × 600 px, con la repetición por defecto del navegador.
+- La fibra era un tile de 240 × 240 px y el hero repetía tiles de 300, 240 y 600 px.
+- En 1440 y 1920 las manchas grandes caían en una grilla regular: se veía dónde "empieza de nuevo el mismo cuadrado" (`review-3d/v3-antes-1440-mosaico.jpg`).
+
+**Regla aplicada:** la micro-textura puede repetirse; la macro-textura nunca. Cada capa declara `background-repeat` de forma explícita.
+
+**Micro (se repite, no se nota).**
+- `fibra.webp` y `grano-papel.webp` son tiles de 256 px que se muestran a 128 CSS px.
+- Son ruido filtrado en frecuencia (FFT): periódicos por construcción, sin costura.
+- Todo el detalle mide 1–4 px y es isótropo, sin rasgos de mayor escala que el ojo pueda agrupar. Por eso la repetición no se percibe.
+
+**Macro (no se repite).**
+- Página:
+  - siete degradados radiales grandes, en `vw`/`vh`, que dan el ritmo tonal de arriba a abajo;
+  - tres parches de tinta únicos (`tinta-a/b/c.webp`, 256 px, semillas distintas, caída radial) en tamaños y posiciones irregulares, con `no-repeat`.
+- Hero: una sola textura de manchas y motas (`hero.webp`, 768 px) en `cover` y `no-repeat`.
+- El borde gastado del hero es una máscara (`borde.webp`).
+
+**Rendimiento.**
+- La primera versión del arreglo usaba filtros SVG `feTurbulence` en data URI. El navegador los rasterizaba en el hilo principal: PageSpeed móvil 68, TBT 2.790 ms.
+- Ahora son WebP generados una vez por `tools/texturas.py` (192 kB en total, no bloquean).
+
+| URL (móvil / escritorio) | Rendimiento | TBT | LCP | Accesibilidad | Recomendaciones |
+|---|---|---|---|---|---|
+| AUTO, filtros SVG (b966cc2) | 68 / — | 2.790 ms | 2,0 s | 100 | 100 |
+| AUTO, WebP (8ad6506) | 92 / 94 | 170 / 200 ms | 2,0 / 0,7 s | 100 | 100 |
+| STATIC, WebP (3b1b313) | 98 / 98 | 30 / 110 ms | 2,3 / 0,6 s | 100 | 100 |
+
+El SEO de 66 en dondesalgo3d se debe al `noindex` deliberado del experimento; producción no lo lleva.
+
+**Fila impar.** Desde 641 px, el último evento de una cantidad impar ocupa las dos columnas en formato horizontal (flyer + ficha). El flyer no se altera. Antes: `v4-webp-1920-impar-antes.jpg`; después: `v4-webp-1440-impar-despues.jpg`.
+
+**Capturas.**
+- Después del arreglo: `v3-despues-{390,1440,1920}-*.jpg`.
+- Versión WebP final: `v4-webp-{375,1440,1920}-*.jpg`.
+
 ### Cómo probarlo (Carlos)
 
 1. Abre https://dondesalgo3d.vercel.app en el teléfono, en Safari (iPhone) o Chrome (Android).
@@ -220,7 +259,8 @@ tras 120 eventos. **No se probó en un teléfono físico.**
    - la trama del fondo se mueve muy poco y con un leve retraso;
    - el texto, la búsqueda y los botones **no** se mueven.
 5. **Si no aparece el botón ni el aviso**, revisa que no esté activado *Ajustes → Accesibilidad → Movimiento → Reducir movimiento*. Con esa opción el sitio respeta la preferencia y queda estático.
-6. **Si algo no responde**, abre https://dondesalgo3d.vercel.app/?3ddebug=1 y envía una captura del panel: muestra perfil, permiso y lecturas del sensor.
+6. **En el computador:** abre https://dondesalgo3d.vercel.app a pantalla completa y recorre la página de arriba a abajo. El fondo no debe mostrar ningún cuadrado que se repita.
+7. **Si algo no responde**, abre https://dondesalgo3d.vercel.app/?3ddebug=1 y envía una captura del panel: muestra perfil, permiso y lecturas del sensor.
 
 ## Preguntas para Carlos
 
