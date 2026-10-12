@@ -3,8 +3,10 @@ import { getPublicEvents } from '../lib/server-events';
 import { getPublicVenues } from '../lib/server-venues';
 import { zonaSlug, zonasDe } from '../lib/venues';
 import { SITE_URL } from '../lib/site';
+import { EXPERIMENTO } from '../lib/experimento';
 export const revalidate = 3600;
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  if (EXPERIMENTO) return [];
   const fijas = ['', '/confianza', '/como-funciona', '/zonas', '/explorar', '/publicar'].map((path) => ({
     url: SITE_URL + path,
   }));

@@ -1525,3 +1525,70 @@ body:has(.hero-home) .site-header .brand { visibility:hidden; }
 .presupuesto-nota { margin:0 0 6px; font-size:11px; color:var(--muted); }
 .barato-atajo { display:inline-block; margin:10px 0 0; font-size:12px; color:var(--accent); }
 @media (min-width:1001px) { .barato-atajo { margin-top:12px; } }
+
+/* ============================================================================
+   EDICIÓN 3D (experimento, carreteando3d). Todo cuelga de html[data-edicion="3d"]:
+   sin NEXT_PUBLIC_EXPERIMENT=1 nada de esto aplica y el sitio es la V1.
+   Capas: Z0 trama · Z1 halo · Z2 túnel de "?" (PosterDecor / DepthScene) ·
+   Z3 interfaz plana (DOM) · Z4 sombras de impresión y bordes.
+   ========================================================================== */
+html[data-edicion="3d"] {
+  --bg:#13131D; --surface:#1E2034; --surface-raised:#2A2C45; --surface-2:var(--surface-raised);
+  --text:#F1E6DE; --muted:#ABA9C7; --line:#373A55;
+  --accent:#F0607A; --accent-hover:#F47E93; --accent-soft:#2B1A27; --accent-2:#8C98D6; --tinta:#13131D;
+  --lila:#B9A3DA; --papel-tinta:#F1E6DE; --gris-papel:#4A4458; --sombra-impresion:rgba(140,152,214,.22);
+}
+/* Z3: el hero pasa de papel a afiche nocturno; el texto es papel. */
+[data-edicion="3d"] .hero { position:relative; isolation:isolate; overflow:hidden; color:var(--text);
+  background:radial-gradient(120% 90% at 82% 45%, #22243A 0%, #191A28 55%, var(--bg) 100%); border:1px solid var(--line); }
+[data-edicion="3d"] .hero .hero-copy { position:relative; z-index:1; }
+[data-edicion="3d"] .hero .eyebrow, [data-edicion="3d"] .hero-date, [data-edicion="3d"] .hero-lead { color:var(--muted); }
+[data-edicion="3d"] .hero-home .hero-lead { color:var(--text); }
+[data-edicion="3d"] .hero .status-dot { background:var(--accent); }
+[data-edicion="3d"] .hero a:focus-visible { outline-color:var(--accent); }
+[data-edicion="3d"] .hero h1 em { color:var(--accent); }
+[data-edicion="3d"] .lugar-selector a { color:var(--muted); }
+[data-edicion="3d"] .lugar-selector a.activa { color:var(--text); border-color:var(--accent); }
+[data-edicion="3d"] .hero .search-form { background:var(--surface); border-color:#5A5D80; }
+[data-edicion="3d"] .hero .search-form:focus-within { border-color:var(--accent); box-shadow:0 0 0 2px var(--accent); }
+[data-edicion="3d"] .hero .search-form > span { color:var(--accent); }
+[data-edicion="3d"] .hero .search-form input, [data-edicion="3d"] .hero .search-form button { color:var(--text); }
+[data-edicion="3d"] .hero .search-form input::placeholder { color:var(--muted); }
+/* Volumen del logo: una segunda tinta corrida (fuera de registro), no texto 3D. */
+[data-edicion="3d"] .hero-logo { color:var(--text); filter:drop-shadow(4px 4px 0 rgba(140,152,214,.42)); }
+[data-edicion="3d"] .hero-home::before { mix-blend-mode:screen; opacity:.06; }
+/* Z0–Z2: decorado. Nunca recibe toques; el lienzo, si existe, reemplaza las capas estáticas. */
+.poster-decor { position:absolute; inset:0; pointer-events:none; }
+.poster-decor .pd-layer, .pd-host, .pd-canvas { position:absolute; inset:0; width:100%; height:100%; z-index:0; }
+.pd-canvas { display:block; }
+.poster-decor.pd-live .pd-layer { visibility:hidden; }
+.poster-small { opacity:.55; }
+.pd-sensor { position:absolute; z-index:2; right:12px; bottom:12px; pointer-events:auto; min-height:36px; padding:0 12px;
+  border:1px solid var(--accent-2); border-radius:99px; background:var(--surface); color:var(--text); font-size:12px; cursor:pointer; }
+.pd-sensor:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+@media (max-width:640px) {
+  [data-edicion="3d"] .hero-home { border-inline:0; }
+  .poster-home { opacity:.7; }
+  .pd-sensor { bottom:auto; right:10px; top:10px; min-height:32px; font-size:11px; }
+  /* El botón del sensor tiene su propia franja: nunca tapa la marca. */
+  [data-edicion="3d"] .hero-home:has(.pd-sensor) { padding-top:52px; }
+}
+/* Z4: tarjetas como papel impreso sobre la noche; sombra plana en una segunda tinta. */
+[data-edicion="3d"] .event-card { box-shadow:6px 6px 0 var(--sombra-impresion); }
+[data-edicion="3d"] .event-card-body { border-top-color:var(--accent); }
+[data-edicion="3d"] .card-category, [data-edicion="3d"] .card-category span,
+[data-edicion="3d"] .card-location, [data-edicion="3d"] .event-card .share-status { color:var(--gris-papel); }
+[data-edicion="3d"] .card-bottom { border-top-color:#D9CCD2; }
+[data-edicion="3d"] .event-card a:focus-visible, [data-edicion="3d"] .event-card button:focus-visible { outline-color:#8E2240; }
+[data-edicion="3d"] .flyer-fallback { background:linear-gradient(140deg,#2A2C45,#15151F); }
+[data-edicion="3d"] .venue-card { border-top-color:var(--accent); }
+@media (hover:hover) and (prefers-reduced-motion:no-preference) {
+  [data-edicion="3d"] .event-card { transition:transform .18s ease, box-shadow .18s ease; }
+  [data-edicion="3d"] .event-card:hover { transform:translate(-1px,-2px); box-shadow:8px 9px 0 var(--sombra-impresion); }
+}
+/* Ajuste de profundidad, al pie. */
+.depth-toggle { grid-column:1 / -1; display:flex; align-items:center; gap:6px; font-size:12px; color:var(--muted); }
+.depth-toggle span { margin-right:6px; letter-spacing:.08em; text-transform:uppercase; font-size:11px; }
+.depth-toggle button { min-height:36px; padding:0 12px; border:1px solid var(--line); border-radius:99px; background:transparent; color:var(--muted); cursor:pointer; }
+.depth-toggle button[aria-pressed="true"] { border-color:var(--accent); color:var(--text); }
+.depth-toggle button:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }

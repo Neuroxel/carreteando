@@ -37,6 +37,8 @@ const nextConfig = {
             key: 'Content-Security-Policy',
             value: "object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'",
           },
+          // Edición experimental (carreteando3d): ninguna página se indexa, tampoco las que fijan su propio robots.
+          ...(process.env.NEXT_PUBLIC_EXPERIMENT === '1' ? [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }] : []),
         ],
       },
     ];

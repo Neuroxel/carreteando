@@ -2,6 +2,7 @@ import 'server-only';
 import { createHash, createHmac } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { getAdminDb } from './server-db';
+import { EXPERIMENTO } from './experimento';
 import {
   submissionIdentity,
   validateReport,
@@ -22,6 +23,8 @@ export async function receiveCommunity(request: Request, kind: 'submission' | 'r
     return json({ error: 'Origen no permitido.' }, 403);
   if (!request.headers.get('content-type')?.startsWith('application/json'))
     return json({ error: 'Usa JSON.' }, 415);
+  // La edición experimental no tiene llaves de la base: entrega lo recibido a producción.
+  if (EXPERIMENTO && !getAdminDb()) return reenviar(request, kind);
   const db = getAdminDb(),
     salt = process.env.CRON_SECRET;
   if (!db || !salt)
@@ -96,5 +99,25 @@ export async function receiveCommunity(request: Request, kind: 'submission' | 'r
       { error: error instanceof ValidationError ? error.message : 'Solicitud inválida.' },
       400,
     );
+  }
+}
+
+const RUTA = { submission: '/api/publicar', report: '/api/reportar', venue: '/api/proponer-lugar' } as const;
+/** El destino es fijo (nunca sale de la solicitud) y el cuerpo se acota igual que arriba. */
+async function reenviar(request: Request, kind: keyof typeof RUTA) {
+  try {
+    const cuerpo = await request.text();
+    if (cuerpo.length > 16384) return json({ error: 'La solicitud es demasiado larga.' }, 413);
+    const r = await fetch(`https://carreteando.vercel.app${RUTA[kind]}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: cuerpo,
+      signal: AbortSignal.timeout(10000),
+      cache: 'no-store',
+    });
+    const datos = await r.json().catch(() => ({ error: 'No se pudo confirmar la recepción.' }));
+    return json(datos, r.status);
+  } catch {
+    return json({ error: 'No podemos recibir solicitudes ahora. Intenta más tarde.' }, 503);
   }
 }

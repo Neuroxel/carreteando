@@ -19,6 +19,7 @@ export const METRICS = [
   'zero_result_search',
   'venue_proposal',
 ] as const;
+import { EXPERIMENTO } from './experimento';
 export type Metric = (typeof METRICS)[number];
 const pendientes = new Set<Metric>();
 let escuchando = false;
@@ -66,6 +67,8 @@ export function rememberEmptySearch(q: string | null) {
 }
 export function track(name: Metric, q?: string) {
   if (
+    // La edición experimental no suma visitas a las cifras de producción.
+    EXPERIMENTO ||
     typeof navigator === 'undefined' ||
     navigator.doNotTrack === '1' ||
     (navigator as Navigator & { globalPrivacyControl?: boolean }).globalPrivacyControl
