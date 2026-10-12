@@ -79,11 +79,14 @@ export default function DepthScene() {
     const w = window as Window & {
       requestIdleCallback?: (f: () => void, o?: { timeout: number }) => number;
     };
-    // Primero termina de cargar la página; luego, en un momento ocioso.
-    const arrancar = () => {
-      if (w.requestIdleCallback) w.requestIdleCallback(() => void iniciar(), { timeout: 2500 });
-      else setTimeout(() => void iniciar(), 1200);
-    };
+    // Primero carga la página y su imagen principal (LCP); 3 s después, en un
+    // momento ocioso, recién se arma la escena. Hasta entonces se ve el afiche
+    // estático, que en reposo es idéntico al lienzo.
+    const arrancar = () =>
+      window.setTimeout(() => {
+        if (w.requestIdleCallback) w.requestIdleCallback(() => void iniciar(), { timeout: 2000 });
+        else void iniciar();
+      }, 3000);
     if (document.readyState === 'complete') arrancar();
     else window.addEventListener('load', arrancar, { once: true });
     const alCambiar = () => void iniciar();
