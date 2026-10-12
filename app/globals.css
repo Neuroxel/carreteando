@@ -1570,8 +1570,11 @@ html[data-edicion="3d"] {
   [data-edicion="3d"] .hero-home { border-inline:0; }
   .poster-home { opacity:.7; }
   .pd-sensor { bottom:auto; right:10px; top:10px; min-height:32px; font-size:11px; }
-  /* El botón del sensor tiene su propia franja: nunca tapa la marca. */
-  [data-edicion="3d"] .hero-home:has(.pd-sensor) { padding-top:52px; }
+}
+/* El botón del sensor tiene su propia franja, reservada desde el primer pintado
+   en pantallas táctiles: nunca tapa la marca ni empuja el contenido al aparecer. */
+@media (max-width:640px) and (pointer:coarse) {
+  [data-edicion="3d"] .hero-home { padding-top:52px; }
 }
 /* Z4: tarjetas como papel impreso sobre la noche; sombra plana en una segunda tinta. */
 [data-edicion="3d"] .event-card { box-shadow:6px 6px 0 var(--sombra-impresion); }

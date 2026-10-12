@@ -5,7 +5,8 @@ import DepthScene from './DepthScene';
  * y un túnel de "?" corridos como capas de tinta. Es SVG estático renderizado en
  * el servidor: sin JavaScript ni WebGL el sitio se ve así, completo. Si el
  * equipo lo permite, DepthScene usa estas mismas capas como texturas de Three.js
- * y les da profundidad. Nada de esto recibe toques ni lleva información.
+ * y les da profundidad. Nada de esto recibe toques ni lleva información: cada capa
+ * es aria-hidden; solo el botón opcional del sensor es un control real.
  */
 const RINGS = [
   { s: 0.6, cx: 772, cy: 344, color: 'var(--papel-tinta, #F1E6DE)', o: 0.85, w: 14 },
@@ -21,8 +22,8 @@ const ring = (r: (typeof RINGS)[number]) =>
 
 export default function PosterDecor({ variant }: { variant: 'home' | 'small' }) {
   return (
-    <div className={`poster-decor poster-${variant}`} aria-hidden="true">
-      <svg className="pd-layer" data-depth="0" viewBox="0 0 1000 600" preserveAspectRatio="xMidYMid slice">
+    <div className={`poster-decor poster-${variant}`}>
+      <svg className="pd-layer" aria-hidden="true" data-depth="0" viewBox="0 0 1000 600" preserveAspectRatio="xMidYMid slice">
         <defs>
           <pattern id="pd-dots" width="9" height="9" patternUnits="userSpaceOnUse">
             <circle cx="4.5" cy="4.5" r="2.2" fill="var(--accent-2)" />
@@ -44,7 +45,7 @@ export default function PosterDecor({ variant }: { variant: 'home' | 'small' }) 
           <rect width="1000" height="600" fill="url(#pd-dots)" mask="url(#pd-m2)" opacity="0.28" />
         </g>
       </svg>
-      <svg className="pd-layer" data-depth="1" viewBox="0 0 1000 600" preserveAspectRatio="xMidYMid slice">
+      <svg className="pd-layer" aria-hidden="true" data-depth="1" viewBox="0 0 1000 600" preserveAspectRatio="xMidYMid slice">
         <defs>
           <radialGradient id="pd-halo">
             <stop offset="0" stopColor="var(--lila, #B9A3DA)" stopOpacity="0.34" />
@@ -62,7 +63,7 @@ export default function PosterDecor({ variant }: { variant: 'home' | 'small' }) 
         <circle cx="800" cy="300" r="270" fill="url(#pd-halo)" />
         <rect width="1000" height="600" fill="url(#pd-dots2)" mask="url(#pd-m3)" opacity="0.22" />
       </svg>
-      <svg className="pd-layer" data-depth="2" viewBox="0 0 1000 600" preserveAspectRatio="xMidYMid slice">
+      <svg className="pd-layer" aria-hidden="true" data-depth="2" viewBox="0 0 1000 600" preserveAspectRatio="xMidYMid slice">
         {RINGS.map((r, i) => (
           <g key={i} data-ring={i} transform={ring(r)} opacity={r.o}>
             <path d={Q} fill="none" stroke={r.color} strokeWidth={r.w} strokeLinejoin="round" />
