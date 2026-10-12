@@ -21,10 +21,20 @@ export function guardar(clave: string, valor: string) {
   }
 }
 
+/**
+ * WebGL con GPU real. Un renderizador por software (SwiftShader, llvmpipe) no
+ * cuenta: ahí cada cuadro cuesta cientos de ms en el hilo principal y el
+ * afiche estático es mejor experiencia.
+ */
 export function webglDisponible() {
   try {
     const c = document.createElement('canvas');
-    return Boolean(c.getContext('webgl2') || c.getContext('webgl'));
+    const gl = (c.getContext('webgl2') || c.getContext('webgl')) as WebGLRenderingContext | null;
+    if (!gl) return false;
+    const info = gl.getExtension('WEBGL_debug_renderer_info');
+    const nombre = String(info ? gl.getParameter(info.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER));
+    gl.getExtension('WEBGL_lose_context')?.loseContext();
+    return !/swiftshader|llvmpipe|software|softpipe/i.test(nombre);
   } catch {
     return false;
   }
@@ -65,7 +75,7 @@ export function motivoEstatico(): string | null {
   if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return 'movimiento reducido del sistema';
   const nav = navigator as Navigator & { connection?: { saveData?: boolean } };
   if (nav.connection?.saveData) return 'ahorro de datos';
-  if (!webglDisponible()) return 'sin WebGL';
+  if (!webglDisponible()) return 'sin WebGL con GPU';
   return null;
 }
 

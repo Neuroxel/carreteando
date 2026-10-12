@@ -301,6 +301,12 @@ export async function montar(decor: HTMLElement, host: HTMLElement, perfilInicia
       fps = fps ? fps * 0.9 + (1000 / dt) * 0.1 : 1000 / dt;
       if (calibrando) {
         muestras.push(dt);
+        // Rescate temprano: si los primeros cuadros ya son muy lentos, no
+        // seguir midiendo (cada cuadro lento bloquea la página).
+        if (muestras.length === 6 && [...muestras].sort((a, b) => a - b)[3] > UMBRAL.LITE_A_STATIC * 1.5) {
+          cerrar();
+          return;
+        }
         if (muestras.length >= 45) {
           calibrando = false;
           const orden = [...muestras].sort((a, b) => a - b);
