@@ -1557,23 +1557,8 @@ html[data-edicion="3d"] {
 /* Volumen del logo: una segunda tinta corrida (fuera de registro), no texto 3D. */
 [data-edicion="3d"] .hero-logo { color:var(--text); filter:drop-shadow(4px 4px 0 rgba(140,152,214,.42)); }
 [data-edicion="3d"] .hero-home::before { mix-blend-mode:screen; opacity:.06; }
-/* Z0–Z2: decorado. Nunca recibe toques; el lienzo, si existe, reemplaza las capas estáticas. */
-.poster-decor { position:absolute; inset:0; pointer-events:none; }
-.poster-decor .pd-layer, .pd-host, .pd-canvas { position:absolute; inset:0; width:100%; height:100%; z-index:0; }
-.pd-canvas { display:block; }
-.poster-decor.pd-live .pd-layer { visibility:hidden; }
-.poster-small { opacity:.55; }
-.pd-sensor { position:absolute; z-index:2; right:12px; bottom:12px; pointer-events:auto; min-height:36px; padding:0 12px;
-  border:1px solid var(--accent-2); border-radius:99px; background:var(--surface); color:var(--text); font-size:12px; cursor:pointer; }
-.pd-sensor:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
 @media (max-width:640px) {
   [data-edicion="3d"] .hero-home { border-inline:0; }
-  .pd-sensor { bottom:auto; right:10px; top:10px; min-height:32px; font-size:11px; }
-}
-/* El botón del sensor tiene su propia franja, reservada desde el primer pintado
-   en pantallas táctiles: nunca tapa la marca ni empuja el contenido al aparecer. */
-@media (max-width:640px) and (pointer:coarse) {
-  [data-edicion="3d"] .hero-home { padding-top:52px; }
 }
 /* Z4: tarjetas como papel impreso sobre la noche; sombra plana en una segunda tinta. */
 [data-edicion="3d"] .event-card { box-shadow:6px 6px 0 var(--sombra-impresion); }
@@ -1588,12 +1573,6 @@ html[data-edicion="3d"] {
   [data-edicion="3d"] .event-card { transition:transform .18s ease, box-shadow .18s ease; }
   [data-edicion="3d"] .event-card:hover { transform:translate(-1px,-2px); box-shadow:8px 9px 0 var(--sombra-impresion); }
 }
-/* Ajuste de profundidad, al pie. */
-.depth-toggle { grid-column:1 / -1; display:flex; align-items:center; gap:6px; font-size:12px; color:var(--muted); }
-.depth-toggle span { margin-right:6px; letter-spacing:.08em; text-transform:uppercase; font-size:11px; }
-.depth-toggle button { min-height:36px; padding:0 12px; border:1px solid var(--line); border-radius:99px; background:transparent; color:var(--muted); cursor:pointer; }
-.depth-toggle button[aria-pressed="true"] { border-color:var(--accent); color:var(--text); }
-.depth-toggle button:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
 
 /* ---------------------------------------------------------------------------
    PAPEL E IMPRENTA (pasada de Carlos): el sitio debe parecer un objeto impreso,
@@ -1662,7 +1641,6 @@ html[data-edicion="3d"] body {
   -webkit-mask-image:radial-gradient(closest-side, #000 20%, transparent 100%); mask-image:radial-gradient(closest-side, #000 20%, transparent 100%);
 }
 [data-edicion="3d"] .hero .hero-copy { z-index:2; }
-.pd-sensor { z-index:3; }
 /* Fuera de registro en los títulos grandes (no en texto de lectura). */
 [data-edicion="3d"] .hero h1:not(:has(.hero-logo)) { text-shadow:3px 2px 0 rgba(140,152,214,.45), -2px -1px 0 rgba(240,96,122,.35); }
 [data-edicion="3d"] .hero-logo { filter:drop-shadow(5px 4px 0 rgba(140,152,214,.5)) drop-shadow(-2px -1px 0 rgba(240,96,122,.35)); }
@@ -1671,10 +1649,6 @@ html[data-edicion="3d"] body {
 /* Tarjetas: piezas de papel montadas sobre la pared, con grano propio (no sobre el flyer). */
 [data-edicion="3d"] .event-card-body, [data-edicion="3d"] .empty-state { background-image:var(--tx-grano-papel); background-size:128px 128px; background-repeat:repeat; }
 [data-edicion="3d"] .event-card { box-shadow:6px 7px 0 var(--sombra-impresion), 0 1px 0 rgba(0,0,0,.4); }
-/* El afiche se ve completo en el teléfono (antes estaba al 70 %). */
-.poster-home { opacity:1; }
-/* Sensor activo: aviso discreto, sin interacción. */
-.pd-sensor-activo { cursor:default; border-color:var(--accent); background:rgba(19,19,29,.82); }
 /* Panel de depuración: solo con ?3ddebug=1. */
 .pd-debug { position:fixed; left:8px; right:8px; bottom:76px; z-index:50; pointer-events:auto; padding:10px 12px;
   background:rgba(10,10,16,.92); color:#F1E6DE; border:1px solid #F0607A; border-radius:8px; font:12px/1.45 ui-monospace,Menlo,monospace; }
@@ -1701,17 +1675,17 @@ html[data-edicion="3d"] body {
 
 /* ===========================================================================
    PASADA "AFICHE DE CARLOS": serigrafía escaneada convertida en interfaz.
-   Tipos: Anton (OFL) para títulos de cartel y Special Elite (Apache 2.0) para
-   lo secundario, ambos servidos desde /fonts. El texto de lectura sigue en Arial.
+   Tipos: Fraunces Black Soft (OFL) para títulos y Special Elite (Apache 2.0)
+   para lo secundario, ambos servidos desde /fonts. El texto de lectura sigue en Arial.
    Jerarquía material: hero = máxima; separadores = serigrafía; tarjetas =
    papel; página = sutil; flyers y texto funcional = intactos y nítidos.
    ========================================================================== */
-@font-face { font-family:'Anton'; src:url('/fonts/anton-latin.woff2') format('woff2'); font-display:swap; font-weight:400;
+@font-face { font-family:'Fraunces'; src:url('/fonts/fraunces-black-soft-latin.woff2') format('woff2'); font-display:swap; font-weight:900;
   unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
 @font-face { font-family:'Special Elite'; src:url('/fonts/special-elite-latin.woff2') format('woff2'); font-display:swap; font-weight:400;
   unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
 html[data-edicion="3d"] {
-  --f-cartel:'Anton', Impact, 'Arial Narrow', sans-serif;
+  --f-cartel:'Fraunces', 'Cooper Black', Georgia, serif;
   --f-maquina:'Special Elite', 'Courier New', Courier, monospace;
   --crema:#EFE3D3;
   --tx-fibras:url('/textures/fibras.webp');
@@ -1746,10 +1720,6 @@ html[data-edicion="3d"] body {
   background-repeat:no-repeat, repeat, repeat, repeat;
   background-position:center, 0 0, 61px 23px, 0 0;
 }
-/* Sombra de lectura bajo la búsqueda y las comunas: la ciudad no compite con la interfaz. */
-.poster-decor::after { content:""; position:absolute; inset:auto 0 0 0; height:58%; z-index:1; pointer-events:none;
-  background:linear-gradient(180deg, transparent, rgba(19,19,29,.78) 55%, rgba(19,19,29,.92)); }
-.pd-sensor { top:12px; bottom:auto; }
 [data-edicion="3d"] .hero-logo-apilado { width:clamp(250px, 44vw, 580px); color:var(--crema); filter:none; overflow:visible; }
 [data-edicion="3d"] .hero-home h1 { margin:6px 0 4px; }
 [data-edicion="3d"] .hero-home .hero-lead { font-family:var(--f-maquina); font-weight:400; color:var(--crema); font-size:17px; letter-spacing:.01em; max-width:34ch; }
@@ -1765,8 +1735,7 @@ html[data-edicion="3d"] body {
 
 /* ---- Títulos de sección: cartel en tinta crema con poros. ---- */
 [data-edicion="3d"] .section-heading h2, [data-edicion="3d"] .section-heading h3, [data-edicion="3d"] .alternative-plans > h3 {
-  font-family:var(--f-cartel); font-weight:400; text-transform:uppercase; letter-spacing:.01em; color:var(--crema);
-  text-shadow:2px 2px 0 rgba(140,152,214,.45);
+  font-family:var(--f-cartel); font-weight:900; letter-spacing:-.01em; color:var(--crema);
   -webkit-mask-image:var(--mk-poros); mask-image:var(--mk-poros); -webkit-mask-size:256px 256px; mask-size:256px 256px;
 }
 [data-edicion="3d"] .section-heading h2, [data-edicion="3d"] .section-heading h3 { font-size:clamp(34px, 4.4vw, 52px); line-height:1; }
@@ -1805,9 +1774,109 @@ html[data-edicion="3d"] body {
   transform:translate(calc(6px + var(--inc-x, 0) * 5px), calc(7px + var(--inc-y, 0) * 4px)); transition:transform .12s linear; }
 .venue-rail-mas { align-items:center; justify-content:center; }
 .venue-rail-mas a { display:flex; align-items:center; justify-content:center; flex:1; min-height:200px; padding:20px; border:1px dashed var(--line);
-  color:var(--text); font:20px/1.2 var(--f-cartel, sans-serif); text-transform:uppercase; text-align:center; position:relative; z-index:1; background:var(--bg); }
+  color:var(--text); font:900 20px/1.2 var(--f-cartel, serif); text-align:center; position:relative; z-index:1; background:var(--bg); }
 @media (prefers-reduced-motion:reduce) { .venue-rail-pista > li::before { transition:none; transform:translate(6px, 7px); } }
 @media (min-width:1001px) { .venue-rail-pista { margin:0; padding-inline:0; scroll-padding-inline:0; } }
 .pd-debug-fuente { font-size:14px; }
 .pd-debug-acciones { display:flex; gap:8px; }
 .pd-debug button { min-height:32px; padding:0 10px; background:#2A2C45; color:#F1E6DE; border:1px solid #8C98D6; border-radius:4px; }
+
+/* ===========================================================================
+   PASADA COMERCIAL (maqueta de Carlos = referencia principal).
+   Papel negro fotocopiado, tinta crema, coral y violeta; arte del hero en
+   spray + luna punteada; reglas a mano; tipografía de máquina para lo
+   secundario. La interfaz sigue siendo la misma: solo cambia la materia.
+   ========================================================================== */
+html[data-edicion="3d"] {
+  --violeta:#9A80D0;
+  --coral:#E8576F;
+  --tinta-papel:#121119;
+  --tx-regla:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='12' preserveAspectRatio='none'><filter id='l' x='0' y='-50%25' width='100%25' height='200%25'><feTurbulence type='fractalNoise' baseFrequency='.06 .5' numOctaves='2' seed='9'/><feDisplacementMap in='SourceGraphic' scale='5'/></filter><path d='M0 6 Q75 3 150 6 T300 6 T450 6 T600 6' stroke='%23E8576F' stroke-width='4.5' fill='none' filter='url(%23l)'/></svg>");
+}
+/* Pared: papel negro con grano de fotocopia, fibras y dos pliegues suaves (no se repiten). */
+html[data-edicion="3d"] body {
+  background-color:var(--tinta-papel);
+  background-image:
+    linear-gradient(90deg, transparent calc(50% - 1px), rgba(255,255,255,.035) calc(50% - 1px), rgba(0,0,0,.28) calc(50% + 1px), transparent calc(50% + 2px)),
+    linear-gradient(180deg, transparent 0, rgba(255,255,255,.03) 1px, rgba(0,0,0,.3) 2px, transparent 3px),
+    linear-gradient(180deg, transparent 0, rgba(255,255,255,.03) 1px, rgba(0,0,0,.3) 2px, transparent 3px),
+    var(--tx-motas-claras), var(--tx-fibra), var(--tx-fibras-suaves),
+    var(--tx-tinta-a), var(--tx-tinta-b), var(--tx-tinta-c),
+    radial-gradient(80vw 60vh at 20% 30%, rgba(40,38,58,.55), transparent 70%),
+    radial-gradient(70vw 50vh at 85% 70%, rgba(8,8,12,.6), transparent 72%);
+  background-size:100% 100%, 100% 4px, 100% 4px, 269px 269px, 128px 128px, 384px 384px, 62vw 62vw, 54vw 54vw, 68vw 68vw, 100% 100%, 100% 100%;
+  background-position:0 0, 0 1040px, 0 2210px, 61px 23px, 0 0, 37px 11px, 104% 12%, -10% 48%, 96% 86%, 0 0, 0 0;
+  background-repeat:no-repeat, no-repeat, no-repeat, repeat, repeat, repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
+}
+
+/* ---- Hero ---- */
+[data-edicion="3d"] .hero-home { background:transparent; }
+[data-edicion="3d"] .hero-home::before { opacity:.9; }
+[data-edicion="3d"] .hero::after { display:none; }
+.poster-decor { position:absolute; inset:0; pointer-events:none; z-index:0; }
+.pd-capa { position:absolute; background-repeat:no-repeat; background-size:100% 100%; }
+.pd-movil .pd-capa { will-change:transform; }
+.pd-nube-violeta { background-image:url('/textures/nube-violeta.webp'); right:-16%; top:-6%; width:80%; aspect-ratio:560 / 720; }
+.pd-luna { background-image:url('/textures/luna.webp'); right:-3%; top:40%; width:34%; aspect-ratio:1; }
+.pd-nube-coral { background-image:url('/textures/nube-coral.webp'); right:-7%; top:46%; width:30%; aspect-ratio:300 / 640; }
+.poster-small .pd-capa { opacity:.6; }
+[data-edicion="3d"] .hero-logo-apilado { width:min(80vw, 380px); color:var(--crema); filter:none; overflow:visible; }
+[data-edicion="3d"] .hero-home h1 { margin:4px 0 14px; }
+[data-edicion="3d"] .hero-home .hero-lead { font-size:16px; line-height:1.5; max-width:31ch; color:var(--crema); }
+[data-edicion="3d"] .hero-home .hero-lead::before { display:none; }
+/* Búsqueda: cápsula con borde violeta, como en la maqueta. */
+[data-edicion="3d"] .hero .search-form { margin-top:22px; border:2px solid var(--violeta); border-radius:999px; background:rgba(18,17,25,.86); padding-left:20px; }
+[data-edicion="3d"] .hero .search-form > span { color:var(--coral); font-size:28px; }
+[data-edicion="3d"] .hero .search-form input { font-family:var(--f-maquina); font-size:16px; }
+[data-edicion="3d"] .hero .search-form input::placeholder { color:var(--crema); opacity:.85; }
+[data-edicion="3d"] .hero .search-form button { font-family:var(--f-maquina); }
+/* Comunas: separadas por reglas verticales; la elegida lleva barra coral. */
+[data-edicion="3d"] .lugar-selector { gap:0; margin-top:12px; }
+[data-edicion="3d"] .lugar-selector a { position:relative; color:var(--crema); opacity:.88; font-size:15px; border-bottom:0; padding:0 16px; }
+[data-edicion="3d"] .lugar-selector a + a::before { content:""; position:absolute; left:0; top:12px; bottom:12px; width:2px; background:var(--crema); opacity:.45; transform:rotate(2deg); }
+[data-edicion="3d"] .lugar-selector a.activa { opacity:1; font-weight:700; box-shadow:inset 0 -6px 0 var(--coral); }
+[data-edicion="3d"] .lugar-selector a span { opacity:.8; }
+
+/* ---- Fechas: la elegida es un bloque coral impreso; las demás, separadas por reglas. ---- */
+[data-edicion="3d"] .date-tabs { gap:0; justify-content:flex-start; border-bottom:2px solid rgba(239,227,211,.25); }
+[data-edicion="3d"] .date-tabs a { position:relative; padding:0 18px; color:var(--crema); font-size:17px; border-bottom:0; min-height:56px; }
+[data-edicion="3d"] .date-tabs a + a::before { content:""; position:absolute; left:0; top:14px; bottom:14px; width:2px; background:var(--crema); opacity:.45; transform:rotate(-2deg); }
+[data-edicion="3d"] .date-tabs a.selected { color:var(--crema); background:var(--coral); font-weight:700;
+  -webkit-mask-image:var(--mk-borde); mask-image:var(--mk-borde); -webkit-mask-size:100% 100%; mask-size:100% 100%; }
+[data-edicion="3d"] .date-tabs a.selected + a::before { display:none; }
+[data-edicion="3d"] .discovery-options summary { font-family:var(--f-maquina); color:var(--crema); font-size:15px; }
+
+/* ---- Títulos de sección: tinta crema y regla coral ondulada a mano. ---- */
+[data-edicion="3d"] .section-heading { background:var(--tx-regla) left bottom / 100% 12px no-repeat; padding-bottom:14px; }
+[data-edicion="3d"] .section-heading h2, [data-edicion="3d"] .section-heading h3 { font-size:clamp(36px, 4.6vw, 54px); }
+[data-edicion="3d"] .heading-period { color:var(--crema); }
+[data-edicion="3d"] .result-count { color:var(--crema); font-size:15px; }
+
+/* ---- Estado vacío: tarjeta con borde violeta punteado, título en tinta crema. ---- */
+[data-edicion="3d"] .empty-state { background:rgba(22,21,34,.9); background-image:none; border:2px dashed var(--violeta); border-radius:16px; }
+[data-edicion="3d"] .empty-state h3 { font-family:var(--f-cartel); font-weight:900; color:var(--crema); font-size:clamp(24px, 3vw, 32px); line-height:1.15; }
+[data-edicion="3d"] .empty-state p { font-family:var(--f-maquina); color:var(--crema); font-size:16px; line-height:1.5; }
+
+/* ---- Tarjetas de evento: el título en la tinta de cartel; el flyer intacto. ---- */
+[data-edicion="3d"] .event-card h3 { font-family:var(--f-cartel); font-weight:900; font-size:clamp(22px, 2.4vw, 28px); line-height:1.12; color:var(--tinta); }
+[data-edicion="3d"] .venue-card h3 { font-family:var(--f-cartel); font-weight:900; }
+
+/* ---- Navegación: misma tinta, etiquetas de máquina. ---- */
+[data-edicion="3d"] .bottom-nav { background-color:#0E0D14; border-top:2px solid rgba(239,227,211,.22); }
+[data-edicion="3d"] .bottom-nav-item { font-family:var(--f-maquina); color:var(--crema); }
+[data-edicion="3d"] .bottom-nav-item.activo { color:var(--coral); }
+[data-edicion="3d"] .site-header a { font-family:var(--f-maquina); }
+
+/* ---- Escritorio: el hero es un afiche compuesto, con el arte a la derecha. ---- */
+@media (min-width:641px) {
+  .pd-nube-violeta { right:-6%; top:-24%; width:46%; }
+  .pd-luna { right:14%; top:26%; width:19%; }
+  .pd-nube-coral { right:-2%; top:18%; width:16%; }
+  [data-edicion="3d"] .hero-logo-apilado { width:clamp(320px, 42vw, 560px); }
+}
+@media (max-width:640px) {
+  [data-edicion="3d"] .hero-home { -webkit-mask-image:none; mask-image:none; padding:22px 18px 4px; }
+  [data-edicion="3d"] .date-tabs { justify-content:space-between; }
+  [data-edicion="3d"] .date-tabs a { padding:0 10px; font-size:15px; }
+  [data-edicion="3d"] .lugar-selector a { padding:0 12px; font-size:14px; }
+}

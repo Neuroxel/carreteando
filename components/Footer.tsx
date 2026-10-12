@@ -1,7 +1,5 @@
 import Link from 'next/link';
 import { Logo } from './Logo';
-import { EXPERIMENTO } from '../lib/experimento';
-import DepthToggle from './poster/DepthToggle';
 export default function Footer() {
   return (
     <footer className="site-footer container">
@@ -27,7 +25,6 @@ export default function Footer() {
         <br />
         Horarios, precios y condiciones pueden cambiar.
       </p>
-      {EXPERIMENTO && <DepthToggle />}
     </footer>
   );
 }

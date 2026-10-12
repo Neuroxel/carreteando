@@ -19,9 +19,9 @@ test('la edición 3D no programa crons propios', () => {
   assert.equal(cfg.crons, undefined);
 });
 
-test('los límites de profundidad respetan el encargo', async () => {
-  const { RESOLUCION, UMBRAL } = await import('../components/poster/profile');
-  assert.equal(RESOLUCION.FULL.dpr, 1.5);
-  assert.equal(RESOLUCION.LITE.dpr, 1);
-  assert.ok(UMBRAL.FULL_A_LITE < UMBRAL.LITE_A_STATIC);
+test('la profundidad es un adorno: sin WebGL y sin controles públicos', () => {
+  const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+  assert.equal(pkg.dependencies.three, undefined);
+  const decor = readFileSync(new URL('../components/poster/Profundidad.tsx', import.meta.url), 'utf8');
+  assert.ok(!decor.includes('Activar profundidad') && !decor.includes('Profundidad activa'));
 });

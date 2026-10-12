@@ -7,7 +7,6 @@
  *   (el vector de gravedad). Solo necesita acelerómetro: funciona en teléfonos
  *   Android sin giroscopio, donde Chrome entrega `deviceorientation` con
  *   beta/gamma nulos. Es el mismo camino que usa la calculadora 3D de Carlos.
- * - POINTER: mouse en escritorio, solo si no hay sensor real.
  * - DEBUG_SIMULATION: los deslizadores de ?3ddebug=1.
  * - NONE.
  *
@@ -20,7 +19,7 @@
  * muestras es el cero. No se recentra solo: una inclinación sostenida se
  * mantiene. `recalibrar()` fija un cero nuevo.
  */
-export type Fuente = 'ORIENTATION' | 'MOTION_ACCELEROMETER' | 'POINTER' | 'DEBUG_SIMULATION' | 'NONE';
+export type Fuente = 'ORIENTATION' | 'MOTION_ACCELEROMETER' | 'DEBUG_SIMULATION' | 'NONE';
 export type EstadoSensor = 'apagado' | 'esperando' | 'recibiendo' | 'sin-datos';
 export type Lectura = {
   fuente: Fuente;
@@ -158,13 +157,6 @@ function alMover(e: DeviceMotionEvent) {
   aplicar('MOTION_ACCELEROMETER', beta, gamma);
 }
 
-function alPuntero(e: PointerEvent) {
-  if (e.pointerType !== 'mouse' || real(L.fuente) || L.fuente === 'DEBUG_SIMULATION') return;
-  L.fuente = 'POINTER';
-  L.tilt = { x: (e.clientX / window.innerWidth) * 2 - 1, y: (e.clientY / window.innerHeight) * 2 - 1 };
-  emitir();
-}
-
 function vigilar() {
   window.clearTimeout(temporizador);
   temporizador = window.setTimeout(() => {
@@ -175,14 +167,17 @@ function vigilar() {
   }, ESPERA_MUESTRAS);
 }
 
-/** Empieza a escuchar sensores reales (Android y escritorio: sin permiso). */
+/**
+ * Empieza a escuchar sensores reales, en silencio. Android entrega
+ * `devicemotion` sin permiso; iOS no entrega nada hasta que se pide permiso, y
+ * para un adorno no se interrumpe al usuario: ahí el afiche queda estático.
+ */
 export function iniciarSensores() {
   if (typeof window === 'undefined') return;
   if (!escuchando) {
     escuchando = true;
     window.addEventListener('deviceorientation', alOrientar, { passive: true });
     window.addEventListener('devicemotion', alMover, { passive: true });
-    window.addEventListener('pointermove', alPuntero, { passive: true });
   }
   if (L.estado === 'apagado' || L.estado === 'sin-datos') {
     L.estado = 'esperando';

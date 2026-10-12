@@ -13,14 +13,14 @@ def ruido(n, f_lo, f_hi, seed, aniso=1.0):
     v = np.real(np.fft.ifft2(F * band * (1 / np.maximum(f, 1))))
     v = (v - v.min()) / (v.max() - v.min())
     return v
-def guardar(nombre, rgb, alpha, q=80):
+def guardar(nombre, rgb, alpha, q=80, aq=100):
     h, w = alpha.shape
     a = np.clip(alpha, 0, 1)
     img = np.zeros((h, w, 4), np.uint8)
     img[..., :3] = np.array(rgb, np.uint8)
     img[..., 3] = (a * 255).astype(np.uint8)
     p = os.path.join(out, nombre)
-    Image.fromarray(img, 'RGBA').save(p, 'WEBP', quality=q, method=6)
+    Image.fromarray(img, 'RGBA').save(p, 'WEBP', quality=q, alpha_quality=aq, method=6)
     print(nombre, os.path.getsize(p))
 # MICRO: fibra clara (tile de 256 px, se muestra a 128 CSS px: nítida en pantallas 2x)
 v = ruido(256, 36, 128, 4); guardar('fibra.webp', (242, 230, 222), np.clip((v - .55) * 1.1, 0, .22))
@@ -88,3 +88,40 @@ alpha = np.clip(1 - huecos - claros, 0, 1)
 rgba = np.zeros((256, 256, 4), np.uint8); rgba[..., :3] = 0; rgba[..., 3] = (alpha * 255).astype(np.uint8)
 Image.fromarray(rgba, 'RGBA').save(os.path.join(out, 'poros.webp'), 'WEBP', quality=80, method=6); print('poros.webp', os.path.getsize(os.path.join(out, 'poros.webp')))
 fibras('fibras-suaves.webp', 768, 110, 13, (246, 238, 228), .24)
+
+# --- Pasada comercial (maqueta de Carlos): nube de spray violeta, spray coral y luna punteada ---
+from PIL import ImageFilter
+def campo(w, h, blobs, seed):
+    """Densidad suave: suma de gaussianas + ruido de baja frecuencia (bordes irregulares)."""
+    yy, xx = np.mgrid[0:h, 0:w].astype(float)
+    d = np.zeros((h, w))
+    for cx, cy, r, k in blobs:
+        d += k * np.exp(-(((xx - cx * w) ** 2 + (yy - cy * h) ** 2) / (2 * (r * w) ** 2)))
+    n = np.array(Image.fromarray((np.random.default_rng(seed).random((h // 8 + 1, w // 8 + 1)) * 255).astype(np.uint8)).resize((w, h), Image.BICUBIC)).astype(float) / 255
+    return np.clip(d * (0.55 + 0.9 * n), 0, 1)
+def spray(nombre, w, h, blobs, seed, rgb, alfa_max):
+    d = campo(w, h, blobs, seed)
+    rng = np.random.default_rng(seed + 1)
+    # punteado: cada píxel es tinta o papel según la densidad (spray / fotocopia), más un velo suave
+    puntos = (rng.random((h, w)) < d ** 1.3).astype(float)
+    puntos = np.array(Image.fromarray((puntos * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(0.45))).astype(float) / 255
+    alpha = np.clip(puntos * 0.9 + d * 0.25, 0, 1) * alfa_max
+    guardar(nombre, rgb, alpha, q=60, aq=60)  # alfa con pérdida: el punteo lo tolera y pesa la mitad
+spray('nube-violeta.webp', 560, 720, [(.72, .18, .22, 1.1), (.9, .05, .2, 1.0), (.55, .32, .12, .7), (.95, .5, .14, .8), (.8, .62, .1, .5)], 71, (150, 124, 205), .95)
+spray('nube-coral.webp', 300, 640, [(1.0, .35, .22, 1.0), (.95, .7, .2, 1.1), (.85, .9, .12, .6)], 72, (232, 87, 111), .95)
+# Luna: esfera oscura punteada, luz desde la izquierda, motas claras.
+n = 300; yy, xx = np.mgrid[0:n, 0:n].astype(float); r = n * .47; cx = cy = n / 2
+dist = np.hypot(xx - cx, yy - cy); dentro = dist < r
+nx = (xx - cx) / r; ny = (yy - cy) / r; nz = np.sqrt(np.clip(1 - nx ** 2 - ny ** 2, 0, 1))
+luz = np.clip(-0.75 * nx - 0.35 * ny + 0.45 * nz, 0, 1)  # luz desde arriba-izquierda
+rng = np.random.default_rng(73)
+punteo = (rng.random((n, n)) < luz ** 1.6 * 0.9) & dentro
+motas = (rng.random((n, n)) < 0.012) & dentro
+borde = (np.abs(dist - r) < 1.8)
+rgba = np.zeros((n, n, 4))
+rgba[dentro] = [24, 20, 36, 235]
+rgba[punteo] = [160, 132, 214, 255]
+rgba[motas] = [238, 228, 212, 230]
+rgba[borde] = [150, 124, 205, 200]
+img = Image.fromarray(rgba.astype(np.uint8), 'RGBA').filter(ImageFilter.GaussianBlur(0.35))
+img.save(os.path.join(out, 'luna.webp'), 'WEBP', quality=60, alpha_quality=60, method=6); print('luna.webp', os.path.getsize(os.path.join(out, 'luna.webp')))

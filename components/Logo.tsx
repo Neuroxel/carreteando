@@ -1,3 +1,4 @@
+import { MARCA } from './poster/marca';
 /**
  * Logo de Dónde Salgo? (dirección "Afiche"): la palabra en Anton (OFL) y el
  * "?" de Archivo Black (OFL), inclinado y con un leve fuera de registro, como
@@ -33,50 +34,29 @@ export const Q_SHADOW = 'translate(1014.6 5) rotate(-8) scale(0.3241)';
 export const Q_MAIN = 'translate(1008.6 0) rotate(-8) scale(0.3241)';
 
 /**
- * Logo apilado de la edición afiche: "DÓNDE / SALGO?" en dos líneas, tinta
- * crema serigrafiada (poros, borde comido, densidad desigual) y un leve fuera
- * de registro en violeta. Son los mismos trazos de WORD, recortados por línea:
- * sigue siendo vector y lleva su nombre accesible.
+ * Logo apilado de la edición afiche, según la maqueta de Carlos: "DÓNDE /
+ * SALGO?" en tipos de madera (Ultra, Apache 2.0, convertido a trazos por
+ * tools/wordmark.py) con cada letra levemente girada, tinta crema con borde
+ * comido y poros, y el "?" alto en coral. Sigue siendo vector y lleva su
+ * nombre accesible.
  */
 export function LogoApilado({ className, title = 'Dónde Salgo?' }: { className?: string; title?: string }) {
-  const lineas = (
-    <>
-      <path d={WORD} clipPath="url(#ds-l1)" />
-      <g transform="translate(-512 208)">
-        <path d={WORD} clipPath="url(#ds-l2)" />
-      </g>
-    </>
-  );
   return (
-    <svg className={className} viewBox="-8 -234 700 452" role="img" aria-label={title} xmlns="http://www.w3.org/2000/svg">
+    <svg className={className} viewBox={MARCA.viewBox} role="img" aria-label={title} xmlns="http://www.w3.org/2000/svg">
       <defs>
-        <clipPath id="ds-l1" clipPathUnits="userSpaceOnUse">
-          <rect x="-10" y="-240" width="505" height="262" />
-        </clipPath>
-        <clipPath id="ds-l2" clipPathUnits="userSpaceOnUse">
-          <rect x="505" y="-240" width="500" height="262" />
-        </clipPath>
         <filter id="ds-serigrafia" x="-3%" y="-3%" width="106%" height="106%">
           {/* poros: la tinta no cubre todo el papel */}
-          <feTurbulence type="fractalNoise" baseFrequency="0.3" numOctaves="1" seed="8" result="poros" />
-          <feColorMatrix in="poros" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -45 30.6" result="huecos" />
+          <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="1" seed="8" result="poros" />
+          <feColorMatrix in="poros" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -40 27.2" result="huecos" />
           <feComposite in="SourceGraphic" in2="huecos" operator="in" result="poroso" />
-          {/* densidad desigual: zonas con menos tinta */}
-          <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="2" seed="4" result="manchas" />
-          <feColorMatrix in="manchas" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.8 0.55" result="densidad" />
-          <feComposite in="poroso" in2="densidad" operator="in" result="entintado" />
-          {/* borde comido */}
-          <feTurbulence type="fractalNoise" baseFrequency="0.045" numOctaves="2" seed="3" result="borde" />
-          <feDisplacementMap in="entintado" in2="borde" scale="6" xChannelSelector="R" yChannelSelector="G" />
+          {/* borde comido, como tinta sobre papel absorbente */}
+          <feTurbulence type="fractalNoise" baseFrequency="0.009" numOctaves="3" seed="3" result="borde" />
+          <feDisplacementMap in="poroso" in2="borde" scale="46" xChannelSelector="R" yChannelSelector="G" />
         </filter>
       </defs>
       <g filter="url(#ds-serigrafia)">
-        <g fill="var(--accent-2)" opacity="0.7" transform="translate(6 5)">
-          {lineas}
-        </g>
-        <g fill="currentColor">{lineas}</g>
-        <path fill="var(--accent-2)" transform="translate(502.6 213) rotate(-8) scale(0.3241)" d={Q} />
-        <path fill="var(--accent)" transform="translate(496.6 208) rotate(-8) scale(0.3241)" d={Q} />
+        <path fill="currentColor" d={MARCA.palabra} />
+        <path fill="var(--accent)" d={MARCA.pregunta} />
       </g>
     </svg>
   );
