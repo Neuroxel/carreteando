@@ -1809,7 +1809,10 @@ html[data-edicion="3d"] body {
 
 /* ---- Hero ---- */
 [data-edicion="3d"] .hero-home { background:transparent; }
-[data-edicion="3d"] .hero-home::before { opacity:.9; }
+/* Grano del hero sin la imagen grande de manchas: el arte ya lo dan el spray y la luna,
+   y así lo más grande que se pinta primero es el texto, no una imagen de 100 kB. */
+[data-edicion="3d"] .hero-home::before { opacity:.9; background-image:var(--tx-fibras), var(--tx-motas-claras), var(--tx-fibra);
+  background-size:384px 384px, 269px 269px, 128px 128px; background-repeat:repeat, repeat, repeat; background-position:0 0, 61px 23px, 0 0; }
 [data-edicion="3d"] .hero::after { display:none; }
 .poster-decor { position:absolute; inset:0; pointer-events:none; z-index:0; }
 .pd-capa { position:absolute; background-repeat:no-repeat; background-size:100% 100%; }
@@ -1839,7 +1842,7 @@ html[data-edicion="3d"] body {
 [data-edicion="3d"] .date-tabs { gap:0; justify-content:flex-start; border-bottom:2px solid rgba(239,227,211,.25); }
 [data-edicion="3d"] .date-tabs a { position:relative; padding:0 18px; color:var(--crema); font-size:17px; border-bottom:0; min-height:56px; }
 [data-edicion="3d"] .date-tabs a + a::before { content:""; position:absolute; left:0; top:14px; bottom:14px; width:2px; background:var(--crema); opacity:.45; transform:rotate(-2deg); }
-[data-edicion="3d"] .date-tabs a.selected { color:var(--crema); background:var(--coral); font-weight:700;
+[data-edicion="3d"] .date-tabs a.selected { color:var(--tinta-papel); background:var(--coral); font-weight:700;
   -webkit-mask-image:var(--mk-borde); mask-image:var(--mk-borde); -webkit-mask-size:100% 100%; mask-size:100% 100%; }
 [data-edicion="3d"] .date-tabs a.selected + a::before { display:none; }
 [data-edicion="3d"] .discovery-options summary { font-family:var(--f-maquina); color:var(--crema); font-size:15px; }

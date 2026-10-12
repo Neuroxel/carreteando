@@ -1,4 +1,5 @@
 import { Suspense } from 'react';
+import { preload } from 'react-dom';
 import Metrics from '../components/Metrics';
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
@@ -26,6 +27,8 @@ export const metadata: Metadata = {
 };
 export const viewport: Viewport = { width: 'device-width', initialScale: 1, themeColor: EXPERIMENTO ? '#13131D' : '#100F0D' };
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  // Edición afiche: la tipografía de máquina se ve arriba del todo; se pide temprano.
+  if (EXPERIMENTO) preload('/fonts/special-elite-latin.woff2', { as: 'font', type: 'font/woff2', crossOrigin: 'anonymous' });
   return (
     <html lang="es-CL" data-edicion={EXPERIMENTO ? '3d' : undefined}>
       <body>
