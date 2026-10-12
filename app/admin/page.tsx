@@ -1,4 +1,6 @@
+import { notFound } from 'next/navigation';
 import sources from '../../data/sources.json';
+import { EXPERIMENTO } from '../../lib/experimento';
 import { currentActor, isAdmin } from '../../lib/admin-session';
 import { getAdminDb } from '../../lib/server-db';
 import { login, logout, review, reviewVenue, importEditorial, runIngestion } from './actions';
@@ -424,6 +426,8 @@ export default async function Admin({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  // Se modera solo en la versión estable.
+  if (EXPERIMENTO) notFound();
   const params = await searchParams;
   if (!(await isAdmin()))
     return (

@@ -2,6 +2,7 @@ import 'server-only';
 import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 import { cookies, headers } from 'next/headers';
 import { getAdminDb } from './server-db';
+import { EXPERIMENTO } from './experimento';
 const cookieName =
   process.env.NODE_ENV === 'production' ? '__Host-carreteando-admin' : 'carreteando-admin';
 // A secret stored with a stray newline used to fail as "clave incorrecta",
@@ -11,6 +12,8 @@ export function normalizeSecret(raw: string | undefined) {
   return value && value.length >= 43 ? value : null;
 }
 function key() {
+  // La edición 3D nunca modera: sin llave, toda sesión y todo login fallan cerrados.
+  if (EXPERIMENTO) return null;
   return normalizeSecret(process.env.ADMIN_ACCESS_TOKEN);
 }
 export function sameSecret(a: string, b: string) {
