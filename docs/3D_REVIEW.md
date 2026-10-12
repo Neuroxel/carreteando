@@ -384,3 +384,86 @@ No hay captura con sensor real: no había un teléfono físico disponible. Esa e
 5. ¿Te convence más el logo sin el gran ? tridimensional?
 6. ¿Te gusta el fondo de ciudad por capas?
 7. ¿Te gusta el carrusel horizontal de lugares?
+
+
+## Pasada comercial (12-10-2026): la maqueta de Carlos manda; el movimiento es opcional
+
+**Cambio de prioridad.** La profundidad dejó de ser requisito de lanzamiento. Ahora es un adorno que aparece solo si el teléfono entrega datos reales, sin pedir nada al usuario.
+
+### Qué se hizo
+
+- **Three.js eliminado.** Se fueron `three` y `@types/three`, más `scene.ts`, `DepthScene` y `DepthToggle`.
+- **Profundidad (`Profundidad.tsx`):** `transform` sobre tres capas del afiche.
+  - Amplitudes: nube violeta 6 px, luna 11 px, spray coral 16 px. La interfaz queda a 0 px.
+  - Solo se mueve con muestras reales de `devicemotion`/`deviceorientation`.
+  - Sin muestras no hay transform, ni bucle, ni costo.
+  - Respeta movimiento reducido, ahorro de datos y pestaña oculta; se pausa fuera de pantalla.
+- **Sin controles públicos.** Se quitaron "Activar profundidad", "Profundidad activa", "Recalibrar" y el selector del pie. El diagnóstico vive solo en `?3ddebug=1`, con un botón para pedir permiso en iOS.
+- **Logo:**
+  - "DÓNDE / SALGO?" en Ultra (Apache 2.0), convertido a trazos por `tools/wordmark.py`;
+  - letras algo condensadas, cada una con giro y salto de línea base fijos;
+  - tinta crema con borde comido y poros escasos (filtro SVG solo sobre el logo);
+  - "?" alto en coral.
+- **Tipos:**
+  - títulos en Fraunces Black Soft (OFL, 18 kB);
+  - lo secundario en Special Elite: bajada, comunas, fechas, filtros, conteos, navegación;
+  - el texto de lectura y los botones siguen en Arial.
+- **Arte del hero** (como en la maqueta): nube de spray violeta, luna punteada y spray coral, en tres WebP con alfa con pérdida (94 kB en total).
+- **Interfaz** (como en la maqueta):
+  - búsqueda en cápsula con borde violeta;
+  - comunas y fechas separadas por reglas verticales a mano;
+  - la fecha elegida es un bloque coral impreso, y la comuna elegida lleva barra coral;
+  - regla coral ondulada bajo los títulos;
+  - tarjeta vacía con borde violeta punteado;
+  - navegación inferior con etiquetas de máquina;
+  - papel negro con grano, fibras y dos pliegues suaves.
+- **Arte retirado del hero:** la ciudad en capas y la imagen grande de manchas. La ciudad no está en la maqueta y recargaba la composición; la imagen de manchas era el elemento LCP y no aportaba al diseño nuevo.
+
+### Comparación con la maqueta (`docs/review-3d/v6-comparacion-390.jpg`, `v6-comparacion-1440.jpg`)
+
+No es idéntico. Las diferencias son reales:
+
+- **LOGO:** misma estructura (dos líneas apretadas, crema, "?" coral alto a la derecha) y mismo peso de tipo de madera. Ultra tiene remates de losa marcados; la maqueta tiene letras más orgánicas, con remates abiertos, anchos irregulares y bordes más rotos. **Cercano, no igual.**
+- **TIPOGRAFÍA:**
+  - "Hoy." y "No tenemos nada confirmado…" en Fraunces Black Soft: muy cercano.
+  - La máquina de la maqueta es más limpia y espaciada (tipo Courier); Special Elite es más rugosa.
+  - Las pestañas de fecha de la maqueta usan una condensada en negrita; aquí son máquina.
+- **PAPEL:** la maqueta tiene grano más fuerte, pliegues visibles y canto gastado alrededor de toda la página. Aquí el grano es más suave y los pliegues casi no se notan. **Es la mayor diferencia que queda.**
+- **COLOR:** coincide: negro, crema, coral #E8576F, violeta #9A80D0.
+- **JERARQUÍA:** la misma, en el mismo orden: marca, ¿Qué hay hoy?, búsqueda, comuna, fecha, eventos.
+- **Diferencias deliberadas:**
+  - la fecha elegida lleva texto tinta sobre coral, no crema: crema sobre coral da contraste 2,9:1;
+  - se mantienen los botones del estado vacío, que son funcionales.
+- **RIEL DE LUGARES:** se mantiene (`v6-1440-riel.jpg`).
+- **FLUJO DE EVENTOS:** vertical natural, sin scroll interno (`.event-grid` con `overflow: visible`).
+
+### Rendimiento (PageSpeed, dondesalgo3d)
+
+| | Rendimiento | LCP | TBT | Accesibilidad | Recomendaciones |
+|---|---|---|---|---|---|
+| Móvil, 067fdf2 (imagen grande en el hero) | 88 | 3,8 s | 70 ms | 96 (contraste de "Hoy") | 100 |
+| **Móvil, 178b104** | **97** | 2,3 s | 30 ms | **100** | 100 |
+| **Escritorio, 178b104** | **100** | 0,7 s | 10 ms | 100 | 100 |
+
+JS inicial de la portada: 134 kB (antes 129 kB más un chunk diferido de Three.js de 134 kB gzip, que ya no existe).
+
+### QA funcional (dondesalgo3d, 390 px)
+
+| Prueba | Resultado |
+|---|---|
+| Búsqueda | `?q=teatro` |
+| Fecha (Mañana) | ok |
+| Comuna (Valpo) | ok |
+| Atrás / adelante | restaura la fecha |
+| Precio (≤ $10.000) | ok |
+| Orden "más barato" | precios ascendentes |
+| Mapa | ok |
+| Riel | cambio de comuna y scroll-snap |
+| Ficha de evento | 200, con compartir y JSON-LD |
+| /publicar | 200 |
+
+Ninguna interacción pidió `_rsc`, `/api` ni Supabase. Las únicas solicitudes nuevas fueron las teselas del mapa.
+
+### Anchos revisados
+
+`v6-360.jpg`, `v6-390-static.jpg`, `v6-430.jpg`, `v6-768.jpg`, `v6-1024.jpg`, `v6-1440-static.jpg`, `v6-1920.jpg`. Movimiento simulado: `v6-390-sim-izquierda.png` y `v6-390-sim-derecha.png`.
