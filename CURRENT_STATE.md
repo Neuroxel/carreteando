@@ -42,7 +42,7 @@ El nombre interno del código, del proyecto en Vercel y de la base sigue siendo
 
 Detalle por comuna y zona: [`docs/CENSO_LOCALES.md`](docs/CENSO_LOCALES.md).
 
-**Valparaíso, censo final (12-10-2026):** 67 → **56** publicados, todos con evidencia
+**Valparaíso, censo final (12-10-2026):** 67 → **66** publicados tras cerrar la cola (7 pendientes con lo que falta); primera pasada: 67 → 56, todos con evidencia
 de operación vigente (evento propio, cuenta o sitio oficial activo).
 - 17 pasaron a pendientes, 2 se cerraron y 1 se rechazó.
 - Hay 9 altas nuevas con evidencia A.

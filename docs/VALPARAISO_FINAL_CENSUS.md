@@ -300,3 +300,29 @@ Lo que sigue es mantenimiento:
 - prioridades: Pagano, Coyote Quemado, Delirio, Klanu y Lo Devi.
 
 Siguiente ciudad: Viña del Mar / Reñaca.
+
+## Cierre de la cola (12-10-2026, segunda pasada)
+
+Se partió de la base (30 pendientes reales), no del informe de Gemini, que se usó
+solo como pista. Respaldo previo: `backup_venues_valparaiso_queue_20261012b`.
+Actor de auditoría: `Claude · cierre cola Valparaíso`.
+
+| Resultado | Locales |
+|---|---|
+| **Publicados (9)** | Liberty (`@bar.restaurantliberty`, Almirante Riveros 9) · MaliZioso (`@malizioso.pizzeria`, con horario) · Angel's Place (PortalTickets, Serrano 424, evento 07-11) · Ex Club 880 (Evently, Av. Errázuriz 880) · Klanu Rock Bar (Almirante Montt 24, posts oficiales y Passline) · Club Delirio (Blanco 504-508 según Evently; Chacabuco 2124 era un error) · Hotzenplotz (Héctor Calvo 331; Gemini daba 605) · Pagano (`@paganocl`, post 25-09-2026) · Maleza (13:00–23:30 con música en vivo) |
+| **Nuevo** | Bar Token (Blanco 1279; ComedyPass 16-10 y PortalTickets). Es una entidad nueva: El Irlandés sigue cerrado; se guarda el linaje de la dirección. |
+| **Cerrados (8)** | Bar La Playa (la Casa de la Cultura ocupa el edificio Atalah desde nov-2024) · Bar Inglés · La Mamba (sucedida por Madame Claude, Almirante Montt 60, inaugurada el 03-07-2026) · Bar Industrial (sucedido por Klanu, mismo número) · Terraza Mimi · Liverpool · Ele Bar · Mero Club |
+| **Rechazados (6)** | Hotel Verso (restaurante de hotel; el IG guardado era de un hotel en Croacia) · Café República (cafetería diurna) · Sky Bar 360 · Nuevo Errázuriz · Mi Casa (restaurante 12–18, Cumming 29) · Flora (hoy salón privado de Fauna) |
+| **Siguen pendientes (7)** | Coyote Quemado · Club M · Caregallo · Lo Devi (Ecuador 50 confirmado) · Matiz (Subida Ecuador 130-155) · Brighton · Espacio Social Violeta (Cumming 125). Cada uno registra exactamente qué evidencia falta. |
+
+**Conflictos que se resolvieron:**
+- **Gemini y las cuentas:**
+  - 14 de los 17 Instagram que propuso **no existen**: caregallobarvalpo, liverpoolcerveceriavalpo, micasarestobar_valpo, meroclubvalpo, brightonhotelvalpo, caferepublicaplayaancha, clubdeliriovalpo, hotzenplotzbar, elcoyotequemadovalpo, espaciosocialvioleta, clublodevivalpo, clubmvalparaiso, malezavalpo, tokenbarvalpo.
+  - De los que existen, solo `bar.restaurantliberty`, `malizioso.pizzeria` y `versohotel` eran correctos. `terrazamimi` es una cuenta vacía.
+- **Direcciones:**
+  - Caregallo: Ecuador 135 en directorios, sin evidencia del 166.
+  - Liverpool: Ecuador 201 (está cerrado).
+  - Mi Casa: Cumming 29, según la Agrupación.
+  - Mero Club: cerrado; el 396 de Gemini corresponde a otros espacios del directorio de PortalTickets.
+- **Matiz en Placilla no existe:** la página oficial de Facebook dice "Ecuador 130, Placilla de Peñuelas" porque Facebook le asignó mal la ciudad.
+- **Después de esta pasada:** 66 publicados, 7 pendientes, 19 cerrados y 51 rechazados.
