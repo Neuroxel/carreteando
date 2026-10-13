@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getAdminDb } from '../../../../lib/server-db';
 import { cronAutorizado } from '../../../../lib/cron-auth';
-import { PILOT_ACCOUNTS, PILOT_LIMITS, pilotItem } from '../../../../lib/instagram-pilot';
+import { PILOT_COHORTS, PILOT_LIMITS, pilotItem, type Cohorte } from '../../../../lib/instagram-pilot';
 export const maxDuration = 300;
 export const dynamic = 'force-dynamic';
 const reply = (body: object, status = 200) =>
@@ -9,8 +9,9 @@ const reply = (body: object, status = 200) =>
 const obj = (v: unknown): Record<string, unknown> =>
   v !== null && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
 /**
- * Una sola corrida, armada a mano en la base (automation_config.instagram_pilot
- * = 'armed') y consumida al empezar. No depende de APIFY_PAUSED, que sigue en
+ * Una corrida por cohorte, armada a mano en la base
+ * (automation_config.instagram_pilot = 'armed-A' o 'armed-B') y consumida al
+ * empezar: cada cohorte corre a lo más una vez y con su propio tope de 1 USD. No depende de APIFY_PAUSED, que sigue en
  * true: la ingesta diaria no vuelve a raspar Instagram. No crea eventos.
  */
 export async function GET(request: Request) {
@@ -20,13 +21,16 @@ export async function GET(request: Request) {
   if (!(await cronAutorizado(request, db))) return reply({ error: 'Unauthorized' }, 401);
   const actor = process.env.APIFY_ACTOR || 'apify~instagram-scraper';
   if (!/^[\w~-]+$/.test(actor)) return reply({ error: 'APIFY_ACTOR inválido.' }, 503);
+  const cohorte = new URL(request.url).searchParams.get('cohorte') as Cohorte | null;
+  if (cohorte !== 'A' && cohorte !== 'B') return reply({ error: 'Cohorte inválida (A o B).' }, 400);
+  const cuentas: readonly string[] = PILOT_COHORTS[cohorte];
   const armed = await db
     .from('automation_config')
-    .update({ value: 'running' })
+    .update({ value: `running-${cohorte}` })
     .eq('key', 'instagram_pilot')
-    .eq('value', 'armed')
+    .eq('value', `armed-${cohorte}`)
     .select('key');
-  if (armed.error || !armed.data?.length) return reply({ error: 'El piloto no está armado.' }, 409);
+  if (armed.error || !armed.data?.length) return reply({ error: `La cohorte ${cohorte} no está armada.` }, 409);
   const started = Date.now();
   const api = async (path: string, init?: RequestInit) => {
     const r = await fetch(`https://api.apify.com/v2/${path}`, {
@@ -46,7 +50,7 @@ export async function GET(request: Request) {
         {
           method: 'POST',
           body: JSON.stringify({
-            directUrls: PILOT_ACCOUNTS.map((h) => `https://www.instagram.com/${h}/`),
+            directUrls: cuentas.map((h) => `https://www.instagram.com/${h}/`),
             resultsType: 'posts',
             resultsLimit: PILOT_LIMITS.postsPerAccount,
             onlyPostsNewerThan: PILOT_LIMITS.newerThan,
@@ -68,7 +72,7 @@ export async function GET(request: Request) {
       throw new Error(`APIFY_${String(run.status || 'DEADLINE')}`);
     }
     const raw = await api(`datasets/${datasetId}/items?format=json&clean=true&limit=100`);
-    const rows = (Array.isArray(raw) ? raw : []).map((x) => pilotItem(obj(x))).filter((x) => x !== null);
+    const rows = (Array.isArray(raw) ? raw : []).map((x) => pilotItem(obj(x), cuentas)).filter((x) => x !== null);
     const cost = typeof run.usageTotalUsd === 'number' ? run.usageTotalUsd : null;
     const accountsRead = new Set(rows.map((r) => r.account)).size;
     const saved = await db.from('instagram_pilot_items').upsert(
@@ -77,20 +81,21 @@ export async function GET(request: Request) {
     );
     if (saved.error) throw new Error('DB_ITEMS');
     const summary = {
-      accounts_requested: PILOT_ACCOUNTS.length,
+      cohort: cohorte,
+      accounts_requested: cuentas.length,
       accounts_read: accountsRead,
       items_returned: Array.isArray(raw) ? raw.length : 0,
       posts_kept: rows.length,
       cost_usd: cost,
       seconds: Math.round((Date.now() - started) / 1000),
     };
-    await db.from('automation_config').update({ value: 'used' }).eq('key', 'instagram_pilot');
+    await db.from('automation_config').update({ value: `used-${cohorte}` }).eq('key', 'instagram_pilot');
     await db.from('instagram_pilot_runs').insert({ apify_run_id: runId, status: 'succeeded', summary });
     return reply({ success: true, apify_run_id: runId, ...summary });
   } catch (e) {
     if (runId) await api(`actor-runs/${runId}/abort`, { method: 'POST' }).catch(() => undefined);
-    await db.from('automation_config').update({ value: 'used' }).eq('key', 'instagram_pilot');
-    await db.from('instagram_pilot_runs').insert({ apify_run_id: runId, status: 'failed', summary: { error: e instanceof Error ? e.message : 'ERROR' } });
+    await db.from('automation_config').update({ value: `used-${cohorte}` }).eq('key', 'instagram_pilot');
+    await db.from('instagram_pilot_runs').insert({ apify_run_id: runId, status: 'failed', summary: { cohort: cohorte, error: e instanceof Error ? e.message : 'ERROR' } });
     return reply({ error: e instanceof Error ? e.message : 'ERROR' }, 502);
   }
 }

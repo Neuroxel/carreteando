@@ -1,3 +1,4 @@
+import { agruparLugares } from '../../lib/admin-venues';
 import sources from '../../data/sources.json';
 import { currentActor, isAdmin } from '../../lib/admin-session';
 import { getAdminDb } from '../../lib/server-db';
@@ -354,7 +355,7 @@ function VenueItem({ row }: { row: Row }) {
       <summary>
         {string(row.name) || 'Lugar sin nombre'}{' '}
         <span>
-          · {string(row.moderation_status)} {row.is_active === false ? '· privado' : ''}
+          · {string(row.disposition || row.moderation_status)} {row.is_active === false ? '· privado' : ''}
         </span>
       </summary>
       <p>
@@ -362,6 +363,7 @@ function VenueItem({ row }: { row: Row }) {
         {row.zone ? ` · ${string(row.zone)}` : ''} · Última revisión:{' '}
         {string(row.last_verified_at) || 'Sin revisión'}
       </p>
+      {row.disposition === 'needs_evidence' && row.evidence_missing ? <p>Falta: {string(row.evidence_missing)}</p> : null}
       <form action={bind('save')}>
         <div className="admin-fields">
           {fields.map(([name, label]) =>
@@ -594,36 +596,42 @@ export default async function Admin({
               </>
             );
           })()}
-          <h2>
-            Lugares ({venues?.data?.filter((v) => v.moderation_status === 'pending').length || 0}{' '}
-            por revisar de {venues?.data?.length || 0})
-          </h2>
-          <p>
-            Un lugar existe aunque hoy no tenga evento. Aprobar lo hace público; retirar lo deja
-            privado sin borrar su historial.
-          </p>
-          {venues?.error ? (
-            <p role="alert">No pudimos consultar los lugares.</p>
-          ) : (
-            <>
-              {(venues?.data || [])
-                .filter((v) => v.moderation_status === 'pending')
-                .map((v) => (
-                  <VenueItem key={v.id} row={v} />
-                ))}
-              <details className="admin-item">
-                <summary>
-                  Lugares ya publicados (
-                  {(venues?.data || []).filter((v) => v.moderation_status !== 'pending').length})
-                </summary>
-                {(venues?.data || [])
-                  .filter((v) => v.moderation_status !== 'pending')
-                  .map((v) => (
-                    <VenueItem key={v.id} row={v} />
-                  ))}
-              </details>
-            </>
-          )}
+          {(() => {
+            // La cola sale de `disposition`, no de `moderation_status` (ver lib/admin-venues.ts).
+            const { porRevisar, publicados, archivados } = agruparLugares(venues?.data || []);
+            return (
+              <>
+                <h2>
+                  Lugares por revisar ({porRevisar.length} de {venues?.data?.length || 0})
+                </h2>
+                <p>
+                  Solo los que necesitan evidencia. Un lugar existe aunque hoy no tenga evento. Aprobar
+                  lo hace público; retirar lo deja privado sin borrar su historial.
+                </p>
+                {venues?.error ? (
+                  <p role="alert">No pudimos consultar los lugares.</p>
+                ) : (
+                  <>
+                    {porRevisar.map((v) => (
+                      <VenueItem key={v.id} row={v} />
+                    ))}
+                    <details className="admin-item">
+                      <summary>Lugares publicados ({publicados.length})</summary>
+                      {publicados.map((v) => (
+                        <VenueItem key={v.id} row={v} />
+                      ))}
+                    </details>
+                    <details className="admin-item">
+                      <summary>Cerrados, rechazados o duplicados ({archivados.length})</summary>
+                      {archivados.map((v) => (
+                        <VenueItem key={v.id} row={v} />
+                      ))}
+                    </details>
+                  </>
+                )}
+              </>
+            );
+          })()}
           {(() => {
             // Una corrida fallida tiene que verse acá, no en los logs.
             const ultima = runs?.data?.[0];
