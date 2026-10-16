@@ -1099,7 +1099,14 @@ textarea::placeholder {
   margin-bottom: 1.25rem;
 }
 .mapa-lienzo {
+  /* Leaflet usa z-index internos altos (capas 400, popups 700, controles 1000).
+     Sin un contexto de apilamiento propio compiten con la barra inferior fija y
+     la tapan. position + z-index:0 + isolation los encierra bajo la navegación. */
+  position: relative;
+  z-index: 0;
+  isolation: isolate;
   height: min(72vh, 620px);
+  height: min(72dvh, 620px);
   min-height: 380px;
   border-radius: 14px;
   overflow: hidden;
@@ -1208,7 +1215,8 @@ textarea::placeholder {
   }
   .bottom-nav-item svg { width: 22px; height: 22px; }
   .bottom-nav-item.activo { opacity: 1; color: var(--acento-marca, #ff5d3b); }
-  body { padding-bottom: 4.25rem; }
+  /* Altura de la barra + la franja del sistema (barra de gestos de Android, home de iPhone). */
+  body { padding-bottom: calc(4.25rem + env(safe-area-inset-bottom)); }
 }
 @media (prefers-reduced-motion: no-preference) {
   .reveal {
