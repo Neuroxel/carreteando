@@ -470,7 +470,7 @@ export default async function Admin({
       .eq('disposition_note', 'La fecha pasó sin que nadie lo revisara.')
       .gte('disposition_at', hace30),
   ]);
-  const [queue, events, audit, metrics, venues, sourceRows, runs] = await Promise.all([
+  const [queue, events, audit, metrics, venues, sourceRows, runs, pistas] = await Promise.all([
     db
       ?.from('community_inbox')
       .select('id,kind,payload,status,revision,reviewed_at')
@@ -512,6 +512,12 @@ export default async function Admin({
       .select('status,started_at,completed_at,metrics')
       .order('started_at', { ascending: false })
       .limit(5),
+    // Pistas de Instagram (evidencia privada del piloto): solo lectura, para revisar a mano.
+    db
+      ?.from('instagram_pilot_items')
+      .select('account,post_url,posted_at,classification,outcome,matched_event_id,candidate,cohort,mentions,coauthors')
+      .order('created_at', { ascending: false })
+      .limit(40),
   ]);
   const failed = !db || queue?.error || events?.error || audit?.error;
   const list = events?.data || [];
@@ -632,6 +638,39 @@ export default async function Admin({
               </>
             );
           })()}
+          <details className="admin-item">
+            <summary>Pistas de Instagram ({pistas?.data?.length || 0} recientes · nunca publican solas)</summary>
+            <p>
+              Lo que el piloto leyó en cuentas públicas vía Apify. Cada valor dice de dónde salió (texto del post,
+              lectura del flyer o la cuenta del lugar). La decisión sigue siendo de una persona o del motor de 7
+              reglas con otra fuente que corrobore.
+            </p>
+            <ul className="admin-pistas">
+              {(pistas?.data || []).map((p) => {
+                const c = (p.candidate || {}) as Record<string, unknown>;
+                const fuente = (c.field_source || {}) as Record<string, string>;
+                const campo = (k: string, label: string) =>
+                  c[k] ? `${label}: ${String(c[k])}${fuente[k] ? ` (${fuente[k]})` : ''}` : null;
+                const datos = [campo('start_date', 'fecha'), campo('time', 'hora'), campo('venue', 'lugar'), campo('city', 'ciudad'), campo('price', 'precio'), campo('ticket_url', 'entradas')].filter(Boolean);
+                const faltan = Array.isArray(c.critical_missing_fields) ? (c.critical_missing_fields as string[]) : [];
+                return (
+                  <li key={String(p.post_url)}>
+                    <a href={String(p.post_url)} target="_blank" rel="noopener noreferrer nofollow">
+                      @{String(p.account)}
+                    </a>{' '}
+                    · {String(p.posted_at || '').slice(0, 10)} {p.cohort ? `· cohorte ${String(p.cohort)}` : ''}
+                    {c.is_event ? ' · parece evento' : ' · no parece evento'}
+                    {c.cancelled ? ' · ⚠ menciona cancelación' : ''}
+                    {c.needs_vision ? ' · necesita leer el flyer' : ''}
+                    {datos.length ? <><br />{datos.join(' · ')}</> : null}
+                    {faltan.length ? <><br />Falta: {faltan.join(', ')}</> : null}
+                    {p.classification || p.outcome ? <><br />Decisión: {String(p.classification || p.outcome)}{p.matched_event_id ? ` (evento ${String(p.matched_event_id)})` : ''}</> : null}
+                    {Array.isArray(p.coauthors) && p.coauthors.length ? <><br />Coautores: @{(p.coauthors as string[]).join(', @')}</> : null}
+                  </li>
+                );
+              })}
+            </ul>
+          </details>
           {(() => {
             // Una corrida fallida tiene que verse acá, no en los logs.
             const ultima = runs?.data?.[0];
