@@ -25,6 +25,10 @@ confirmar migración, cola privada y auditoría. No se importó ninguna fila nue
   `instagram_accounts` responde 404/PGRST205 en la caché REST. Esto no prueba
   por sí solo la ausencia física de la tabla: hay que inspeccionar esquema y
   migraciones con acceso administrativo.
+- Tras la reconexión informada por el dueño se repitió una consulta de lectura:
+  mismo rechazo de permisos; `list_projects` sigue vacío y `get_project`
+  también deniega acceso. El navegador de esta sesión no tiene sesión abierta
+  en el panel Supabase. No se modificó la base.
 
 ## Observado en producción
 
@@ -64,6 +68,14 @@ no una importación observada.
   degradar ESLint a otra versión mayor. No afirmar auditoría total limpia.
 - Build local iniciado y `/api/snapshot` responde 200 con 93 eventos y 147
   lugares; una fila PortalDisc ahora devuelve `fuente=web`.
+- CI remoto de la PR #2 aprobado para `7b14f2f`; preview Vercel compilado:
+  `https://carreteando-git-fix-release-readiness-oct17-neuroxel.vercel.app`.
+  La protección redirige a SSO; el token local no permite entrar y el conector
+  devuelve 403 al solicitar acceso temporal. Se probó la app local y la
+  producción pública, pero no se verificó el contenido del preview protegido.
+- Durante la revisión local aparecieron dos errores `fetch failed / ECONNRESET`
+  en el servidor, sin URL identificada en el mensaje. No se atribuyen a la
+  base ni se declaran resueltos; snapshot y render principal respondieron.
 - Regresión con petición autenticada simulada: registro inaccesible implica
   exactamente una lectura, ningún armado consumido y ninguna llamada Apify.
 - Navegador real en producción: Radar abre en Carretes hoy, muestra estrellas
@@ -93,7 +105,8 @@ no una importación observada.
   armado y topes existentes. Nada se publica desde Instagram automáticamente.
 - [ ] Completar incremental por cuenta: hoy se guarda `last_post_at`, pero
   el actor aún pide una ventana fija de 7 días. No llamarlo incremental listo.
-- [ ] Confirmar preview y CI de esta PR; revisar antes de fusionar main.
+- [x] Confirmar compilación del preview y CI de esta PR.
+- [ ] Revisar el contenido del preview protegido antes de fusionar main.
 - [ ] QA final del despliegue aprobado: móvil físico, GPS permitido/denegado,
   atrás/adelante, aporte privado, detalle/fuente y medición de cero peticiones
   de datos adicionales en filtros/lista/mapa. No se volvió a medir la red
