@@ -13,6 +13,8 @@ import {
   RawPost,
 } from '../../../../lib/ingestion';
 import { editorialRows } from '../../../../lib/editorial-feed';
+import { sinDuplicadosDeFuente } from '../../../../lib/editorial-dedupe';
+import { estadosDeFuentes, reporteCobertura } from '../../../../lib/coverage';
 import { dispatchSources } from '../../../../lib/sources/dispatcher';
 import { notifyIndexNow } from '../../../../lib/indexnow';
 import { engineMode, reevaluate } from '../../../../lib/sources/automation';
@@ -98,11 +100,16 @@ export async function GET(request: Request) {
     const editorial = editorialRows();
     metrics.editorial_reviewed = editorial.length;
     metrics.editorial_inserted = 0;
-    if (editorial.length) {
+    // Misma ficha y misma fecha ya en la base, en cualquier estado: no se duplica ni se reactiva.
+    const { nuevas: editorialNuevas, omitidas } = await sinDuplicadosDeFuente(db, editorial).catch(() => {
+      throw new IngestionError('DB_EDITORIAL_DEDUPE');
+    });
+    metrics.editorial_skipped_existing = omitidas;
+    if (editorialNuevas.length) {
       const imported = await db
         .from('events')
         .upsert(
-          editorial.map((r) => ({ ...r, ingestion_run_id: runId })),
+          editorialNuevas.map((r) => ({ ...r, ingestion_run_id: runId })),
           { onConflict: 'instagram_id', ignoreDuplicates: true },
         )
         .select('instagram_id');
@@ -124,6 +131,21 @@ export async function GET(request: Request) {
     metrics.adapter_duplicates = dispatch.reports.reduce((n, r) => n + r.duplicates, 0);
     metrics.adapter_parse_failures = dispatch.reports.reduce((n, r) => n + r.parseFailures, 0);
     metrics.adapter_reports = dispatch.reports;
+    metrics.sources_postponed = dispatch.postergadas;
+    // Cobertura por local y día (solo lectura): qué rutas se revisaron, qué
+    // encontraron y qué sigue bloqueado o pendiente. Un fallo aquí no tumba la corrida.
+    try {
+      const hoy = toChileDateString(new Date());
+      const estados = await estadosDeFuentes(
+        db,
+        hoy,
+        7,
+        dispatch.reports.map((r) => ({ sourceId: r.sourceId, ok: r.ok, error: r.error, fechas: r.fechas })),
+      );
+      metrics.coverage = reporteCobertura(estados, hoy);
+    } catch {
+      metrics.coverage_error = 'COVERAGE_FAILED';
+    }
     // Después de reunir evidencia, toda la cola vigente se vuelve a juzgar:
     // lo confirmado se publica, lo ajeno se descarta, lo dudoso queda con su motivo.
     try {

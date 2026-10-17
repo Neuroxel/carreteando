@@ -3,6 +3,7 @@ import { detectCategory } from '../events';
 import { ADAPTERS, MANUAL_SOURCES, SOURCES } from './registry';
 import { clasificar, type Relevancia } from './relevance';
 import { authorityOf, originGroupOf, statusFromText } from './evidence';
+import { hostPermitido } from '../image-hosts';
 import { SourceError, type EventCandidate, type Fetcher, type SourceDefinition } from './types';
 const USER_AGENT = 'CarreteandoBot/1.0 (+https://dondesalgo.vercel.app/confianza)';
 const MAX_BYTES = 3_000_000;
@@ -114,6 +115,8 @@ export interface SourceRunReport {
   irrelevant: number;
   relevant: number;
   error: string | null;
+  /** Fechas (Chile) que la fuente anunció en esta lectura: base del reporte de cobertura. */
+  fechas: string[];
 }
 type Db = {
   from: (table: string) => any;
@@ -121,7 +124,16 @@ type Db = {
 export interface RunOptions {
   /** El motor de evidencia decide la publicación: aquí todo entra privado. */
   deferToEngine?: boolean;
+  /**
+   * Tiempo para empezar fuentes nuevas dentro de la función (Vercel corta a
+   * los 300 s). Lo que no alcanza queda vencido y encabeza la próxima corrida.
+   */
+  plazoMs?: number;
+  /** Reloj inyectable para las pruebas. */
+  reloj?: () => number;
 }
+/** Margen para el resto del cron (editorial, motor, snapshot) después del despacho. */
+export const PLAZO_DESPACHO_MS = 180_000;
 export async function runSource(
   source: SourceDefinition,
   db: Db,
@@ -145,6 +157,7 @@ export async function runSource(
     irrelevant: 0,
     relevant: 0,
     error: null,
+    fechas: [],
   };
   const adapter = ADAPTERS[source.adapter];
   if (!adapter) {
@@ -166,6 +179,7 @@ export async function runSource(
     return report;
   }
   report.candidates = candidates.length;
+  report.fechas = [...new Set(candidates.map((c) => c.date).filter((d) => d >= today))].sort();
   // The same night can appear twice inside one page.
   const seen = new Set<string>();
   const unique = candidates.filter((candidate) => {
@@ -223,6 +237,18 @@ export async function runSource(
           .is('price_clp', null)
           .or(`source_detail_url.eq."${url}",instagram_url.eq."${url}"`);
       }
+      // Lo mismo con el afiche: solo si falta, solo en la ficha de esta misma
+      // URL y con su procedencia. Un afiche puesto o corregido no se toca.
+      const afiche = afichePara(candidate, source);
+      if (afiche) {
+        const url = candidate.detailUrl.replace(/"/g, '');
+        await db
+          .from('events')
+          .update(afiche)
+          .eq('id', existente)
+          .is('image_url', null)
+          .or(`source_detail_url.eq."${url}",instagram_url.eq."${url}"`);
+      }
       report.duplicates += 1;
       continue;
     }
@@ -239,18 +265,9 @@ export async function runSource(
       location: `${candidate.venue || source.name} · ${candidate.city}`,
       instagram_url: candidate.detailUrl,
       source_detail_url: candidate.detailUrl,
-      image_url: candidate.imageUrl,
       // La procedencia viaja con la imagen: una ticketera no es lo mismo que el
       // cartel que el propio local publicó.
-      image_source_url: candidate.imageUrl ? candidate.detailUrl : null,
-      image_kind: candidate.imageUrl
-        ? source.sourceType === 'TICKET_PLATFORM'
-          ? 'ticketera'
-          : source.sourceType === 'MUNICIPALITY'
-            ? 'grafica_municipal'
-            : 'flyer_oficial'
-        : null,
-      image_verified_at: candidate.imageUrl ? new Date().toISOString() : null,
+      ...(afichePara(candidate, source) || { image_url: null, image_source_url: null, image_kind: null, image_verified_at: null }),
       price_clp: candidate.priceClp,
       price_text: candidate.priceText,
       category: detectCategory(`${candidate.title} ${candidate.description || ''}`),
@@ -280,6 +297,33 @@ export async function runSource(
   }
   report.durationMs = Date.now() - started;
   return report;
+}
+/** Tipo de imagen según quién la publica. */
+export function tipoImagen(source: Pick<SourceDefinition, 'sourceType'>) {
+  return source.sourceType === 'TICKET_PLATFORM' || source.sourceType === 'VESTI'
+    ? 'ticketera'
+    : source.sourceType === 'MUNICIPALITY'
+      ? 'grafica_municipal'
+      : 'flyer_oficial';
+}
+/** Un afiche con su procedencia (la ficha de origen), o nada si el host no está permitido. */
+export function afichePara(candidate: Pick<EventCandidate, 'imageUrl' | 'detailUrl'>, source: Pick<SourceDefinition, 'sourceType'>) {
+  if (!candidate.imageUrl) return null;
+  let host: string;
+  try {
+    const u = new URL(candidate.imageUrl);
+    if (u.protocol !== 'https:') return null;
+    host = u.hostname;
+  } catch {
+    return null;
+  }
+  if (!hostPermitido(host)) return null;
+  return {
+    image_url: candidate.imageUrl,
+    image_source_url: candidate.detailUrl,
+    image_kind: tipoImagen(source),
+    image_verified_at: new Date().toISOString(),
+  };
 }
 export function slugLocal(nombre: string, ciudad: string) {
   return normalizedTitle(`${nombre} ${ciudad}`).replace(/ /g, '-').slice(0, 80);
@@ -539,6 +583,8 @@ export interface DispatchReport {
   due: number;
   ran: number;
   reports: SourceRunReport[];
+  /** Vencidas que no empezaron por plazo: siguen vencidas para la próxima corrida. */
+  postergadas: string[];
 }
 export async function dispatchSources(
   db: Db,
@@ -556,7 +602,15 @@ export async function dispatchSources(
   const urgentes = await sourcesWithEventsSoon(db, reloj);
   const due = dueSources(data || [], reloj, budget, urgentes);
   const reports: SourceRunReport[] = [];
+  const postergadas: string[] = [];
+  const reloj2 = options.reloj || Date.now;
+  const inicio = reloj2();
+  const plazo = options.plazoMs ?? PLAZO_DESPACHO_MS;
   for (const source of due) {
+    if (reloj2() - inicio >= plazo) {
+      postergadas.push(source.id);
+      continue;
+    }
     const report = await runSource(source, db, fetcher, toChileDateString(reloj), options);
     reports.push(report);
     const next = new Date(reloj.getTime() + source.refreshHours * 3600_000).toISOString();
@@ -601,5 +655,5 @@ export async function dispatchSources(
     }
     await db.from('event_sources').update(health).eq('id', source.id);
   }
-  return { due: due.length, ran: reports.length, reports };
+  return { due: due.length, ran: reports.length, reports, postergadas };
 }

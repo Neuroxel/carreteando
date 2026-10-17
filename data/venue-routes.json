@@ -1,0 +1,48 @@
+{
+  "nota": "Rutas públicas por local, revisadas a mano. 'auto' la lee un adaptador con host exacto; 'manual' y 'bloqueado' quedan en el reporte de cobertura como pendientes explícitos, nunca como 'sin eventos'. Las rutas de PortalTickets ya registradas en lib/sources/registry.ts cuentan solas.",
+  "locales": [
+    {
+      "slug": "woo-club-valparaiso-osm",
+      "nombre": "Woo Club",
+      "comuna": "Valparaíso",
+      "rutas": [
+        { "tipo": "evently_agenda", "url": "https://wooclub.evently.cl/", "acceso": "auto", "verificada": "2026-10-17" },
+        { "tipo": "vesti_company", "url": "https://vesti.cl/company/woo-club", "acceso": "auto", "verificada": "2026-10-17", "nota": "El 17-oct decía 'SIN FECHAS PUBLICADAS' mientras Evently vendía el sábado: una ruta vacía no cierra el local." }
+      ]
+    },
+    {
+      "slug": "studio-valparaiso",
+      "nombre": "Studio Valparaíso",
+      "comuna": "Valparaíso",
+      "rutas": [
+        { "tipo": "vesti_company", "url": "https://vesti.cl/company/studio-valparaiso", "acceso": "auto", "verificada": "2026-10-17" }
+      ]
+    },
+    {
+      "slug": "pagano-club",
+      "nombre": "Pagano",
+      "comuna": "Valparaíso",
+      "rutas": [
+        { "tipo": "passline_venue", "url": "https://www.passline.com/venue/pagano-valpo", "acceso": "bloqueado", "verificada": "2026-10-17", "nota": "Passline responde con desafío de Cloudflare a agentes identificados; no se salta. Vista humana del 17-oct: solo la dirección (Errázuriz 1852), sin fechas." },
+        { "tipo": "instagram", "url": "https://www.instagram.com/paganocl/", "acceso": "bloqueado", "verificada": "2026-10-17", "nota": "Cuenta +18: no se lee sin sesión. Solo vía Apify, hoy en pausa." }
+      ]
+    },
+    {
+      "slug": "mascara-pub",
+      "nombre": "Máscara",
+      "comuna": "Valparaíso",
+      "rutas": [
+        { "tipo": "ecopass", "url": "https://www.ecopass.cl/", "acceso": "bloqueado", "verificada": "2026-10-17", "nota": "Ecopass muestra la verificación de seguridad de Cloudflare; no se salta." },
+        { "tipo": "instagram", "url": "https://www.instagram.com/mascara_valparaiso/", "acceso": "bloqueado", "verificada": "2026-10-17", "nota": "Solo vía Apify, hoy en pausa." }
+      ]
+    },
+    {
+      "slug": "balada-el-huevo",
+      "nombre": "Balada El Huevo",
+      "comuna": "Valparaíso",
+      "rutas": [
+        { "tipo": "instagram", "url": "https://www.instagram.com/el.huevo/", "acceso": "bloqueado", "verificada": "2026-10-17", "nota": "Cuenta activa del local (la antigua @barelhuevo no publica desde 2016). El dominio elhuevo.cl caducó. Solo vía Apify, hoy en pausa." }
+      ]
+    }
+  ]
+}
