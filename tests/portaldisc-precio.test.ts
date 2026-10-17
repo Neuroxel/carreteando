@@ -8,14 +8,13 @@ mock.timers.enable({ apis: ['Date'], now: new Date('2026-10-17T15:00:00Z') });
 const ficha = (s: string) => readFileSync(new URL(`./fixtures/portaldisc-${s}.html`, import.meta.url), 'utf8');
 
 test('ticket gratuito con condición: se dice la condición, nunca "Gratis" a secas', () => {
-  assert.deepEqual(precioDeFicha(ficha('metalattackenclubsegundopiso')), {
-    price: 0,
-    text: 'Ticket gratis hasta agotar stock · General $4.000 + cargo',
-  });
+  const p = precioDeFicha(ficha('metalattackenclubsegundopiso'));
+  assert.deepEqual([p?.price, p?.text, p?.disponibilidad], [0, 'Ticket gratis hasta agotar stock · General $4.000 + cargo', 'disponible']);
 });
 
 test('la promo de 3 entradas no cuenta como precio individual', () => {
-  assert.deepEqual(precioDeFicha(ficha('folkquilpue17deoctubre')), { price: 2500, text: 'Desde $2.500 + cargo' });
+  const p = precioDeFicha(ficha('folkquilpue17deoctubre'));
+  assert.deepEqual([p?.price, p?.text], [2500, 'Desde $2.500 + cargo']);
 });
 
 test('lo agotado o no disponible no cuenta', () => {

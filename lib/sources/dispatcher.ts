@@ -115,6 +115,8 @@ export interface SourceRunReport {
   parseFailures: number;
   irrelevant: number;
   relevant: number;
+  /** Filas existentes cuyo precio, disponibilidad o URL primaria se actualizó. */
+  refreshed: number;
   error: string | null;
   /** Fechas (Chile) que la fuente anunció en esta lectura: base del reporte de cobertura. */
   fechas: string[];
@@ -157,6 +159,7 @@ export async function runSource(
     parseFailures: 0,
     irrelevant: 0,
     relevant: 0,
+    refreshed: 0,
     error: null,
     fechas: [],
   };
@@ -168,7 +171,7 @@ export async function runSource(
   }
   let candidates: EventCandidate[] = [];
   try {
-    const result = await adapter.run(source, fetcher);
+    const result = await adapter.run(source, fetcher, await contextoDe(db, source, today));
     report.itemsFound = result.itemsFound;
     report.parseFailures = result.parseFailures;
     report.error = result.diagnostics?.join(' · ') || null;
@@ -224,20 +227,15 @@ export async function runSource(
       await proponerLocal(db, candidate, propuestos);
     // Lo que ya existe no se duplica: se le agrega evidencia. Así una segunda
     // fuente confirma, y un cambio de fecha en el origen queda a la vista.
-    const existente = await findExisting(db, candidate);
-    if (existente) {
+    const fila = await findExisting(db, candidate);
+    if (fila) {
+      const existente = fila.id;
       await addEvidence(db, existente, source, candidate);
-      // Solo se completa un precio vacío, y solo en la ficha de esta misma URL:
-      // una corrección del dueño o un precio ya puesto nunca se pisan.
-      if (candidate.priceClp !== null) {
-        const url = candidate.detailUrl.replace(/"/g, '');
-        await db
-          .from('events')
-          .update({ price_clp: candidate.priceClp, price_text: candidate.priceText })
-          .eq('id', existente)
-          .is('price_clp', null)
-          .or(`source_detail_url.eq."${url}",instagram_url.eq."${url}"`);
-      }
+      // Datos que cambian con el tiempo (precio, tramo vigente, agotado, URL
+      // primaria) se refrescan con la lectura más reciente de la misma ficha o
+      // de la misma fuente. Título, fecha, lugar y procedencia no se tocan, y
+      // una fila corregida por una persona solo recibe lo que le falta.
+      if (await refrescarDinamicos(db, fila, source, candidate)) report.refreshed += 1;
       // Lo mismo con el afiche: solo si falta, solo en la ficha de esta misma
       // URL y con su procedencia. Un afiche puesto o corregido no se toca.
       const afiche = afichePara(candidate, source);
@@ -326,6 +324,83 @@ export function afichePara(candidate: Pick<EventCandidate, 'imageUrl' | 'detailU
     image_verified_at: new Date().toISOString(),
   };
 }
+/** Fichas de esta fuente que ya tienen precio guardado (para leer primero las que no). */
+async function contextoDe(db: Db, source: SourceDefinition, today: string) {
+  // Es solo una prioridad: si no se puede leer, el adaptador corre igual.
+  const data = await Promise.resolve()
+    .then(() =>
+      db
+        .from('events')
+        .select('source_detail_url,instagram_url')
+        .eq('source_id', source.id)
+        .gte('date_text', today)
+        .not('price_clp', 'is', null)
+        .limit(1000),
+    )
+    .then((r: { data?: unknown[] }) => r?.data || [])
+    .catch(() => []);
+  const conPrecio = new Set<string>();
+  for (const r of data as { source_detail_url?: string | null; instagram_url?: string | null }[])
+    for (const u of [r.source_detail_url, r.instagram_url]) if (u) conPrecio.add(u);
+  return { conPrecio };
+}
+
+/** Una persona con nombre tocó el evento en el panel: sus datos no se pisan. */
+async function editadoPorPersona(db: Db, id: number) {
+  const { data } = await db.from('review_audit').select('actor').eq('target', `event:${id}`).limit(50);
+  return ((data || []) as { actor?: string | null }[]).some((r) => !String(r.actor || '').startsWith('sistema'));
+}
+
+/**
+ * Qué datos dinámicos se pueden refrescar en una fila existente (puro, probado):
+ * - misma ficha (misma URL): precio y disponibilidad según la lectura más reciente;
+ * - misma fuente y mismo host, con otra URL (el sitio cambió de rutas): además
+ *   se mueve la URL a la primaria vigente;
+ * - otra fuente u otro host: nada (solo evidencia);
+ * - fila corregida por una persona: solo se completa un precio vacío.
+ */
+export function cambiosDinamicos(
+  fila: FilaExistente,
+  source: Pick<SourceDefinition, 'id'>,
+  candidate: Pick<EventCandidate, 'detailUrl' | 'priceClp' | 'priceText' | 'disponibilidad'>,
+  editadaPorPersona: boolean,
+): Record<string, unknown> | null {
+  const comparable = (u: string | null | undefined) => {
+    if (!u) return null;
+    try {
+      const x = new URL(u);
+      return `${x.hostname.replace(/^www\./, '')}${x.pathname.replace(/\/+$/, '')}`;
+    } catch {
+      return null;
+    }
+  };
+  const host = (u: string | null | undefined) => comparable(u)?.split('/')[0] ?? null;
+  const nueva = comparable(candidate.detailUrl);
+  const mismaFicha = [fila.source_detail_url, fila.instagram_url].some((u) => comparable(u) === nueva);
+  const actual = fila.source_detail_url || fila.instagram_url;
+  const migrar = !mismaFicha && fila.source_id === source.id && host(actual) === host(candidate.detailUrl);
+  if (!mismaFicha && !migrar) return null;
+  const precioLeido = candidate.priceClp !== null || candidate.disponibilidad === 'agotado';
+  const cambios: Record<string, unknown> = {};
+  if (editadaPorPersona) {
+    if (fila.price_clp == null && candidate.priceClp !== null && mismaFicha)
+      Object.assign(cambios, { price_clp: candidate.priceClp, price_text: candidate.priceText });
+  } else {
+    if (precioLeido && (fila.price_clp !== candidate.priceClp || fila.price_text !== candidate.priceText))
+      Object.assign(cambios, { price_clp: candidate.priceClp, price_text: candidate.priceText });
+    if (migrar) Object.assign(cambios, { instagram_url: candidate.detailUrl, source_detail_url: candidate.detailUrl });
+  }
+  return Object.keys(cambios).length ? cambios : null;
+}
+
+async function refrescarDinamicos(db: Db, fila: FilaExistente, source: SourceDefinition, candidate: EventCandidate) {
+  const persona = await editadoPorPersona(db, fila.id);
+  const cambios = cambiosDinamicos(fila, source, candidate, persona);
+  if (!cambios) return false;
+  const { error } = await db.from('events').update({ ...cambios, last_verified_at: new Date().toISOString() }).eq('id', fila.id);
+  return !error;
+}
+
 export function slugLocal(nombre: string, ciudad: string) {
   return normalizedTitle(`${nombre} ${ciudad}`).replace(/ /g, '-').slice(0, 80);
 }
@@ -400,26 +475,38 @@ async function lookupVenueId(db: Db, slug: string): Promise<number | null> {
  * la URL de detalle (la misma ficha es el mismo evento aunque cambie la fecha),
  * luego por la clave estable, luego por fecha, lugar y título parecido.
  */
-async function findExisting(db: Db, candidate: EventCandidate): Promise<number | null> {
+const CAMPOS_EXISTENTE = 'id,title,date_text,event_time,source_id,instagram_url,source_detail_url,price_clp,price_text';
+export interface FilaExistente {
+  id: number;
+  title?: string;
+  date_text?: string;
+  event_time?: string | null;
+  source_id?: string | null;
+  instagram_url?: string | null;
+  source_detail_url?: string | null;
+  price_clp?: number | null;
+  price_text?: string | null;
+}
+async function findExisting(db: Db, candidate: EventCandidate): Promise<FilaExistente | null> {
   const porUrl = await db
     .from('events')
-    .select('id,title,date_text,event_time')
+    .select(CAMPOS_EXISTENTE)
     .or(`source_detail_url.eq."${candidate.detailUrl.replace(/"/g, '')}",instagram_url.eq."${candidate.detailUrl.replace(/"/g, '')}"`)
     .neq('disposition', 'duplicate')
     .limit(20);
-  type Fila = { id: number; title?: string; date_text?: string; event_time?: string | null };
+  type Fila = FilaExistente & { title?: string; date_text?: string };
   // Una ficha puede vender dos funciones: solo es la misma fila si la hora es compatible.
   const filas = ((porUrl.data || []) as Fila[]).filter((r) => horasCompatibles(r.event_time, candidate.time));
   // Primero la fila de esa misma fecha; si la fuente cambió la fecha, la ficha parecida.
   const mismaFicha =
     filas.find((r) => r.date_text === candidate.date) ||
     filas.find((r) => (r.title ? looksLikeSameEvent(r.title, candidate.title) : false));
-  if (mismaFicha) return mismaFicha.id as number;
-  const porClave = await db.from('events').select('id').eq('instagram_id', candidate.key).limit(1);
-  if (porClave.data && porClave.data[0]) return porClave.data[0].id as number;
+  if (mismaFicha) return mismaFicha;
+  const porClave = await db.from('events').select(CAMPOS_EXISTENTE).eq('instagram_id', candidate.key).limit(1);
+  if (porClave.data && porClave.data[0]) return porClave.data[0] as FilaExistente;
   const { data } = await db
     .from('events')
-    .select('id,title,venue,event_time')
+    .select(`${CAMPOS_EXISTENTE},venue`)
     .eq('date_text', candidate.date)
     .neq('disposition', 'duplicate')
     .limit(60);
@@ -429,7 +516,7 @@ async function findExisting(db: Db, candidate: EventCandidate): Promise<number |
       !candidate.venue || !row.venue || normalizedTitle(row.venue) === normalizedTitle(candidate.venue);
     return sameVenue && looksLikeSameEvent(row.title, candidate.title);
   });
-  return parecido ? (parecido.id as number) : null;
+  return parecido ? (parecido as FilaExistente) : null;
 }
 const ESTRUCTURADOS = new Set(['wp-events-list', 'tribe-events', 'usm-eventos', 'jsonld-events', 'ics-calendar']);
 /** Lo que esta fuente afirma hoy sobre el evento, con su procedencia. */
@@ -452,6 +539,15 @@ export function evidenceRow(eventId: number, source: SourceDefinition, candidate
           ? candidate.status
           : statusFromText(`${candidate.title} ${candidate.description || ''}`),
       date_verified: candidate.confidence === 'high',
+      // Precio y tramos de esta lectura, con su URL: la procedencia de cada cambio queda guardada.
+      ...(candidate.priceClp !== null || candidate.disponibilidad
+        ? {
+            price_clp: candidate.priceClp,
+            price_text: candidate.priceText,
+            availability: candidate.disponibilidad ?? null,
+            tiers: candidate.tiers ?? null,
+          }
+        : {}),
     },
     p_structured: ESTRUCTURADOS.has(source.adapter) || candidate.confidence === 'high',
   };
