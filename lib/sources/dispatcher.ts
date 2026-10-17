@@ -3,7 +3,8 @@ import { detectCategory } from '../events';
 import { ADAPTERS, MANUAL_SOURCES, SOURCES } from './registry';
 import { clasificar, type Relevancia } from './relevance';
 import { authorityOf, originGroupOf, statusFromText } from './evidence';
-import { SourceError, type EventCandidate, type Fetcher, type SourceDefinition } from './types';
+import { hostPermitido } from '../image-hosts';
+import { PLAZO_AGOTADO, SourceError, type EventCandidate, type Fetcher, type SourceDefinition } from './types';
 const USER_AGENT = 'CarreteandoBot/1.0 (+https://dondesalgo.vercel.app/confianza)';
 const MAX_BYTES = 3_000_000;
 export const httpFetcher: Fetcher = async (url) => {
@@ -114,6 +115,8 @@ export interface SourceRunReport {
   irrelevant: number;
   relevant: number;
   error: string | null;
+  /** Fechas (Chile) que la fuente anunció en esta lectura: base del reporte de cobertura. */
+  fechas: string[];
 }
 type Db = {
   from: (table: string) => any;
@@ -121,7 +124,16 @@ type Db = {
 export interface RunOptions {
   /** El motor de evidencia decide la publicación: aquí todo entra privado. */
   deferToEngine?: boolean;
+  /**
+   * Tiempo para empezar fuentes nuevas dentro de la función (Vercel corta a
+   * los 300 s). Lo que no alcanza queda vencido y encabeza la próxima corrida.
+   */
+  plazoMs?: number;
+  /** Reloj inyectable para las pruebas. */
+  reloj?: () => number;
 }
+/** Margen para el resto del cron (editorial, motor, snapshot) después del despacho. */
+export const PLAZO_DESPACHO_MS = 180_000;
 export async function runSource(
   source: SourceDefinition,
   db: Db,
@@ -145,6 +157,7 @@ export async function runSource(
     irrelevant: 0,
     relevant: 0,
     error: null,
+    fechas: [],
   };
   const adapter = ADAPTERS[source.adapter];
   if (!adapter) {
@@ -166,6 +179,7 @@ export async function runSource(
     return report;
   }
   report.candidates = candidates.length;
+  report.fechas = [...new Set(candidates.map((c) => c.date).filter((d) => d >= today))].sort();
   // The same night can appear twice inside one page.
   const seen = new Set<string>();
   const unique = candidates.filter((candidate) => {
@@ -223,6 +237,18 @@ export async function runSource(
           .is('price_clp', null)
           .or(`source_detail_url.eq."${url}",instagram_url.eq."${url}"`);
       }
+      // Lo mismo con el afiche: solo si falta, solo en la ficha de esta misma
+      // URL y con su procedencia. Un afiche puesto o corregido no se toca.
+      const afiche = afichePara(candidate, source);
+      if (afiche) {
+        const url = candidate.detailUrl.replace(/"/g, '');
+        await db
+          .from('events')
+          .update(afiche)
+          .eq('id', existente)
+          .is('image_url', null)
+          .or(`source_detail_url.eq."${url}",instagram_url.eq."${url}"`);
+      }
       report.duplicates += 1;
       continue;
     }
@@ -239,18 +265,9 @@ export async function runSource(
       location: `${candidate.venue || source.name} · ${candidate.city}`,
       instagram_url: candidate.detailUrl,
       source_detail_url: candidate.detailUrl,
-      image_url: candidate.imageUrl,
       // La procedencia viaja con la imagen: una ticketera no es lo mismo que el
       // cartel que el propio local publicó.
-      image_source_url: candidate.imageUrl ? candidate.detailUrl : null,
-      image_kind: candidate.imageUrl
-        ? source.sourceType === 'TICKET_PLATFORM'
-          ? 'ticketera'
-          : source.sourceType === 'MUNICIPALITY'
-            ? 'grafica_municipal'
-            : 'flyer_oficial'
-        : null,
-      image_verified_at: candidate.imageUrl ? new Date().toISOString() : null,
+      ...(afichePara(candidate, source) || { image_url: null, image_source_url: null, image_kind: null, image_verified_at: null }),
       price_clp: candidate.priceClp,
       price_text: candidate.priceText,
       category: detectCategory(`${candidate.title} ${candidate.description || ''}`),
@@ -280,6 +297,33 @@ export async function runSource(
   }
   report.durationMs = Date.now() - started;
   return report;
+}
+/** Tipo de imagen según quién la publica. */
+export function tipoImagen(source: Pick<SourceDefinition, 'sourceType'>) {
+  return source.sourceType === 'TICKET_PLATFORM' || source.sourceType === 'VESTI'
+    ? 'ticketera'
+    : source.sourceType === 'MUNICIPALITY'
+      ? 'grafica_municipal'
+      : 'flyer_oficial';
+}
+/** Un afiche con su procedencia (la ficha de origen), o nada si el host no está permitido. */
+export function afichePara(candidate: Pick<EventCandidate, 'imageUrl' | 'detailUrl'>, source: Pick<SourceDefinition, 'sourceType'>) {
+  if (!candidate.imageUrl) return null;
+  let host: string;
+  try {
+    const u = new URL(candidate.imageUrl);
+    if (u.protocol !== 'https:') return null;
+    host = u.hostname;
+  } catch {
+    return null;
+  }
+  if (!hostPermitido(host)) return null;
+  return {
+    image_url: candidate.imageUrl,
+    image_source_url: candidate.detailUrl,
+    image_kind: tipoImagen(source),
+    image_verified_at: new Date().toISOString(),
+  };
 }
 export function slugLocal(nombre: string, ciudad: string) {
   return normalizedTitle(`${nombre} ${ciudad}`).replace(/ /g, '-').slice(0, 80);
@@ -440,6 +484,8 @@ export function urgencia(horasHastaEvento: number): number | null {
   if (horasHastaEvento <= 72) return 12;
   return null;
 }
+/** Fracción del presupuesto que siempre va a las fuentes más atrasadas por turno. */
+export const RESERVA_ATRASADAS = 0.25;
 /** The daily cron is a dispatcher: it refreshes whatever is due, never everything. */
 export function dueSources(
   rows: { id: string; active: boolean; next_check_at: string; last_checked_at?: string | null }[],
@@ -454,8 +500,19 @@ export function dueSources(
     const ultima = row.last_checked_at ? Date.parse(row.last_checked_at) : 0;
     return now.getTime() - ultima >= cada * 3600_000 - TOLERANCIA_RELOJ_MS;
   };
-  const due = rows
-    .filter((row) => row.active && (new Date(row.next_check_at).getTime() <= limite || urgente(row)))
+  const porTurno = (row: (typeof rows)[number]) => new Date(row.next_check_at).getTime() <= limite;
+  const vencidas = rows.filter((row) => row.active && (porTurno(row) || urgente(row)));
+  // Cupo reservado para las más atrasadas por turno: si las urgentes llenaran
+  // siempre el presupuesto, una fuente normal no se leería nunca. Van primero,
+  // así tampoco el plazo de la corrida las deja fuera.
+  const reserva = Math.floor(limit * RESERVA_ATRASADAS);
+  const reservadas = vencidas
+    .filter(porTurno)
+    .sort((a, b) => a.next_check_at.localeCompare(b.next_check_at) || a.id.localeCompare(b.id))
+    .slice(0, reserva);
+  const elegidas = new Set(reservadas.map((r) => r.id));
+  const due = vencidas
+    .filter((row) => !elegidas.has(row.id))
     // Primero lo que tiene eventos encima; después, por antigüedad.
     // Primero lo que tiene un evento más cerca (6 h antes que 12 h), y entre
     // ellas la que lleva más tiempo sin leerse; después, el turno normal.
@@ -466,8 +523,8 @@ export function dueSources(
         (urgente(a) ? (a.last_checked_at || '').localeCompare(b.last_checked_at || '') : 0) ||
         a.next_check_at.localeCompare(b.next_check_at),
     )
-    .slice(0, limit);
-  return due
+    .slice(0, limit - reservadas.length);
+  return [...reservadas, ...due]
     .map((row) => SOURCES.find((source) => source.id === row.id))
     .filter((source): source is SourceDefinition => Boolean(source));
 }
@@ -539,6 +596,8 @@ export interface DispatchReport {
   due: number;
   ran: number;
   reports: SourceRunReport[];
+  /** Vencidas que no empezaron por plazo: siguen vencidas para la próxima corrida. */
+  postergadas: string[];
 }
 export async function dispatchSources(
   db: Db,
@@ -556,8 +615,29 @@ export async function dispatchSources(
   const urgentes = await sourcesWithEventsSoon(db, reloj);
   const due = dueSources(data || [], reloj, budget, urgentes);
   const reports: SourceRunReport[] = [];
+  const postergadas: string[] = [];
+  const reloj2 = options.reloj || Date.now;
+  const inicio = reloj2();
+  const plazo = options.plazoMs ?? PLAZO_DESPACHO_MS;
+  const agotado = () => reloj2() - inicio >= plazo;
+  // El plazo se mira antes de CADA solicitud, no solo al empezar una fuente:
+  // una cartelera con 24 fichas no puede seguir pidiendo pasado el límite.
+  const conPlazo: Fetcher = (url) => {
+    if (agotado()) return Promise.reject(new SourceError(PLAZO_AGOTADO));
+    return fetcher(url);
+  };
   for (const source of due) {
-    const report = await runSource(source, db, fetcher, toChileDateString(reloj), options);
+    if (agotado()) {
+      postergadas.push(source.id);
+      continue;
+    }
+    const report = await runSource(source, db, conPlazo, toChileDateString(reloj), options);
+    // Si ni la agenda alcanzó a pedirse, la fuente no se leyó: sigue vencida,
+    // sin contar como fallo ni correr su turno.
+    if (report.error === PLAZO_AGOTADO) {
+      postergadas.push(source.id);
+      continue;
+    }
     reports.push(report);
     const next = new Date(reloj.getTime() + source.refreshHours * 3600_000).toISOString();
     await db.from('ingestion_source_runs').insert([
@@ -601,5 +681,5 @@ export async function dispatchSources(
     }
     await db.from('event_sources').update(health).eq('id', source.id);
   }
-  return { due: due.length, ran: reports.length, reports };
+  return { due: due.length, ran: reports.length, reports, postergadas };
 }

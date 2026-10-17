@@ -4,6 +4,10 @@ import { jsonldEvents } from './adapters/jsonld';
 import { icsCalendar } from './adapters/ics';
 import { usmEventos } from './adapters/usm';
 import { wpDatedSlug, wpEventsList, wpNewsScan } from './adapters/wordpress';
+import { cinzanoApi } from './adapters/cinzano';
+import { eventlyAgenda } from './adapters/evently';
+import { vestiCompany } from './adapters/vesti';
+import { fuentesDeRutas } from '../venue-routes';
 import type { Adapter, SourceDefinition } from './types';
 export const ADAPTERS: Record<string, Adapter> = {
   [wpEventsList.id]: wpEventsList,
@@ -15,6 +19,9 @@ export const ADAPTERS: Record<string, Adapter> = {
   [usmEventos.id]: usmEventos,
   [jsonldEvents.id]: jsonldEvents,
   [icsCalendar.id]: icsCalendar,
+  [vestiCompany.id]: vestiCompany,
+  [eventlyAgenda.id]: eventlyAgenda,
+  [cinzanoApi.id]: cinzanoApi,
 };
 const portaldisc = (
   id: string,
@@ -47,7 +54,7 @@ const portaldisc = (
  * public, and its robots.txt allows us. A source that stops meeting that is
  * deactivated in the registry, not quietly left to fail every night.
  */
-export const SOURCES: SourceDefinition[] = [
+const BASE: SourceDefinition[] = [
   {
     id: 'pcdv-agenda',
     name: 'Parque Cultural de Valparaíso · agenda oficial',
@@ -69,8 +76,9 @@ export const SOURCES: SourceDefinition[] = [
     id: 'cinzano-agenda',
     name: 'Bar Cinzano · programación oficial',
     sourceType: 'OFFICIAL_VENUE_SITE',
-    adapter: wpDatedSlug.id,
-    publicUrl: 'https://cinzanooficial.cl',
+    // Oct-2026: el sitio dejó el tipo de WordPress `cinzano_event` por una API propia.
+    adapter: cinzanoApi.id,
+    publicUrl: 'https://cinzanooficial.cl/cinzano-api/cinzano/v1/events',
     commune: 'Valparaíso',
     zone: 'Plan de Valparaíso',
     venueSlug: 'bar-cinzano',
@@ -80,7 +88,6 @@ export const SOURCES: SourceDefinition[] = [
     tier: 'A',
     accessMode: 'api',
     refreshHours: 24,
-    config: { postType: 'cinzano_event', perPage: '40' },
   },
   portaldisc('portaldisc-cassot', 'cassotbar', 'Cassot Bar', 'cassot-bar', 'Valparaíso', 'Subida Ecuador', 48),
   portaldisc(
@@ -291,6 +298,8 @@ export const SOURCES: SourceDefinition[] = [
     },
   },
 ];
+/** Lo registrado a mano más las rutas automáticas por local (data/venue-routes.json). */
+export const SOURCES: SourceDefinition[] = [...BASE, ...fuentesDeRutas(BASE)];
 /**
  * Fuentes públicas que vale la pena mirar a mano pero que no leemos con un
  * programa: o no tienen una forma estructurada, o se protegen con un desafío

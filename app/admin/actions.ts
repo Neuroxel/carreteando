@@ -58,7 +58,9 @@ export async function importEditorial() {
   if (!(await isAdmin())) redirect('/admin');
   const db = getAdminDb();
   const { editorialRows } = await import('../../lib/editorial-feed');
-  const rows = editorialRows();
+  const { sinDuplicadosDeFuente } = await import('../../lib/editorial-dedupe');
+  const rows = db ? (await sinDuplicadosDeFuente(db, editorialRows()).catch(() => null))?.nuevas ?? null : [];
+  if (rows === null) redirect('/admin?status=failed');
   const saved = rows.length
     ? await db
         ?.from('events')
