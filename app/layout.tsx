@@ -1,4 +1,5 @@
 import { Suspense } from 'react';
+import { preload } from 'react-dom';
 import Metrics from '../components/Metrics';
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
@@ -21,10 +22,12 @@ export const metadata: Metadata = {
   },
   twitter: { card: 'summary_large_image', images: ['/opengraph-image'] },
 };
-export const viewport: Viewport = { width: 'device-width', initialScale: 1, themeColor: '#100F0D' };
+export const viewport: Viewport = { width: 'device-width', initialScale: 1, themeColor: '#13131D' };
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  // Edición afiche: la tipografía de máquina se ve arriba del todo; se pide temprano.
+  preload('/fonts/special-elite-latin.woff2', { as: 'font', type: 'font/woff2', crossOrigin: 'anonymous' });
   return (
-    <html lang="es-CL">
+    <html lang="es-CL" data-edicion="3d">
       <body>
         <a className="skip-link" href="#contenido">
           Ir al contenido

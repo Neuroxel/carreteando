@@ -1,3 +1,4 @@
+import { MARCA } from './poster/marca';
 /**
  * Logo de Dónde Salgo? (dirección "Afiche"): la palabra en Anton (OFL) y el
  * "?" de Archivo Black (OFL), inclinado y con un leve fuera de registro, como
@@ -31,3 +32,32 @@ export function LogoMark({ className, title = 'Dónde Salgo?' }: { className?: s
 export const LOGO_VIEWBOX = '-8 -247 1227 265';
 export const Q_SHADOW = 'translate(1014.6 5) rotate(-8) scale(0.3241)';
 export const Q_MAIN = 'translate(1008.6 0) rotate(-8) scale(0.3241)';
+
+/**
+ * Logo apilado de la edición afiche, según la maqueta de Carlos: "DÓNDE /
+ * SALGO?" en tipos de madera (Ultra, Apache 2.0, convertido a trazos por
+ * tools/wordmark.py) con cada letra levemente girada, tinta crema con borde
+ * comido y poros, y el "?" alto en coral. Sigue siendo vector y lleva su
+ * nombre accesible.
+ */
+export function LogoApilado({ className, title = 'Dónde Salgo?' }: { className?: string; title?: string }) {
+  return (
+    <svg className={className} viewBox={MARCA.viewBox} role="img" aria-label={title} xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <filter id="ds-serigrafia" x="-3%" y="-3%" width="106%" height="106%">
+          {/* poros: la tinta no cubre todo el papel */}
+          <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="1" seed="8" result="poros" />
+          <feColorMatrix in="poros" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -80 62" result="huecos" />
+          <feComposite in="SourceGraphic" in2="huecos" operator="in" result="poroso" />
+          {/* borde comido, como tinta sobre papel absorbente */}
+          <feTurbulence type="fractalNoise" baseFrequency="0.009" numOctaves="3" seed="3" result="borde" />
+          <feDisplacementMap in="poroso" in2="borde" scale="60" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+      </defs>
+      <g filter="url(#ds-serigrafia)">
+        <path fill="currentColor" d={MARCA.palabra} />
+        <path fill="var(--accent)" d={MARCA.pregunta} />
+      </g>
+    </svg>
+  );
+}
