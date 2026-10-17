@@ -1,6 +1,14 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { PILOT_1_ACCOUNTS, PILOT_COHORTS, PILOT_LIMITS, TOPE_USD, candidatoDesdeTexto, candidatoValido, cuentasCitadas, entradaActor, pilotItem } from '../lib/instagram-pilot';
+import { PILOT_1_ACCOUNTS, PILOT_COHORTS, PILOT_LIMITS, TOPE_USD, candidatoDesdeTexto, candidatoValido, cuentasCitadas, entradaActor, inicioIncremental, pilotItem } from '../lib/instagram-pilot';
+
+test('incremental conserva solape y limita marcas inválidas, futuras o viejas a siete días', () => {
+  const now = Date.parse('2026-10-17T04:00:00Z');
+  const floor = now - 7 * 86400000;
+  for (const value of [null, 'invalid', '2026-10-18T04:00:00Z', '2026-09-01T00:00:00Z'])
+    assert.equal(inicioIncremental(value, now), floor);
+  assert.equal(inicioIncremental('2026-10-16T04:00:00Z', now), now - 86400000 - 60000);
+});
 
 test('el piloto 2 es acotado: dos cohortes de 15 cuentas sin repetir, 3 posts, 7 días, 1 USD por cohorte', () => {
   assert.equal(PILOT_1_ACCOUNTS.length, 15);

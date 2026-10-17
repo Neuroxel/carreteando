@@ -1,0 +1,8 @@
+CHEAP_EVENT_COVERAGE 2026-10-17 · snapshot 2026-10-17T03:49:01.485Z
+tramo                externos públicos con precio
+gratis                      0        0          0
+gratis_condicional          6        6          4
+hasta_5000                 10       10          7
+hasta_10000                16       16          9
+precio_desconocido          1        1          0
+faltan: ninguno

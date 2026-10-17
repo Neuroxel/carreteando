@@ -9,6 +9,7 @@ import {
   candidatoDesdeTexto,
   cuentasCitadas,
   entradaActor,
+  inicioIncremental,
   pilotItem,
   type Actor,
   type Cohorte,
@@ -42,12 +43,20 @@ export async function GET(request: Request) {
   const actor = (url.searchParams.get('actor') || 'apify~instagram-scraper') as Actor;
   if (!ACTORES.includes(actor)) return reply({ error: 'Actor no permitido.' }, 400);
   const marca = `${cohorte}-${CORTO[actor]}`;
-  const cuentas: readonly string[] = PILOT_COHORTS[cohorte];
+  const solicitadas: readonly string[] = PILOT_COHORTS[cohorte];
   const tope = TOPE_USD[cohorte];
   // No consumir la autorización ni pagar al actor si falta la migración o
   // no podemos leer el registro privado que da contexto a la extracción.
-  const reg = await db.from('instagram_accounts').select('username,status,kind,venue_id').limit(2000);
+  const reg = await db.from('instagram_accounts').select('username,status,kind,venue_id,last_post_at').limit(2000);
   if (reg.error) return reply({ error: 'Registro de Instagram no disponible. Revisa la migración y el acceso.' }, 503);
+  const activas = new Set((reg.data || []).filter((r) => r.status === 'active').map((r) => String(r.username)));
+  const cuentas = solicitadas.filter((u) => activas.has(u));
+  if (!cuentas.length || (cohorte === 'BENCH' && cuentas.length !== solicitadas.length))
+    return reply({ error: 'Faltan cuentas activas verificadas para esta corrida.' }, 409);
+  const ahora = Date.now();
+  const cortes = new Map(cuentas.map((u) => [u, inicioIncremental(reg.data?.find((r) => r.username === u)?.last_post_at, ahora)]));
+  // BENCH conserva la ventana completa para comparar actores en igualdad.
+  const newerThan = cohorte === 'BENCH' ? PILOT_LIMITS.newerThan : new Date(Math.min(...cortes.values())).toISOString();
   const armed = await db
     .from('automation_config')
     .update({ value: `running-${marca}` })
@@ -72,7 +81,7 @@ export async function GET(request: Request) {
     const start = obj(
       (await api(`acts/${actor}/runs?timeout=240&maxItems=${maxItems}&maxTotalChargeUsd=${tope}`, {
         method: 'POST',
-        body: JSON.stringify(entradaActor(actor, cuentas, PILOT_LIMITS.postsPerAccount, PILOT_LIMITS.newerThan)),
+        body: JSON.stringify(entradaActor(actor, cuentas, PILOT_LIMITS.postsPerAccount, newerThan)),
       })) as unknown,
     );
     let run = obj(start.data);
@@ -89,14 +98,16 @@ export async function GET(request: Request) {
     }
     const raw = await api(`datasets/${datasetId}/items?format=json&clean=true&limit=200`);
     const crudos = Array.isArray(raw) ? raw.map(obj) : [];
-    const rows = crudos.map((x) => pilotItem(x, cuentas)).filter((x) => x !== null);
+    const rows = crudos.map((x) => pilotItem(x, cuentas)).filter((x) => x !== null)
+      .filter((x) => !x.posted_at || (Date.parse(x.posted_at) <= ahora &&
+        Date.parse(x.posted_at) >= (cohorte === 'BENCH' ? inicioIncremental(null, ahora) : cortes.get(x.account)!)));
     // Cuentas que son lugares: el lugar y la ciudad salen del registro, no del texto.
     const conocidas = new Set((reg.data || []).map((r) => String(r.username)));
     const ids = (reg.data || []).filter((r) => r.kind === 'venue' && r.venue_id).map((r) => Number(r.venue_id));
     const lugares = ids.length ? await db.from('venues').select('id,name,city').in('id', ids) : { data: [] };
     const lugarDe = new Map(
       (reg.data || [])
-        .filter((r) => r.venue_id)
+        .filter((r) => r.status === 'active' && r.kind === 'venue' && r.venue_id)
         .map((r) => {
           const v = (lugares.data || []).find((x) => Number(x.id) === Number(r.venue_id));
           return [String(r.username), v ? { venue: String(v.name), city: String(v.city) } : null] as const;
@@ -127,9 +138,15 @@ export async function GET(request: Request) {
         { onConflict: 'username', ignoreDuplicates: true },
       );
     const leidas = [...new Set(rows.map((r) => r.account))];
+    // Si se alcanzó el tope, puede quedar historial sin leer: no saltarlo al
+    // avanzar la marca. Esa cuenta requiere una pasada manual más amplia.
+    const saturadas = leidas.filter((u) => crudos.filter((x) => pilotItem(x, [u]) !== null).length >= PILOT_LIMITS.postsPerAccount);
     for (const u of leidas) {
       const ult = rows.filter((r) => r.account === u).map((r) => r.posted_at).filter(Boolean).sort().pop() || null;
-      await db.from('instagram_accounts').update({ last_scraped_at: new Date().toISOString(), ...(ult ? { last_post_at: ult } : {}) }).eq('username', u);
+      const anterior = reg.data?.find((r) => r.username === u)?.last_post_at;
+      const avanza = !saturadas.includes(u) && ult && (!anterior || Date.parse(ult) > Date.parse(String(anterior)));
+      const watermark = await db.from('instagram_accounts').update({ last_scraped_at: new Date().toISOString(), ...(avanza ? { last_post_at: ult } : {}) }).eq('username', u);
+      if (watermark.error) throw new Error('DB_WATERMARK');
     }
     const cost = typeof run.usageTotalUsd === 'number' ? run.usageTotalUsd : null;
     const lleno = (f: (x: Record<string, unknown>) => unknown) => crudos.filter((x) => Boolean(f(x))).length;
@@ -137,6 +154,9 @@ export async function GET(request: Request) {
       cohort: cohorte,
       actor,
       accounts_requested: cuentas.length,
+      accounts_skipped: solicitadas.filter((u) => !activas.has(u)),
+      accounts_at_limit: saturadas,
+      only_posts_newer_than: newerThan,
       accounts_read: leidas.length,
       accounts_missing: cuentas.filter((c) => !leidas.includes(c)),
       items_returned: crudos.length,

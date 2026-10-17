@@ -40,9 +40,10 @@
   {
    "titulo": "Camila Moreno",
    "lugar": "Teatro Mauri SCD",
-   "precio_min": 6000,
+   "precio_min": 12000,
    "acceso": "pago",
-   "fuente": "https://www.portaldisc.com/evento/camilamorenolaultimaluzenteatromauri"
+   "fuente": "https://www.portaldisc.com/evento/camilamorenolaultimaluzenteatromauriscd",
+   "nota_verificacion": "Ficha reabierta el 17-oct-2026: fecha coincidente, mínimo individual disponible $12.000 + cargo. Sustituye la referencia anterior de $6.000."
   },
   {
    "titulo": "Metal Attack",

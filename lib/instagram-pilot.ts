@@ -86,6 +86,14 @@ export const PILOT_LIMITS = { postsPerAccount: 3, newerThan: '7 days', maxItems:
 /** Ventana en ms, para descartar posts fijados viejos que el actor igual devuelve. */
 const VENTANA_MS = 7 * 24 * 3600 * 1000;
 
+/** Primera lectura: siete días. Después, solape de un minuto para no perder posts en el límite. */
+export function inicioIncremental(lastPostAt: unknown, ahora = Date.now()): number {
+  const last = typeof lastPostAt === 'string' ? Date.parse(lastPostAt) : NaN;
+  return Number.isFinite(last) && last <= ahora
+    ? Math.max(ahora - VENTANA_MS, last - 60000)
+    : ahora - VENTANA_MS;
+}
+
 export interface PilotItem {
   account: string;
   post_url: string;

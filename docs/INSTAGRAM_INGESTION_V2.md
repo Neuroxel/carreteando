@@ -1,6 +1,10 @@
 # Ingesta de Instagram v2
 
-Rama `feat/instagram-ingestion-v2`. Reutiliza lo existente: `instagram_pilot_runs`/`items`, `event_sources`, `event_evidence`, `review_audit`, `automation_config`, `lib/instagram-pilot.ts`, `lib/event-extraction.ts`, `/api/cron/piloto-instagram` y `/admin`. No hay base paralela ni reescritura.
+Integrada en `main` hasta `1472741`; continuación incremental en PR #2.
+Reutiliza `instagram_pilot_runs`/`items`, `event_sources`, `event_evidence`,
+`review_audit`, `automation_config`, `lib/instagram-pilot.ts`,
+`lib/event-extraction.ts`, `/api/cron/piloto-instagram` y `/admin`.
+No hay base paralela ni reescritura.
 
 ## Reglas
 
@@ -25,7 +29,17 @@ Rama `feat/instagram-ingestion-v2`. Reutiliza lo existente: `instagram_pilot_run
 
 ## Cadencia
 
-No se programa nada pagado. Si el piloto 2 da al menos 3 eventos únicos útiles por corrida y menos de 10 minutos de revisión por evento, se propone jueves en la tarde + sábado a mediodía. Las corridas serían incrementales: `last_post_at` por cuenta, `onlyPostsNewerThan` y tope por corrida.
+No se programa nada pagado. El benchmark del 17-oct dejó 10 posts únicos y
+ningún candidato completo: no justifica activar cadencia. Si el piloto 2 da
+al menos 3 eventos únicos útiles por corrida y menos de 10 minutos de revisión
+por evento, se propone jueves en la tarde + sábado a mediodía.
+
+En PR #2, A/B calcula `onlyPostsNewerThan` con la marca más antigua del grupo
+activo, limitada a siete días, y filtra después por la marca de cada cuenta,
+con un minuto de solape. BENCH conserva siete días para comparar actores.
+Sólo se avanzan marcas tras guardar evidencia, sin retroceder y sin avanzar
+cuentas que alcanzaron el tope de tres posts (requieren revisión más amplia).
+Este cambio todavía necesita despliegue y medición real.
 
 ## Visión (RTX 4070 Ti Super local)
 
@@ -37,8 +51,10 @@ No se programa nada pagado. Si el piloto 2 da al menos 3 eventos únicos útiles
 
 | Pieza | Estado |
 |---|---|
-| Código + tests (153 OK) | listo, en la rama |
-| Migración `20261016120000_instagram_ingestion_v2.sql` | escrita, **no aplicada** (conector de Supabase sin acceso) |
-| Despliegue | **no hecho**: requiere merge a `main` autorizado por el dueño |
-| Benchmark BENCH | pendiente del despliegue |
-| Piloto 2 (A + B, ≤ USD 1,00) | pendiente del despliegue y del maestro (maestro hecho) |
+| Código v2 | integrado en producción; incremental en PR #2 |
+| Migración `20261016120000_instagram_ingestion_v2.sql` | aplicada y registrada el 17-oct desde SQL Editor autenticado |
+| Registro | 61 activas, 22 candidatas (incluye 1 descubierta), 8 rechazadas; privado y reconciliado |
+| Benchmark BENCH | dos actores completados; US$0,0594 total; 0 candidatos completos |
+| Piloto 2 A + B | pendiente; no autorizado ni ejecutado en esta pasada |
+
+Detalle, límites y evidencia: `docs/RELEASE_CHECKLIST_2026-10-17.md`.

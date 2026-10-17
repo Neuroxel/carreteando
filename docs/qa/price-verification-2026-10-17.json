@@ -1,0 +1,75 @@
+[
+  {
+    "id": "src-portaldisc-casacultura-2026-10-17-trio-certero-bailanta-y-sapukai-en-casa-de-la-cultura-valpar",
+    "title": "TRÍO CERTERO: BAILANTA Y SAPUKAI EN CASA DE LA CULTURA VALPARAÍSO",
+    "url": "https://www.portaldisc.com/evento/bailantaysapukai",
+    "price": null,
+    "dateMatches": null,
+    "cancelled": null,
+    "checked_at": "2026-10-17T03:52:53.300Z",
+    "retrieval_status": "failed"
+  },
+  {
+    "id": "src-portaldisc-espaciobarcelona-2026-10-17-subirenbuscadelaire-en-espacio-barcelona-valparaiso",
+    "title": "SUBIRENBUSCADELAIRE EN ESPACIO BARCELONA, VALPARAÍSO",
+    "url": "https://www.portaldisc.com/evento/subirenbuscadelairevalpo",
+    "price": null,
+    "dateMatches": null,
+    "cancelled": null,
+    "checked_at": "2026-10-17T03:52:53.305Z",
+    "retrieval_status": "failed"
+  },
+  {
+    "id": "src-portaldisc-espaciomusa-2026-10-17-mono-guitarra-dosifa-fenomeno-zambelli-mai-en-espacio-musa-q",
+    "title": "MONO GUITARRA + DÖSIFA + FENÓMENO ZAMBELLI + MAI EN ESPACIO MUSA, QUILPUÉ",
+    "url": "https://www.portaldisc.com/evento/folkquilpue17deoctubre",
+    "price": null,
+    "dateMatches": null,
+    "cancelled": null,
+    "checked_at": "2026-10-17T03:52:53.305Z",
+    "retrieval_status": "failed"
+  },
+  {
+    "id": "src-portaldisc-region-2026-10-17-metal-attack-en-club-segundo-piso-valparaiso",
+    "title": "METAL ATTACK EN CLUB SEGUNDO PISO, VALPARAÍSO",
+    "url": "https://www.portaldisc.com/evento/metalattackenclubsegundopiso",
+    "price": null,
+    "dateMatches": null,
+    "cancelled": null,
+    "checked_at": "2026-10-17T03:52:53.305Z",
+    "retrieval_status": "failed"
+  },
+  {
+    "id": "src-portaldisc-region-2026-10-17-ninfa-folk-lanzamiento-primer-sencillo-en-espacio-guestro-li",
+    "title": "NINFA FOLK: LANZAMIENTO PRIMER SENCILLO EN ESPACIO GUESTRO, LIMACHE",
+    "url": "https://www.portaldisc.com/evento/primersencilloninfafolkespacioguestro",
+    "price": null,
+    "dateMatches": null,
+    "cancelled": null,
+    "checked_at": "2026-10-17T03:52:53.305Z",
+    "retrieval_status": "failed"
+  },
+  {
+    "id": "src-portaldisc-region-2026-10-17-seba-el-monstruo-lanzamiento-lleno-de-97-en-teatro-ipa-valpa",
+    "title": "SEBA & EL MONSTRUO, LANZAMIENTO: LLENO DE 97 EN TEATRO IPA, VALPARAÍSO",
+    "url": "https://www.portaldisc.com/evento/llenode97",
+    "price": null,
+    "dateMatches": null,
+    "cancelled": null,
+    "checked_at": "2026-10-17T03:52:53.305Z",
+    "retrieval_status": "failed"
+  },
+  {
+    "id": "src-portaldisc-teatromauri-2026-10-17-camila-moreno-la-ultima-luz-en-teatro-mauri-scd-valparaiso",
+    "title": "CAMILA MORENO: LA ULTIMA LUZ EN TEATRO MAURI SCD VALPARAISO",
+    "url": "https://www.portaldisc.com/evento/camilamorenolaultimaluzenteatromauriscd",
+    "price": {
+      "price": 12000,
+      "text": "Desde $12.000 + cargo"
+    },
+    "dateMatches": true,
+    "cancelled": false,
+    "checked_at": "2026-10-17T03:52:53.331Z",
+    "retrieval_status": "ok"
+  }
+]

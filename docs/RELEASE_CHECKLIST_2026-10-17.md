@@ -1,5 +1,83 @@
 # Lanzamiento: verificación del 17 de octubre de 2026
 
+## Actualización tras acceso por navegador (prevalece sobre la línea base)
+
+El dueño inició sesión en el panel Supabase del proyecto canónico. El conector
+MCP sigue rechazando acceso, pero el SQL Editor autenticado sí funciona.
+
+**Hecho y verificado en la base:**
+
+- Tres respaldos tenían RLS desactivada y SELECT para anon/authenticated.
+  Se habilitó RLS y se revocaron esos permisos sin borrar filas. La consulta
+  final no encuentra tablas regulares de `public` sin RLS.
+- Migración Instagram v2 aplicada y registrada como `20261016120000`; registro
+  privado, cinco columnas v2 comprobadas y job diario de purga activo.
+  Hardening registrado en `20261017034717_protect_private_backups.sql`.
+- Siembra insert-only desde el maestro: 90 handles distintos (92 filas de
+  entrada), reconciliados por slug con los IDs reales. Resultado inicial:
+  61 activos vinculados a lugares publicados, 21 candidatos, 8 rechazados.
+  El descubrimiento del benchmark agrega una candidata: quedan 22.
+  No se inventaron handles ni se activaron hipótesis de Gemini.
+- Barrido existente ejecutado: cero vencidos en cola; quedan **3 revisiones
+  vigentes**, que se conservan privadas. No se aprobó la cola para vaciarla.
+- Importador existente ejecutado mediante pase de un uso: HTTP 200,
+  `editorialInsertados=11`. El mecanismo existente dejó la fila vieja de Mad
+  Professor como duplicada y la ficha corregida pública.
+- RPC `review_item` probado con guardado sin cambio de contenido y revisión
+  obsoleta: una sola nueva auditoría (688), revisión final 1. Esto prueba la
+  operación de base; el login y envío del formulario de `/admin` siguen sin
+  probarse de extremo a extremo con una credencial de moderador.
+- Precio de Camila Moreno completado tras reabrir la misma fuente: $12.000
+  más cargo; auditoría 689. Se corrigió también la referencia anterior del
+  benchmark ($6.000 y otro slug). Seis fichas adicionales no pudieron
+  reabrirse por fallos de conexión: sus precios siguen sin inventarse.
+
+**Observado públicamente después del import:** 104 eventos vigentes, **18 hoy
+y 2 mañana**, 147 lugares. Se comprobó en navegador Mañana → Mad Professor:
+18:00, general $23.000, dirección y enlace PortalTickets. Los 18 eventos del
+benchmark están presentes; esto no implica cobertura exhaustiva de la región.
+
+**Benchmark Apify ejecutado con autorización explícita de US$0,50 total:**
+
+| Actor | Tiempo | Elementos | Posts retenidos | Cuentas leídas | Costo USD |
+|---|---:|---:|---:|---:|---:|
+| instagram-scraper | 38 s | 13 | 9 | 4/5 | 0,0270 |
+| instagram-post-scraper | 28 s | 13 | 8 | 4/5 | 0,0324 |
+
+Total **US$0,0594**. Ambos omitieron `manda.chile`; eso no demuestra cierre
+ni inexistencia. La unión tiene 10 posts únicos privados, **0 candidatos
+marcados como evento y 0 completos**; 2 requieren visión. No se publicó
+ningún evento desde Instagram. El resultado no justifica activar una cadencia
+pagada. Piloto A/B y benchmark de visión siguen pendientes; no se gastó en ellos.
+
+**Implementado en PR, aún sin desplegar en producción:** incremental A/B por
+marca `last_post_at`, ventana máxima de siete días y solape de un minuto;
+solamente cuentas activas. BENCH conserva siete días para comparar actores.
+Las marcas avanzan tras guardar la evidencia; no retroceden y no avanzan si
+se alcanza el tope de tres posts, porque puede quedar historial sin leer.
+La cuenta saturada se informa para una pasada manual más amplia. Sin cron
+pagado nuevo. Verificación local: 170 pruebas más lint, tipos, build y auditoría
+de producción. El CI remoto debe confirmar la revisión nueva de la PR.
+
+**Bloqueo GPS encontrado en la verificación HTTP:** la política global de
+producción/configuración original es `geolocation=()`, que deniega el permiso
+incluso si la persona quiere concederlo. La PR la cambia a
+`geolocation=(self)` y mantiene cámara/micrófono bloqueados. La solicitud
+continúa limitada por el flujo de Radar existente. Incluye regresión de la
+cabecera: 170 pruebas. GPS real sólo podrá cerrarse tras desplegar y probar
+en un navegador/teléfono con permiso concedido.
+
+**URL oficial pendiente de decisión/configuración:** las dos URLs responden
+por HTTP, pero `dondesalgo.vercel.app` aún declara canónica a
+`carreteando.vercel.app`. El navegador de esta sesión rechazó una conexión al
+alias de la marca; no se declara resuelto. Mantener una sola dirección
+canónica y redirigir la antigua al adoptar la URL oficial. No se compró dominio
+ni se modificó DNS o configuración de producción en esta pasada.
+
+Evidencia en `docs/qa/`: capturas de RLS, migración, auditoría, importación,
+benchmark, cartelera móvil y ficha pública; snapshots antes/después y respuestas
+del benchmark. Las secciones siguientes conservan la línea base previa al login.
+
 ## Decisión
 
 **No declarar release cerrado.** Hay lectura pública funcional, pero no acceso
@@ -87,24 +165,25 @@ no una importación observada.
 
 ## Checklist pendiente, en orden
 
-- [ ] Restablecer acceso administrativo al mismo proyecto Supabase, sin
+- [x] Restablecer acceso administrativo al mismo proyecto Supabase, sin
   compartir claves en chat ni cambiar permisos públicos.
-- [ ] Consultar estado real de eventos/editoriales, cola, auditoría,
+- [x] Consultar estado real de eventos/editoriales, cola, auditoría,
   `automation_config`, historial de migraciones y cron. Guardar conteos antes.
-- [ ] Ejecutar el importador existente de forma insert-only para los 11
+- [x] Ejecutar el importador existente de forma insert-only para los 11
   editoriales, verificando no duplicar ni reactivar retiros. Comprobar después
   snapshot, ficha y enlace de fuente; resolver precios de filas existentes
   sólo mediante moderación auditada.
-- [ ] Barrer vencidos con el mecanismo existente y verificar cero vencidos
+- [x] Barrer vencidos con el mecanismo existente y verificar cero vencidos
   en cola vigente. Probar una transición administrativa reversible y su
   `review_audit` antes de declarar admin funcional.
-- [ ] Revisar y aplicar `20261016120000_instagram_ingestion_v2.sql` si falta;
+- [x] Revisar y aplicar `20261016120000_instagram_ingestion_v2.sql` si falta;
   verificar columnas, RLS, permisos privados y cron de purga. Reconciliar
   maestro contra IDs canónicos; las filas dudosas siguen candidatas.
-- [ ] Ejecutar benchmark y piloto acotados sólo tras comprobar esquema,
+- [x] Ejecutar benchmark acotado sólo tras comprobar esquema,
   armado y topes existentes. Nada se publica desde Instagram automáticamente.
-- [ ] Completar incremental por cuenta: hoy se guarda `last_post_at`, pero
-  el actor aún pide una ventana fija de 7 días. No llamarlo incremental listo.
+- [x] Implementar y probar incremental por cuenta en la PR.
+- [ ] Revisar/desplegar incremental y medirlo en una corrida autorizada.
+- [ ] Evaluar piloto A/B y visión sólo si se justifica por utilidad editorial.
 - [x] Confirmar compilación del preview y CI de esta PR.
 - [ ] Revisar el contenido del preview protegido antes de fusionar main.
 - [ ] QA final del despliegue aprobado: móvil físico, GPS permitido/denegado,

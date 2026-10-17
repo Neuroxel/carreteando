@@ -2,8 +2,10 @@
 
 > **Verificación actual: 17-10-2026.** Estado recuperado, evidencia de producción
 > y bloqueos: [Checklist de lanzamiento](docs/RELEASE_CHECKLIST_2026-10-17.md).
-> Ese corte prevalece sobre las cifras históricas de esta página. Admin,
-> migración Instagram e importación editorial todavía no están cerrados.
+> Ese corte prevalece sobre las cifras históricas de esta página. La migración
+> Instagram y el import editorial ya se aplicaron desde el panel autenticado:
+> 18 eventos hoy, 2 mañana y cero vencidos en cola. Admin web, GPS real y
+> despliegue del incremental siguen pendientes de verificación final.
 
 El contenido de abajo corresponde al **10 de octubre de 2026**
 (rama `release/dondesalgo-v1`).

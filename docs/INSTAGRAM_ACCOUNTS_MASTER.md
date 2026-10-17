@@ -2,7 +2,12 @@
 
 Tabla privada definida en `supabase/migrations/20261016120000_instagram_ingestion_v2.sql`: RLS activa, sin acceso para anon ni authenticated.
 
-**Estado: migración escrita y probada en código, no aplicada.** El conector de Supabase perdió acceso al proyecto durante esta pasada (`list_projects` vacío, `execute_sql` sin permiso).
+**Estado al 17-oct: migración aplicada y registrada desde el SQL Editor
+autenticado.** El conector MCP sigue sin acceso. Se reconciliaron 92 filas
+con handle del maestro contra los slugs canónicos: 90 cuentas distintas,
+61 activas vinculadas a lugares publicados, 21 candidatas y 8 rechazadas.
+El benchmark agregó una candidata nueva: quedan 22. La tabla es privada.
+Ver `scripts/seed-instagram-accounts.sql` y el checklist del 17-oct.
 
 ## Campos
 
@@ -11,7 +16,7 @@ Tabla privada definida en `supabase/migrations/20261016120000_instagram_ingestio
 - `kind`: venue, centro_alumnos, universidad, centro_cultural, productora, colectivo, promotor, banda_artista, fiesta_recurrente, other.
 - `status`: active, candidate, rejected, paused.
 
-## Siembra inicial (al aplicar la migración)
+## Criterio del maestro para la siembra inicial
 
 Las cuentas de lugares salen de `docs/data/VENUES_INSTAGRAM_MASTER.md`:
 

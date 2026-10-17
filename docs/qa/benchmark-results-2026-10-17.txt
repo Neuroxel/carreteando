@@ -1,0 +1,54 @@
+Browser tab: 3, Title: "Untitled query | SQL Editor | carretes | tpotp's Org | Supabase", URL: "https://supabase.com/dashboard/project/hgwljbtqdserkdhulbts/sql/3ea01850-9ac9-46e2-93ca-953e2fd69f5a".
+0 AXWebArea Untitled query | SQL Editor | carretes | tpotp's Org | Supabase, URL: supabase.com/dashboard/project/hgwljbtqdserkdhulbts/sql/3ea01850-9ac9-46e2-93ca-953e2fd69f5a
+	1 container
+		162 link Description: Skip to content, Value: supabase.com/dashboard/project/hgwljbtqdserkdhulbts/sql/3ea01850-9ac9-46e2-93ca-953e2fd69f5a#main
+		163 container
+			164 button T carretes main
+				165 text T
+				166 text carretes
+				167 text main
+			168 button Connect
+			169 pop up button (collapsed) Neuroxel, ID: radix-_r_4_, Secondary Actions: Expand
+				170 image Neuroxel
+			171 button Description: Open menu, Help: Menu dropdown button
+		172 container Floating toolbar
+			173 container mobile-nav-actions
+				174 button search-trigger
+				175 button Help, ID: help-dropdown-button
+				176 button Advisor Center, ID: advisor-center-trigger
+				177 button SQL Editor, ID: editor-trigger
+					178 image
+					179 text SQL Editor
+				180 button AI Assistant, ID: assistant-trigger
+					181 text AI Assistant
+		182 container
+			183 tab group
+				184 container
+					185 tab (selected, settable, boolean) Untitled query, ID: radix-_r_87_-trigger-sql-3ea01850-9ac9-46e2-93ca-953e2fd69f5a, Value: 1
+Untitled query
+					186 button Close tab
+				187 button
+			188 text Unsaved edits
+			189 pop up button (collapsed) Description: More actions, ID: radix-_r_8k_, Secondary Actions: Expand
+			190 pop up button (collapsed) Description: Query source: Database, ID: radix-_r_8s_, Secondary Actions: Expand
+			191 button Save
+			192 button Run
+			193 container
+				194 editor (settable) Description: Editor content, Value: instagram_pilot_runs where cohort='BENCH' order by created_at desc limit 2) t)) as benchmark_results;
+			195 splitter 50
+			196 container
+				197 tab group
+					198 tab (selected, settable, boolean) Results, Value: 1, ID: radix-_r_93_-trigger-results
+					199 tab (selectable, settable, boolean) Chart, Value: 0, ID: radix-_r_93_-trigger-chart
+					201 button 1 row
+						202 container
+							203 text 1  row
+					200 pop up button (collapsed) Export, ID: radix-_r_9i_, Secondary Actions: Expand
+				204 table
+					205 row benchmark_results
+						206 cell (selectable) benchmark_results
+					207 row {"runs":[{"actor":"apify~instagram-post-scraper","cohort":"BENCH","status":"succeeded","summary":{"actor":"apify~instagram-post-scraper","cohort":"BENCH","cap_usd":0.25,"seconds":28,"cost_usd":0.0324,"posts_kept":8,"accounts_read":4,"items_returned":13,"accounts_missing":["manda.chile"],"accounts_requested":5,"field_completeness":{"caption":11,"location":3,"mentions":2,"coauthors":5,"timestamp":13,"display_url":13,"pinned_flag":13,"tagged_users":5},"candidate_accounts_found":0},"apify_run_id":"AqFszDUjzcE5ke8L7"},{"actor":"apify~instagram-scraper","cohort":"BENCH","status":"succeeded","summary":{"actor":"apify~instagram-scraper","cohort":"BENCH","cap_usd":0.25,"seconds":38,"cost_usd":0.027000000000000003,"posts_kept":9,"accounts_read":4,"items_returned":13,"accounts_missing":["manda.chile"],"accounts_requested":5,"field_completeness":{"caption":12,"location":5,"mentions":3,"coauthors":5,"timestamp":13,"display_url":13,"pinned_flag":13,"tagged_users":5},"candidate_accounts_found":1},"apify_run_id":"QrCYltdplQ4TtqFrh"}],"state":"used-BENCH-post","response":{"error":null,"status":200,"content":"{\"success\":true,\"apify_run_id\":\"AqFszDUjzcE5ke8L7\",\"cohort\":\"BENCH\",\"actor\":\"apify~instagram-post-scraper\",\"accounts_requested\":5,\"accounts_read\":4,\"accounts_missing\":[\"manda.chile\"],\"items_returned\":13,\"posts_kept\":8,\"field_completeness\":{\"timestamp\":13,\"caption\":11,\"mentions\":2,\"tagged_users\":5,\"coauthors\":5,\"location\":3,\"display_url\":13,\"pinned_flag\":13},\"candidate_accounts_found\":0,\"cost_usd\":0.0324,\"cap_usd\":0.25,\"seconds\":28}"}} View full cell content
+						208 cell (selectable) Description: View full cell content, Value: {"runs":[{"actor":"apify~instagram-post-scraper","cohort":"BENCH","status":"succeeded","summary":{"actor":"apify~instagram-post-scraper","cohort":"BENCH","cap_usd":0.25,"seconds":28,"cost_usd":0.0324,"posts_kept":8,"accounts_read":4,"items_returned":13,"accounts_missing":["manda.chile"],"accounts_requested":5,"field_completeness":{"caption":11,"location":3,"mentions":2,"coauthors":5,"timestamp":13,"display_url":13,"pinned_flag":13,"tagged_users":5},"candidate_accounts_found":0},"apify_run_id":"AqFszDUjzcE5ke8L7"},{"actor":"apify~instagram-scraper","cohort":"BENCH","status":"succeeded","summary":{"actor":"apify~instagram-scraper","cohort":"BENCH","cap_usd":0.25,"seconds":38,"cost_usd":0.027000000000000003,"posts_kept":9,"accounts_read":4,"items_returned":13,"accounts_missing":["manda.chile"],"accounts_requested":5,"field_completeness":{"caption":12,"location":5,"mentions":3,"coauthors":5,"timestamp":13,"display_url":13,"pinned_flag":13,"tagged_users":5},"candidate_accounts_found":1},"apify_run_id":"QrCYltdplQ4TtqFrh"}],"state":"used-BENCH-post","response":{"error":null,"status":200,"content":"{\"success\":true,\"apify_run_id\":\"AqFszDUjzcE5ke8L7\",\"cohort\":\"BENCH\",\"actor\":\"apify~instagram-post-scraper\",\"accounts_requested\":5,\"accounts_read\":4,\"accounts_missing\":[\"manda.chile\"],\"items_returned\":13,\"posts_kept\":8,\"field_completeness\":{\"timestamp\":13,\"caption\":11,\"mentions\":2,\"tagged_users\":5,\"coauthors\":5,\"location\":3,\"display_url\":13,\"pinned_flag\":13},\"candidate_accounts_found\":0,\"cost_usd\":0.0324,\"cap_usd\":0.25,\"seconds\":28}"}}
+		161 text SQL Editor | carretes | tpotp's Org | Supabase
+
+The focused UI element is 194 editor (settable) Description: Editor content, Value: instagram_pilot_runs where cohort='BENCH' order by created_at desc limit 2) t)) as benchmark_results;
