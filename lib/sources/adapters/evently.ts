@@ -36,17 +36,17 @@ type Ticket = { name?: unknown; price?: unknown; description?: unknown; isSoldOu
  * Los tipos de ticket con su condición escrita por el local. Un ticket gratis
  * se dice con su condición ("válido hasta las 23:30…"), nunca "Gratis" a secas.
  */
-export function precioDeTickets(html: string): { price: number; text: string } | null {
+export function precioDeTickets(html: string): { price: number | null; text: string; disponibilidad: 'disponible' | 'agotado' } | null {
   const texto = textoRsc(html);
   const tickets: Ticket[] = [];
   for (const m of texto.matchAll(/"ticketType":\{/g)) {
     const t = valorDesde(texto, m.index + '"ticketType":'.length);
     if (t && typeof t === 'object') tickets.push(t as Ticket);
   }
-  const vigentes = tickets.filter(
-    (t) => typeof t.price === 'number' && Number.isInteger(t.price) && t.price >= 0 && t.price <= 500000 && t.isSoldOut !== true && t.hasAvailableStock !== false,
-  );
-  if (!vigentes.length) return null;
+  const validos = tickets.filter((t) => typeof t.price === 'number' && Number.isInteger(t.price) && t.price >= 0 && t.price <= 500000);
+  const vigentes = validos.filter((t) => t.isSoldOut !== true && t.hasAvailableStock !== false);
+  // Todas publicadas y todas agotadas: se dice agotado, sin mostrar un precio que no se puede pagar.
+  if (!vigentes.length) return validos.length ? { price: null, text: 'Agotado en Evently', disponibilidad: 'agotado' } : null;
   const limpio = (v: unknown) => (typeof v === 'string' ? decodeEntities(v).replace(/\s+/g, ' ').trim() : '');
   const partes = vigentes.map((t) => {
     const nombre = limpio(t.name);
@@ -55,7 +55,7 @@ export function precioDeTickets(html: string): { price: number; text: string } |
     return `${nombre} ${precio}${condicion ? ` (${condicion.replace(/\.$/, '')})` : ''}`;
   });
   const minimo = Math.min(...vigentes.map((t) => t.price as number));
-  return { price: minimo, text: partes.join(' · ').slice(0, 500) };
+  return { price: minimo, text: partes.join(' · ').slice(0, 500), disponibilidad: 'disponible' };
 }
 
 /**
@@ -143,6 +143,7 @@ export async function leerEvently(
     if (precio) {
       c.priceClp = precio.price;
       c.priceText = precio.text;
+      c.disponibilidad = precio.disponibilidad;
     } else
       anotar(
         c,

@@ -1,7 +1,8 @@
 import { toChileDateString } from '../../event-extraction';
 import { CIUDADES } from '../../types';
 import { buildCandidate, decodeEntities, stripTags } from '../normalize';
-import { SourceError, type Adapter, type AdapterResult, type EventCandidate, type Fetcher } from '../types';
+import { precioDeTickets } from './evently';
+import { SourceError, esPlazoAgotado, type Adapter, type AdapterResult, type EventCandidate, type Fetcher } from '../types';
 
 type Ld = Record<string, unknown>;
 const plano = (v: string) =>
@@ -108,6 +109,43 @@ export function candidatoDeLd(ev: Ld, sourceId: string, pageUrl: string, today: 
   return c;
 }
 
+/** Fichas de Evento de cualquier productora en Evently: `<productora>.evently.cl/<evento>`. */
+export const FICHA_EVENTLY = /^https:\/\/(?!app\.|admin\.|www\.)[a-z0-9-]+\.evently\.cl\/[A-Za-z0-9-]{6,}$/;
+/**
+ * Evently publica los tipos de entrada solo en `<ficha>/tickets`. Se leen ahí,
+ * con la misma estructura que la agenda de Woo (`ticketType` con precio
+ * numérico); si la página no trae esa estructura, no se adivina nada. Tope de
+ * solicitudes por corrida. No se aplica a ninguna otra plataforma.
+ */
+export async function preciosEvently(candidatos: EventCandidate[], fetcher: Fetcher, tope = 10) {
+  const counts = new Map<string, number>();
+  const anotar = (c: EventCandidate, code: string) => {
+    c.reasons.push(code);
+    counts.set(code, (counts.get(code) || 0) + 1);
+  };
+  let usadas = 0;
+  for (const c of [...candidatos].sort((a, b) => a.date.localeCompare(b.date))) {
+    if (c.priceClp !== null || !FICHA_EVENTLY.test(c.detailUrl)) continue;
+    if (usadas >= tope) {
+      anotar(c, 'PRICE_BUDGET');
+      continue;
+    }
+    usadas += 1;
+    let plazo = false;
+    const r = await fetcher(`${c.detailUrl}/tickets`).catch((e) => {
+      plazo = esPlazoAgotado(e);
+      return null;
+    });
+    const p = r && r.status === 200 ? precioDeTickets(r.body) : null;
+    if (p) {
+      c.priceClp = p.price;
+      c.priceText = p.text;
+      c.disponibilidad = p.disponibilidad;
+    } else anotar(c, plazo ? 'PRICE_DEADLINE' : r ? (r.status === 200 ? 'PRICE_NOT_FOUND' : `PRICE_HTTP_${r.status}`) : 'PRICE_NETWORK');
+  }
+  return [...counts].map(([k, n]) => `${k}=${n}`);
+}
+
 /** Fecha al final del slug (…-03-10-2026): si ya pasó, la ficha no se abre. */
 export function fechaDeSlug(url: string): string | null {
   const m = url.match(/-(\d{2})-(\d{2})-(\d{4})\/?$/);
@@ -197,6 +235,7 @@ export const jsonldEvents: Adapter = {
       }
     }
     if (!itemsFound && paginas.length && parseFailures === paginas.length) throw new SourceError('SIN_PAGINAS');
-    return { itemsFound, candidates, parseFailures };
+    const diagnostics = await preciosEvently(candidates, fetcher);
+    return { itemsFound, candidates, parseFailures, diagnostics: diagnostics.length ? diagnostics : undefined };
   },
 };
