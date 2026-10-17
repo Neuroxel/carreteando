@@ -90,6 +90,6 @@ export function editorialRows(now = new Date()) {
       is_active: true,
       moderation_status: 'approved',
       organizer_verified: false,
-      event_key: eventKey(e.venue_id, e.date, e.title),
+      event_key: eventKey(e.venue_id, e.date, e.title, e.time),
     }));
 }

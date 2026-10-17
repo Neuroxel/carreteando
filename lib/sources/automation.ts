@@ -8,6 +8,7 @@
 import { toChileDateString } from '../event-extraction';
 import { CIUDADES } from '../types';
 import { httpFetcher, looksLikeSameEvent, normalizedTitle } from './dispatcher';
+import { agruparPorHora, horasCompatibles } from '../occurrence';
 import { evaluateEventEvidence, sameVenue, wilsonLower, type Authority, type Decision, type EventState, type Evidence } from './evidence';
 import { ADAPTERS, SOURCES } from './registry';
 import { clasificar, type Relevancia } from './relevance';
@@ -100,7 +101,10 @@ export function duplicadosPorFicha(rows: Row[], evidence: Map<number, Evidence[]
     if (url) porUrl.set(url, [...(porUrl.get(url) || []), r]);
   }
   const copias = new Map<number, number>();
-  for (const [url, grupo] of porUrl) {
+  // Dos funciones vendidas en la misma ficha (20:00 y 22:00) no son copias:
+  // primero se separan por hora; dentro de cada función rige la regla de siempre.
+  const funciones = [...porUrl].flatMap(([url, filas]) => agruparPorHora(filas, (r) => r.event_time).map((g) => [url, g] as const));
+  for (const [url, grupo] of funciones) {
     if (grupo.length < 2) continue;
     const ultimaFecha = grupo
       .flatMap((r) => evidence.get(r.id) || [])
@@ -242,7 +246,14 @@ export async function reevaluate(db: Db, now = new Date(), forced?: EngineMode):
     const copiaDe = copias.get(r.id);
     if (copiaDe && !st.humanLocked) res = { ...res, decision: 'AUTO_REJECT', rule: 4, reasons: [`misma ficha que el evento ${copiaDe}`], conflicting: [] };
     if (res.decision === 'AUTO_PROMOTE_FROM_REVIEW' || res.decision === 'AUTO_PUBLISH') {
-      const gemelo = publicos.find((p) => p.id !== r.id && p.date_text === r.date_text && mismoLugar(p, r) && looksLikeSameEvent(p.title || '', r.title || ''));
+      const gemelo = publicos.find(
+        (p) =>
+          p.id !== r.id &&
+          p.date_text === r.date_text &&
+          horasCompatibles(p.event_time, r.event_time) &&
+          mismoLugar(p, r) &&
+          looksLikeSameEvent(p.title || '', r.title || ''),
+      );
       if (gemelo) res = { ...res, decision: 'AUTO_REJECT', rule: 4, reasons: [`ya publicado como el evento ${gemelo.id}`] };
     }
     report.counts[res.decision] = (report.counts[res.decision] || 0) + 1;

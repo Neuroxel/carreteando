@@ -17,6 +17,8 @@ export interface Evento {
   descripcion?: string | null;
   fecha: string; // ISO date string YYYY-MM-DD
   hora?: string | null; // HH:MM
+  /** Final explícito publicado por la fuente (HH:MM; menor que `hora` = día siguiente). Nunca se estima. */
+  fin?: string | null;
   lugar?: string | null;
   ciudad: string;
   sector?: string | null;

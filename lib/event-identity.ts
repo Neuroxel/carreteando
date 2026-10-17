@@ -1,3 +1,4 @@
+import { sufijoHora } from './occurrence';
 import { normalizeText } from './event-extraction';
 export function eventIdentity(title: string): string {
   return normalizeText(title)
@@ -6,6 +7,13 @@ export function eventIdentity(title: string): string {
     .replace(/^-|-$/g, '')
     .slice(0, 100);
 }
-export function eventKey(venue: string, date: string, title: string): string {
-  return `${venue}|${date}|${eventIdentity(title)}`;
+/**
+ * Clave canónica (índice único `events_canonical_key`). Con hora conocida se
+ * agrega al final: dos funciones del mismo día son dos filas. Sin hora, igual
+ * que antes, así las claves ya guardadas siguen valiendo.
+ */
+export function eventKey(venue: string, date: string, title: string, time: string | null = null): string {
+  const base = `${venue}|${date}|${eventIdentity(title)}`;
+  const hora = sufijoHora(time);
+  return hora ? `${base}|${hora}` : base;
 }

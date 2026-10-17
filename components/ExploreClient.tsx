@@ -10,6 +10,7 @@ import { buscarLugares, buscarZonas, zonaSlug } from '../lib/venues';
 import { normalizar, puntosDeMapa } from '../lib/map';
 import type { PublicSnapshot } from '../lib/snapshot';
 import { rememberEmptySearch } from '../lib/metrics';
+import { ORDEN_TEMPORAL, ahoraEnChile, estadoTemporal, porEstadoTemporal } from '../lib/temporal';
 import { CLAVE_GPS_NEGADO, OPCIONES_GPS, leerCapa, porCercania, textoDistancia, type Capa, type Posicion } from '../lib/radar';
 import EventCard from './EventCard';
 import VenueCard from './VenueCard';
@@ -208,10 +209,17 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
       .catch(() => undefined);
   }, [vista, gps, ubicar]);
   const todos = snap.events;
+  // Reloj de Chile para "Ya empezó": se actualiza cada minuto en el teléfono, sin pedir nada.
+  useEffect(() => {
+    const t = setInterval(() => setAhora(Date.now()), 60_000);
+    return () => clearInterval(t);
+  }, []);
+  const ahoraCL = useMemo(() => ahoraEnChile(new Date(ahora)), [ahora]);
   const events = useMemo(() => {
     const lista = diversifyByVenue(filterEvents(todos, filtros, today));
-    return orden === 'barato' ? ordenarPorPrecio(lista) : nocheAntes(lista);
-  }, [todos, filtros, today, orden]);
+    // Lo que todavía no empieza va primero; lo iniciado sigue en la lista, después.
+    return orden === 'barato' ? ordenarPorPrecio(lista) : porEstadoTemporal(nocheAntes(lista), ahoraCL);
+  }, [todos, filtros, today, orden, ahoraCL]);
   const derivados = useMemo(() => {
     const conteoLugar = new Map<string, number>();
     const hoyPorLugar = new Map<string, string>();
@@ -272,8 +280,12 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
   // Radar no usa las pestañas de fecha: siempre marca lo de hoy. "Carretes hoy"
   // muestra solo lugares con evento confirmado hoy; "Boliches", todos.
   const eventosHoy = useMemo(
-    () => (vista === 'mapa' ? filterEvents(todos, { ...filtros, fecha: 'hoy' }, today) : []),
-    [vista, todos, filtros, today],
+    // Un evento con final publicado y ya pasado no es una recomendación activa.
+    () =>
+      vista === 'mapa'
+        ? filterEvents(todos, { ...filtros, fecha: 'hoy' }, today).filter((e) => estadoTemporal(e, ahoraCL) !== 'finalizado')
+        : [],
+    [vista, todos, filtros, today, ahoraCL],
   );
   const lugaresMapa = useMemo(() => {
     if (vista !== 'mapa') return [];
@@ -289,7 +301,17 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
     () => (vista === 'mapa' ? puntosDeMapa(lugaresMapa, eventosHoy, today) : []),
     [vista, lugaresMapa, eventosHoy, today],
   );
-  const cercanos = useMemo(() => (yo && puntos.length ? porCercania(puntos, yo).slice(0, 6) : []), [yo, puntos]);
+  // Cercanía: primero lo que todavía no empieza, después lo ya iniciado y al final
+  // los lugares sin evento hoy; dentro de cada grupo, por distancia.
+  const cercanos = useMemo(() => {
+    if (!yo || !puntos.length) return [];
+    const orden = (p: (typeof puntos)[number]) =>
+      p.estaNoche.length ? Math.min(...p.estaNoche.map((e) => ORDEN_TEMPORAL[estadoTemporal({ fecha: today, hora: e.hora }, ahoraCL)])) : 9;
+    return porCercania(puntos, yo)
+      .map((x) => ({ ...x, orden: orden(x.punto) }))
+      .sort((a, b) => a.orden - b.orden || a.km - b.km)
+      .slice(0, 6);
+  }, [yo, puntos, today, ahoraCL]);
   const vigentes = todos.filter((e) => e.fecha >= today).length;
   const viejo = ahora - Date.parse(snap.generatedAt) > VIEJO_MS;
   const dateLabel = new Intl.DateTimeFormat('es-CL', {
@@ -526,7 +548,7 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
                   Más cerca de ti<span className="heading-period">.</span>
                 </h3>
                 <ol>
-                  {cercanos.map(({ punto, km }) => (
+                  {cercanos.map(({ punto, km, orden }) => (
                     <li key={punto.slug}>
                       <Link prefetch={false} href={`/lugar/${punto.slug}`}>
                         <span className="radar-cerca-nombre">
@@ -535,6 +557,7 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
                         </span>
                         <span className="radar-cerca-dato">
                           {punto.estaNoche[0] ? `${punto.estaNoche[0].titulo}${punto.estaNoche[0].hora ? ` · ${punto.estaNoche[0].hora}` : ''}` : punto.tipoLabel}
+                          {orden === ORDEN_TEMPORAL.iniciado ? ' · ya empezó' : ''}
                         </span>
                       </Link>
                       <span className="radar-cerca-km">{textoDistancia(km)}</span>
@@ -631,7 +654,7 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
             ) : (
               <div className="event-grid">
                 {events.map((e, i) => (
-                  <EventCard key={e.id} evento={e} today={today} priority={i === 0} />
+                  <EventCard key={e.id} evento={e} today={today} priority={i === 0} estado={estadoTemporal(e, ahoraCL)} />
                 ))}
               </div>
             )}
@@ -640,7 +663,7 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
                 <h3>Otras noches en la región</h3>
                 <div className="event-grid">
                   {derivados.sugerencias.map((e) => (
-                    <EventCard key={e.id} evento={e} today={today} />
+                    <EventCard key={e.id} evento={e} today={today} estado={estadoTemporal(e, ahoraCL)} />
                   ))}
                 </div>
               </div>
