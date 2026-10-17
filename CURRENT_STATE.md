@@ -1,126 +1,115 @@
-# Dónde Salgo? — estado actual
+# Dónde Salgo? — estado canónico actual
 
-**Este documento describe solo el presente.** La historia (septiembre, release de
-octubre, decisiones anteriores) está en [`docs/historia/`](docs/historia/). Si algo
-de allá contradice esto, manda esto.
+**Este documento describe el presente.** La historia y checkpoints anteriores están en `docs/historia/` y en los informes fechados de `docs/`. Si contradicen este archivo, manda este archivo.
 
-Última verificación: **10 de octubre de 2026** (rama `release/dondesalgo-v1`).
+Última consolidación: **17 de octubre de 2026, Chile**. Rama canónica: `main`.
 
-## Qué es
+## Producto
 
-**Dónde Salgo?** reúne eventos y lugares para salir en la Región de Valparaíso:
-qué hay hoy, dónde queda, cómo llegar y de dónde sale cada dato. No vende
-entradas. Modela **lugares** (existen aunque hoy no pase nada) y **eventos**
-(pasan en una fecha).
+**Dónde Salgo?** descubre carretes, conciertos, tocatas, comedia y vida nocturna de la Región de Valparaíso. Modela por separado **lugares** y **eventos**. No vende entradas: conserva la fuente y deriva al origen.
 
-El nombre interno del código, del proyecto en Vercel y de la base sigue siendo
-`carreteando`. Ningún texto público lo muestra.
+Arquitectura **client-first**: snapshot cacheado y filtros/búsqueda/mapa locales en el teléfono; backend para ingestión, moderación y escrituras.
 
-## Dónde está
+## Producción y repositorio
 
-| | |
+| Componente | Estado |
 |---|---|
-| Revisión V1 | rama `release/dondesalgo-v1` (URL en [`docs/CARLOS_REVIEW_V1.md`](docs/CARLOS_REVIEW_V1.md)) |
-| Producción | `https://carreteando.vercel.app` (rama `main`, todavía con la marca anterior) |
-| Dominio | `dondesalgo.cl` **no está registrado** (NIC Chile, 04-10-2026). Ver [`docs/MARCA_Y_DOMINIO.md`](docs/MARCA_Y_DOMINIO.md) |
-| Base | Supabase, proyecto `hgwljbtqdserkdhulbts` |
-| Marco | Next.js 15 App Router; la portada y Explorar son estáticas y filtran en el teléfono |
+| Repo | `Neuroxel/carreteando` |
+| Producción canónica | `https://dondesalgo.vercel.app` |
+| Alias antiguo | `https://carreteando.vercel.app` redirige permanentemente al dominio canónico |
+| Base canónica | Supabase / PostgreSQL, proyecto `hgwljbtqdserkdhulbts` |
+| Framework | Next.js 15 App Router |
+| Catálogo versionado | **147 lugares publicados**, snapshot generado 2026-10-17T16:06:54Z |
+| Estado de despliegue | merges recientes con CI y checks de Vercel; verificar siempre el SHA final antes de declarar producción lista |
 
-## Datos (04-10-2026)
+## UX aprobada por Carlos
 
-| | |
-|---|---|
-| Lugares publicados | 134 |
-| Candidatos pendientes | 3 (los otros 246 se resolvieron: ver el censo) |
-| Con coordenada en el mapa | 96 (72 %) |
-| Con horario con fuente propia | 10 |
-| Con nivel de precio | 0 (muestra de 6; se necesitan 30) |
-| Eventos públicos vigentes | 77 (4 hoy) |
-| Eventos vigentes en revisión | 31 |
-| Fuentes automáticas activas | 30, ninguna caída |
-| Motor de evidencia | `active` (7 reglas, sin IA) |
+Navegación: **Carretes · Boliches · Radar · Aportar**.
 
-Detalle por comuna y zona: [`docs/CENSO_LOCALES.md`](docs/CENSO_LOCALES.md).
+- Radar abre en **Carretes hoy**; puede cambiar a Boliches.
+- GPS se solicita **solo al entrar a Radar** o al pedir cercanía.
+- La ubicación queda en el navegador: no se almacena ni se envía al backend.
+- `Permissions-Policy` permite `geolocation=(self)` y mantiene cámara/micrófono bloqueados.
+- Evento de hoy: marcador distintivo; boliches sin evento: punto atenuado.
+- Carretes vuelve realmente a la lista, no deja el mapa activo.
+- En Carretes, los eventos nocturnos se ordenan antes de los diurnos del mismo día.
 
-**Valparaíso, censo final (12-10-2026):** 67 → **66** publicados tras cerrar la cola (7 pendientes con lo que falta); primera pasada: 67 → 56, todos con evidencia
-de operación vigente (evento propio, cuenta o sitio oficial activo).
-- 17 pasaron a pendientes, 2 se cerraron y 1 se rechazó.
-- Hay 9 altas nuevas con evidencia A.
-- 30 quedan en cola, con lo que falta y fecha de recheque.
+QA responsive automatizada/capturas: 360, 375, 390, 430 y escritorio. **Pendiente:** prueba final en Android/iPhone físico.
 
-Detalle, conflictos y monitoreo: [`docs/VALPARAISO_FINAL_CENSUS.md`](docs/VALPARAISO_FINAL_CENSUS.md).
-La investigación intensiva de Valparaíso queda cerrada; sigue Viña del Mar / Reñaca.
+## Datos y cobertura
 
-## Reglas que no se negocian
+No presentar una cifra de eventos como “actual” si no se leyó la DB/snapshot vivo.
 
-- No se inventa precio, horario, género, dirección ni estado de apertura. Nunca
-  se dice "abierto ahora".
-- Horario: solo "Según horario publicado", con fuente y fecha.
-- Precio: niveles $–$$$$ solo con fuente y fecha; sin dato, sin insignia.
-- OpenStreetMap, Google y las redes sociales crean **candidatos**, no fichas
-  públicas.
-- Pagar compra visibilidad, nunca confianza. Hoy no se cobra nada.
+- Última observación pública documentada del 17-oct: **16 planes hoy en Valparaíso**, después de incorporar Liberty. Es una observación histórica del turno, no una garantía del conteo actual.
+- El feed editorial versionado conserva decisiones humanas y se deduplica contra filas existentes en cualquier estado.
+- La cobertura automática de #6 incluye:
+  - PortalTickets/PortalDisc (carteleras y recorrido regional);
+  - Vesti por compañía con host exacto;
+  - Evently con subdominio exacto;
+  - API oficial de Cinzano;
+  - presupuesto de fuentes, rotación anti-inanición, deadline por request y dedupe paginado.
+- `data/catalogo-publico.json` contiene los 147 lugares y obliga a reportar como `PENDING` los locales sin ruta; no se confunde falta de ruta con “sin eventos”.
+- Una ruta vacía no prueba ausencia de programación. Un anuncio vigente sin stock verificable no se marca `AVAILABLE`.
 
-## Portada V1
+### Programación automática
 
-DÓNDE SALGO? como titular → "¿Qué hay hoy?" → búsqueda y comuna (comunas con eventos o lugares) → Hoy / Mañana / Este finde → eventos →
-lugares → "¿Falta algo?". Filtros secundarios (escena, gratis, eventos/lugares,
-mapa) tras "Filtros". Se quitó la ruta de zonas ("camino del carrete").
+Cuatro turnos diarios, separados seis horas:
+- Supabase pg_cron: **00:00, 06:00 y 12:00 UTC**.
+- Vercel cron: **18:00 UTC**.
 
-## Presupuesto: “¿Dónde salgo con mi presupuesto?”
+El endpoint es `/api/cron/scrape`; la reserva de corrida aplica cooldown de tres horas.
 
-Requisito central del producto desde el 10-10-2026 (pedido de Carlos: “falta que
-nuestra página busque cosas más baratas”).
+**Pendiente operativo:** comprobar una corrida completa posterior al merge final y verificar que refresque snapshot + páginas públicas.
 
-- `price_clp` = la entrada individual más barata **vigente** (no promociones de
-  grupo, no consumo de barra salvo que la fuente diga que es la entrada).
-  `price_text` = el texto público completo (“$10.000 + cargo”, “Entradas
-  agotadas”, “Precio por confirmar”).
-- Filtro en “Filtros”: Cualquiera · Gratis · Hasta $5.000 · Hasta $10.000 ·
-  Hasta $15.000 (`?precio=gratis|5000|10000|15000`; `pago` y `todos` siguen
-  funcionando). Orden opcional “Más barato” (`?orden=barato`): precios conocidos
-  de menor a mayor y los desconocidos al final. Todo en el teléfono, sin pedir
-  nada al servidor.
-- **Barato** = gratis o hasta $5.000 por entrada individual. El atajo “Barato hoy”
-  aparece solo si hay al menos un evento así.
-- Un precio desconocido **nunca** cuenta como barato ni gratis. El precio **no** es
-  requisito para publicar.
-- El nivel de precio de un **lugar** ($–$$$$, canasta cerveza + cóctel) es otra
-  cosa y sigue sin activarse (muestra de 6 locales).
+## Provenance
 
-Indicadores (10-10-2026, 22:30):
+- No se inventan horario, precio, dirección, disponibilidad ni estado de apertura.
+- Fuente primaria > índice/agregador.
+- Conflictos permanecen visibles; si la hora no se puede resolver, `time: null`.
+- `apify_instagram`/Instagram se muestra como Instagram; Facebook/Google conservan su origen; otros adaptadores web se muestran como **web**, no como Instagram.
+- Los hallazgos de Gemini obtenidos sólo desde snippets son **pistas**, no verificación.
+- Antigravity puede aportar evidencia `LIVE_FETCH`; se reconcilia contra catálogo/DB antes de publicar.
 
-| | Hoy (11 públicos) | Vigentes públicos con ticketera (77) |
-|---|---|---|
-| Cobertura de precio | 6/11 (55 %) | 21/77 (27 %) |
-| Precio desconocido | 5/11 (45 %) | 56/77 (73 %) |
-| Gratis | 0 | 0 |
-| Barato (≤ $5.000) | 1 | 5 |
-| Hasta $10.000 | 4 | 11 |
+## Instagram / Apify
 
-## Lectura pública
+El trabajo incremental existe parcialmente en el PR legado #2, pero **#2 no debe mergearse completo**: quedó basado en un main anterior y solapa cambios ya integrados.
 
-Explorar, buscar, filtrar y abrir el mapa no piden nada al servidor (medido:
-0 peticiones). Las métricas se agregan por día, sin IP guardada ni identidad.
-Las búsquedas sin resultado se cuentan por texto (sin correos, teléfonos ni
-enlaces) en `search_misses`, 90 días.
+Siguiente trabajo de Claude:
+1. partir desde el `main` actual;
+2. rescatar sólo la lógica incremental de Instagram/Apify y sus tests;
+3. conservar redirects, Radar, cobertura #6 y provenance posterior;
+4. no ejecutar Apify recurrente hasta que exista un **tope mensual explícito**;
+5. no inventar handles ni usar login personal.
 
-## Comunidad
+## Estado de integración 17-oct
 
-`/publicar`: proponer evento, y **¿Falta un lugar?** / **Reclama tu ficha**
-(mismo formulario). Todo entra a `community_inbox` y lo resuelve una persona
-en `/admin`. Nada se publica solo.
+Integrado:
+- #4 — lote editorial Woo/Studio/Cómpeta/Ignacio.
+- #6 — cobertura por local/día, Vesti/Evently, dedupe, Cinzano, Liberty.
+- #7 — política de geolocalización para Radar.
+- #9 — provenance pública web ≠ Instagram.
 
-## Limitaciones conocidas
+PR #2 queda como **legado/handoff**: no mergear completo.
 
-1. Dominio sin registrar y marca sin búsqueda en INAPI: **revisión legal pendiente**.
-2. Precio sin calibrar: 0 niveles publicados.
-3. Horario en 10 de 134 lugares (solo fuentes propias).
-4. Cobertura media o baja por zona: la segunda pasada todavía encuentra locales.
-5. Sin MFA para moderadores; respaldo sin ensayo de restauración.
-6. Tiles de OpenStreetMap: pasar a un proveedor contratado antes de escalar.
-7. No se afirma cobertura total: se mide saturación por zona.
+## Bloqueos y pendientes de lanzamiento
 
-## Veredicto
+1. **Supabase MCP:** en el chat coordinador actual el proyecto conocido responde “no tienes permiso”; no se puede inspeccionar/limpiar admin ni forzar una importación hasta restaurar acceso.
+2. **Ingesta post-merge:** verificar la siguiente corrida programada y el conteo público resultante.
+3. **Admin:** confirmar cola sin stale items desde DB real.
+4. **Móvil físico:** ejecutar QA final Android/iPhone.
+5. **Apify:** definir presupuesto recurrente antes de activar Instagram.
+6. **Seguridad Vercel:** confirmar que el bypass secret legado de `carreteando3d` haya sido revocado.
+7. **Fuentes nuevas:** priorizar ComedyPass/ComediaTicket y rutas oficiales que hoy quedan fuera de los adaptadores gratuitos; Google sirve para descubrir rutas, no como evidencia final.
 
-Ver el informe V1 y [`docs/CARLOS_REVIEW_V1.md`](docs/CARLOS_REVIEW_V1.md).
+## Criterio de lanzamiento
+
+No bloquear V1 por completar los 147 locales ni por terminar Instagram.
+
+Sí bloquear si:
+- el cron no actualiza la cartelera;
+- el snapshot visible queda desfasado de la DB;
+- admin/escrituras no pueden verificarse;
+- Radar no puede obtener GPS cuando el usuario lo pide;
+- una regresión de provenance o dedupe permite datos falsos/duplicados.
+
+La expansión territorial y nuevas fuentes continúan después del lanzamiento de una V1 operativamente verificable.
