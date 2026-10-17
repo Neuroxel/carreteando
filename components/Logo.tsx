@@ -40,9 +40,14 @@ export const Q_MAIN = 'translate(1008.6 0) rotate(-8) scale(0.3241)';
  * comido y poros, y el "?" alto en coral. Sigue siendo vector y lleva su
  * nombre accesible.
  */
-export function LogoApilado({ className, title = 'Dónde Salgo?' }: { className?: string; title?: string }) {
+export function LogoApilado({ className, title = 'Dónde Salgo?', decorativo = false }: { className?: string; title?: string; decorativo?: boolean }) {
   return (
-    <svg className={className} viewBox={MARCA.viewBox} role="img" aria-label={title} xmlns="http://www.w3.org/2000/svg">
+    <svg
+      className={className}
+      viewBox={MARCA.viewBox}
+      {...(decorativo ? { 'aria-hidden': true, focusable: 'false' } : { role: 'img', 'aria-label': title })}
+      xmlns="http://www.w3.org/2000/svg"
+    >
       <defs>
         <filter id="ds-serigrafia" x="-3%" y="-3%" width="106%" height="106%">
           {/* poros: la tinta no cubre todo el papel */}

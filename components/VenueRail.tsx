@@ -108,7 +108,7 @@ export default function VenueRail({
       <ul className="venue-rail-pista" ref={pista} onScroll={medir} aria-label={`Lugares en ${comuna}`}>
         {deLaComuna.slice(0, MAX).map((l) => (
           <li key={l.slug}>
-            <VenueCard lugar={l} proximos={conteo.get(l.nombre) || 0} hoy={hoy.get(l.nombre) || null} />
+            <VenueCard lugar={l} proximos={conteo.get(l.slug) || 0} hoy={hoy.get(l.slug) || null} />
           </li>
         ))}
         {deLaComuna.length > MAX && (

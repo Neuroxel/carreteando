@@ -1,0 +1,6 @@
+{
+  "nota": "Alias explícitos y revisados de lugares del catálogo, además de los que ya trae la base. Solo nombres que la fuente usa para el MISMO local; nunca parecidos. Un alias exige la misma ciudad.",
+  "alias": {
+    "liberty": ["Bar Liberty"]
+  }
+}

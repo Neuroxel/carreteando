@@ -29,9 +29,18 @@ export function porCercania<T extends Posicion>(lista: T[], yo: Posicion) {
     .sort((a, b) => a.km - b.km);
 }
 
-export type Capa = 'hoy' | 'boliches';
-/** El radar abre en "Carretes hoy"; "Boliches" muestra todos los lugares. */
-export const leerCapa = (valor: string | null): Capa => (valor === 'boliches' ? 'boliches' : 'hoy');
+/**
+ * ¿Centrar el mapa en la persona? Sí, cada vez que el mapa se arma con su
+ * posición, salvo que ya lo haya movido con la mano, y solo si hay algo a
+ * menos de 30 km (fuera de la región no sirve).
+ */
+export function debeCentrar(yo: Posicion | null, puntos: Posicion[], movidoPorPersona: boolean) {
+  return Boolean(yo) && !movidoPorPersona && puntos.some((p) => distanciaKm(yo as Posicion, p) < 30);
+}
+
+export type Capa = 'hoy' | 'lugares';
+/** El radar abre en "Carretes hoy"; "Lugares" muestra todos. `boliches` se acepta por enlaces viejos. */
+export const leerCapa = (valor: string | null): Capa => (valor === 'lugares' || valor === 'boliches' ? 'lugares' : 'hoy');
 
 /** Precisión gruesa a propósito: alcanza para ordenar por cercanía. */
 export const OPCIONES_GPS: PositionOptions = { enableHighAccuracy: false, maximumAge: 5 * 60_000, timeout: 12_000 };
