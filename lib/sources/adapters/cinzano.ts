@@ -1,7 +1,7 @@
 import { addDays, toChileDateString } from '../../event-extraction';
 import { buildCandidate } from '../normalize';
 import { fechaHoraChile } from '../rsc';
-import { SourceError, type Adapter, type AdapterResult, type EventCandidate } from '../types';
+import { SourceError, type Adapter, type AdapterResult, type EventCandidate, type Fetcher } from '../types';
 import { HORIZONTE_DIAS } from './vesti';
 
 const API = 'https://cinzanooficial.cl/cinzano-api/cinzano/v1/events';
@@ -100,6 +100,68 @@ export function leerCinzano(json: unknown, source: { id: string; commune: string
   return { itemsFound: json.length, candidates, parseFailures };
 }
 
+type TicketCinzano = { id?: unknown; name?: unknown; kind?: unknown; price?: unknown; serviceFee?: unknown; stock?: unknown; status?: unknown; isSellable?: unknown; isVisible?: unknown };
+/** "Orquesta Cinzano - Viernes 23 de octubre - Invitacion gratuita hasta las 23:00" → la condición del ticket. */
+const condicion = (nombre: string) => nombre.split(/\s+-\s+/).pop()!.trim();
+
+/**
+ * Los tickets del evento son más específicos que el listado (el 23-oct el
+ * listado dice $10.000 y el ticket vendible más barato es una invitación
+ * gratuita hasta las 23:00). Manda el ticket vendible de menor precio; todos
+ * agotados es "agotado"; sin tickets, no se promete precio.
+ */
+export function aplicarTickets(c: EventCandidate, json: unknown) {
+  const lista = (json as { tickets?: unknown })?.tickets;
+  if (!Array.isArray(lista)) return false;
+  const tickets = (lista as TicketCinzano[])
+    .filter((t) => t.isVisible !== false && typeof t.name === 'string' && typeof t.price === 'number' && Number.isInteger(t.price) && t.price >= 0 && t.price <= 500000)
+    .map((t) => ({
+      id: String(t.id ?? ''),
+      nombre: condicion(t.name as string),
+      precio: t.price as number,
+      cargo: typeof t.serviceFee === 'number' && t.serviceFee > 0 ? t.serviceFee : 0,
+      vendible: t.isSellable === true && t.status !== 'sold-out' && (typeof t.stock !== 'number' || t.stock > 0),
+    }));
+  c.reasons = c.reasons.filter((r) => !r.startsWith('AVAILABILITY_CONFLICT'));
+  c.tiers = tickets.map((t) => ({ nombre: t.nombre, precio: t.precio, agotado: !t.vendible }));
+  const vendibles = tickets.filter((t) => t.vendible).sort((a, b) => a.precio - b.precio);
+  const texto = (t: (typeof tickets)[number]) => (t.precio === 0 ? t.nombre : `${t.nombre} ${pesos(t.precio)}${t.cargo ? ` + ${pesos(t.cargo)} cargo` : ''}`);
+  if (vendibles.length) {
+    c.priceClp = vendibles[0].precio;
+    c.priceText = vendibles.slice(0, 2).map(texto).join(' · ');
+    c.disponibilidad = 'disponible';
+    c.confidence = 'high';
+    c.reasons.push(`TICKETS: ${vendibles.map((t) => t.id).join(',')} vendibles`);
+  } else if (tickets.length) {
+    c.priceClp = null;
+    c.priceText = 'Agotado en Cinzano';
+    c.disponibilidad = 'agotado';
+    c.reasons.push('TICKETS: todos agotados o sin venta');
+  } else {
+    c.priceClp = null;
+    c.priceText = null;
+    c.disponibilidad = 'conflicto';
+    c.confidence = 'medium';
+    c.reasons.push('AVAILABILITY_CONFLICT: el evento no publica tickets');
+  }
+  return true;
+}
+
+/** Lectura acotada de tickets: los más próximos primero, una solicitud por evento. */
+export async function conTicketsCinzano(candidatos: EventCandidate[], fetcher: Fetcher, tope = 8) {
+  const orden = [...candidatos].sort((a, b) => `${a.date}${a.time}`.localeCompare(`${b.date}${b.time}`)).slice(0, tope);
+  for (const c of orden) {
+    const id = new URL(c.detailUrl).searchParams.get('event_id');
+    if (!id || !/^\d{1,8}$/.test(id)) continue;
+    try {
+      const r = await fetcher(`${API}/${id}/tickets`);
+      if (r.status === 200) aplicarTickets(c, JSON.parse(r.body));
+    } catch {
+      // Sin tickets legibles queda lo que dijo el listado (con su conflicto, si lo hay).
+    }
+  }
+}
+
 export const cinzanoApi: Adapter = {
   id: 'cinzano-api',
   async run(source, fetcher) {
@@ -112,6 +174,8 @@ export const cinzanoApi: Adapter = {
     } catch {
       throw new SourceError('PAGINA_INESPERADA');
     }
-    return leerCinzano(json, source);
+    const r2 = leerCinzano(json, source);
+    await conTicketsCinzano(r2.candidates, fetcher);
+    return r2;
   },
 };

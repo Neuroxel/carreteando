@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { precioDeFicha } from '../lib/sources/adapters/portaldisc';
 import { FICHA_EVENTLY, preciosEvently } from '../lib/sources/adapters/jsonld';
 import { cambiosDinamicos, runSource } from '../lib/sources/dispatcher';
-import { sourceById } from '../lib/sources/registry';
+import { ADAPTERS, sourceById } from '../lib/sources/registry';
 import { buildCandidate } from '../lib/sources/normalize';
 import { baseMemoria } from './helpers/base-memoria';
 import type { Fetcher } from '../lib/sources/types';
@@ -149,4 +149,34 @@ test('TicketPlus y Cinzano quedan en revisión (nivel C) hasta aprobación human
   assert.ok(tablas.events.every((e) => e.disposition !== 'public'));
   const kitsch = tablas.events.find((e) => e.date_text === '2026-10-17')!;
   assert.deepEqual([kitsch.price_clp ?? null, kitsch.price_text ?? null], [null, null], 'sin precio arbitrario');
+});
+
+test('Cinzano: el ticket vendible más barato manda sobre el listado; lectura acotada', async () => {
+  const API = 'https://cinzanooficial.cl/cinzano-api/cinzano/v1/events';
+  const pedidas: string[] = [];
+  const fetcher: Fetcher = async (u) => {
+    pedidas.push(u);
+    if (u === API) return { status: 200, body: fx('cinzano-api-events-2026-10-17.json') };
+    const id = /\/events\/(\d+)\/tickets$/.exec(u)?.[1];
+    try {
+      return { status: 200, body: fx(`cinzano-tickets-${id}-2026-10-17.json`) };
+    } catch {
+      return { status: 404, body: '' };
+    }
+  };
+  const fuente = sourceById('cinzano-agenda')!;
+  const res = await ADAPTERS[fuente.adapter].run(fuente, fetcher);
+  const por = (d: string) => res.candidates.find((c) => c.date === d)!;
+  // 23-oct: el listado dice $10.000; el ticket dice invitación gratuita hasta las 23:00.
+  assert.deepEqual([por('2026-10-23').priceClp, por('2026-10-23').priceText], [0, 'Invitacion gratuita hasta las 23:00 · Entrada despues de las 23:00 $10.000 + $1.000 cargo']);
+  // 24-oct: entrada general vendible.
+  assert.deepEqual([por('2026-10-24').priceClp, por('2026-10-24').priceText, por('2026-10-24').disponibilidad], [10000, 'Entrada General $10.000 + $1.000 cargo', 'disponible']);
+  // 17-oct: la única invitación está agotada (no hay "general $15.000").
+  assert.deepEqual([por('2026-10-17').priceClp, por('2026-10-17').priceText, por('2026-10-17').disponibilidad], [null, 'Agotado en Cinzano', 'agotado']);
+  // 30-oct: sin tickets: conflicto, sin precio.
+  assert.deepEqual([por('2026-10-30').priceClp, por('2026-10-30').disponibilidad], [null, 'conflicto']);
+  // 31-oct sin ficha de tickets legible: queda lo del listado.
+  assert.equal(por('2026-10-31').priceText, 'Entrada $10.000 + $1.000 cargo');
+  assert.ok(pedidas.every((u) => u.startsWith(API)), 'solo la API oficial');
+  assert.ok(pedidas.length <= 1 + 8, 'una solicitud por evento, con tope');
 });
