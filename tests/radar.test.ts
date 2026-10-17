@@ -33,3 +33,16 @@ test('el radar abre en carretes de hoy', () => {
   assert.equal(leerCapa('otra'), 'hoy');
   assert.equal(leerCapa('boliches'), 'boliches');
 });
+
+import { esDeDia, nocheAntes } from '../lib/events';
+test('en un mismo día, lo nocturno encabeza y lo de día va después', () => {
+  const lista = [
+    { id: 'almuerzo', fecha: '2026-10-17', hora: '13:00' },
+    { id: 'tocata', fecha: '2026-10-17', hora: '21:00' },
+    { id: 'sin-hora', fecha: '2026-10-17', hora: null },
+    { id: 'manana', fecha: '2026-10-18', hora: '15:00' },
+  ];
+  assert.deepEqual(nocheAntes(lista).map((e) => e.id), ['tocata', 'sin-hora', 'almuerzo', 'manana']);
+  assert.equal(esDeDia('01:30'), false);
+  assert.equal(esDeDia('17:59'), true);
+});

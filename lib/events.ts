@@ -158,6 +158,24 @@ export function ordenarPorPrecio<T extends Pick<Evento, 'precio' | 'precio_conoc
     })
     .map((x) => x.e);
 }
+/**
+ * Carretes es la noche: dentro de un mismo día, lo que empieza entre las 06:00
+ * y las 17:59 (un almuerzo con show, una función de cine) va después de lo
+ * nocturno. No se esconde: solo deja de encabezar la cartelera.
+ */
+export const esDeDia = (hora: string | null | undefined) => Boolean(hora && hora >= '06:00' && hora < '18:00');
+export function nocheAntes<T extends Pick<Evento, 'fecha' | 'hora'>>(eventos: T[]): T[] {
+  // Partición estable por tramos consecutivos del mismo día: el orden entre días no se toca.
+  const salida: T[] = [];
+  for (let i = 0; i < eventos.length; ) {
+    let j = i;
+    while (j < eventos.length && eventos[j].fecha === eventos[i].fecha) j++;
+    const tramo = eventos.slice(i, j);
+    salida.push(...tramo.filter((e) => !esDeDia(e.hora)), ...tramo.filter((e) => esDeDia(e.hora)));
+    i = j;
+  }
+  return salida;
+}
 export function getChileTodayStr(): string {
   return toChileDateString(new Date());
 }

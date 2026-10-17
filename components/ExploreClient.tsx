@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState, type MouseEvent } from 'react';
-import { diversifyByVenue, esBarato, filterEvents, ordenarPorPrecio } from '../lib/events';
+import { diversifyByVenue, esBarato, filterEvents, nocheAntes, ordenarPorPrecio } from '../lib/events';
 import { toChileDateString } from '../lib/event-extraction';
 import { parseFilters } from '../lib/filters';
 import { CIUDADES, type FiltrosEvento } from '../lib/types';
@@ -210,7 +210,7 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
   const todos = snap.events;
   const events = useMemo(() => {
     const lista = diversifyByVenue(filterEvents(todos, filtros, today));
-    return orden === 'barato' ? ordenarPorPrecio(lista) : lista;
+    return orden === 'barato' ? ordenarPorPrecio(lista) : nocheAntes(lista);
   }, [todos, filtros, today, orden]);
   const derivados = useMemo(() => {
     const conteoLugar = new Map<string, number>();
