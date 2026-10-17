@@ -1,10 +1,12 @@
 # Dónde Salgo? — estado actual
 
-**Este documento describe solo el presente.** La historia (septiembre, release de
-octubre, decisiones anteriores) está en [`docs/historia/`](docs/historia/). Si algo
-de allá contradice esto, manda esto.
+> **Verificación actual: 17-10-2026.** Estado recuperado, evidencia de producción
+> y bloqueos: [Checklist de lanzamiento](docs/RELEASE_CHECKLIST_2026-10-17.md).
+> Ese corte prevalece sobre las cifras históricas de esta página. Admin,
+> migración Instagram e importación editorial todavía no están cerrados.
 
-Última verificación: **10 de octubre de 2026** (rama `release/dondesalgo-v1`).
+El contenido de abajo corresponde al **10 de octubre de 2026**
+(rama `release/dondesalgo-v1`).
 
 ## Qué es
 

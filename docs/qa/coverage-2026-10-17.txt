@@ -1,0 +1,8 @@
+CHEAP_EVENT_COVERAGE 2026-10-17 · snapshot 2026-10-17T03:31:58.493Z
+tramo                externos públicos con precio
+gratis                      0        0          0
+gratis_condicional          6        1          0
+hasta_5000                 10        3          1
+hasta_10000                17        8          1
+precio_desconocido          1        0          0
+faltan: Fiesta Infinito Pop · Trotamundos Valparaíso; WAUW · Alto San Andrés; Fiesta + Extended · The House; Tributo a Amy Winehouse · Klanu Rock Bar; Sábado en Garage · Garage 597; Sábado Prime · Hollywood Experience Viña; Manda Viña sábado · Manda; Columbia · Brisamar; La primera generación del reggaetón · Open Quillota; Alex Anwandter · Trotamundos Valparaíso

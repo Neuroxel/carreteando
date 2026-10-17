@@ -44,6 +44,10 @@ export async function GET(request: Request) {
   const marca = `${cohorte}-${CORTO[actor]}`;
   const cuentas: readonly string[] = PILOT_COHORTS[cohorte];
   const tope = TOPE_USD[cohorte];
+  // No consumir la autorización ni pagar al actor si falta la migración o
+  // no podemos leer el registro privado que da contexto a la extracción.
+  const reg = await db.from('instagram_accounts').select('username,status,kind,venue_id').limit(2000);
+  if (reg.error) return reply({ error: 'Registro de Instagram no disponible. Revisa la migración y el acceso.' }, 503);
   const armed = await db
     .from('automation_config')
     .update({ value: `running-${marca}` })
@@ -87,7 +91,6 @@ export async function GET(request: Request) {
     const crudos = Array.isArray(raw) ? raw.map(obj) : [];
     const rows = crudos.map((x) => pilotItem(x, cuentas)).filter((x) => x !== null);
     // Cuentas que son lugares: el lugar y la ciudad salen del registro, no del texto.
-    const reg = await db.from('instagram_accounts').select('username,status,kind,venue_id').limit(2000);
     const conocidas = new Set((reg.data || []).map((r) => String(r.username)));
     const ids = (reg.data || []).filter((r) => r.kind === 'venue' && r.venue_id).map((r) => Number(r.venue_id));
     const lugares = ids.length ? await db.from('venues').select('id,name,city').in('id', ids) : { data: [] };

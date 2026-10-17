@@ -71,7 +71,11 @@ export function dbRowToEvento(row: EventRow): Evento | null {
           ? 'passline'
           : row.source === 'editorial'
             ? 'editorial'
-            : 'instagram',
+            : row.source === 'apify_instagram' || row.source === 'instagram'
+              ? 'instagram'
+              : row.source === 'facebook' || row.source === 'google'
+                ? row.source
+                : 'web',
     fuente_url: safeWebUrl(row.instagram_url),
     organizador: str(row.username),
     organizador_url:
