@@ -1933,3 +1933,6 @@ html[data-edicion="3d"] body {
 [data-edicion="3d"] .radar-capas a { font-family:var(--f-maquina); }
 [data-edicion="3d"] .radar-capas a.activa { color:var(--crema); background:var(--surface-raised); box-shadow:inset 0 -2px 0 var(--coral); }
 [data-edicion="3d"] .site-header nav a.activo { color:var(--coral); }
+.mapa-grupo { display:flex; align-items:center; justify-content:center; gap:1px; width:36px; height:36px; border-radius:50%; background:#1E2034; color:#EFE3D3; border:2px solid rgba(239,227,211,.55); font:700 13px/1 system-ui, sans-serif; box-shadow:0 1px 4px rgba(0,0,0,.6); }
+.mapa-grupo-hoy { border-color:var(--coral, #E8576F); color:#fff; background:#3A1C2A; }
+.mapa-grupo b { color:var(--coral, #E8576F); font-weight:400; }

@@ -29,6 +29,7 @@ type LeafletGlobal = {
   markerClusterGroup?: (options: Record<string, unknown>) => LeafletLayer;
   latLngBounds: (points: [number, number][]) => unknown;
 };
+type Grupo = { getAllChildMarkers: () => { options: { hoy?: boolean } }[] };
 type MapaLeaflet = {
   remove: () => void;
   fitBounds: (bounds: unknown, options: Record<string, unknown>) => void;
@@ -126,7 +127,21 @@ export default function VenueMap({ puntos, yo = null }: { puntos: PuntoMapa[]; y
             '&copy; colaboradores de <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
         }).addTo(instancia);
         const grupo = L.markerClusterGroup
-          ? L.markerClusterGroup({ maxClusterRadius: 44, showCoverageOnHover: false })
+          ? L.markerClusterGroup({
+              maxClusterRadius: 44,
+              showCoverageOnHover: false,
+              // Un grupo que esconde un carrete de hoy lo dice con la misma estrella.
+              iconCreateFunction: (grupo: Grupo) => {
+                const hijos = grupo.getAllChildMarkers();
+                const conHoy = hijos.filter((m) => m.options.hoy).length;
+                return L.divIcon({
+                  className: '',
+                  html: `<span class="mapa-grupo${conHoy ? ' mapa-grupo-hoy' : ''}" aria-hidden="true">${conHoy ? '<b>✦</b>' : ''}${hijos.length}</span>`,
+                  iconSize: [36, 36],
+                  iconAnchor: [18, 18],
+                });
+              },
+            })
           : L.layerGroup();
         for (const punto of puntos) {
           const acento = acentoDe(punto.ciudad);
@@ -143,6 +158,7 @@ export default function VenueMap({ puntos, yo = null }: { puntos: PuntoMapa[]; y
             icon: icono,
             title: estrella ? `${punto.nombre}: carrete hoy` : punto.nombre,
             zIndexOffset: estrella ? 500 : 0,
+            hoy: estrella,
           })
             .bindPopup(ficha(punto), { maxWidth: 280, closeButton: true });
           marcador.on('popupopen', () => track('marker_open'));
