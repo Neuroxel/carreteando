@@ -74,6 +74,15 @@ export function tiersDeFicha(html: string): TierEntrada[] | null {
  * tampoco. Una entrada gratis se dice con su condición. Si todas las entradas
  * individuales están agotadas, se dice "agotado" y no se muestra un precio.
  */
+/**
+ * La ficha cambia el botón de compra por "EVENTO CANCELADO" (con el aviso de
+ * reembolso). Solo ese botón cuenta: el pie de página habla de cancelaciones
+ * en general y no dice nada de este evento.
+ */
+export function canceladaEnFicha(html: string) {
+  return /id="botonera"[\s\S]{0,800}?<a\b[^>]*class="buy"[^>]*>\s*EVENTO\s+CANCELADO\s*<\/a>/i.test(html);
+}
+
 export function precioDeFicha(html: string): PrecioFicha | null {
   const tiers = tiersDeFicha(html);
   if (!tiers || !tiers.length) return null;
@@ -144,6 +153,13 @@ async function conPrecio(candidatos: EventCandidate[], fetcher: Fetcher, ctx: Ad
     }
     if (!r || r.status !== 200) {
       pendiente(c, plazo ? 'PRICE_DEADLINE' : r ? `PRICE_HTTP_${r.status}` : 'PRICE_NETWORK');
+      continue;
+    }
+    if (canceladaEnFicha(r.body)) {
+      c.status = 'cancelled';
+      c.priceClp = null;
+      c.priceText = null;
+      pendiente(c, 'CANCELLED_ON_DETAIL');
       continue;
     }
     const p = precioDeFicha(r.body);

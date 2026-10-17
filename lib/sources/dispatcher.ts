@@ -73,6 +73,8 @@ export function decide(
     return { decision: 'descartado', reason: 'no es una salida: actividad académica o diurna' };
   if (source.trust === 'evidence')
     return { decision: 'revisar', reason: 'fuente marcada solo como evidencia' };
+  // Cancelado en la ficha: nunca se publica; si ya existe, la evidencia lo retira (regla 5).
+  if (candidate.status === 'cancelled') return { decision: 'revisar', reason: 'la fuente dice que se canceló' };
   // This product is about the night. A gallery open from 10:00 to 13:30 is real,
   // current and correctly parsed, and still not an answer to "quiero salir".
   const daytime = candidate.time !== null && candidate.time < '17:00';

@@ -75,6 +75,7 @@ export function leerCinzano(json: unknown, source: { id: string; commune: string
     }
     const venta = e.hasSellableTickets === true && typeof e.availableStock === 'number' && e.availableStock > 0;
     const externo = ticketExterno(e.externalTicketUrl);
+    if (typeof e.status === 'string') c.reasons.push(`LISTING_STATUS: ${e.status}`);
     if (externo) c.reasons.push(`TICKET_URL: ${externo}`);
     const precioValido = typeof e.price === 'number' && Number.isInteger(e.price) && e.price >= 0 && e.price <= 500000;
     if (!venta && !externo && (e.status === 'available' || e.status === 'few-tickets')) {
@@ -107,8 +108,10 @@ const condicion = (nombre: string) => nombre.split(/\s+-\s+/).pop()!.trim();
 /**
  * Los tickets del evento son más específicos que el listado (el 23-oct el
  * listado dice $10.000 y el ticket vendible más barato es una invitación
- * gratuita hasta las 23:00). Manda el ticket vendible de menor precio; todos
- * agotados es "agotado"; sin tickets, no se promete precio.
+ * gratuita hasta las 23:00). Manda el ticket vendible de menor precio. Sin
+ * ticket vendible no se afirma "agotado" del evento salvo que el listado
+ * también lo diga: un tramo en línea cerrado no descarta la entrada en puerta
+ * (Kitsch: invitación agotada, listado "few-tickets"). Eso es un conflicto.
  */
 export function aplicarTickets(c: EventCandidate, json: unknown) {
   const lista = (json as { tickets?: unknown })?.tickets;
@@ -132,11 +135,17 @@ export function aplicarTickets(c: EventCandidate, json: unknown) {
     c.disponibilidad = 'disponible';
     c.confidence = 'high';
     c.reasons.push(`TICKETS: ${vendibles.map((t) => t.id).join(',')} vendibles`);
-  } else if (tickets.length) {
+  } else if (tickets.length && c.reasons.includes('LISTING_STATUS: sold-out')) {
     c.priceClp = null;
     c.priceText = 'Agotado en Cinzano';
     c.disponibilidad = 'agotado';
-    c.reasons.push('TICKETS: todos agotados o sin venta');
+    c.reasons.push('TICKETS: todos agotados y el listado dice agotado');
+  } else if (tickets.length) {
+    c.priceClp = null;
+    c.priceText = null;
+    c.disponibilidad = 'conflicto';
+    c.confidence = 'medium';
+    c.reasons.push('AVAILABILITY_CONFLICT: ningún ticket en línea a la venta y el listado no dice agotado');
   } else {
     c.priceClp = null;
     c.priceText = null;
