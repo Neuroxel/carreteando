@@ -14,6 +14,8 @@ export const IMAGE_HOSTS = [
   'events-cdn.vesti.cl',
   'static.ptocdn.net',
   'kn6kang47jzl4ttd.public.blob.vercel-storage.com',
+  'cdn.comediaticket.cl',
+  'comedypass.online',
   'images.unsplash.com',
   // Sitios oficiales de los propios lugares: el cartel que publica el local
   'parquecultural.cl',

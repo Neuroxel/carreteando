@@ -108,7 +108,8 @@ export interface Adapter {
   id: string;
   run(source: SourceDefinition, fetcher: Fetcher, ctx?: AdapterContext): Promise<AdapterResult>;
 }
-export type Fetcher = (url: string) => Promise<{ status: number; body: string }>;
+/** `init.headers` solo para APIs públicas que exigen una cabecera (ComediaTicket: `Country`). */
+export type Fetcher = (url: string, init?: { headers?: Record<string, string> }) => Promise<{ status: number; body: string }>;
 /** El plazo de la corrida se agotó antes de esta solicitud: no se pidió. */
 export const PLAZO_AGOTADO = 'PLAZO_AGOTADO';
 export const esPlazoAgotado = (e: unknown) => e instanceof SourceError && e.code === PLAZO_AGOTADO;

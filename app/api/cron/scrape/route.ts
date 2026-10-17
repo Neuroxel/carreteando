@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { refrescarPublico } from '../../../../lib/snapshot';
 import { getAdminDb } from '../../../../lib/server-db';
+import { presupuestoApify } from '../../../../lib/apify-budget';
 import { cronAutorizado } from '../../../../lib/cron-auth';
 import {
   boundedResultsLimit,
@@ -192,8 +193,22 @@ export async function GET(request: Request) {
       if (finished.error) throw new IngestionError('DB_FINISH');
       return reply({ success: true, run_id: runId, ...metrics });
     }
+    // Presupuesto mensual: la base (y Apify, si responde) dicen cuánto queda.
+    const presupuesto = await presupuestoApify(db, { token });
+    metrics.apify_budget = presupuesto;
+    if (!presupuesto.correr) {
+      metrics.mode = 'apify_omitido';
+      metrics.apify_skipped = presupuesto.motivo;
+      metrics.apify_cost_usd = 0;
+      const omitida = await db
+        .from('ingestion_runs')
+        .update({ status: 'succeeded', completed_at: new Date().toISOString(), cost_usd: 0, metrics })
+        .eq('id', runId);
+      if (omitida.error) throw new IngestionError('DB_FINISH');
+      return reply({ success: true, run_id: runId, skipped: presupuesto.motivo, ...metrics });
+    }
     const start = record(
-      await apify(`acts/${actor}/runs?timeout=180&maxItems=40&maxTotalChargeUsd=1`, {
+      await apify(`acts/${actor}/runs?timeout=180&maxItems=40&maxTotalChargeUsd=${presupuesto.maxTotalChargeUsd}`, {
         method: 'POST',
         body: JSON.stringify({
           directUrls: ACTIVE_SOURCES.map((h) => `https://www.instagram.com/${h}/`),

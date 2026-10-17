@@ -8,11 +8,11 @@ import { horasCompatibles } from '../occurrence';
 import { PLAZO_AGOTADO, SourceError, type EventCandidate, type Fetcher, type SourceDefinition } from './types';
 const USER_AGENT = 'CarreteandoBot/1.0 (+https://dondesalgo.vercel.app/confianza)';
 const MAX_BYTES = 3_000_000;
-export const httpFetcher: Fetcher = async (url) => {
+export const httpFetcher: Fetcher = async (url, init) => {
   let response: Response;
   try {
     response = await fetch(url, {
-      headers: { 'User-Agent': USER_AGENT, Accept: 'application/json, text/html;q=0.9' },
+      headers: { ...(init?.headers || {}), 'User-Agent': USER_AGENT, Accept: 'application/json, text/html;q=0.9' },
       cache: 'no-store',
       redirect: 'follow',
       signal: AbortSignal.timeout(20000),
@@ -720,9 +720,9 @@ export async function dispatchSources(
   const agotado = () => reloj2() - inicio >= plazo;
   // El plazo se mira antes de CADA solicitud, no solo al empezar una fuente:
   // una cartelera con 24 fichas no puede seguir pidiendo pasado el límite.
-  const conPlazo: Fetcher = (url) => {
+  const conPlazo: Fetcher = (url, init) => {
     if (agotado()) return Promise.reject(new SourceError(PLAZO_AGOTADO));
-    return fetcher(url);
+    return fetcher(url, init);
   };
   for (const source of due) {
     if (agotado()) {

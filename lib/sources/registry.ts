@@ -7,6 +7,7 @@ import { wpDatedSlug, wpEventsList, wpNewsScan } from './adapters/wordpress';
 import { cinzanoApi } from './adapters/cinzano';
 import { eventlyAgenda } from './adapters/evently';
 import { vestiCompany } from './adapters/vesti';
+import { COMEDIATICKET_API, COMEDYPASS_API, comediaTicketApi, comedyPassStore } from './adapters/comedia';
 import { fuentesDeRutas } from '../venue-routes';
 import type { Adapter, SourceDefinition } from './types';
 export const ADAPTERS: Record<string, Adapter> = {
@@ -22,6 +23,8 @@ export const ADAPTERS: Record<string, Adapter> = {
   [vestiCompany.id]: vestiCompany,
   [eventlyAgenda.id]: eventlyAgenda,
   [cinzanoApi.id]: cinzanoApi,
+  [comedyPassStore.id]: comedyPassStore,
+  [comediaTicketApi.id]: comediaTicketApi,
 };
 const portaldisc = (
   id: string,
@@ -272,6 +275,38 @@ const BASE: SourceDefinition[] = [
       linkPattern: '^https://(?!app\\.|admin\\.)[a-z0-9-]+\\.evently\\.cl/[A-Za-z0-9-]{6,}$',
       maxPages: '25',
     },
+  },
+  // Ticketeras de comedia (oct-2026). Entran en revisión: nivel C para que la
+  // regla 2 no las publique solas; una persona o una segunda fuente decide.
+  {
+    id: 'comedypass-regiones',
+    name: 'ComedyPass · shows en regiones',
+    sourceType: 'TICKET_PLATFORM',
+    adapter: comedyPassStore.id,
+    publicUrl: COMEDYPASS_API,
+    commune: 'Valparaíso',
+    zone: null,
+    venueSlug: null,
+    trust: 'review',
+    family: 'TICKET_PLATFORM',
+    tier: 'C',
+    accessMode: 'api',
+    refreshHours: 24,
+  },
+  {
+    id: 'comediaticket-region',
+    name: 'ComediaTicket · región de Valparaíso',
+    sourceType: 'TICKET_PLATFORM',
+    adapter: comediaTicketApi.id,
+    publicUrl: COMEDIATICKET_API,
+    commune: 'Valparaíso',
+    zone: null,
+    venueSlug: null,
+    trust: 'review',
+    family: 'TICKET_PLATFORM',
+    tier: 'C',
+    accessMode: 'api',
+    refreshHours: 24,
   },
   {
     // Ticketera grande. Su listado /todos es nacional y sus fichas publican
