@@ -1938,3 +1938,7 @@ html[data-edicion="3d"] body {
 .mapa-grupo b { color:var(--coral, #E8576F); font-weight:400; }
 .mapa-estrella.punto-evento, .mapa-estrella.punto-fonda, .mapa-estrella.punto-vivo { box-shadow:none; border:0; background:none; border-radius:0; width:30px; height:30px; }
 .mapa-estrella-leyenda.punto-evento, .mapa-estrella-leyenda.punto-fonda, .mapa-estrella-leyenda.punto-vivo { width:18px; height:18px; }
+
+/* Estado temporal: "Ya empezó" no dice que terminó; "Terminó" solo con final publicado. */
+.card-estado { display:inline-flex; align-items:center; padding:1px 7px; border-radius:999px; border:1px solid currentColor; font-size:11px; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); }
+.card-estado-fin { opacity:.75; }

@@ -4,6 +4,7 @@ import { ADAPTERS, MANUAL_SOURCES, SOURCES } from './registry';
 import { clasificar, type Relevancia } from './relevance';
 import { authorityOf, originGroupOf, statusFromText } from './evidence';
 import { hostPermitido } from '../image-hosts';
+import { horasCompatibles } from '../occurrence';
 import { PLAZO_AGOTADO, SourceError, type EventCandidate, type Fetcher, type SourceDefinition } from './types';
 const USER_AGENT = 'CarreteandoBot/1.0 (+https://dondesalgo.vercel.app/confianza)';
 const MAX_BYTES = 3_000_000;
@@ -402,12 +403,13 @@ async function lookupVenueId(db: Db, slug: string): Promise<number | null> {
 async function findExisting(db: Db, candidate: EventCandidate): Promise<number | null> {
   const porUrl = await db
     .from('events')
-    .select('id,title,date_text')
+    .select('id,title,date_text,event_time')
     .or(`source_detail_url.eq."${candidate.detailUrl.replace(/"/g, '')}",instagram_url.eq."${candidate.detailUrl.replace(/"/g, '')}"`)
     .neq('disposition', 'duplicate')
-    .limit(5);
-  type Fila = { id: number; title?: string; date_text?: string };
-  const filas = (porUrl.data || []) as Fila[];
+    .limit(20);
+  type Fila = { id: number; title?: string; date_text?: string; event_time?: string | null };
+  // Una ficha puede vender dos funciones: solo es la misma fila si la hora es compatible.
+  const filas = ((porUrl.data || []) as Fila[]).filter((r) => horasCompatibles(r.event_time, candidate.time));
   // Primero la fila de esa misma fecha; si la fuente cambió la fecha, la ficha parecida.
   const mismaFicha =
     filas.find((r) => r.date_text === candidate.date) ||
@@ -417,12 +419,12 @@ async function findExisting(db: Db, candidate: EventCandidate): Promise<number |
   if (porClave.data && porClave.data[0]) return porClave.data[0].id as number;
   const { data } = await db
     .from('events')
-    .select('id,title,venue')
+    .select('id,title,venue,event_time')
     .eq('date_text', candidate.date)
     .neq('disposition', 'duplicate')
     .limit(60);
-  const parecido = (data || []).find((row: { title?: string; venue?: string | null }) => {
-    if (!row.title) return false;
+  const parecido = (data || []).find((row: { title?: string; venue?: string | null; event_time?: string | null }) => {
+    if (!row.title || !horasCompatibles(row.event_time, candidate.time)) return false;
     const sameVenue =
       !candidate.venue || !row.venue || normalizedTitle(row.venue) === normalizedTitle(candidate.venue);
     return sameVenue && looksLikeSameEvent(row.title, candidate.title);

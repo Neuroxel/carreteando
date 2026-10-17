@@ -1,16 +1,20 @@
 import Link from 'next/link';
 import { Evento } from '../lib/types';
 import { eventDateLabel } from '../lib/events';
+import type { EstadoTemporal } from '../lib/temporal';
 import EventImage from './EventImage';
 import ShareButton from './ShareButton';
 export default function EventCard({
   evento: e,
   today,
   priority = false,
+  estado,
 }: {
   evento: Evento;
   today?: string;
   priority?: boolean;
+  /** Solo se muestra lo que se sabe: "Ya empezó" no significa que haya terminado. */
+  estado?: EstadoTemporal;
 }) {
   return (
     <article className="event-card">
@@ -40,6 +44,8 @@ export default function EventCard({
         <div className="card-category">
           <time dateTime={e.fecha}>{eventDateLabel(e.fecha, today)}</time>
           <span>{e.hora ? `${e.hora} h` : 'Hora por confirmar'}</span>
+          {estado === 'iniciado' && <span className="card-estado">Ya empezó</span>}
+          {estado === 'finalizado' && <span className="card-estado card-estado-fin">Terminó</span>}
         </div>
         <h3>
           <Link href={`/evento/${encodeURIComponent(e.id)}`} prefetch={false}>

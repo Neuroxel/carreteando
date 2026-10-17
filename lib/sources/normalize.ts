@@ -1,3 +1,4 @@
+import { sufijoHora } from '../occurrence';
 import { extractPriceInfo, toChileDateString } from '../event-extraction';
 import { safeImageUrl, safeWebUrl } from '../safety';
 import type { EventCandidate } from './types';
@@ -92,7 +93,11 @@ export function parseTime(value: string): string | null {
  * Two adapters describing the same night must produce the same key, and the key
  * must never collide across venues that happen to share a title.
  */
-export function candidateKey(sourceId: string, date: string, title: string) {
+/**
+ * Clave de ocurrencia por fuente. Con hora conocida la incluye (`…-2026-10-24-2000-estoy-bien`):
+ * dos funciones del mismo día no colisionan. Sin hora queda como antes.
+ */
+export function candidateKey(sourceId: string, date: string, title: string, time: string | null = null) {
   const slug = title
     .toLowerCase()
     .normalize('NFD')
@@ -100,7 +105,8 @@ export function candidateKey(sourceId: string, date: string, title: string) {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '')
     .slice(0, 60);
-  return `src-${sourceId}-${date}-${slug || 'evento'}`;
+  const hora = sufijoHora(time);
+  return `src-${sourceId}-${date}-${hora ? `${hora}-` : ''}${slug || 'evento'}`;
 }
 export function buildCandidate(input: {
   sourceId: string;
@@ -121,7 +127,7 @@ export function buildCandidate(input: {
   const priceSource = `${input.description || ''} ${title}`;
   const price = extractPriceInfo(priceSource);
   return {
-    key: candidateKey(input.sourceId, input.date, title),
+    key: candidateKey(input.sourceId, input.date, title, input.time || null),
     title,
     date: input.date,
     time: input.time || null,
