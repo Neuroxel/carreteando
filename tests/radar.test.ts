@@ -1,0 +1,35 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { distanciaKm, leerCapa, porCercania, textoDistancia } from '../lib/radar';
+
+const plazaSotomayor = { lat: -33.0389, lng: -71.6283 };
+const plazaVergara = { lat: -33.0245, lng: -71.5518 };
+
+test('distancia en línea recta entre Valparaíso y Viña', () => {
+  const km = distanciaKm(plazaSotomayor, plazaVergara);
+  assert.ok(km > 7 && km < 7.5, String(km));
+  assert.equal(distanciaKm(plazaSotomayor, plazaSotomayor), 0);
+});
+
+test('texto de distancia legible', () => {
+  assert.equal(textoDistancia(0.012), '50 m');
+  assert.equal(textoDistancia(0.34), '350 m');
+  assert.equal(textoDistancia(4.24), '4,2 km');
+  assert.equal(textoDistancia(23.6), '24 km');
+});
+
+test('ordena por cercanía sin tocar la lista original', () => {
+  const lista = [
+    { id: 'vina', ...plazaVergara },
+    { id: 'valpo', ...plazaSotomayor },
+  ];
+  const orden = porCercania(lista, { lat: -33.04, lng: -71.63 });
+  assert.deepEqual(orden.map((x) => x.punto.id), ['valpo', 'vina']);
+  assert.equal(lista[0].id, 'vina');
+});
+
+test('el radar abre en carretes de hoy', () => {
+  assert.equal(leerCapa(null), 'hoy');
+  assert.equal(leerCapa('otra'), 'hoy');
+  assert.equal(leerCapa('boliches'), 'boliches');
+});

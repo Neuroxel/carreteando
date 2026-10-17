@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import { Suspense } from 'react';
+import NavDestinos from './NavDestinos';
 import { Logo } from './Logo';
 export default function Navbar() {
   return (
@@ -8,11 +10,15 @@ export default function Navbar() {
           <Logo className="brand-logo" title="Dónde Salgo?" />
         </Link>
         <nav aria-label="Navegación principal">
-          <Link prefetch={false} href="/explorar">Explorar</Link>
-          <Link prefetch={false} href="/explorar?vista=mapa">Mapa</Link>
-          <Link prefetch={false} href="/publicar" className="nav-publish">
-            Aportar <span aria-hidden="true">↗</span>
-          </Link>
+          <Suspense
+            fallback={
+              <Link prefetch={false} href="/publicar" className="nav-publish">
+                Aportar <span aria-hidden="true">↗</span>
+              </Link>
+            }
+          >
+            <NavDestinos />
+          </Suspense>
         </nav>
       </div>
     </header>

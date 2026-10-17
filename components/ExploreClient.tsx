@@ -10,11 +10,12 @@ import { buscarLugares, buscarZonas, zonaSlug } from '../lib/venues';
 import { normalizar, puntosDeMapa } from '../lib/map';
 import type { PublicSnapshot } from '../lib/snapshot';
 import { rememberEmptySearch } from '../lib/metrics';
+import { CLAVE_GPS_NEGADO, OPCIONES_GPS, leerCapa, porCercania, textoDistancia, type Capa, type Posicion } from '../lib/radar';
 import EventCard from './EventCard';
 import VenueCard from './VenueCard';
 import VenueRail from './VenueRail';
 import VenueMap from './VenueMap';
-import { Logo, LogoApilado } from './Logo';
+import { LogoApilado } from './Logo';
 import PosterDecor from './poster/PosterDecor';
 
 const SHORT: Record<string, string> = { Valparaíso: 'Valpo', 'Viña del Mar': 'Viña' };
@@ -26,7 +27,11 @@ interface Estado {
   ver: Ver;
   vista: Vista;
   orden: Orden;
+  /** Solo en el mapa (Radar): carretes de hoy o todos los boliches. */
+  capa: Capa;
 }
+type Cambio = Partial<FiltrosEvento> & { ver?: Ver; vista?: Vista; orden?: Orden; capa?: Capa };
+type Gps = 'idle' | 'pidiendo' | 'ok' | 'negado' | 'error' | 'no';
 /** Un snapshot más viejo que esto se avisa, sin bloquear nada. */
 const VIEJO_MS = 6 * 3600_000;
 /** Al volver a la pestaña, si pasó esto, se pregunta (con ETag) si hay datos nuevos. */
@@ -39,6 +44,7 @@ function leer(search: string, defecto: string): Estado {
     ver: p.get('ver') === 'eventos' ? 'eventos' : p.get('ver') === 'lugares' ? 'lugares' : 'todo',
     vista: p.get('vista') === 'mapa' ? 'mapa' : 'lista',
     orden: p.get('orden') === 'barato' ? 'barato' : 'recomendados',
+    capa: leerCapa(p.get('capa')),
   };
 }
 /** URL limpia: solo lo que difiere del valor por defecto. */
@@ -54,6 +60,7 @@ function aUrl(e: Estado, path: string, defecto: string) {
   if (e.ver !== 'todo') p.set('ver', e.ver);
   if (e.vista !== 'lista') p.set('vista', e.vista);
   if (e.orden !== 'recomendados') p.set('orden', e.orden);
+  if (e.vista === 'mapa' && e.capa !== 'hoy') p.set('capa', e.capa);
   const q = p.toString();
   return q ? `${path}?${q}` : path;
 }
@@ -104,14 +111,15 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
   }, [snap]);
 
   const ir = useCallback(
-    (cambio: Partial<FiltrosEvento> & { ver?: Ver; vista?: Vista; orden?: Orden }, reemplazar = false) => {
+    (cambio: Cambio, reemplazar = false) => {
       setEstado((prev) => {
-        const { ver, vista, orden, ...filtros } = cambio;
+        const { ver, vista, orden, capa, ...filtros } = cambio;
         const next: Estado = {
           filtros: { ...prev.filtros, ...filtros },
           ver: ver ?? prev.ver,
           vista: vista ?? prev.vista,
           orden: orden ?? prev.orden,
+          capa: capa ?? prev.capa,
         };
         const url = aUrl(next, path, defecto);
         if (reemplazar) history.replaceState(null, '', url);
@@ -121,13 +129,14 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
     },
     [path, defecto],
   );
-  const enlace = (cambio: Partial<FiltrosEvento> & { ver?: Ver; vista?: Vista; orden?: Orden }) => ({
+  const enlace = (cambio: Cambio) => ({
     href: aUrl(
       {
         filtros: { ...estado.filtros, ...cambio },
         ver: cambio.ver ?? estado.ver,
         vista: cambio.vista ?? estado.vista,
         orden: cambio.orden ?? estado.orden,
+        capa: cambio.capa ?? estado.capa,
       },
       path,
       defecto,
@@ -139,7 +148,65 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
     },
   });
 
-  const { filtros, ver, vista, orden } = estado;
+  // Radar: la ubicación se pide solo cuando la persona abre el Radar, una vez,
+  // y queda en este teléfono. Si dice que no, el mapa sigue igual y no se insiste.
+  const [yo, setYo] = useState<Posicion | null>(null);
+  const [gps, setGps] = useState<Gps>('idle');
+  const ubicar = useCallback((manual: boolean) => {
+    if (typeof navigator === 'undefined' || !('geolocation' in navigator)) return setGps('no');
+    if (!manual) {
+      try {
+        if (localStorage.getItem(CLAVE_GPS_NEGADO)) return setGps('negado');
+      } catch {
+        /* sin almacenamiento: se pregunta como si fuera la primera vez */
+      }
+    }
+    setGps('pidiendo');
+    navigator.geolocation.getCurrentPosition(
+      (p) => {
+        setYo({ lat: p.coords.latitude, lng: p.coords.longitude });
+        setGps('ok');
+        try {
+          localStorage.removeItem(CLAVE_GPS_NEGADO);
+        } catch {
+          /* nada que limpiar */
+        }
+      },
+      (err) => {
+        if (err.code !== err.PERMISSION_DENIED) return setGps('error');
+        setGps('negado');
+        try {
+          localStorage.setItem(CLAVE_GPS_NEGADO, '1');
+        } catch {
+          /* igual no se vuelve a preguntar en esta visita */
+        }
+      },
+      OPCIONES_GPS,
+    );
+  }, []);
+  useEffect(() => {
+    // Tocar Radar en la barra es el gesto que autoriza preguntar.
+    const abrir = () => ubicar(false);
+    window.addEventListener('radar:abrir', abrir);
+    // Desde otra página, la barra llega con ?ubicar=1; se consume y se borra.
+    const p = new URLSearchParams(location.search);
+    if (p.get('ubicar') === '1') {
+      p.delete('ubicar');
+      const q = p.toString();
+      history.replaceState(null, '', q ? `${location.pathname}?${q}` : location.pathname);
+      ubicar(false);
+    }
+    return () => window.removeEventListener('radar:abrir', abrir);
+  }, [ubicar]);
+  const { filtros, ver, vista, orden, capa } = estado;
+  useEffect(() => {
+    // Un mapa abierto por enlace solo usa la ubicación si ya estaba permitida: sin aviso nuevo.
+    if (vista !== 'mapa' || gps !== 'idle' || !navigator.permissions) return;
+    navigator.permissions
+      .query({ name: 'geolocation' })
+      .then((r) => r.state === 'granted' && ubicar(false))
+      .catch(() => undefined);
+  }, [vista, gps, ubicar]);
   const todos = snap.events;
   const events = useMemo(() => {
     const lista = diversifyByVenue(filterEvents(todos, filtros, today));
@@ -202,16 +269,27 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
     if (sinResultados) rememberEmptySearch(filtros.busqueda || null);
     else if (filtros.busqueda) rememberEmptySearch(null);
   }, [sinResultados, filtros.busqueda]);
-  const lugaresMapa = useMemo(() => {
-    if (ver === 'lugares') return lugaresVisibles;
-    const nombres = new Set(events.map((e) => normalizar(e.lugar || '')));
-    const elegidos = new Set(lugaresVisibles.map((l) => l.slug));
-    return derivados.lugaresZona.filter((l) => nombres.has(normalizar(l.nombre)) || (ver === 'todo' && elegidos.has(l.slug)));
-  }, [ver, events, lugaresVisibles, derivados.lugaresZona]);
-  const puntos = useMemo(
-    () => vista === 'mapa' ? puntosDeMapa(lugaresMapa, events, today) : [],
-    [vista, lugaresMapa, events, today],
+  // Radar no usa las pestañas de fecha: siempre marca lo de hoy. "Carretes hoy"
+  // muestra solo lugares con evento confirmado hoy; "Boliches", todos.
+  const eventosHoy = useMemo(
+    () => (vista === 'mapa' ? filterEvents(todos, { ...filtros, fecha: 'hoy' }, today) : []),
+    [vista, todos, filtros, today],
   );
+  const lugaresMapa = useMemo(() => {
+    if (vista !== 'mapa') return [];
+    const escena = filtros.escena && filtros.escena !== 'todos' ? filtros.escena : null;
+    const conEvento = new Set(eventosHoy.map((e) => normalizar(e.lugar || '')));
+    return derivados.lugaresZona.filter((l) => {
+      if (capa === 'hoy') return conEvento.has(normalizar(l.nombre));
+      const coincideLugar = !filtros.busqueda || derivados.lugaresHallados.some((x) => x.slug === l.slug);
+      return coincideLugar && (!escena || lugarEnEscena(l, escena) || conEvento.has(normalizar(l.nombre)));
+    });
+  }, [vista, capa, eventosHoy, filtros.busqueda, filtros.escena, derivados.lugaresZona, derivados.lugaresHallados]);
+  const puntos = useMemo(
+    () => (vista === 'mapa' ? puntosDeMapa(lugaresMapa, eventosHoy, today) : []),
+    [vista, lugaresMapa, eventosHoy, today],
+  );
+  const cercanos = useMemo(() => (yo && puntos.length ? porCercania(puntos, yo).slice(0, 6) : []), [yo, puntos]);
   const vigentes = todos.filter((e) => e.fecha >= today).length;
   const viejo = ahora - Date.parse(snap.generatedAt) > VIEJO_MS;
   const dateLabel = new Intl.DateTimeFormat('es-CL', {
@@ -235,9 +313,19 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
                 <LogoApilado className="hero-logo hero-logo-apilado" />
               </>
             ) : (
-              <>
-                Explorar <em>la noche.</em>
-              </>
+              vista === 'mapa' ? (
+                <>
+                  Radar <em>de carretes.</em>
+                </>
+              ) : ver === 'lugares' ? (
+                <>
+                  Boliches <em>para salir.</em>
+                </>
+              ) : (
+                <>
+                  Carretes <em>de la región.</em>
+                </>
+              )
             )}
           </h1>
           {home && <p className="hero-lead">¿Qué hay hoy? Eventos y lugares para salir en la Región de Valparaíso.</p>}
@@ -288,6 +376,34 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
         </div>
       </section>
       <section className={`container discovery ${home ? 'discovery-home' : ''}`} id="cartelera" aria-label="Cartelera">
+        {vista === 'mapa' ? (
+          <div className="radar-cabecera">
+            <div className="segmented radar-capas" role="group" aria-label="Qué mostrar en el radar">
+              <a {...enlace({ capa: 'hoy' })} className={capa === 'hoy' ? 'activa' : ''} aria-current={capa === 'hoy' ? 'true' : undefined}>
+                <span className="radar-estrella" aria-hidden="true">✦</span> Carretes hoy
+              </a>
+              <a {...enlace({ capa: 'boliches' })} className={capa === 'boliches' ? 'activa' : ''} aria-current={capa === 'boliches' ? 'true' : undefined}>
+                Boliches
+              </a>
+            </div>
+            {gps === 'ok' ? (
+              <p className="radar-gps">Ordenado por cercanía. Tu ubicación no sale de este teléfono.</p>
+            ) : gps === 'pidiendo' ? (
+              <p className="radar-gps" role="status">Buscando tu ubicación…</p>
+            ) : gps === 'negado' ? (
+              <p className="radar-gps">
+                Sin tu ubicación el mapa funciona igual.{' '}
+                <button type="button" className="radar-gps-boton" onClick={() => ubicar(true)}>
+                  Volver a intentar
+                </button>
+              </p>
+            ) : gps === 'no' ? null : (
+              <button type="button" className="radar-gps-boton" onClick={() => ubicar(true)}>
+                {gps === 'error' ? 'No pudimos ubicarte. Probar otra vez' : 'Ver qué hay cerca de mí'}
+              </button>
+            )}
+          </div>
+        ) : ver === 'lugares' ? null : (
         <div className="date-tabs" aria-label="Cuándo">
           {(
             [
@@ -303,7 +419,8 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
             </a>
           ))}
         </div>
-        <details className="discovery-options"><summary>Filtros{(filtros.escena !== 'todos' || (filtros.precio && filtros.precio !== 'todos') || orden !== 'recomendados' || ver !== 'todo' || vista !== 'lista') ? ' · activos' : ''}</summary>
+        )}
+        <details className="discovery-options"><summary>Filtros{(filtros.escena !== 'todos' || (filtros.precio && filtros.precio !== 'todos') || orden !== 'recomendados' || ver === 'eventos') ? ' · activos' : ''}</summary>
         {derivados.escenas.length > 0 && (
           <div className="escenas" aria-label="Escenas">
             {derivados.escenas.map((x) => {
@@ -377,7 +494,7 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
           </div>
         </div>
         </details>
-        {derivados.baratos > 0 && (filtros.precio || 'todos') === 'todos' && (
+        {vista === 'lista' && ver !== 'lugares' && derivados.baratos > 0 && (filtros.precio || 'todos') === 'todos' && (
           <a className="barato-atajo" {...enlace({ precio: '5000' })}>
             Barato {filtros.fecha === 'hoy' ? 'hoy' : 'en estas fechas'}: {derivados.baratos} gratis o hasta $5.000
           </a>
@@ -390,13 +507,48 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
         {vista === 'mapa' && (
           <>
             {puntos.length ? (
-              <VenueMap puntos={puntos} />
+              <VenueMap puntos={puntos} yo={yo} />
+            ) : capa === 'hoy' ? (
+              <div className="empty-state">
+                <h3>{eventosHoy.length ? 'Los carretes de hoy todavía no tienen ubicación verificada.' : 'No tenemos carretes confirmados para hoy acá.'}</h3>
+                <div className="actions">
+                  <a className="button button-primary" {...enlace({ capa: 'boliches' })}>
+                    Ver todos los boliches
+                  </a>
+                </div>
+              </div>
             ) : (
               <p className="empty-state">Ninguno de estos lugares tiene todavía una ubicación verificada.</p>
             )}
+            {cercanos.length > 0 && (
+              <div className="radar-cerca">
+                <h3>
+                  Más cerca de ti<span className="heading-period">.</span>
+                </h3>
+                <ol>
+                  {cercanos.map(({ punto, km }) => (
+                    <li key={punto.slug}>
+                      <Link prefetch={false} href={`/lugar/${punto.slug}`}>
+                        <span className="radar-cerca-nombre">
+                          {punto.estaNoche.length > 0 && <span className="radar-estrella" aria-label="Carrete hoy">✦ </span>}
+                          {punto.nombre}
+                        </span>
+                        <span className="radar-cerca-dato">
+                          {punto.estaNoche[0] ? `${punto.estaNoche[0].titulo}${punto.estaNoche[0].hora ? ` · ${punto.estaNoche[0].hora}` : ''}` : punto.tipoLabel}
+                        </span>
+                      </Link>
+                      <span className="radar-cerca-km">{textoDistancia(km)}</span>
+                    </li>
+                  ))}
+                </ol>
+                <p className="trust-note">Distancia en línea recta, no a pie.</p>
+              </div>
+            )}
             <p className="trust-note">
-              {puntos.length} de {lugaresMapa.length} lugares con ubicación verificada. Los demás siguen en la
-              lista: preferimos no ponerlos en la esquina equivocada.
+              {capa === 'hoy'
+                ? `✦ marca un evento confirmado para hoy (${eventosHoy.length} en total), no cuánta gente hay. `
+                : ''}
+              {puntos.length} de {lugaresMapa.length} lugares con ubicación verificada; preferimos no poner ninguno en la esquina equivocada.
             </p>
           </>
         )}

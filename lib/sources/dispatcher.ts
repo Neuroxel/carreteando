@@ -211,6 +211,17 @@ export async function runSource(
     const existente = await findExisting(db, candidate);
     if (existente) {
       await addEvidence(db, existente, source, candidate);
+      // Solo se completa un precio vacío, y solo en la ficha de esta misma URL:
+      // una corrección del dueño o un precio ya puesto nunca se pisan.
+      if (candidate.priceClp !== null) {
+        const url = candidate.detailUrl.replace(/"/g, '');
+        await db
+          .from('events')
+          .update({ price_clp: candidate.priceClp, price_text: candidate.priceText })
+          .eq('id', existente)
+          .is('price_clp', null)
+          .or(`source_detail_url.eq."${url}",instagram_url.eq."${url}"`);
+      }
       report.duplicates += 1;
       continue;
     }

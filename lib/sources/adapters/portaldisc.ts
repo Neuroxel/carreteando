@@ -1,11 +1,63 @@
 import { toChileDateString } from '../../event-extraction';
 import { buildCandidate, fechaVerificada, parseSpanishDate, parseTime, stripTags } from '../normalize';
-import { SourceError, type Adapter, type AdapterResult } from '../types';
+import { SourceError, type Adapter, type AdapterResult, type EventCandidate, type Fetcher } from '../types';
 import { ciudadDe } from './jsonld';
 const CARD_SEPARATOR = 'class="album"';
 const HREF = /href="(\/evento\/[A-Za-z0-9_-]+)"/;
 const IMG = /src="(https:\/\/images\.portaldisc\.com\/[^"']+)"/;
 const PARAGRAPH = /<p[^>]*>([\s\S]*?)<\/p>/g;
+/**
+ * El precio no viene en el listado: está en la ficha de cada evento, bajo
+ * "TICKETS DISPONIBLES". Se toma el ticket individual más barato que siga a la
+ * venta (los agotados y las promos de 2 o 3 entradas no cuentan) y un ticket
+ * gratuito se dice tal cual, con su condición, nunca como "Gratis" a secas.
+ */
+export function precioDeFicha(html: string): { price: number; text: string } | null {
+  const inicio = html.indexOf('TICKETS DISPONIBLES');
+  if (inicio < 0) return null;
+  const fin = html.indexOf('Fecha:', inicio);
+  const bloque = stripTags(html.slice(inicio, fin > inicio ? fin : inicio + 4000))
+    .replace(/[^\S\n]+/g, ' ');
+  const gratis = /ticket gratis([^:]*):/i.exec(bloque);
+  const pagados: { nombre: string; precio: number }[] = [];
+  for (const m of bloque.matchAll(/([A-Za-zÁÉÍÓÚÑáéíóúñ0-9 +/]{2,40}?):\s*\$\s?([\d.]{3,9})\s*\+\s*Cargo\s*(AGOTAD[AO]|NO DISPONIBLE|QUEDAN? [^\n]{0,20})?/gi)) {
+    const nombre = m[1].trim();
+    if (/agotad|no disponible/i.test(m[3] || '')) continue;
+    if (/doble|2\s*x\s*1|2x|3\s*por|promoci|disco|vip|\bmesa\b/i.test(nombre)) continue;
+    const precio = Number(m[2].replace(/\./g, ''));
+    if (Number.isInteger(precio) && precio > 0 && precio <= 500000) pagados.push({ nombre, precio });
+  }
+  const minimo = pagados.sort((a, b) => a.precio - b.precio)[0];
+  const pesos = (n: number) => `$${n.toLocaleString('es-CL')}`;
+  if (gratis) {
+    const condicion = gratis[1].trim().toLowerCase();
+    const base = condicion ? `Ticket gratis ${condicion}` : 'Ticket gratis en PortalTickets';
+    return { price: 0, text: minimo ? `${base} · ${minimo.nombre} ${pesos(minimo.precio)} + cargo` : base };
+  }
+  if (!minimo) return null;
+  return { price: minimo.precio, text: `Desde ${pesos(minimo.precio)} + cargo` };
+}
+
+/** Completa el precio leyendo la ficha, con tope de visitas por corrida. */
+async function conPrecio(candidatos: EventCandidate[], fetcher: Fetcher, tope = 24) {
+  let leidas = 0;
+  for (const c of candidatos) {
+    if (c.priceClp !== null || leidas >= tope) continue;
+    leidas += 1;
+    try {
+      const r = await fetcher(c.detailUrl);
+      const p = r.status === 200 ? precioDeFicha(r.body) : null;
+      if (p) {
+        c.priceClp = p.price;
+        c.priceText = p.text;
+      }
+    } catch {
+      /* sin ficha: el evento entra igual, con precio por confirmar */
+    }
+  }
+  return candidatos;
+}
+
 /**
  * A ticket platform publishes one page per venue. It is a real calendar, but it
  * is somebody else's calendar: dates come from human-written Spanish, so these
@@ -63,7 +115,7 @@ export const portaldiscCartelera: Adapter = {
       if (candidate) candidates.push(candidate);
       else parseFailures += 1;
     }
-    return { itemsFound: cards.length, candidates, parseFailures };
+    return { itemsFound: cards.length, candidates: await conPrecio(candidates, fetcher), parseFailures };
   },
 };
 
@@ -127,6 +179,6 @@ export const portaldiscRegion: Adapter = {
       if (candidate) candidates.push(candidate);
       else parseFailures += 1;
     }
-    return { itemsFound: chunks.length - 1 - fuera, candidates, parseFailures };
+    return { itemsFound: chunks.length - 1 - fuera, candidates: await conPrecio(candidates, fetcher), parseFailures };
   },
 };
