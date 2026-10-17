@@ -90,11 +90,11 @@ test('migas de pan absolutas y en orden', () => {
 });
 
 test('la dirección del sitio es configurable pero no rompible', () => {
-  assert.equal(siteUrlFrom(undefined), 'https://carreteando.vercel.app');
+  assert.equal(siteUrlFrom(undefined), 'https://dondesalgo.vercel.app');
   assert.equal(siteUrlFrom('https://carreteando.cl/'), 'https://carreteando.cl');
-  assert.equal(siteUrlFrom('http://carreteando.cl'), 'https://carreteando.vercel.app');
-  assert.equal(siteUrlFrom('https://carreteando.cl/algo'), 'https://carreteando.vercel.app');
-  assert.equal(siteUrlFrom('no es url'), 'https://carreteando.vercel.app');
+  assert.equal(siteUrlFrom('http://carreteando.cl'), 'https://dondesalgo.vercel.app');
+  assert.equal(siteUrlFrom('https://carreteando.cl/algo'), 'https://dondesalgo.vercel.app');
+  assert.equal(siteUrlFrom('no es url'), 'https://dondesalgo.vercel.app');
 });
 
 test('las URLs con filtros no se indexan; la limpia sí', () => {
@@ -106,7 +106,7 @@ test('las URLs con filtros no se indexan; la limpia sí', () => {
 test('IndexNow anuncia solo URLs propias, sin repetir y con la clave publicada', () => {
   const p = indexNowPayload(['/evento/a', '/evento/a', '/explorar']);
   assert.equal(p.urlList.length, 2);
-  assert.ok(p.urlList.every((u) => u.startsWith('https://carreteando.vercel.app/')));
+  assert.ok(p.urlList.every((u) => u.startsWith('https://dondesalgo.vercel.app/')));
   assert.equal(p.key, INDEXNOW_KEY);
   assert.match(INDEXNOW_KEY, /^[a-f0-9]{32}$/);
   assert.ok(p.keyLocation.endsWith('/indexnow-key.txt'));

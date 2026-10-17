@@ -4,7 +4,7 @@ import { ADAPTERS, MANUAL_SOURCES, SOURCES } from './registry';
 import { clasificar, type Relevancia } from './relevance';
 import { authorityOf, originGroupOf, statusFromText } from './evidence';
 import { SourceError, type EventCandidate, type Fetcher, type SourceDefinition } from './types';
-const USER_AGENT = 'CarreteandoBot/1.0 (+https://carreteando.vercel.app/confianza)';
+const USER_AGENT = 'CarreteandoBot/1.0 (+https://dondesalgo.vercel.app/confianza)';
 const MAX_BYTES = 3_000_000;
 export const httpFetcher: Fetcher = async (url) => {
   let response: Response;

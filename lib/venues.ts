@@ -111,7 +111,10 @@ export function dbRowToLugar(row: VenueRow): Lugar | null {
   };
 }
 function propia(url: string | null) {
-  return url?.startsWith('https://carreteando.vercel.app/') ? url.slice('https://carreteando.vercel.app'.length) : url;
+  for (const origin of ['https://carreteando.vercel.app', 'https://dondesalgo.vercel.app']) {
+    if (url?.startsWith(`${origin}/`)) return url.slice(origin.length);
+  }
+  return url;
 }
 // A point we are not sure about is worse than no point: it sends somebody to the
 // wrong corner at one in the morning.

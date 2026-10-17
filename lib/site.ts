@@ -1,4 +1,4 @@
-const PRODUCCION = 'https://carreteando.vercel.app';
+const PRODUCCION = 'https://dondesalgo.vercel.app';
 /**
  * La dirección pública sale de la configuración, no del código: el día que
  * haya dominio propio basta con cambiar NEXT_PUBLIC_SITE_URL y volver a
