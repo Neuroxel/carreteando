@@ -87,6 +87,15 @@ export interface EventCandidate {
   endTime?: string | null;
   /** Estado escrito por la fuente en forma estructurada (schema.org eventStatus, ICS STATUS). */
   status?: 'scheduled' | 'cancelled' | 'postponed';
+  /** Leída en la ficha: `agotado` solo si todas las entradas individuales lo dicen. */
+  disponibilidad?: 'disponible' | 'agotado';
+  /** Tipos de entrada tal como los publica la fuente (van a la evidencia, con su URL). */
+  tiers?: { nombre: string; precio: number; agotado: boolean }[];
+}
+/** Lo que la base ya sabe y le sirve al adaptador para gastar mejor su presupuesto. */
+export interface AdapterContext {
+  /** Fichas de esta fuente que ya tienen precio guardado: se releen después de las que no. */
+  conPrecio?: Set<string>;
 }
 export interface AdapterResult {
   /** Partial enrichment problems; agenda ingestion may still succeed. */
@@ -97,7 +106,7 @@ export interface AdapterResult {
 }
 export interface Adapter {
   id: string;
-  run(source: SourceDefinition, fetcher: Fetcher): Promise<AdapterResult>;
+  run(source: SourceDefinition, fetcher: Fetcher, ctx?: AdapterContext): Promise<AdapterResult>;
 }
 export type Fetcher = (url: string) => Promise<{ status: number; body: string }>;
 /** El plazo de la corrida se agotó antes de esta solicitud: no se pidió. */

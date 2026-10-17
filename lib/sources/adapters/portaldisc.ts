@@ -1,52 +1,123 @@
 import { toChileDateString } from '../../event-extraction';
 import { buildCandidate, fechaVerificada, parseSpanishDate, parseTime, stripTags } from '../normalize';
-import { SourceError, esPlazoAgotado, type Adapter, type AdapterResult, type EventCandidate, type Fetcher } from '../types';
+import { SourceError, esPlazoAgotado, type AdapterContext, type Adapter, type AdapterResult, type EventCandidate, type Fetcher } from '../types';
 import { ciudadDe } from './jsonld';
 const CARD_SEPARATOR = 'class="album"';
 const HREF = /href="(\/evento\/[A-Za-z0-9_-]+)"/;
 const IMG = /src="(https:\/\/images\.portaldisc\.com\/[^"']+)"/;
 const PARAGRAPH = /<p[^>]*>([\s\S]*?)<\/p>/g;
 /**
- * El precio no viene en el listado: está en la ficha de cada evento, bajo
- * "TICKETS DISPONIBLES". Se toma el ticket individual más barato que siga a la
- * venta (los agotados y las promos de 2 o 3 entradas no cuentan) y un ticket
- * gratuito se dice tal cual, con su condición, nunca como "Gratis" a secas.
+ * Un tipo de entrada tal como lo publica la ficha. `agotado` solo si la ficha
+ * lo dice (AGOTADA, NO DISPONIBLE, FINALIZADO); la ausencia de esa palabra no
+ * garantiza stock, pero tampoco se inventa que esté agotado.
  */
-export function precioDeFicha(html: string): { price: number; text: string } | null {
+export interface TierEntrada {
+  nombre: string;
+  precio: number;
+  gratis: boolean;
+  agotado: boolean;
+  cargo: boolean;
+  /** Precio por grupo (2x1, doble, 3 por…): no es el precio de una entrada. */
+  grupal: boolean;
+  /** Solo para niños o menores: no hace gratis la noche. */
+  infantil: boolean;
+  /** Entrada con algo más (disco, totebag, VIP, mesa): no es la base. */
+  conExtra: boolean;
+}
+export interface PrecioFicha {
+  price: number | null;
+  text: string;
+  /** `agotado`: todas las entradas individuales dicen agotado. */
+  disponibilidad: 'disponible' | 'agotado';
+  tiers: TierEntrada[];
+}
+const ACCIONES =
+  /Comprar o Regalar|Agregar al Carro|Generar Ticket Gratuito|Al comprar este ticket, recibir[aá]s \d+ entradas individuales con su respectivo c[oó]digo QR\.?|Puedes generar un m[aá]ximo de \d+ tickets? gratuitos? con tu cuenta de PortalTickets\.?|QUEDAN? \d+|[ÚU]LTIMOS TICKETS/gi;
+
+/** Los tipos de entrada del bloque "TICKETS DISPONIBLES". No exige "+ Cargo": algunas fichas no lo escriben. */
+export function tiersDeFicha(html: string): TierEntrada[] | null {
   const inicio = html.indexOf('TICKETS DISPONIBLES');
   if (inicio < 0) return null;
   const fin = html.indexOf('Fecha:', inicio);
-  const bloque = stripTags(html.slice(inicio, fin > inicio ? fin : inicio + 4000))
+  const bloque = stripTags(html.slice(inicio + 'TICKETS DISPONIBLES'.length, fin > inicio ? fin : inicio + 6000))
+    // Restos de atributos que quedan cuando un onclick lleva ">" dentro.
+    .replace(/'\)"[^>]*?">/g, ' ')
+    .replace(/^\s*:/, '')
     .replace(/[^\S\n]+/g, ' ');
-  const gratis = /ticket gratis([^:]*):/i.exec(bloque);
-  const pagados: { nombre: string; precio: number }[] = [];
-  for (const m of bloque.matchAll(/([A-Za-zÁÉÍÓÚÑáéíóúñ0-9 +/]{2,40}?):\s*\$\s?([\d.]{3,9})\s*\+\s*Cargo\s*(AGOTAD[AO]|NO DISPONIBLE|QUEDAN? [^\n]{0,20})?/gi)) {
-    const nombre = m[1].trim();
-    if (/agotad|no disponible/i.test(m[3] || '')) continue;
-    if (/doble|2\s*x\s*1|2x|3\s*por|promoci|disco|vip|\bmesa\b/i.test(nombre)) continue;
-    const precio = Number(m[2].replace(/\./g, ''));
-    if (Number.isInteger(precio) && precio > 0 && precio <= 500000) pagados.push({ nombre, precio });
+  // Cada tipo empieza tras el anterior: las acciones y avisos sirven de separador.
+  const limpio = bloque.replace(ACCIONES, ' ¦ ');
+  const tiers: TierEntrada[] = [];
+  const patron = /([^¦:\n$]{2,60}?):\s*(?:\$\s?([\d.]{1,9})(\s*\+\s*Cargo)?|(?=\s*¦)|(Entrada Liberada))\s*(AGOTAD[AO]|NO DISPONIBLE|FINALIZADO)?/gi;
+  for (const m of limpio.matchAll(patron)) {
+    const nombre = m[1].replace(/\s+/g, ' ').trim();
+    if (!nombre || /^(fecha|lugar)$/i.test(nombre)) continue;
+    const gratis = !m[2];
+    const precio = gratis ? 0 : Number(m[2].replace(/\./g, ''));
+    if (!Number.isInteger(precio) || precio < 0 || precio > 500000) continue;
+    tiers.push({
+      nombre,
+      precio,
+      gratis,
+      agotado: Boolean(m[5]),
+      cargo: Boolean(m[3]),
+      grupal: /doble|2\s*x\s*1|\b\dx\b|\b\d\s*por\b|promoci|dos personas|para dos|pareja|grupal/i.test(nombre),
+      infantil: /ni[ñn]o|menor|infantil/i.test(nombre),
+      conExtra: /disco|totebag|polera|vip|\bmesa\b|\+/i.test(nombre),
+    });
   }
-  const minimo = pagados.sort((a, b) => a.precio - b.precio)[0];
+  return tiers;
+}
+
+/**
+ * El precio que se muestra es el de la entrada individual más barata que se
+ * puede comprar ahora. Lo agotado no cuenta; lo grupal, infantil o con extras
+ * tampoco. Una entrada gratis se dice con su condición. Si todas las entradas
+ * individuales están agotadas, se dice "agotado" y no se muestra un precio.
+ */
+export function precioDeFicha(html: string): PrecioFicha | null {
+  const tiers = tiersDeFicha(html);
+  if (!tiers || !tiers.length) return null;
   const pesos = (n: number) => `$${n.toLocaleString('es-CL')}`;
-  if (gratis) {
-    const condicion = gratis[1].trim().toLowerCase();
-    const base = condicion ? `Ticket gratis ${condicion}` : 'Ticket gratis en PortalTickets';
-    return { price: 0, text: minimo ? `${base} · ${minimo.nombre} ${pesos(minimo.precio)} + cargo` : base };
+  const base = tiers.filter((t) => !t.grupal && !t.infantil && !t.conExtra);
+  const elegibles = base.length ? base : tiers.filter((t) => !t.infantil);
+  const vigentes = elegibles.filter((t) => !t.agotado);
+  if (!vigentes.length) {
+    return elegibles.length
+      ? { price: null, text: 'Agotado en PortalTickets', disponibilidad: 'agotado', tiers }
+      : null;
   }
-  if (!minimo) return null;
-  return { price: minimo.precio, text: `Desde ${pesos(minimo.precio)} + cargo` };
+  const pagados = vigentes.filter((t) => !t.gratis).sort((a, b) => a.precio - b.precio);
+  const gratis = vigentes.find((t) => t.gratis);
+  const conCargo = (t: TierEntrada) => `${pesos(t.precio)}${t.cargo ? ' + cargo' : ''}`;
+  if (gratis) {
+    const condicion = gratis.nombre.replace(/^ticket gratis\s*/i, '').trim().toLowerCase();
+    const texto = /gratis|liberad/i.test(gratis.nombre) ? `Ticket gratis${condicion ? ` ${condicion}` : ''}` : `${gratis.nombre}: gratis`;
+    return {
+      price: 0,
+      text: pagados[0] ? `${texto} · ${pagados[0].nombre} ${conCargo(pagados[0])}` : texto,
+      disponibilidad: 'disponible',
+      tiers,
+    };
+  }
+  const minimo = pagados[0];
+  return { price: minimo.precio, text: `Desde ${conCargo(minimo)}`, disponibilidad: 'disponible', tiers };
 }
 
 /** Prioriza fechas cercanas; las 24 solicitudes incluyen reintentos del alias. */
-async function conPrecio(candidatos: EventCandidate[], fetcher: Fetcher, tope = 24) {
+/**
+ * Lee el precio en la ficha de cada evento, con tope de solicitudes. Primero las
+ * fichas que la base todavía no tiene con precio y, con lo que sobre, las que
+ * ya lo tienen (para notar un tramo agotado o un cambio).
+ */
+async function conPrecio(candidatos: EventCandidate[], fetcher: Fetcher, ctx: AdapterContext = {}, tope = 24) {
   let solicitudes = 0;
   const counts = new Map<string, number>();
   const pendiente = (c: EventCandidate, code: string) => {
     c.reasons.push(code);
     counts.set(code, (counts.get(code) || 0) + 1);
   };
-  for (const c of [...candidatos].sort((a, b) => a.date.localeCompare(b.date))) {
+  const yaTiene = (c: EventCandidate) => Number(Boolean(ctx.conPrecio?.has(c.detailUrl)));
+  for (const c of [...candidatos].sort((a, b) => yaTiene(a) - yaTiene(b) || a.date.localeCompare(b.date))) {
     if (c.priceClp !== null) continue;
     if (solicitudes >= tope) {
       pendiente(c, 'PRICE_BUDGET');
@@ -79,6 +150,8 @@ async function conPrecio(candidatos: EventCandidate[], fetcher: Fetcher, tope = 
     if (p) {
       c.priceClp = p.price;
       c.priceText = p.text;
+      c.disponibilidad = p.disponibilidad;
+      c.tiers = p.tiers.map((t) => ({ nombre: t.nombre, precio: t.precio, agotado: t.agotado }));
     } else pendiente(c, 'PRICE_NOT_FOUND');
   }
   return { candidates: candidatos, diagnostics: [...counts].map(([code, n]) => `${code}=${n}`) };
@@ -91,7 +164,7 @@ async function conPrecio(candidatos: EventCandidate[], fetcher: Fetcher, tope = 
  */
 export const portaldiscCartelera: Adapter = {
   id: 'portaldisc-cartelera',
-  async run(source, fetcher): Promise<AdapterResult> {
+  async run(source, fetcher, ctx): Promise<AdapterResult> {
     const response = await fetcher(source.publicUrl);
     if (response.status !== 200) throw new SourceError(`HTTP_${response.status}`);
     const body = response.body;
@@ -141,7 +214,7 @@ export const portaldiscCartelera: Adapter = {
       if (candidate) candidates.push(candidate);
       else parseFailures += 1;
     }
-    return { itemsFound: cards.length, ...await conPrecio(candidates, fetcher), parseFailures };
+    return { itemsFound: cards.length, ...await conPrecio(candidates, fetcher, ctx), parseFailures };
   },
 };
 
@@ -153,7 +226,7 @@ export const portaldiscCartelera: Adapter = {
  */
 export const portaldiscRegion: Adapter = {
   id: 'portaldisc-region',
-  async run(source, fetcher): Promise<AdapterResult> {
+  async run(source, fetcher, ctx): Promise<AdapterResult> {
     const response = await fetcher(source.publicUrl);
     if (response.status !== 200) throw new SourceError(`HTTP_${response.status}`);
     const chunks = response.body.split('class="info_responsivo"');
@@ -205,6 +278,6 @@ export const portaldiscRegion: Adapter = {
       if (candidate) candidates.push(candidate);
       else parseFailures += 1;
     }
-    return { itemsFound: chunks.length - 1 - fuera, ...await conPrecio(candidates, fetcher), parseFailures };
+    return { itemsFound: chunks.length - 1 - fuera, ...await conPrecio(candidates, fetcher, ctx), parseFailures };
   },
 };
