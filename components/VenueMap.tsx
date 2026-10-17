@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { encuadre, type PuntoMapa } from '../lib/map';
-import { distanciaKm, type Posicion } from '../lib/radar';
+import { debeCentrar, type Posicion } from '../lib/radar';
 import { track } from '../lib/metrics';
 import { acentoDe } from '../lib/types';
 const LEAFLET_CSS = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css';
@@ -41,7 +41,7 @@ const ESTADOS: Record<string, { label: string; className: string }> = {
   vivo: { label: 'Con reportes de hoy', className: 'punto-vivo' },
   fonda: { label: 'Fonda hoy', className: 'punto-fonda' },
   evento: { label: 'Carrete hoy', className: 'punto-evento' },
-  lugar: { label: 'Boliche', className: 'punto-lugar' },
+  lugar: { label: 'Lugar', className: 'punto-lugar' },
 };
 /** Estrella de serigrafía: el marcador de un lugar con evento confirmado hoy. */
 const ESTRELLA =
@@ -99,6 +99,23 @@ export default function VenueMap({ puntos, yo = null }: { puntos: PuntoMapa[]; y
   const contenedor = useRef<HTMLDivElement>(null);
   const mapaRef = useRef<{ L: LeafletGlobal; mapa: MapaLeaflet } | null>(null);
   const [estado, setEstado] = useState<'cargando' | 'listo' | 'error'>('cargando');
+  // Sube cada vez que un mapa nuevo queda listo: al cambiar de capa el mapa se
+  // reconstruye y la capa "Tú" tiene que volver a ponerse sobre el nuevo.
+  const [version, setVersion] = useState(0);
+  // Si la persona ya arrastró, hizo zoom o tocó el mapa, no se la recentra.
+  const movidoPorPersona = useRef(false);
+  useEffect(() => {
+    const el = contenedor.current;
+    if (!el) return;
+    const marcar = () => {
+      movidoPorPersona.current = true;
+    };
+    const eventos = ['pointerdown', 'wheel', 'touchstart', 'keydown'] as const;
+    for (const ev of eventos) el.addEventListener(ev, marcar, { passive: true });
+    return () => {
+      for (const ev of eventos) el.removeEventListener(ev, marcar);
+    };
+  }, []);
   useEffect(() => {
     let cancelado = false;
     let mapa: MapaLeaflet | null = null;
@@ -167,10 +184,11 @@ export default function VenueMap({ puntos, yo = null }: { puntos: PuntoMapa[]; y
         grupo.addTo(instancia);
         if (puntos.length > 1) {
           const limites = L.latLngBounds(puntos.map((p) => [p.lat, p.lng]));
-          instancia.fitBounds(limites, { padding: [28, 28], maxZoom: 15 });
+          instancia.fitBounds(limites, { padding: [28, 28], maxZoom: 15, animate: false });
         }
         mapaRef.current = { L, mapa: instancia };
         setEstado('listo');
+        setVersion((v) => v + 1);
       } catch {
         if (!cancelado) setEstado('error');
       }
@@ -182,10 +200,10 @@ export default function VenueMap({ puntos, yo = null }: { puntos: PuntoMapa[]; y
     };
   }, [puntos]);
   // La ubicación propia es otra capa: llega después y no redibuja el mapa.
-  const centrado = useRef(false);
+  // Se vuelve a poner cada vez que el mapa se reconstruye (cambio de capa).
   useEffect(() => {
     const ref = mapaRef.current;
-    if (!ref || !yo || estado !== 'listo') return;
+    if (!ref || !yo) return;
     const marca = ref.L.marker([yo.lat, yo.lng], {
       icon: ref.L.divIcon({ className: '', html: '<span class="mapa-yo" aria-hidden="true"></span>', iconSize: [22, 22], iconAnchor: [11, 11] }),
       title: 'Tu ubicación',
@@ -193,13 +211,9 @@ export default function VenueMap({ puntos, yo = null }: { puntos: PuntoMapa[]; y
       zIndexOffset: 1000,
     });
     marca.addTo(ref.mapa);
-    // Se centra una vez, y solo si hay algo dentro de 30 km: fuera de la región no sirve.
-    if (!centrado.current && puntos.some((p) => distanciaKm(yo, p) < 30)) {
-      centrado.current = true;
-      ref.mapa.setView([yo.lat, yo.lng], 14, { animate: false });
-    }
+    if (debeCentrar(yo, puntos, movidoPorPersona.current)) ref.mapa.setView([yo.lat, yo.lng], 14, { animate: false });
     return () => ref.mapa.removeLayer(marca);
-  }, [yo, estado, puntos]);
+  }, [yo, version, puntos]);
   const conteo = puntos.reduce<Record<string, number>>((acc, p) => {
     acc[p.estado] = (acc[p.estado] || 0) + 1;
     return acc;
