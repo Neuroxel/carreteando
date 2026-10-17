@@ -43,6 +43,8 @@ export function editorialRows(now = new Date()) {
           'www.vesti.cl',
           'vesti.cl',
           'www.portaldisc.com',
+          // Agenda propia del local en Evently (subdominio exacto, no todo *.evently.cl).
+          'wooclub.evently.cl',
           // Organización oficial del evento y prensa regional que lo confirma:
           // el puente manual cuando la ticketera no deja leerse.
           'miltambores.cl',
