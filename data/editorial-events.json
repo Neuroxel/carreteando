@@ -1392,5 +1392,26 @@
     "review_decision": "approved",
     "review_basis": "Ficha pública de venta reabierta el 17-oct-2026 (reconciliación de candidatos Gemini). Passline: acceso 20:00 y show 21:00; tickets agotados, sin precio visible.",
     "moment": null
+  },
+  {
+    "id": "curated-20261018-mad-professor-trota",
+    "title": "Mad Professor · No Protection XXXI",
+    "date": "2026-10-18",
+    "time": "18:00",
+    "venue": "Trotamundos Valparaíso",
+    "venue_id": "trotamundos-valparaiso",
+    "city": "Valparaíso",
+    "address": "Blanco 1253",
+    "price_clp": 23000,
+    "price_text": "General $23.000 + cargo (preventas agotadas)",
+    "category": "electronica",
+    "source_url": "https://www.portaldisc.com/evento/madprofessorvalparaiso",
+    "image_url": null,
+    "organizer": "Cvltvre Inc.",
+    "description": "Leyenda del dub celebra 31 años de No Protection. Apertura de puertas 18:00, término aprox. 00:00. Todas las edades.",
+    "reviewed_at": "2026-10-17T03:12:08.494446+00:00",
+    "review_decision": "approved",
+    "review_basis": "Ficha pública de PortalTickets reabierta el 17-oct-2026: domingo 18 a las 18:00 (Gemini decía 21:00 con puertas 22:00: corregido); preventas agotadas, General $23.000.",
+    "moment": null
   }
 ]
