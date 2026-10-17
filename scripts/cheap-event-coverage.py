@@ -12,7 +12,7 @@ def norm(s):
     return ''.join(c if c.isalnum() else ' ' for c in s).split()
 
 bench = json.load(open(sys.argv[1], encoding='utf-8'))
-fuente = sys.argv[2] if len(sys.argv) > 2 else 'https://carreteando.vercel.app/api/snapshot'
+fuente = sys.argv[2] if len(sys.argv) > 2 else 'https://dondesalgo.vercel.app/api/snapshot'
 snap = json.load(urllib.request.urlopen(fuente) if fuente.startswith('http') else open(fuente, encoding='utf-8'))
 del_dia = [e for e in snap['events'] if e['fecha'] == bench['fecha']]
 

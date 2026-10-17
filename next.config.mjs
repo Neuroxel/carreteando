@@ -24,6 +24,14 @@ const nextConfig = {
       { protocol: 'https', hostname: 'lacalera.cl' },
     ],
   },
+  async redirects() {
+    return [{
+      source: '/:path*',
+      has: [{ type: 'host', value: 'carreteando.vercel.app' }],
+      destination: 'https://dondesalgo.vercel.app/:path*',
+      permanent: true,
+    }];
+  },
   async headers() {
     return [
       {
