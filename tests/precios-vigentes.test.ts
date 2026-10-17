@@ -1,10 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { precioDeFicha } from '../lib/sources/adapters/portaldisc';
+import { canceladaEnFicha, precioDeFicha } from '../lib/sources/adapters/portaldisc';
+import { evaluateEventEvidence, type Evidence } from '../lib/sources/evidence';
 import { FICHA_EVENTLY, preciosEvently } from '../lib/sources/adapters/jsonld';
 import { cambiosDinamicos, runSource } from '../lib/sources/dispatcher';
-import { sourceById } from '../lib/sources/registry';
+import { ADAPTERS, sourceById } from '../lib/sources/registry';
 import { buildCandidate } from '../lib/sources/normalize';
 import { baseMemoria } from './helpers/base-memoria';
 import type { Fetcher } from '../lib/sources/types';
@@ -80,8 +81,8 @@ test('refresco dinámico: misma ficha refresca; persona solo completa; otra fuen
   // Cinzano: misma fuente, mismo sitio, otra ruta → la URL pasa a la primaria vigente.
   const viejo = { id: 2, source_id: 'cinzano-agenda', instagram_url: 'https://cinzanooficial.cl/cinzano_event/orquesta-cinzano-viernes-23-de-octubre/', source_detail_url: null, price_clp: 10000, price_text: '$10.000' };
   assert.deepEqual(
-    cambiosDinamicos(viejo, { id: 'cinzano-agenda' }, { detailUrl: 'https://cinzanooficial.cl/evento/16651', priceClp: 10000, priceText: 'Entrada $10.000 + $1.000 cargo' }, false),
-    { price_clp: 10000, price_text: 'Entrada $10.000 + $1.000 cargo', instagram_url: 'https://cinzanooficial.cl/evento/16651', source_detail_url: 'https://cinzanooficial.cl/evento/16651' },
+    cambiosDinamicos(viejo, { id: 'cinzano-agenda' }, { detailUrl: 'https://cinzanooficial.cl/eventos/?event_id=16651', priceClp: 10000, priceText: 'Entrada $10.000 + $1.000 cargo' }, false),
+    { price_clp: 10000, price_text: 'Entrada $10.000 + $1.000 cargo', instagram_url: 'https://cinzanooficial.cl/eventos/?event_id=16651', source_detail_url: 'https://cinzanooficial.cl/eventos/?event_id=16651' },
   );
 });
 
@@ -113,6 +114,122 @@ test('ingesta: Cinzano reconcilia la fila vieja de WordPress sin duplicarla', as
   await runSource(sourceById('cinzano-agenda')!, db, async () => ({ status: 200, body: api }), '2026-10-17');
   const del23 = tablas.events.filter((e) => e.date_text === '2026-10-23');
   assert.equal(del23.length, 1, 'no se duplica');
-  assert.equal(del23[0].instagram_url, 'https://cinzanooficial.cl/evento/16651');
+  assert.equal(del23[0].instagram_url, 'https://cinzanooficial.cl/eventos/?event_id=16651');
   assert.equal(del23[0].price_text, 'Entrada $10.000 + $1.000 cargo');
+});
+
+test('Cinzano: event_id es la identidad; /eventos/ no es una sola ficha', () => {
+  const ficha = (id: number) => `https://cinzanooficial.cl/eventos/?event_id=${id}`;
+  const fila = { id: 9, source_id: 'cinzano-agenda', instagram_url: ficha(16651), source_detail_url: ficha(16651), price_clp: 10000, price_text: 'Entrada $10.000 + $1.000 cargo' };
+  const otro = { detailUrl: ficha(16654), priceClp: 12000, priceText: 'Entrada $12.000', disponibilidad: 'disponible' as const };
+  assert.equal(cambiosDinamicos(fila, { id: 'cinzano-agenda' }, otro, false), null, 'otro event_id: ni refresca ni migra la URL');
+  // La misma ficha con parámetros de seguimiento o en otro orden sí es la misma.
+  const mismo = { ...otro, detailUrl: `${ficha(16651)}&utm_source=ig` };
+  assert.deepEqual(cambiosDinamicos(fila, { id: 'cinzano-agenda' }, mismo, false), { price_clp: 12000, price_text: 'Entrada $12.000' });
+  // La ruta errónea /evento/ID migra a la ficha primaria.
+  const errada = { ...fila, instagram_url: 'https://cinzanooficial.cl/evento/16651', source_detail_url: 'https://cinzanooficial.cl/evento/16651' };
+  assert.deepEqual(cambiosDinamicos(errada, { id: 'cinzano-agenda' }, { detailUrl: ficha(16651), priceClp: 10000, priceText: 'Entrada $10.000 + $1.000 cargo', disponibilidad: 'disponible' }, false), {
+    instagram_url: ficha(16651),
+    source_detail_url: ficha(16651),
+  });
+  // Conflicto de disponibilidad: se retira el precio guardado; una corrección humana no se pisa.
+  const conflicto = { detailUrl: ficha(16651), priceClp: null, priceText: null, disponibilidad: 'conflicto' as const };
+  assert.deepEqual(cambiosDinamicos(fila, { id: 'cinzano-agenda' }, conflicto, false), { price_clp: null, price_text: null });
+  assert.equal(cambiosDinamicos(fila, { id: 'cinzano-agenda' }, conflicto, true), null);
+});
+
+test('TicketPlus y Cinzano quedan en revisión (nivel C) hasta aprobación humana', async () => {
+  for (const id of ['ticketplus-region', 'cinzano-agenda']) {
+    const s = sourceById(id)!;
+    assert.deepEqual([s.trust, s.tier], ['review', 'C'], id);
+  }
+  // Ni una fila nueva de Cinzano se publica sola, tenga o no conflicto.
+  const { db, tablas } = baseMemoria();
+  await runSource(sourceById('cinzano-agenda')!, db, async () => ({ status: 200, body: fx('cinzano-api-events-2026-10-17.json') }), '2026-10-17');
+  assert.ok(tablas.events.length >= 4);
+  assert.ok(tablas.events.every((e) => e.disposition !== 'public'));
+  const kitsch = tablas.events.find((e) => e.date_text === '2026-10-17')!;
+  assert.deepEqual([kitsch.price_clp ?? null, kitsch.price_text ?? null], [null, null], 'sin precio arbitrario');
+});
+
+test('Cinzano: el ticket vendible más barato manda sobre el listado; lectura acotada', async () => {
+  const API = 'https://cinzanooficial.cl/cinzano-api/cinzano/v1/events';
+  const pedidas: string[] = [];
+  const fetcher: Fetcher = async (u) => {
+    pedidas.push(u);
+    if (u === API) return { status: 200, body: fx('cinzano-api-events-2026-10-17.json') };
+    const id = /\/events\/(\d+)\/tickets$/.exec(u)?.[1];
+    try {
+      return { status: 200, body: fx(`cinzano-tickets-${id}-2026-10-17.json`) };
+    } catch {
+      return { status: 404, body: '' };
+    }
+  };
+  const fuente = sourceById('cinzano-agenda')!;
+  const res = await ADAPTERS[fuente.adapter].run(fuente, fetcher);
+  const por = (d: string) => res.candidates.find((c) => c.date === d)!;
+  // 23-oct: el listado dice $10.000; el ticket dice invitación gratuita hasta las 23:00.
+  assert.deepEqual([por('2026-10-23').priceClp, por('2026-10-23').priceText], [0, 'Invitacion gratuita hasta las 23:00 · Entrada despues de las 23:00 $10.000 + $1.000 cargo']);
+  // 24-oct: entrada general vendible.
+  assert.deepEqual([por('2026-10-24').priceClp, por('2026-10-24').priceText, por('2026-10-24').disponibilidad], [10000, 'Entrada General $10.000 + $1.000 cargo', 'disponible']);
+  // 17-oct: la única invitación en línea está agotada, pero el listado dice "few-tickets":
+  // puede haber entrada en puerta. No se afirma agotado: conflicto, sin precio, a revisión.
+  assert.deepEqual([por('2026-10-17').priceClp, por('2026-10-17').priceText, por('2026-10-17').disponibilidad], [null, null, 'conflicto']);
+  assert.notEqual(por('2026-10-17').priceText, 'Agotado en Cinzano');
+  // 30-oct: sin tickets: conflicto, sin precio.
+  assert.deepEqual([por('2026-10-30').priceClp, por('2026-10-30').disponibilidad], [null, 'conflicto']);
+  // 31-oct sin ficha de tickets legible: queda lo del listado.
+  assert.equal(por('2026-10-31').priceText, 'Entrada $10.000 + $1.000 cargo');
+  assert.ok(pedidas.every((u) => u.startsWith(API)), 'solo la API oficial');
+  assert.ok(pedidas.length <= 1 + 8, 'una solicitud por evento, con tope');
+});
+
+test('Cinzano: "agotado" solo si el listado también lo dice', async () => {
+  const { aplicarTickets } = await import('../lib/sources/adapters/cinzano');
+  const tickets = JSON.parse(fx('cinzano-tickets-16183-2026-10-17.json'));
+  const base = { detailUrl: 'https://cinzanooficial.cl/eventos/?event_id=16183', priceClp: null, priceText: null, confidence: 'high' as const };
+  const vendidoEnListado = { ...base, reasons: ['LISTING_STATUS: sold-out'] } as never as Parameters<typeof aplicarTickets>[0];
+  aplicarTickets(vendidoEnListado, tickets);
+  assert.deepEqual([vendidoEnListado.priceText, vendidoEnListado.disponibilidad], ['Agotado en Cinzano', 'agotado']);
+  const pocos = { ...base, reasons: ['LISTING_STATUS: few-tickets'] } as never as Parameters<typeof aplicarTickets>[0];
+  aplicarTickets(pocos, tickets);
+  assert.deepEqual([pocos.priceClp, pocos.priceText, pocos.disponibilidad, pocos.confidence], [null, null, 'conflicto', 'medium']);
+});
+
+test('PortalTickets: "EVENTO CANCELADO" en el botón de la ficha cancela; el pie de página no', () => {
+  const yorka = fx('portaldisc-yorka-postales-cancelado.html');
+  assert.equal(canceladaEnFicha(yorka), true);
+  assert.equal(precioDeFicha(yorka), null);
+  const soloPie = yorka.replace(/<div[^>]*id="botonera"[\s\S]*?<\/p><\/div>/, '');
+  assert.ok(soloPie.includes('cancelación'), 'el pie sigue hablando de cancelaciones');
+  assert.equal(canceladaEnFicha(soloPie), false);
+  for (const f of ['tchanglanzamientoep', 'kazuakivalparaiso', 'primersencilloninfafolkespacioguestro', 'lalogiasesion07']) assert.equal(canceladaEnFicha(ficha(f)), false, f);
+});
+
+test('ingesta: una ficha cancelada no se publica y su evidencia retira la fila pública', async () => {
+  const slug = 'yorka-postales-sesiones-de-primavera-en-pcdv';
+  const tarjeta =
+    `<div class="album"><a href="/evento/${slug}"><img src="https://images.portaldisc.com/eventos/1.jpg"></a>` +
+    '<p>YORKA EN POSTALES, SESIONES DE PRIMAVERA EN PARQUE CULTURAL DE VALPARAÍSO</p><p>Domingo 18 de octubre 2026, 20:00</p><p>Parque Cultural de Valparaíso, Valparaíso</p></div>';
+  const fetcher: Fetcher = async (u) =>
+    u.includes('/cartelera/') ? { status: 200, body: `<html>PRÓXIMOS EVENTOS ${tarjeta}</html>` } : u.endsWith(slug) ? { status: 200, body: fx('portaldisc-yorka-postales-cancelado.html') } : { status: 404, body: '' };
+  const { db, tablas } = baseMemoria();
+  const claims: Record<string, unknown>[] = [];
+  const conRpc = { ...db, rpc: async (_f: string, a: { p_claims: Record<string, unknown> }) => (claims.push(a.p_claims), { data: null, error: null }) };
+  const fuente = sourceById('portaldisc-teatromauri')!;
+  await runSource(fuente, conRpc, fetcher, '2026-10-17');
+  assert.equal(tablas.events.length, 1);
+  assert.notEqual(tablas.events[0].disposition, 'public', 'cancelado nunca entra publicado');
+  assert.equal(claims.at(-1)?.status, 'cancelled');
+  // Si ya estaba pública (id 784), la nueva lectura deja evidencia de cancelación y el motor la retira.
+  tablas.events[0].disposition = 'public';
+  await runSource(fuente, conRpc, fetcher, '2026-10-17');
+  assert.equal(tablas.events.length, 1, 'no se duplica');
+  assert.equal(claims.at(-1)?.status, 'cancelled');
+  const evidencia: Evidence = {
+    sourceId: fuente.id, family: 'TICKET_PLATFORM', originGroup: 'portaldisc', authority: 'transactional',
+    url: `https://www.portaldisc.com/evento/${slug}`, retrievedAt: '2026-10-17T22:00:00Z', claims: claims.at(-1) as Evidence['claims'], structured: false, active: true,
+  };
+  const estado = { id: 784, title: 'Yorka', date: '2026-10-18', time: '20:00', venue: 'Parque Cultural de Valparaíso', city: 'Valparaíso', venueKnown: true, disposition: 'public', relevance: 'NIGHTLIFE_HIGH', humanLocked: false, eventStatus: 'scheduled' } as Parameters<typeof evaluateEventEvidence>[0];
+  assert.equal(evaluateEventEvidence(estado, [evidencia], () => 'B', '2026-10-17').decision, 'AUTO_CANCEL');
 });

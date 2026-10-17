@@ -86,9 +86,11 @@ const BASE: SourceDefinition[] = [
     zone: 'Plan de Valparaíso',
     venueSlug: 'bar-cinzano',
     venueName: 'Bar Cinzano',
-    trust: 'auto',
+    // Oct-2026: enlaces rotos y conflicto stock/precio en la API. En revisión
+    // (nivel C para que la regla 1 no la publique sola) hasta aprobación humana.
+    trust: 'review',
     family: 'VENUE_OFFICIAL',
-    tier: 'A',
+    tier: 'C',
     accessMode: 'api',
     refreshHours: 24,
   },
@@ -235,9 +237,10 @@ const BASE: SourceDefinition[] = [
     publicUrl: 'https://ticketplus.cl',
     commune: 'Valparaíso',
     zone: null,
-    trust: 'strict',
+    // En revisión (nivel C) hasta aprobación humana: no se publica sola.
+    trust: 'review',
     family: 'TICKET_PLATFORM',
-    tier: 'B',
+    tier: 'C',
     accessMode: 'html',
     relevanceFilter: true,
     refreshHours: 24,
