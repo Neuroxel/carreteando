@@ -80,8 +80,8 @@ test('refresco dinámico: misma ficha refresca; persona solo completa; otra fuen
   // Cinzano: misma fuente, mismo sitio, otra ruta → la URL pasa a la primaria vigente.
   const viejo = { id: 2, source_id: 'cinzano-agenda', instagram_url: 'https://cinzanooficial.cl/cinzano_event/orquesta-cinzano-viernes-23-de-octubre/', source_detail_url: null, price_clp: 10000, price_text: '$10.000' };
   assert.deepEqual(
-    cambiosDinamicos(viejo, { id: 'cinzano-agenda' }, { detailUrl: 'https://cinzanooficial.cl/evento/16651', priceClp: 10000, priceText: 'Entrada $10.000 + $1.000 cargo' }, false),
-    { price_clp: 10000, price_text: 'Entrada $10.000 + $1.000 cargo', instagram_url: 'https://cinzanooficial.cl/evento/16651', source_detail_url: 'https://cinzanooficial.cl/evento/16651' },
+    cambiosDinamicos(viejo, { id: 'cinzano-agenda' }, { detailUrl: 'https://cinzanooficial.cl/eventos/?event_id=16651', priceClp: 10000, priceText: 'Entrada $10.000 + $1.000 cargo' }, false),
+    { price_clp: 10000, price_text: 'Entrada $10.000 + $1.000 cargo', instagram_url: 'https://cinzanooficial.cl/eventos/?event_id=16651', source_detail_url: 'https://cinzanooficial.cl/eventos/?event_id=16651' },
   );
 });
 
@@ -113,6 +113,40 @@ test('ingesta: Cinzano reconcilia la fila vieja de WordPress sin duplicarla', as
   await runSource(sourceById('cinzano-agenda')!, db, async () => ({ status: 200, body: api }), '2026-10-17');
   const del23 = tablas.events.filter((e) => e.date_text === '2026-10-23');
   assert.equal(del23.length, 1, 'no se duplica');
-  assert.equal(del23[0].instagram_url, 'https://cinzanooficial.cl/evento/16651');
+  assert.equal(del23[0].instagram_url, 'https://cinzanooficial.cl/eventos/?event_id=16651');
   assert.equal(del23[0].price_text, 'Entrada $10.000 + $1.000 cargo');
+});
+
+test('Cinzano: event_id es la identidad; /eventos/ no es una sola ficha', () => {
+  const ficha = (id: number) => `https://cinzanooficial.cl/eventos/?event_id=${id}`;
+  const fila = { id: 9, source_id: 'cinzano-agenda', instagram_url: ficha(16651), source_detail_url: ficha(16651), price_clp: 10000, price_text: 'Entrada $10.000 + $1.000 cargo' };
+  const otro = { detailUrl: ficha(16654), priceClp: 12000, priceText: 'Entrada $12.000', disponibilidad: 'disponible' as const };
+  assert.equal(cambiosDinamicos(fila, { id: 'cinzano-agenda' }, otro, false), null, 'otro event_id: ni refresca ni migra la URL');
+  // La misma ficha con parámetros de seguimiento o en otro orden sí es la misma.
+  const mismo = { ...otro, detailUrl: `${ficha(16651)}&utm_source=ig` };
+  assert.deepEqual(cambiosDinamicos(fila, { id: 'cinzano-agenda' }, mismo, false), { price_clp: 12000, price_text: 'Entrada $12.000' });
+  // La ruta errónea /evento/ID migra a la ficha primaria.
+  const errada = { ...fila, instagram_url: 'https://cinzanooficial.cl/evento/16651', source_detail_url: 'https://cinzanooficial.cl/evento/16651' };
+  assert.deepEqual(cambiosDinamicos(errada, { id: 'cinzano-agenda' }, { detailUrl: ficha(16651), priceClp: 10000, priceText: 'Entrada $10.000 + $1.000 cargo', disponibilidad: 'disponible' }, false), {
+    instagram_url: ficha(16651),
+    source_detail_url: ficha(16651),
+  });
+  // Conflicto de disponibilidad: se retira el precio guardado; una corrección humana no se pisa.
+  const conflicto = { detailUrl: ficha(16651), priceClp: null, priceText: null, disponibilidad: 'conflicto' as const };
+  assert.deepEqual(cambiosDinamicos(fila, { id: 'cinzano-agenda' }, conflicto, false), { price_clp: null, price_text: null });
+  assert.equal(cambiosDinamicos(fila, { id: 'cinzano-agenda' }, conflicto, true), null);
+});
+
+test('TicketPlus y Cinzano quedan en revisión (nivel C) hasta aprobación humana', async () => {
+  for (const id of ['ticketplus-region', 'cinzano-agenda']) {
+    const s = sourceById(id)!;
+    assert.deepEqual([s.trust, s.tier], ['review', 'C'], id);
+  }
+  // Ni una fila nueva de Cinzano se publica sola, tenga o no conflicto.
+  const { db, tablas } = baseMemoria();
+  await runSource(sourceById('cinzano-agenda')!, db, async () => ({ status: 200, body: fx('cinzano-api-events-2026-10-17.json') }), '2026-10-17');
+  assert.ok(tablas.events.length >= 4);
+  assert.ok(tablas.events.every((e) => e.disposition !== 'public'));
+  const kitsch = tablas.events.find((e) => e.date_text === '2026-10-17')!;
+  assert.deepEqual([kitsch.price_clp ?? null, kitsch.price_text ?? null], [null, null], 'sin precio arbitrario');
 });

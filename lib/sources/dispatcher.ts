@@ -357,30 +357,43 @@ async function editadoPorPersona(db: Db, id: number) {
  * - misma fuente y mismo host, con otra URL (el sitio cambió de rutas): además
  *   se mueve la URL a la primaria vigente;
  * - otra fuente u otro host: nada (solo evidencia);
+ * - misma ruta con otra consulta (`/eventos/?event_id=1` vs `=2`): son fichas
+ *   distintas; ni se refresca ni se migra la URL;
  * - fila corregida por una persona: solo se completa un precio vacío.
  */
+const SEGUIMIENTO = /^(utm_\w+|fbclid|gclid|mc_cid|mc_eid|ref)$/i;
+/**
+ * Host + ruta + consulta ordenada, sin parámetros de seguimiento. La consulta se
+ * conserva: en sitios como Cinzano (`/eventos/?event_id=ID`) es la identidad.
+ */
+export function fichaComparable(u: string | null | undefined) {
+  if (!u) return null;
+  try {
+    const x = new URL(u);
+    const q = [...x.searchParams].filter(([k]) => !SEGUIMIENTO.test(k)).sort(([a], [b]) => a.localeCompare(b));
+    const consulta = q.length ? `?${new URLSearchParams(q).toString()}` : '';
+    return `${x.hostname.replace(/^www\./, '')}${x.pathname.replace(/\/+$/, '')}${consulta}`;
+  } catch {
+    return null;
+  }
+}
+
 export function cambiosDinamicos(
   fila: FilaExistente,
   source: Pick<SourceDefinition, 'id'>,
   candidate: Pick<EventCandidate, 'detailUrl' | 'priceClp' | 'priceText' | 'disponibilidad'>,
   editadaPorPersona: boolean,
 ): Record<string, unknown> | null {
-  const comparable = (u: string | null | undefined) => {
-    if (!u) return null;
-    try {
-      const x = new URL(u);
-      return `${x.hostname.replace(/^www\./, '')}${x.pathname.replace(/\/+$/, '')}`;
-    } catch {
-      return null;
-    }
-  };
-  const host = (u: string | null | undefined) => comparable(u)?.split('/')[0] ?? null;
-  const nueva = comparable(candidate.detailUrl);
-  const mismaFicha = [fila.source_detail_url, fila.instagram_url].some((u) => comparable(u) === nueva);
+  const nueva = fichaComparable(candidate.detailUrl);
+  const mismaFicha = [fila.source_detail_url, fila.instagram_url].some((u) => fichaComparable(u) === nueva);
   const actual = fila.source_detail_url || fila.instagram_url;
-  const migrar = !mismaFicha && fila.source_id === source.id && host(actual) === host(candidate.detailUrl);
+  const ruta = (u: string | null | undefined) => fichaComparable(u)?.split('?')[0] ?? null;
+  const host = (u: string | null | undefined) => ruta(u)?.split('/')[0] ?? null;
+  // Misma ruta y otra consulta: la consulta es la identidad (event_id), no una variante.
+  const otraConsulta = !mismaFicha && ruta(actual) === ruta(candidate.detailUrl);
+  const migrar = !mismaFicha && !otraConsulta && fila.source_id === source.id && host(actual) === host(candidate.detailUrl);
   if (!mismaFicha && !migrar) return null;
-  const precioLeido = candidate.priceClp !== null || candidate.disponibilidad === 'agotado';
+  const precioLeido = candidate.priceClp !== null || candidate.disponibilidad === 'agotado' || candidate.disponibilidad === 'conflicto';
   const cambios: Record<string, unknown> = {};
   if (editadaPorPersona) {
     if (fila.price_clp == null && candidate.priceClp !== null && mismaFicha)

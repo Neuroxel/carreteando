@@ -86,15 +86,18 @@ test('Evently: presupuesto de fichas y host exacto', async () => {
   assert.equal(otro.length, 0, 'un host fuera de la lista no se pide nunca');
 });
 
-test('Cinzano: API oficial con precio y cargo; la disponibilidad no se inventa', () => {
+test('Cinzano: ficha /eventos/?event_id=ID; con conflicto de stock no hay precio y va a revisión', () => {
   const json = JSON.parse(fx('cinzano-api-events-2026-10-17.json'));
   const r = leerCinzano(json, { id: 'cinzano-agenda', commune: 'Valparaíso', venueName: 'Bar Cinzano' }, HOY);
-  const kitsch = r.candidates.find((c) => c.detailUrl === 'https://cinzanooficial.cl/evento/16183');
-  assert.deepEqual([kitsch?.date, kitsch?.time, kitsch?.priceClp], ['2026-10-17', '21:00', 10000]);
-  assert.equal(kitsch?.priceText, 'Entrada $10.000 + $1.000 cargo · sin venta en línea habilitada al revisar');
-  assert.ok(kitsch?.reasons.some((x) => x.startsWith('AVAILABILITY_CONFLICT: estado "few-tickets" con stock 0')));
-  const viernes = r.candidates.find((c) => c.date === '2026-10-23');
-  assert.equal(viernes?.priceText, 'Entrada $10.000 + $1.000 cargo');
+  assert.ok(r.candidates.every((c) => /^https:\/\/cinzanooficial\.cl\/eventos\/\?event_id=\d+$/.test(c.detailUrl)), 'nunca /evento/ID ni el listado');
+  // Kitsch: "few-tickets" con stock 0 y sin venta habilitada.
+  const kitsch = r.candidates.find((c) => c.detailUrl === 'https://cinzanooficial.cl/eventos/?event_id=16183')!;
+  assert.deepEqual([kitsch.date, kitsch.time, kitsch.priceClp, kitsch.priceText, kitsch.disponibilidad, kitsch.confidence], ['2026-10-17', '21:00', null, null, 'conflicto', 'medium']);
+  assert.ok(kitsch.reasons.some((x) => x.startsWith('AVAILABILITY_CONFLICT: estado "few-tickets" con stock 0')));
+  // 30-oct: "available" con stock 0: el mismo conflicto, sin precio arbitrario.
+  assert.equal(r.candidates.find((c) => c.date === '2026-10-30')?.disponibilidad, 'conflicto');
+  const viernes = r.candidates.find((c) => c.date === '2026-10-23')!;
+  assert.deepEqual([viernes.priceClp, viernes.priceText, viernes.disponibilidad], [10000, 'Entrada $10.000 + $1.000 cargo', 'disponible']);
   assert.ok(r.candidates.every((c) => c.date >= HOY), 'mayo no vuelve');
 });
 

@@ -15,16 +15,33 @@ type EventoCinzano = {
   status?: unknown;
   availableStock?: unknown;
   hasSellableTickets?: unknown;
+  externalTicketUrl?: unknown;
   privateEvent?: unknown;
   image?: unknown;
   description?: unknown;
 };
 
 /**
+ * Ficha primaria de un evento. El `event_id` es la identidad: `/eventos/` sin él
+ * es el listado, y `/evento/ID` (la ruta que se usó antes) no es la ficha.
+ */
+export const fichaCinzano = (id: string) => `https://cinzanooficial.cl/eventos/?event_id=${id}`;
+/** Un enlace de compra externo publicado por el propio local, si es https. */
+function ticketExterno(v: unknown) {
+  if (typeof v !== 'string' || !v.trim()) return null;
+  try {
+    const u = new URL(v.trim());
+    return u.protocol === 'https:' ? u.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Bar Cinzano dejó WordPress (tipo `cinzano_event`) por una API propia. Cada
  * evento trae fecha con su desfase, precio y cargo. La disponibilidad no se
- * inventa: si el sitio dice "few-tickets" pero el stock es 0 y no hay venta
- * habilitada, se anota el conflicto y la tarjeta no promete entradas.
+ * inventa: si el sitio dice "available"/"few-tickets" pero el stock es 0 y no
+ * hay venta habilitada, es un conflicto: sin precio, confianza media y a revisión.
  */
 export function leerCinzano(json: unknown, source: { id: string; commune: string; venueName?: string | null }, today = toChileDateString()): AdapterResult {
   if (!Array.isArray(json)) throw new SourceError('PAGINA_INESPERADA');
@@ -46,7 +63,7 @@ export function leerCinzano(json: unknown, source: { id: string; commune: string
       time: cuando.time,
       venue: source.venueName || null,
       city: source.commune,
-      detailUrl: `https://cinzanooficial.cl/evento/${id}`,
+      detailUrl: fichaCinzano(id),
       imageUrl: typeof e.image === 'string' ? e.image : null,
       description: typeof e.description === 'string' ? e.description : null,
       confidence: 'high',
@@ -57,13 +74,27 @@ export function leerCinzano(json: unknown, source: { id: string; commune: string
       continue;
     }
     const venta = e.hasSellableTickets === true && typeof e.availableStock === 'number' && e.availableStock > 0;
-    if (typeof e.price === 'number' && Number.isInteger(e.price) && e.price >= 0 && e.price <= 500000) {
-      const cargo = typeof e.serviceFee === 'number' && e.serviceFee > 0 ? ` + ${pesos(e.serviceFee)} cargo` : '';
-      c.priceClp = e.price;
-      c.priceText = `${e.price === 0 ? 'Entrada sin costo' : `Entrada ${pesos(e.price)}${cargo}`}${venta ? '' : ' · sin venta en línea habilitada al revisar'}`;
-    } else c.reasons.push('PRICE_NOT_FOUND');
-    if (!venta && (e.status === 'available' || e.status === 'few-tickets'))
+    const externo = ticketExterno(e.externalTicketUrl);
+    if (externo) c.reasons.push(`TICKET_URL: ${externo}`);
+    const precioValido = typeof e.price === 'number' && Number.isInteger(e.price) && e.price >= 0 && e.price <= 500000;
+    if (!venta && !externo && (e.status === 'available' || e.status === 'few-tickets')) {
+      // La fuente se contradice: ni precio ni "quedan pocas"; decide una persona.
       c.reasons.push(`AVAILABILITY_CONFLICT: estado "${e.status}" con stock ${String(e.availableStock)} y venta ${e.hasSellableTickets === true ? 'habilitada' : 'no habilitada'}`);
+      c.confidence = 'medium';
+      c.disponibilidad = 'conflicto';
+      c.priceClp = null;
+      c.priceText = null;
+    } else if (!venta && !externo && e.status === 'sold-out') {
+      c.disponibilidad = 'agotado';
+      c.priceClp = null;
+      c.priceText = 'Agotado en Cinzano';
+    } else if (precioValido) {
+      const precio = e.price as number;
+      const cargo = typeof e.serviceFee === 'number' && e.serviceFee > 0 ? ` + ${pesos(e.serviceFee)} cargo` : '';
+      c.priceClp = precio;
+      c.priceText = precio === 0 ? 'Entrada sin costo' : `Entrada ${pesos(precio)}${cargo}`;
+      c.disponibilidad = 'disponible';
+    } else c.reasons.push('PRICE_NOT_FOUND');
     candidates.push(c);
   }
   return { itemsFound: json.length, candidates, parseFailures };

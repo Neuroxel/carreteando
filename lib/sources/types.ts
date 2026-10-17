@@ -87,8 +87,12 @@ export interface EventCandidate {
   endTime?: string | null;
   /** Estado escrito por la fuente en forma estructurada (schema.org eventStatus, ICS STATUS). */
   status?: 'scheduled' | 'cancelled' | 'postponed';
-  /** Leída en la ficha: `agotado` solo si todas las entradas individuales lo dicen. */
-  disponibilidad?: 'disponible' | 'agotado';
+  /**
+   * Leída en la ficha: `agotado` solo si todas las entradas individuales lo dicen.
+   * `conflicto`: la fuente se contradice (estado "disponible" sin stock ni venta);
+   * no se muestra precio y el evento queda en revisión.
+   */
+  disponibilidad?: 'disponible' | 'agotado' | 'conflicto';
   /** Tipos de entrada tal como los publica la fuente (van a la evidencia, con su URL). */
   tiers?: { nombre: string; precio: number; agotado: boolean }[];
 }
