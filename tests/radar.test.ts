@@ -2,6 +2,15 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { distanciaKm, leerCapa, porCercania, textoDistancia } from '../lib/radar';
 
+test('la política del servidor permite GPS al propio sitio y mantiene cámara y micrófono bloqueados', async () => {
+  const { default: config } = await import('../next.config.mjs');
+  assert.ok(config.headers);
+  const rules = await config.headers();
+  const policy = rules.flatMap((r: { headers: { key: string; value: string }[] }) => r.headers)
+    .find((h: { key: string }) => h.key === 'Permissions-Policy');
+  assert.equal(policy?.value, 'camera=(), microphone=(), geolocation=(self)');
+});
+
 const plazaSotomayor = { lat: -33.0389, lng: -71.6283 };
 const plazaVergara = { lat: -33.0245, lng: -71.5518 };
 
