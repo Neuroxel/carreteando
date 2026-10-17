@@ -72,15 +72,33 @@ una vez cargados. Esperar el certificado (candado en Domains).
 Con `.cl` validado: `dondesalgo.vercel.app/*` → `https://dondesalgo.cl/*`
 permanente, como regla `has: host` en `next.config.mjs` (igual que la de
 `carreteando.vercel.app`, que pasa a apuntar directo a `.cl` para evitar dos
-saltos). PR con test del redirect; **no activarlo antes** de comprobar HTTPS
-y funcionamiento del `.cl`.
+saltos). **No activarlo antes** de comprobar HTTPS y funcionamiento del `.cl`.
+
+**Los crons quedan fuera del redirect.** Un cron no sigue un 308: si
+`/api/cron/*` redirigiera, la ingesta dejaría de correr en silencio.
+- La regla de redirect excluye `/api/cron/:path*` (patrón negativo en `source`,
+  p. ej. `/((?!api/cron/).*)`), y lo mismo la de `carreteando.vercel.app`.
+- Las rutas de cron responden directo en **todos** los hosts asignados; no se
+  mueven a otro dominio hasta migrar, verificadamente, cada llamador: el Vercel
+  cron de `vercel.json` (ruta relativa, sigue al deployment de producción) y los
+  tres jobs de pg_cron de Supabase (URL absoluta: hoy apuntan a
+  `dondesalgo.vercel.app`).
+- Prueba obligatoria en el PR del redirect: `curl -s -o /dev/null -w "%{http_code}"`
+  a `https://dondesalgo.vercel.app/api/cron/scrape` sin credenciales devuelve
+  **401 directo** (nunca 308), y una página cualquiera sí devuelve 308; test
+  automatizado del patrón con ambos casos.
+- Tras el deploy: confirmar que la siguiente corrida programada aparece en
+  `ingestion_runs` (o un `skip` por cooldown con HTTP 200).
 
 ### E. Rollback (sin tocar la base)
 1. Si el redirect de D ya está: revert de ese PR y deploy (o "Promote" del
    deployment anterior en Vercel), y `dondesalgo.vercel.app` vuelve a servir.
 2. Quitar `NEXT_PUBLIC_SITE_URL` (o volver a `https://dondesalgo.vercel.app`) y
    redeploy: canónicos, sitemap y OG vuelven a `.vercel.app`.
-3. El dominio `.cl` puede quedar asignado sin ser canónico; se retira de
+3. Crons: si algún job de pg_cron ya se había movido a `dondesalgo.cl`,
+   volverlo a `https://dondesalgo.vercel.app/api/cron/scrape` (mismo secreto) y
+   confirmar la siguiente corrida en `ingestion_runs`. El Vercel cron no cambia.
+4. El dominio `.cl` puede quedar asignado sin ser canónico; se retira de
    Domains solo si falla su certificado o DNS.
 
 ## SEO tras el cambio de marca

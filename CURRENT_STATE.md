@@ -79,7 +79,7 @@ Fuentes: 34 activas de 44 registradas. En revisión (nivel C, no publican solas)
 ## Instagram / Apify
 
 - Presupuesto mensual (mes UTC, ingesta + piloto): objetivo US$2,50, tope duro US$3,00, US$0,05 por corrida (`lib/apify-budget.ts`). Ninguna corrida empieza si su peor caso pasa el tope; sobre el objetivo, una por día; sin contabilidad legible, no corre.
-- Octubre: **US$0,1377** gastados, US$2,8623 disponibles bajo el tope. Estado: **pausado**. `main` escribe el watermark pero todavía no lo lee para corridas incrementales; no se ejecuta hasta corregirlo.
+- Octubre: **US$0,1377** gastados (registrados en `instagram_pilot_runs`; `ingestion_runs` suma US$0), US$2,8623 disponibles bajo el tope. Estado: **pausado**. `main` escribe el watermark pero todavía no lo lee para corridas incrementales; no se ejecuta hasta corregirlo.
 - Instagram es pista/evidencia: nunca publica solo. Sin login personal ni cookies.
 
 ## Estado de integración 17-oct

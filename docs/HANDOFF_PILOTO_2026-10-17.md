@@ -12,7 +12,7 @@ teléfono físico no está validado (Radar se validó con GPS simulado).
 
 - Aprobados: Don Carter 24-oct **20:00** (venta cerrada, sin precio) y **22:00** (general $20.000) como dos
   ocurrencias; Paola Molina, Nico Pontigo y Roberto Delgado, Ipanema.
-- Columbia: retirado (enlace genérico). Garage: la invitación gratis está agotada → pack 2×$110.000. Socias: VIP agotado.
+- Columbia: retirado (enlace genérico). Garage: la invitación gratis está agotada → pack 2x1 a $10.000 en total para dos personas. Socias: VIP agotado.
   Amy Winehouse: hora `null` (09 vs 21 en fuentes). Julio: $8.000 con cupos. Hollywood: 00:00 agotada, 22/23 disponibles.
 - Privados por conflicto: JUHN (Blanco 889 vs Ex Club, Errázuriz 880), Lavanda (106 vs 109 B),
   Pachabamba (sin coincidencia), Carlita (2 funciones agotadas).
