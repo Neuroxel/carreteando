@@ -130,11 +130,13 @@ test('provider outage records failed run without leaking response or claiming sc
       const headers = { 'content-type': 'application/json' };
       if (url.includes('claim_ingestion_run'))
         return new Response(JSON.stringify('test-run'), { headers });
+      // El presupuesto consulta el consumo del mes antes de iniciar; caído, no inventa cero ni bloquea.
+      if (url === 'https://api.apify.com/v2/users/me/limits') return new Response('', { status: 503 });
       if (url.startsWith('https://api.apify.com/')) {
         providerCalls++;
         return new Response('token=SECRET_SHOULD_NOT_LEAK', { status: 503 });
       }
-      if (url.includes('/ingestion_runs')) failure = JSON.parse(String(init?.body));
+      if (url.includes('/ingestion_runs') && init?.body) failure = JSON.parse(String(init.body));
       return new Response('[]', { headers });
     };
     const response = await cron(
@@ -159,5 +161,38 @@ test('provider outage records failed run without leaking response or claiming sc
       'APIFY_API_TOKEN',
     ])
       delete process.env[k];
+  }
+});
+
+test('sin margen en el mes, la ingesta omite Apify con APIFY_MONTHLY_BUDGET y no inicia corrida', async () => {
+  process.env.CRON_SECRET = 'test-only';
+  process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://example.supabase.co';
+  process.env.SUPABASE_SECRET_KEY = 'sb_secret_test';
+  process.env.APIFY_API_TOKEN = 'test-only';
+  const inicios: string[] = [];
+  let cierre: Record<string, unknown> | undefined;
+  try {
+    globalThis.fetch = async (input, init) => {
+      const url = String(input);
+      const headers = { 'content-type': 'application/json' };
+      if (url.includes('claim_ingestion_run')) return new Response(JSON.stringify('test-run'), { headers });
+      if (url === 'https://api.apify.com/v2/users/me/limits')
+        return new Response(JSON.stringify({ data: { current: { monthlyUsageUsd: 2.97 } } }), { headers });
+      if (url.startsWith('https://api.apify.com/')) {
+        inicios.push(url);
+        return new Response('{}', { headers });
+      }
+      if (url.includes('/ingestion_runs') && init?.body) cierre = JSON.parse(String(init.body));
+      return new Response('[]', { headers });
+    };
+    const r = await cron(new Request('https://carreteando.vercel.app/api/cron/scrape', { headers: { authorization: 'Bearer test-only' } }));
+    const body = await r.json();
+    assert.equal(r.status, 200);
+    assert.equal(body.skipped, 'APIFY_MONTHLY_BUDGET');
+    assert.deepEqual(inicios, [], 'no se inicia ninguna corrida');
+    assert.equal(cierre?.cost_usd, 0);
+  } finally {
+    globalThis.fetch = originalFetch;
+    for (const k of ['CRON_SECRET', 'NEXT_PUBLIC_SUPABASE_URL', 'SUPABASE_SECRET_KEY', 'APIFY_API_TOKEN']) delete process.env[k];
   }
 });

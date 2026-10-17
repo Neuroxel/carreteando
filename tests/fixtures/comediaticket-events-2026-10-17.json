@@ -1,0 +1,985 @@
+{
+ "data": [
+  {
+   "id": 6194,
+   "title": "¡BAILEN!",
+   "dateEventInit": "2026-10-17",
+   "dateEventEnd": "2026-10-17",
+   "imageMain": "https://cdn.comediaticket.cl/events/1/events-rz8pnfrh-publish.png",
+   "availability": 1,
+   "status": 2,
+   "slug": "bailen_bq3y3",
+   "Establishments": {
+    "name": "Cafetería Ex-Cárcel Valparaíso",
+    "address": "Parque Cultural de Valparaíso - Cárcel, Valparaíso, Chile",
+    "ll": "-33.0471424,-71.6285578",
+    "Communes": {
+     "id": 41,
+     "name": "Valparaíso",
+     "idRegion": 5
+    },
+    "Regiones": {
+     "id": 5,
+     "name": "Valparaíso",
+     "idCountry": 1
+    }
+   },
+   "event_presentation": [
+    {
+     "timeInit": "19:30:00",
+     "dateClosingSale": "2026-10-17T21:30:00.000Z",
+     "statusSale": 1,
+     "status": 1,
+     "tickets_presentation": [
+      {
+       "name": "PRE VENTA 1",
+       "price": "6000",
+       "quantity": 15,
+       "sold": 15,
+       "reserved": 0
+      },
+      {
+       "name": "General",
+       "price": "6000",
+       "quantity": 65,
+       "sold": 20,
+       "reserved": 0
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 6264,
+   "title": "Carlita presenta ¡“Nadie dijo que sería fácil” en Quilpué! ",
+   "dateEventInit": "2026-10-21",
+   "dateEventEnd": "2026-10-21",
+   "imageMain": "https://cdn.comediaticket.cl/events/1/events-08b7sme6-publish.jpeg",
+   "availability": 0,
+   "status": 2,
+   "slug": "carlita-presenta-nadie-dijo-que-seria-facil-en-quilpue-_5vj3y",
+   "Establishments": {
+    "name": "SushiWeb",
+    "address": "Calle Benjamín - Vicuña Mackenna 835, Quilpué, Marga Marga, Chile",
+    "ll": "-33.0470581,-71.444343",
+    "Communes": {
+     "id": 76,
+     "name": "Quilpué",
+     "idRegion": 5
+    },
+    "Regiones": {
+     "id": 5,
+     "name": "Valparaíso",
+     "idCountry": 1
+    }
+   },
+   "event_presentation": [
+    {
+     "timeInit": "22:00:00",
+     "dateClosingSale": "2026-10-22T01:00:00.000Z",
+     "statusSale": 2,
+     "status": 1,
+     "tickets_presentation": [
+      {
+       "name": "GENERAL",
+       "price": "10000",
+       "quantity": 210,
+       "sold": 210,
+       "reserved": 0
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 6370,
+   "title": "Carlita Presenta \"Nadie dijo que sería fácil\" en Quilpué ",
+   "dateEventInit": "2026-10-22",
+   "dateEventEnd": "2026-10-22",
+   "imageMain": "https://cdn.comediaticket.cl/events/1/events-fz9nm5si-publish.png",
+   "availability": 0,
+   "status": 2,
+   "slug": "carlita-presenta-nadie-dijo-que-seria-facil-en-quilpue-_z121r",
+   "Establishments": {
+    "name": "SushiWeb",
+    "address": "Calle Benjamín - Vicuña Mackenna 835, Quilpué, Marga Marga, Chile",
+    "ll": "-33.0470581,-71.444343",
+    "Communes": {
+     "id": 76,
+     "name": "Quilpué",
+     "idRegion": 5
+    },
+    "Regiones": {
+     "id": 5,
+     "name": "Valparaíso",
+     "idCountry": 1
+    }
+   },
+   "event_presentation": [
+    {
+     "timeInit": "21:00:00",
+     "dateClosingSale": "2026-10-23T00:00:00.000Z",
+     "statusSale": 2,
+     "status": 1,
+     "tickets_presentation": [
+      {
+       "name": "GENERAL",
+       "price": "10000",
+       "quantity": 210,
+       "sold": 210,
+       "reserved": 0
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 6455,
+   "title": "LAVANDA PRESENTA VALPO",
+   "dateEventInit": "2026-10-23",
+   "dateEventEnd": "2026-10-23",
+   "imageMain": "https://cdn.comediaticket.cl/events/1/events-wnfwwyvt-publish.png",
+   "availability": 1,
+   "status": 2,
+   "slug": "lavanda-presenta-valpo_lkoow",
+   "Establishments": {
+    "name": "Terraza miaw",
+    "address": "Almirante Montt 106, Valparaíso, Chile",
+    "ll": "-33.0432347,-71.6262347",
+    "Communes": {
+     "id": 41,
+     "name": "Valparaíso",
+     "idRegion": 5
+    },
+    "Regiones": {
+     "id": 5,
+     "name": "Valparaíso",
+     "idCountry": 1
+    }
+   },
+   "event_presentation": [
+    {
+     "timeInit": "21:00:00",
+     "dateClosingSale": "2026-10-24T00:00:00.000Z",
+     "statusSale": 1,
+     "status": 1,
+     "tickets_presentation": [
+      {
+       "name": "PRE VENTA 1",
+       "price": "5000",
+       "quantity": 30,
+       "sold": 6,
+       "reserved": 0
+      },
+      {
+       "name": "GENERAL",
+       "price": "10000",
+       "quantity": 20,
+       "sold": 0,
+       "reserved": 0
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 6444,
+   "title": "Pachabamba: Un show de comedia musical",
+   "dateEventInit": "2026-10-23",
+   "dateEventEnd": "2026-10-23",
+   "imageMain": "https://cdn.comediaticket.cl/events/1/events-2tchg4zb-publish.png",
+   "availability": 1,
+   "status": 2,
+   "slug": "pachabamba-un-show-de-comedia-musical_jzpck",
+   "Establishments": {
+    "name": "Barbones Comedy",
+    "address": "Avenida San Martín 199, Viña del Mar, Chile",
+    "ll": "-33.0188285,-71.5603892",
+    "Communes": {
+     "id": 47,
+     "name": "Viña del Mar",
+     "idRegion": 5
+    },
+    "Regiones": {
+     "id": 5,
+     "name": "Valparaíso",
+     "idCountry": 1
+    }
+   },
+   "event_presentation": [
+    {
+     "timeInit": "22:00:00",
+     "dateClosingSale": "2026-10-24T01:00:00.000Z",
+     "statusSale": 1,
+     "status": 1,
+     "tickets_presentation": [
+      {
+       "name": "GENERAL",
+       "price": "5000",
+       "quantity": 80,
+       "sold": 4,
+       "reserved": 0
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 6136,
+   "title": "Stand up comedy  Clau Desmadre ",
+   "dateEventInit": "2026-10-24",
+   "dateEventEnd": "2026-10-24",
+   "imageMain": "https://cdn.comediaticket.cl/events/1/events-a5eoe0jb-publish.jpeg",
+   "availability": 1,
+   "status": 2,
+   "slug": "stand-up-comedy-clau-desmadre-_fqi4k",
+   "Establishments": {
+    "name": "Brava Bar San Felipe",
+    "address": "Traslaviña 1412, 2171623 San Felipe, Valparaíso, Chile",
+    "ll": "-32.7520525,-70.7275118",
+    "Communes": {
+     "id": 69,
+     "name": "San Felipe",
+     "idRegion": 5
+    },
+    "Regiones": {
+     "id": 5,
+     "name": "Valparaíso",
+     "idCountry": 1
+    }
+   },
+   "event_presentation": [
+    {
+     "timeInit": "21:00:00",
+     "dateClosingSale": "2026-10-24T23:00:00.000Z",
+     "statusSale": 1,
+     "status": 1,
+     "tickets_presentation": [
+      {
+       "name": "GENERAL",
+       "price": "9000",
+       "quantity": 150,
+       "sold": 2,
+       "reserved": 0
+      },
+      {
+       "name": "PRE VENTA 1",
+       "price": "7000",
+       "quantity": 40,
+       "sold": 38,
+       "reserved": 0
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 6028,
+   "title": "Don Carter en Barbones CURAUMA",
+   "dateEventInit": "2026-10-24",
+   "dateEventEnd": "2026-10-24",
+   "imageMain": "https://cdn.comediaticket.cl/events/1/events-2jlysar4-publish.png",
+   "availability": 1,
+   "status": 2,
+   "slug": "don-carter-en-barbones-curauma_m3vdr",
+   "Establishments": {
+    "name": "Barbones Curauma",
+    "address": "Avenida Borde Laguna 1728, Placilla, Valparaíso, Chile",
+    "ll": "-33.1404885,-71.5714775",
+    "Communes": {
+     "id": 41,
+     "name": "Valparaíso",
+     "idRegion": 5
+    },
+    "Regiones": {
+     "id": 5,
+     "name": "Valparaíso",
+     "idCountry": 1
+    }
+   },
+   "event_presentation": [
+    {
+     "timeInit": "20:00:00",
+     "dateClosingSale": "2026-10-24T22:00:00.000Z",
+     "statusSale": 2,
+     "status": 1,
+     "tickets_presentation": [
+      {
+       "name": "GENERAL",
+       "price": "15000",
+       "quantity": 50,
+       "sold": 50,
+       "reserved": 0
+      },
+      {
+       "name": "GENERAL",
+       "price": "20000",
+       "quantity": 52,
+       "sold": 50,
+       "reserved": 0
+      }
+     ]
+    },
+    {
+     "timeInit": "22:00:00",
+     "dateClosingSale": "2026-10-25T01:00:00.000Z",
+     "statusSale": 1,
+     "status": 1,
+     "tickets_presentation": [
+      {
+       "name": "GENERAL",
+       "price": "20000",
+       "quantity": 100,
+       "sold": 80,
+       "reserved": 0
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 6231,
+   "title": "Botota Fox presenta “Ni Santa, Ni Señora”en San Felipe ",
+   "dateEventInit": "2026-10-29",
+   "dateEventEnd": "2026-10-29",
+   "imageMain": "https://cdn.comediaticket.cl/events/1/events-95htde4w-publish.jpeg",
+   "availability": 1,
+   "status": 2,
+   "slug": "botota-fox-presenta-ni-santa-ni-senoraen-san-felipe-_hhllf",
+   "Establishments": {
+    "name": "La Diabla Bar ",
+    "address": "de Aconcagua - Carlos Condell 35, San Felipe, Chile",
+    "ll": "-32.7485597,-70.7201484",
+    "Communes": {
+     "id": 69,
+     "name": "San Felipe",
+     "idRegion": 5
+    },
+    "Regiones": {
+     "id": 5,
+     "name": "Valparaíso",
+     "idCountry": 1
+    }
+   },
+   "event_presentation": [
+    {
+     "timeInit": "21:00:00",
+     "dateClosingSale": "2026-10-30T00:00:00.000Z",
+     "statusSale": 1,
+     "status": 1,
+     "tickets_presentation": [
+      {
+       "name": "GENERAL",
+       "price": "10000",
+       "quantity": 250,
+       "sold": 5,
+       "reserved": 0
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 6140,
+   "title": "Piare en La Ligua",
+   "dateEventInit": "2026-10-30",
+   "dateEventEnd": "2026-10-30",
+   "imageMain": "https://cdn.comediaticket.cl/events/1/events-7d5mtoxa-publish.png",
+   "availability": 0,
+   "status": 2,
+   "slug": "piare-en-la-ligua_jdfxy",
+   "Establishments": {
+    "name": "Patio 785",
+    "address": "Ortiz de Rosas 785, Valparaíso, La Ligua, Chile",
+    "ll": "-32.4491977,-71.2341515",
+    "Communes": {
+     "id": 53,
+     "name": "La Ligua",
+     "idRegion": 5
+    },
+    "Regiones": {
+     "id": 5,
+     "name": "Valparaíso",
+     "idCountry": 1
+    }
+   },
+   "event_presentation": [
+    {
+     "timeInit": "21:00:00",
+     "dateClosingSale": "2026-10-30T23:00:00.000Z",
+     "statusSale": 2,
+     "status": 1,
+     "tickets_presentation": [
+      {
+       "name": "GENERAL",
+       "price": "15000",
+       "quantity": 33,
+       "sold": 33,
+       "reserved": 0
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 6281,
+   "title": "ASSKHA SUMATHRA, LA PREVIA DE HALLOWEEN EN SALA RIVOLI",
+   "dateEventInit": "2026-10-30",
+   "dateEventEnd": "2026-10-30",
+   "imageMain": "https://cdn.comediaticket.cl/events/1/events-ld7ygqm6-publish.png",
+   "availability": 1,
+   "status": 2,
+   "slug": "asskha-sumathra-la-previa-de-halloween-en-sala-rivoli_u26fq",
+   "Establishments": {
+    "name": "Sala Rivoli",
+    "address": "Victoria 2474, Valparaíso, Chile",
+    "ll": "-33.0485824,-71.6101996",
+    "Communes": {
+     "id": 41,
+     "name": "Valparaíso",
+     "idRegion": 5
+    },
+    "Regiones": {
+     "id": 5,
+     "name": "Valparaíso",
+     "idCountry": 1
+    }
+   },
+   "event_presentation": [
+    {
+     "timeInit": "22:00:00",
+     "dateClosingSale": "2026-10-31T01:00:00.000Z",
+     "statusSale": 1,
+     "status": 1,
+     "tickets_presentation": [
+      {
+       "name": "PRE VENTA 1",
+       "price": "15000",
+       "quantity": 20,
+       "sold": 20,
+       "reserved": 0
+      },
+      {
+       "name": "PRE VENTA 2",
+       "price": "17000",
+       "quantity": 180,
+       "sold": 37,
+       "reserved": 0
+      },
+      {
+       "name": "GENERAL",
+       "price": "20000",
+       "quantity": 100,
+       "sold": 0,
+       "reserved": 0
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 6383,
+   "title": "Pelea Talla Baja - Vicky ReginALTO vs. Maka CHICAmonti ",
+   "dateEventInit": "2026-11-04",
+   "dateEventEnd": "2026-11-04",
+   "imageMain": "https://cdn.comediaticket.cl/events/1/events-fvvia5od-publish.png",
+   "availability": 1,
+   "status": 2,
+   "slug": "pelea-talla-baja-vicky-reginalto-vs-maka-chicamonti-_mwdo8",
+   "Establishments": {
+    "name": "Barbones",
+    "address": "7 Norte 444, Viña del Mar, Valparaíso, Chile",
+    "ll": "-33.0160298,-71.5535479",
+    "Communes": {
+     "id": 47,
+     "name": "Viña del Mar",
+     "idRegion": 5
+    },
+    "Regiones": {
+     "id": 5,
+     "name": "Valparaíso",
+     "idCountry": 1
+    }
+   },
+   "event_presentation": [
+    {
+     "timeInit": "19:00:00",
+     "dateClosingSale": "2026-11-04T22:00:00.000Z",
+     "statusSale": 1,
+     "status": 1,
+     "tickets_presentation": [
+      {
+       "name": "GENERAL",
+       "price": "15000",
+       "quantity": 40,
+       "sold": 1,
+       "reserved": 0
+      },
+      {
+       "name": "2x ",
+       "price": "25000",
+       "quantity": 40,
+       "sold": 14,
+       "reserved": 0
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 5855,
+   "title": "\"La Cura\"",
+   "dateEventInit": "2026-11-06",
+   "dateEventEnd": "2026-11-06",
+   "imageMain": "https://cdn.comediaticket.cl/events/1/events-6r7k8knf-publish.png",
+   "availability": 1,
+   "status": 2,
+   "slug": "la-cura_m0xq2",
+   "Establishments": {
+    "name": "Barbones Curauma",
+    "address": "Avenida Borde Laguna 1728, Placilla, Valparaíso, Chile",
+    "ll": "-33.1404885,-71.5714775",
+    "Communes": {
+     "id": 41,
+     "name": "Valparaíso",
+     "idRegion": 5
+    },
+    "Regiones": {
+     "id": 5,
+     "name": "Valparaíso",
+     "idCountry": 1
+    }
+   },
+   "event_presentation": [
+    {
+     "timeInit": "21:00:00",
+     "dateClosingSale": "2026-11-06T23:00:00.000Z",
+     "statusSale": 1,
+     "status": 1,
+     "tickets_presentation": [
+      {
+       "name": "GENERAL",
+       "price": "8000",
+       "quantity": 30,
+       "sold": 0,
+       "reserved": 0
+      },
+      {
+       "name": "2x1 (Compras 1 entrada y entran 2 personas)",
+       "price": "12000",
+       "quantity": 50,
+       "sold": 2,
+       "reserved": 0
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 6299,
+   "title": "NUEVO MUNDO EN LOS ANDES",
+   "dateEventInit": "2026-11-06",
+   "dateEventEnd": "2026-11-06",
+   "imageMain": "https://cdn.comediaticket.cl/events/1/events-z1rubr7m-publish.png",
+   "availability": 1,
+   "status": 2,
+   "slug": "nuevo-mundo-en-los-andes_5w0fs",
+   "Establishments": {
+    "name": "Brava Los Andes",
+    "address": "O'Higgins 434, Los Andes, Chile",
+    "ll": "-32.8340493,-70.5994511",
+    "Communes": {
+     "id": 49,
+     "name": "Los Andes",
+     "idRegion": 5
+    },
+    "Regiones": {
+     "id": 5,
+     "name": "Valparaíso",
+     "idCountry": 1
+    }
+   },
+   "event_presentation": [
+    {
+     "timeInit": "21:00:00",
+     "dateClosingSale": "2026-11-07T00:00:00.000Z",
+     "statusSale": 1,
+     "status": 1,
+     "tickets_presentation": [
+      {
+       "name": "GENERAL",
+       "price": "10000",
+       "quantity": 150,
+       "sold": 0,
+       "reserved": 0
+      },
+      {
+       "name": "2x1 (Compras 1 entrada y entran 2 personas)",
+       "price": "12000",
+       "quantity": 30,
+       "sold": 0,
+       "reserved": 0
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 6131,
+   "title": "Pau San Martín en VIÑA DEL MAR",
+   "dateEventInit": "2026-11-12",
+   "dateEventEnd": "2026-11-12",
+   "imageMain": "https://cdn.comediaticket.cl/events/1/events-h794pjb0-publish.png",
+   "availability": 1,
+   "status": 2,
+   "slug": "pau-san-martin-en-vina-del-mar_ra5bo",
+   "Establishments": {
+    "name": "Barbones Comedy",
+    "address": "Avenida San Martín 199, Viña del Mar, Chile",
+    "ll": "-33.0188285,-71.5603892",
+    "Communes": {
+     "id": 47,
+     "name": "Viña del Mar",
+     "idRegion": 5
+    },
+    "Regiones": {
+     "id": 5,
+     "name": "Valparaíso",
+     "idCountry": 1
+    }
+   },
+   "event_presentation": [
+    {
+     "timeInit": "21:00:00",
+     "dateClosingSale": "2026-11-12T23:00:00.000Z",
+     "statusSale": 1,
+     "status": 1,
+     "tickets_presentation": [
+      {
+       "name": "GENERAL",
+       "price": "11000",
+       "quantity": 140,
+       "sold": 61,
+       "reserved": 0
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 6359,
+   "title": "León Murillo en Viña",
+   "dateEventInit": "2026-11-18",
+   "dateEventEnd": "2026-11-18",
+   "imageMain": "https://cdn.comediaticket.cl/events/1/events-m8dwghmh-publish.jpeg",
+   "availability": 1,
+   "status": 2,
+   "slug": "leon-murillo-en-vina_e8vne",
+   "Establishments": {
+    "name": "Barbones Comedy",
+    "address": "Avenida San Martín 199, Viña del Mar, Chile",
+    "ll": "-33.0188285,-71.5603892",
+    "Communes": {
+     "id": 47,
+     "name": "Viña del Mar",
+     "idRegion": 5
+    },
+    "Regiones": {
+     "id": 5,
+     "name": "Valparaíso",
+     "idCountry": 1
+    }
+   },
+   "event_presentation": [
+    {
+     "timeInit": "19:00:00",
+     "dateClosingSale": "2026-11-18T22:00:00.000Z",
+     "statusSale": 1,
+     "status": 1,
+     "tickets_presentation": [
+      {
+       "name": "GENERAL",
+       "price": "13000",
+       "quantity": 100,
+       "sold": 0,
+       "reserved": 0
+      },
+      {
+       "name": "PRE VENTA 1",
+       "price": "10000",
+       "quantity": 50,
+       "sold": 0,
+       "reserved": 0
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 6307,
+   "title": "NUEVO MUNDO EN CURAUMA",
+   "dateEventInit": "2026-11-20",
+   "dateEventEnd": "2026-11-20",
+   "imageMain": "https://cdn.comediaticket.cl/events/1/events-j7dbt1g4-publish.png",
+   "availability": 1,
+   "status": 2,
+   "slug": "nuevo-mundo-en-curauma_wp6lm",
+   "Establishments": {
+    "name": "Barbones Curauma",
+    "address": "Avenida Borde Laguna 1728, Placilla, Valparaíso, Chile",
+    "ll": "-33.1404885,-71.5714775",
+    "Communes": {
+     "id": 41,
+     "name": "Valparaíso",
+     "idRegion": 5
+    },
+    "Regiones": {
+     "id": 5,
+     "name": "Valparaíso",
+     "idCountry": 1
+    }
+   },
+   "event_presentation": [
+    {
+     "timeInit": "20:00:00",
+     "dateClosingSale": "2026-11-20T23:00:00.000Z",
+     "statusSale": 1,
+     "status": 1,
+     "tickets_presentation": [
+      {
+       "name": "GENERAL",
+       "price": "10000",
+       "quantity": 80,
+       "sold": 0,
+       "reserved": 0
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 6294,
+   "title": "Salas Moya el Guionista de Chile en Viña del mar ",
+   "dateEventInit": "2026-11-27",
+   "dateEventEnd": "2026-11-27",
+   "imageMain": "https://cdn.comediaticket.cl/events/1/events-4krzof4g-publish.png",
+   "availability": 1,
+   "status": 2,
+   "slug": "salas-moya-el-guionista-de-chile-en-vina-del-mar-_fvwog",
+   "Establishments": {
+    "name": "Barbones Comedy",
+    "address": "Avenida San Martín 199, Viña del Mar, Chile",
+    "ll": "-33.0188285,-71.5603892",
+    "Communes": {
+     "id": 47,
+     "name": "Viña del Mar",
+     "idRegion": 5
+    },
+    "Regiones": {
+     "id": 5,
+     "name": "Valparaíso",
+     "idCountry": 1
+    }
+   },
+   "event_presentation": [
+    {
+     "timeInit": "22:00:00",
+     "dateClosingSale": "2026-11-28T01:00:00.000Z",
+     "statusSale": 1,
+     "status": 1,
+     "tickets_presentation": [
+      {
+       "name": "GENERAL",
+       "price": "8000",
+       "quantity": 50,
+       "sold": 0,
+       "reserved": 0
+      },
+      {
+       "name": "2x1 (Compras 1 entrada y entran 2 personas)",
+       "price": "10000",
+       "quantity": 100,
+       "sold": 0,
+       "reserved": 0
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 6427,
+   "title": "El regreso de la bestia",
+   "dateEventInit": "2026-11-28",
+   "dateEventEnd": "2026-11-28",
+   "imageMain": "https://cdn.comediaticket.cl/events/1/events-klooo8uq-publish.png",
+   "availability": 1,
+   "status": 2,
+   "slug": "el-regreso-de-la-bestia_2y8l4",
+   "Establishments": {
+    "name": "Akellarre Pub & Terraza",
+    "address": "Comercio 293, Putaendo, Chile",
+    "ll": "-32.629724,-70.7173358",
+    "Communes": {
+     "id": 73,
+     "name": "Putaendo",
+     "idRegion": 5
+    },
+    "Regiones": {
+     "id": 5,
+     "name": "Valparaíso",
+     "idCountry": 1
+    }
+   },
+   "event_presentation": [
+    {
+     "timeInit": "21:00:00",
+     "dateClosingSale": "2026-11-29T00:00:00.000Z",
+     "statusSale": 1,
+     "status": 1,
+     "tickets_presentation": [
+      {
+       "name": "GENERAL",
+       "price": "10000",
+       "quantity": 100,
+       "sold": 0,
+       "reserved": 0
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 6465,
+   "title": "Pato Bezma En Viña",
+   "dateEventInit": "2026-11-28",
+   "dateEventEnd": "2026-11-28",
+   "imageMain": "https://cdn.comediaticket.cl/events/1/events-nywtiys0-publish.png",
+   "availability": 1,
+   "status": 2,
+   "slug": "pato-bezma-en-vina_h14ph",
+   "Establishments": {
+    "name": "Barbones Comedy",
+    "address": "Avenida San Martín 199, Viña del Mar, Chile",
+    "ll": "-33.0188285,-71.5603892",
+    "Communes": {
+     "id": 47,
+     "name": "Viña del Mar",
+     "idRegion": 5
+    },
+    "Regiones": {
+     "id": 5,
+     "name": "Valparaíso",
+     "idCountry": 1
+    }
+   },
+   "event_presentation": [
+    {
+     "timeInit": "20:00:00",
+     "dateClosingSale": "2026-11-28T23:00:00.000Z",
+     "statusSale": 1,
+     "status": 1,
+     "tickets_presentation": [
+      {
+       "name": "GENERAL",
+       "price": "6000",
+       "quantity": 10,
+       "sold": 0,
+       "reserved": 0
+      },
+      {
+       "name": "2x ",
+       "price": "10000",
+       "quantity": 45,
+       "sold": 0,
+       "reserved": 0
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 6422,
+   "title": "PAM PAM EN VIÑA DEL MAR",
+   "dateEventInit": "2026-12-05",
+   "dateEventEnd": "2026-12-05",
+   "imageMain": "https://cdn.comediaticket.cl/events/1/events-gfbp6c4p-publish.png",
+   "availability": 1,
+   "status": 2,
+   "slug": "pam-pam-en-vina-del-mar_4fanj",
+   "Establishments": {
+    "name": "Barbones",
+    "address": "7 Norte 444, Viña del Mar, Valparaíso, Chile",
+    "ll": "-33.0160298,-71.5535479",
+    "Communes": {
+     "id": 47,
+     "name": "Viña del Mar",
+     "idRegion": 5
+    },
+    "Regiones": {
+     "id": 5,
+     "name": "Valparaíso",
+     "idCountry": 1
+    }
+   },
+   "event_presentation": [
+    {
+     "timeInit": "21:00:00",
+     "dateClosingSale": "2026-12-06T00:00:00.000Z",
+     "statusSale": 1,
+     "status": 1,
+     "tickets_presentation": [
+      {
+       "name": "GENERAL",
+       "price": "10000",
+       "quantity": 100,
+       "sold": 0,
+       "reserved": 0
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 6344,
+   "title": "Valentín en Happy People",
+   "dateEventInit": "2026-10-17",
+   "dateEventEnd": "2026-10-17",
+   "imageMain": "https://cdn.comediaticket.cl/events/1/events-pjdios7g-publish.png",
+   "availability": 1,
+   "status": 2,
+   "slug": "valentin-en-happy-people_we784",
+   "Establishments": {
+    "name": "Happy People",
+    "address": "Rancagua 395, Providencia, Chile",
+    "ll": "-33.4406531,-70.6278725",
+    "Communes": {
+     "id": 280,
+     "name": "Providencia",
+     "idRegion": 13
+    },
+    "Regiones": {
+     "id": 13,
+     "name": "Santiago",
+     "idCountry": 1
+    }
+   },
+   "event_presentation": [
+    {
+     "timeInit": "20:00:00",
+     "dateClosingSale": "2026-10-17T23:00:00.000Z",
+     "statusSale": 1,
+     "status": 1,
+     "tickets_presentation": [
+      {
+       "name": "GENERAL",
+       "price": "7000",
+       "quantity": 50,
+       "sold": 14,
+       "reserved": 0
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

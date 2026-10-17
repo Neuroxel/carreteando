@@ -12,6 +12,8 @@ const nextConfig = {
       { protocol: 'https', hostname: 'static.ptocdn.net' },
       { protocol: 'https', hostname: 'miltambores.cl' },
       { protocol: 'https', hostname: 'kn6kang47jzl4ttd.public.blob.vercel-storage.com' },
+      { protocol: 'https', hostname: 'cdn.comediaticket.cl' },
+      { protocol: 'https', hostname: 'comedypass.online' },
       { protocol: 'https', hostname: 'events-cdn.vesti.cl' },
       { protocol: 'https', hostname: 'images.portaldisc.com' },
       // Sitios oficiales de los propios lugares y municipios: de ahí sale el

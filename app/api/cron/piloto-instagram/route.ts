@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getAdminDb } from '../../../../lib/server-db';
 import { cronAutorizado } from '../../../../lib/cron-auth';
+import { presupuestoApify } from '../../../../lib/apify-budget';
 import {
   ACTORES,
   PILOT_COHORTS,
@@ -43,7 +44,9 @@ export async function GET(request: Request) {
   if (!ACTORES.includes(actor)) return reply({ error: 'Actor no permitido.' }, 400);
   const marca = `${cohorte}-${CORTO[actor]}`;
   const cuentas: readonly string[] = PILOT_COHORTS[cohorte];
-  const tope = TOPE_USD[cohorte];
+  const presupuesto = await presupuestoApify(db, { token, topePedido: TOPE_USD[cohorte] });
+  if (!presupuesto.correr) return reply({ error: presupuesto.motivo, gastado_mes_usd: presupuesto.gastadoMes, restante_usd: presupuesto.restante }, 429);
+  const tope = presupuesto.maxTotalChargeUsd;
   const armed = await db
     .from('automation_config')
     .update({ value: `running-${marca}` })
@@ -164,7 +167,7 @@ export async function GET(request: Request) {
       status: 'failed',
       cohort: cohorte,
       actor,
-      summary: { cohort: cohorte, actor, error: e instanceof Error ? e.message : 'ERROR' },
+      summary: { cohort: cohorte, actor, cap_usd: tope, error: e instanceof Error ? e.message : 'ERROR' },
     });
     return reply({ error: e instanceof Error ? e.message : 'ERROR' }, 502);
   }
