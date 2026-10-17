@@ -5,6 +5,15 @@
 El dueño inició sesión en el panel Supabase del proyecto canónico. El conector
 MCP sigue rechazando acceso, pero el SQL Editor autenticado sí funciona.
 
+La sesión GitHub existente permitió después iniciar sesión en Vercel sin
+cambiar protecciones. **Preview autenticado revisado** en cartelera y Radar;
+viewport 390×844 sin desborde horizontal (scrollWidth 375, viewport 390).
+Radar muestra 10 lugares geolocalizados de los 15 asociados a 18 eventos.
+La ubicación agotó el intento en este navegador y ofreció reintentar; no se
+verificó una coordenada real. CI y preview **READY** para el código
+`c4cf74d806f2014eb43568f0e0259e9c62098e21` (171 pruebas). La protección
+inicial descrita más abajo es parte de la línea base, ya superada por navegador.
+
 **Hecho y verificado en la base:**
 
 - Tres respaldos tenían RLS desactivada y SELECT para anon/authenticated.
@@ -195,7 +204,8 @@ no una importación observada.
 - [ ] Revisar/desplegar incremental y medirlo en una corrida autorizada.
 - [ ] Evaluar piloto A/B y visión sólo si se justifica por utilidad editorial.
 - [x] Confirmar compilación del preview y CI de esta PR.
-- [ ] Revisar el contenido del preview protegido antes de fusionar main.
+- [x] Revisar cartelera y Radar del preview protegido antes de fusionar main.
+- [ ] Revisión final del dueño y despliegue de la PR.
 - [ ] QA final del despliegue aprobado: móvil físico, GPS permitido/denegado,
   atrás/adelante, aporte privado, detalle/fuente y medición de cero peticiones
   de datos adicionales en filtros/lista/mapa. No se volvió a medir la red
