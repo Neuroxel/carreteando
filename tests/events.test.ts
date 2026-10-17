@@ -8,6 +8,12 @@ const row = {
   is_active: true,
   moderation_status: 'approved',
 };
+test('la procedencia web no se convierte en Instagram en el modelo público', () => {
+  assert.equal(dbRowToEvento({ ...row, source: 'adapter', source_id: 'portaldisc-region' })?.fuente, 'web');
+  assert.equal(dbRowToEvento({ ...row, source: 'apify_instagram' })?.fuente, 'instagram');
+  assert.equal(dbRowToEvento({ ...row, source: 'editorial' })?.fuente, 'editorial');
+  assert.equal(dbRowToEvento({ ...row, source: 'facebook' })?.fuente, 'facebook');
+});
 test('public model rejects missing dates and moderation; never uses scraped_at', () => {
   for (const patch of [
     { date_text: null },
