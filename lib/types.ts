@@ -9,7 +9,7 @@ export type Categoria =
   | 'rock'
   | 'otro';
 
-export type FuenteEvento = 'instagram' | 'facebook' | 'google' | 'passline' | 'editorial' | 'manual';
+export type FuenteEvento = 'instagram' | 'facebook' | 'google' | 'passline' | 'editorial' | 'manual' | 'web';
 
 export interface Evento {
   id: string;
