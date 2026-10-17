@@ -7,7 +7,8 @@ import { parseFilters } from '../lib/filters';
 import { CIUDADES, type FiltrosEvento } from '../lib/types';
 import { escenasConLugares, lugarEnEscena } from '../lib/escenas';
 import { buscarLugares, buscarZonas, zonaSlug } from '../lib/venues';
-import { normalizar, puntosDeMapa } from '../lib/map';
+import { puntosDeMapa } from '../lib/map';
+import { indiceDeLugares } from '../lib/venue-match';
 import type { PublicSnapshot } from '../lib/snapshot';
 import { rememberEmptySearch } from '../lib/metrics';
 import { ORDEN_TEMPORAL, ahoraEnChile, estadoTemporal, porEstadoTemporal } from '../lib/temporal';
@@ -16,7 +17,7 @@ import EventCard from './EventCard';
 import VenueCard from './VenueCard';
 import VenueRail from './VenueRail';
 import VenueMap from './VenueMap';
-import { LogoApilado } from './Logo';
+import TituloSeccion from './TituloSeccion';
 import PosterDecor from './poster/PosterDecor';
 
 const SHORT: Record<string, string> = { Valparaíso: 'Valpo', 'Viña del Mar': 'Viña' };
@@ -28,7 +29,7 @@ interface Estado {
   ver: Ver;
   vista: Vista;
   orden: Orden;
-  /** Solo en el mapa (Radar): carretes de hoy o todos los boliches. */
+  /** Solo en el mapa (Radar): carretes de hoy o todos los lugares. */
   capa: Capa;
 }
 type Cambio = Partial<FiltrosEvento> & { ver?: Ver; vista?: Vista; orden?: Orden; capa?: Capa };
@@ -209,6 +210,11 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
       .catch(() => undefined);
   }, [vista, gps, ubicar]);
   const todos = snap.events;
+  // El lugar de cada evento: nombre, alias y misma ciudad; nunca un parecido.
+  const lugarDe = useMemo(() => {
+    const indice = indiceDeLugares(snap.venues);
+    return (e: { lugar?: string | null; ciudad: string }) => indice(e.lugar, e.ciudad);
+  }, [snap.venues]);
   // Reloj de Chile para "Ya empezó": se actualiza cada minuto en el teléfono, sin pedir nada.
   useEffect(() => {
     const t = setInterval(() => setAhora(Date.now()), 60_000);
@@ -224,9 +230,10 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
     const conteoLugar = new Map<string, number>();
     const hoyPorLugar = new Map<string, string>();
     for (const e of todos) {
-      if (!e.lugar || e.fecha < today) continue;
-      conteoLugar.set(e.lugar, (conteoLugar.get(e.lugar) || 0) + 1);
-      if (e.fecha === today && !hoyPorLugar.has(e.lugar)) hoyPorLugar.set(e.lugar, e.nombre);
+      const slug = lugarDe(e);
+      if (!slug || e.fecha < today) continue;
+      conteoLugar.set(slug, (conteoLugar.get(slug) || 0) + 1);
+      if (e.fecha === today && !hoyPorLugar.has(slug)) hoyPorLugar.set(slug, e.nombre);
     }
     const lugaresZona = (filtros.ciudad === 'todos' ? snap.venues : snap.venues.filter((l) => l.ciudad === filtros.ciudad))
       .slice()
@@ -259,26 +266,26 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
         .filter((e, i, all) => all.findIndex((o) => o.lugar === e.lugar && o.ciudad === e.ciudad) === i)
         .slice(0, 3),
     };
-  }, [todos, snap.venues, filtros, today]);
+  }, [todos, snap.venues, filtros, today, lugarDe]);
   const lugaresVisibles = useMemo(() => {
-    const coincidencias = new Set(events.map((e) => normalizar(e.lugar || '')));
+    const coincidencias = new Set(events.map(lugarDe));
     const escena = filtros.escena && filtros.escena !== 'todos' ? filtros.escena : null;
     const refinar = [filtros.precio, filtros.tipo, filtros.categoria].some((v) => v && v !== 'todos');
     return derivados.lugaresZona.filter((l) => {
       const coincideLugar = !filtros.busqueda || derivados.lugaresHallados.some((x) => x.slug === l.slug);
-      const tieneEvento = coincidencias.has(normalizar(l.nombre));
+      const tieneEvento = coincidencias.has(l.slug);
       // La escena sale primero de lo que el lugar es; un evento que calza también cuenta.
       const coincideEscena = !escena || lugarEnEscena(l, escena) || tieneEvento;
       return coincideLugar && coincideEscena && (!refinar || tieneEvento);
     });
-  }, [events, filtros, derivados.lugaresZona, derivados.lugaresHallados]);
+  }, [events, filtros, derivados.lugaresZona, derivados.lugaresHallados, lugarDe]);
   const sinResultados = Boolean(filtros.busqueda) && derivados.busquedaEventos === 0 && derivados.lugaresHallados.length === 0 && derivados.zonasHalladas.length === 0;
   useEffect(() => {
     if (sinResultados) rememberEmptySearch(filtros.busqueda || null);
     else if (filtros.busqueda) rememberEmptySearch(null);
   }, [sinResultados, filtros.busqueda]);
   // Radar no usa las pestañas de fecha: siempre marca lo de hoy. "Carretes hoy"
-  // muestra solo lugares con evento confirmado hoy; "Boliches", todos.
+  // muestra solo lugares con evento confirmado hoy; "Lugares", todos.
   const eventosHoy = useMemo(
     // Un evento con final publicado y ya pasado no es una recomendación activa.
     () =>
@@ -290,16 +297,16 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
   const lugaresMapa = useMemo(() => {
     if (vista !== 'mapa') return [];
     const escena = filtros.escena && filtros.escena !== 'todos' ? filtros.escena : null;
-    const conEvento = new Set(eventosHoy.map((e) => normalizar(e.lugar || '')));
+    const conEvento = new Set(eventosHoy.map(lugarDe));
     return derivados.lugaresZona.filter((l) => {
-      if (capa === 'hoy') return conEvento.has(normalizar(l.nombre));
+      if (capa === 'hoy') return conEvento.has(l.slug);
       const coincideLugar = !filtros.busqueda || derivados.lugaresHallados.some((x) => x.slug === l.slug);
-      return coincideLugar && (!escena || lugarEnEscena(l, escena) || conEvento.has(normalizar(l.nombre)));
+      return coincideLugar && (!escena || lugarEnEscena(l, escena) || conEvento.has(l.slug));
     });
-  }, [vista, capa, eventosHoy, filtros.busqueda, filtros.escena, derivados.lugaresZona, derivados.lugaresHallados]);
+  }, [vista, capa, eventosHoy, filtros.busqueda, filtros.escena, derivados.lugaresZona, derivados.lugaresHallados, lugarDe]);
   const puntos = useMemo(
-    () => (vista === 'mapa' ? puntosDeMapa(lugaresMapa, eventosHoy, today) : []),
-    [vista, lugaresMapa, eventosHoy, today],
+    () => (vista === 'mapa' ? puntosDeMapa(lugaresMapa, eventosHoy, today, {}, lugarDe) : []),
+    [vista, lugaresMapa, eventosHoy, today, lugarDe],
   );
   // Cercanía: primero lo que todavía no empieza, después lo ya iniciado y al final
   // los lugares sin evento hoy; dentro de cada grupo, por distancia.
@@ -329,27 +336,7 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
           <p className="eyebrow">
             <span className="status-dot" /> REGIÓN DE VALPARAÍSO <span className="hero-date">/ {dateLabel}</span>
           </p>
-          <h1>
-            {home ? (
-              <>
-                <LogoApilado className="hero-logo hero-logo-apilado" />
-              </>
-            ) : (
-              vista === 'mapa' ? (
-                <>
-                  Radar <em>de carretes.</em>
-                </>
-              ) : ver === 'lugares' ? (
-                <>
-                  Boliches <em>para salir.</em>
-                </>
-              ) : (
-                <>
-                  Carretes <em>de la región.</em>
-                </>
-              )
-            )}
-          </h1>
+          <TituloSeccion home={home} vista={vista} ver={ver} />
           {home && <p className="hero-lead">¿Qué hay hoy? Eventos y lugares para salir en la Región de Valparaíso.</p>}
           <form
             className="search-form"
@@ -404,8 +391,8 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
               <a {...enlace({ capa: 'hoy' })} className={capa === 'hoy' ? 'activa' : ''} aria-current={capa === 'hoy' ? 'true' : undefined}>
                 <span className="radar-estrella" aria-hidden="true">✦</span> Carretes hoy
               </a>
-              <a {...enlace({ capa: 'boliches' })} className={capa === 'boliches' ? 'activa' : ''} aria-current={capa === 'boliches' ? 'true' : undefined}>
-                Boliches
+              <a {...enlace({ capa: 'lugares' })} className={capa === 'lugares' ? 'activa' : ''} aria-current={capa === 'lugares' ? 'true' : undefined}>
+                Lugares
               </a>
             </div>
             {gps === 'ok' ? (
@@ -534,8 +521,8 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
               <div className="empty-state">
                 <h3>{eventosHoy.length ? 'Los carretes de hoy todavía no tienen ubicación verificada.' : 'No tenemos carretes confirmados para hoy acá.'}</h3>
                 <div className="actions">
-                  <a className="button button-primary" {...enlace({ capa: 'boliches' })}>
-                    Ver todos los boliches
+                  <a className="button button-primary" {...enlace({ capa: 'lugares' })}>
+                    Ver todos los lugares
                   </a>
                 </div>
               </div>
@@ -689,7 +676,7 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
             )}
             <div className="venue-grid">
               {lugaresVisibles.slice(0, 9).map((l) => (
-                <VenueCard key={l.slug} lugar={l} proximos={derivados.conteoLugar.get(l.nombre) || 0} hoy={derivados.hoyPorLugar.get(l.nombre) || null} />
+                <VenueCard key={l.slug} lugar={l} proximos={derivados.conteoLugar.get(l.slug) || 0} hoy={derivados.hoyPorLugar.get(l.slug) || null} />
               ))}
             </div>
           </div>
@@ -722,7 +709,7 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
             ) : (
               <div className="venue-grid">
                 {(ver === 'lugares' ? lugaresVisibles : lugaresVisibles.slice(0, 6)).map((l) => (
-                  <VenueCard key={l.slug} lugar={l} proximos={derivados.conteoLugar.get(l.nombre) || 0} hoy={derivados.hoyPorLugar.get(l.nombre) || null} />
+                  <VenueCard key={l.slug} lugar={l} proximos={derivados.conteoLugar.get(l.slug) || 0} hoy={derivados.hoyPorLugar.get(l.slug) || null} />
                 ))}
               </div>
             )}

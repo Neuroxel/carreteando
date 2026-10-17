@@ -28,11 +28,14 @@ export function puntosDeMapa(
   eventos: Evento[],
   hoy: string,
   vivos: Record<string, string> = {},
+  /** Lugar de cada evento (slug). Sin él, nombre exacto como antes. */
+  lugarDe?: (e: Evento) => string | null,
 ): PuntoMapa[] {
   const porLugar = new Map<string, Evento[]>();
   for (const evento of eventos) {
     if (!evento.lugar) continue;
-    const clave = normalizar(evento.lugar);
+    const clave = lugarDe ? lugarDe(evento) : normalizar(evento.lugar);
+    if (!clave) continue;
     const lista = porLugar.get(clave) || [];
     lista.push(evento);
     porLugar.set(clave, lista);
@@ -40,7 +43,7 @@ export function puntosDeMapa(
   const puntos: PuntoMapa[] = [];
   for (const lugar of lugares) {
     if (lugar.lat === null || lugar.lng === null || !lugar.precision_mapa) continue;
-    const suyos = (porLugar.get(normalizar(lugar.nombre)) || []).sort((a, b) =>
+    const suyos = (porLugar.get(lugarDe ? lugar.slug : normalizar(lugar.nombre)) || []).sort((a, b) =>
       a.fecha.localeCompare(b.fecha),
     );
     const estaNoche = suyos.filter((e) => e.fecha === hoy);

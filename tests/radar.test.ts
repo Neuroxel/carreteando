@@ -40,7 +40,8 @@ test('ordena por cercanía sin tocar la lista original', () => {
 test('el radar abre en carretes de hoy', () => {
   assert.equal(leerCapa(null), 'hoy');
   assert.equal(leerCapa('otra'), 'hoy');
-  assert.equal(leerCapa('boliches'), 'boliches');
+  assert.equal(leerCapa('lugares'), 'lugares');
+  assert.equal(leerCapa('boliches'), 'lugares', 'los enlaces viejos siguen funcionando');
 });
 
 import { esDeDia, nocheAntes } from '../lib/events';
