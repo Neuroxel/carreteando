@@ -18,8 +18,10 @@ MCP sigue rechazando acceso, pero el SQL Editor autenticado sí funciona.
   61 activos vinculados a lugares publicados, 21 candidatos, 8 rechazados.
   El descubrimiento del benchmark agrega una candidata: quedan 22.
   No se inventaron handles ni se activaron hipótesis de Gemini.
-- Barrido existente ejecutado: cero vencidos en cola; quedan **3 revisiones
-  vigentes**, que se conservan privadas. No se aprobó la cola para vaciarla.
+- Barrido existente ejecutado: cero vencidos en cola. Se rechazó el cine
+  diurno de las 08:00 por estar fuera de alcance (auditoría 690). Quedan
+  **2 revisiones vigentes privadas**: Juhn All Star (falta revisión de recinto
+  y evidencia) y Noches en Movimiento (falta corroboración vigente).
 - Importador existente ejecutado mediante pase de un uso: HTTP 200,
   `editorialInsertados=11`. El mecanismo existente dejó la fila vieja de Mad
   Professor como duplicada y la ficha corregida pública.
@@ -56,7 +58,7 @@ solamente cuentas activas. BENCH conserva siete días para comparar actores.
 Las marcas avanzan tras guardar la evidencia; no retroceden y no avanzan si
 se alcanza el tope de tres posts, porque puede quedar historial sin leer.
 La cuenta saturada se informa para una pasada manual más amplia. Sin cron
-pagado nuevo. Verificación local: 170 pruebas más lint, tipos, build y auditoría
+pagado nuevo. Verificación local: 171 pruebas más lint, tipos, build y auditoría
 de producción. El CI remoto debe confirmar la revisión nueva de la PR.
 
 **Bloqueo GPS encontrado en la verificación HTTP:** la política global de
@@ -64,8 +66,16 @@ producción/configuración original es `geolocation=()`, que deniega el permiso
 incluso si la persona quiere concederlo. La PR la cambia a
 `geolocation=(self)` y mantiene cámara/micrófono bloqueados. La solicitud
 continúa limitada por el flujo de Radar existente. Incluye regresión de la
-cabecera: 170 pruebas. GPS real sólo podrá cerrarse tras desplegar y probar
+cabecera. GPS real sólo podrá cerrarse tras desplegar y probar
 en un navegador/teléfono con permiso concedido.
+
+**QA de cobertura corregido:** la coincidencia difusa podía confundir Alex
+Anwandter + fiesta con Infinito Pop por compartir lugar y la palabra «fiesta».
+Cuando el benchmark trae URL precisa, ahora exige la misma fuente (conservando
+query identificadora). La regresión impide ese falso positivo. Resultado final:
+18/18 presentes, 10/10 hasta $5.000 presentes y **8 con precio conocido**;
+6/6 cortesías condicionales presentes, **5 con precio conocido**. No equivale
+a decir que los precios faltantes sean gratis ni que el catálogo sea exhaustivo.
 
 **URL oficial pendiente de decisión/configuración:** las dos URLs responden
 por HTTP, pero `dondesalgo.vercel.app` aún declara canónica a

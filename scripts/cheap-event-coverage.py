@@ -6,6 +6,7 @@ cartelera pública (snapshot). Métrica interna de QA, no un puntaje público.
 Uso: python3 scripts/cheap-event-coverage.py BENCHMARK.json [SNAPSHOT.json|URL]
 """
 import json, sys, unicodedata, urllib.request
+from urllib.parse import urlsplit
 
 def norm(s):
     s = unicodedata.normalize('NFKD', s or '').encode('ascii', 'ignore').decode().lower()
@@ -17,6 +18,11 @@ snap = json.load(urllib.request.urlopen(fuente) if fuente.startswith('http') els
 del_dia = [e for e in snap['events'] if e['fecha'] == bench['fecha']]
 
 def presente(b):
+    if b.get('fuente'):
+        def origen(url):
+            u = urlsplit(url or '')
+            return u.netloc.lower().removeprefix('www.'), u.path.rstrip('/'), u.query
+        return next((e for e in del_dia if origen(e.get('fuente_url')) == origen(b['fuente'])), None)
     lugar, titulo = set(norm(b['lugar'])), set(norm(b['titulo'])) - {'en', 'de', 'la', 'el', 'a', 'y'}
     for e in del_dia:
         if lugar <= set(norm(e.get('lugar'))) and (not titulo or titulo & set(norm(e['nombre']))):
