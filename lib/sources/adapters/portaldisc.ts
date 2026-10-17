@@ -38,24 +38,44 @@ export function precioDeFicha(html: string): { price: number; text: string } | n
   return { price: minimo.precio, text: `Desde ${pesos(minimo.precio)} + cargo` };
 }
 
-/** Completa el precio leyendo la ficha, con tope de visitas por corrida. */
+/** Prioriza fechas cercanas; las 24 solicitudes incluyen reintentos del alias. */
 async function conPrecio(candidatos: EventCandidate[], fetcher: Fetcher, tope = 24) {
-  let leidas = 0;
-  for (const c of candidatos) {
-    if (c.priceClp !== null || leidas >= tope) continue;
-    leidas += 1;
-    try {
-      const r = await fetcher(c.detailUrl);
-      const p = r.status === 200 ? precioDeFicha(r.body) : null;
-      if (p) {
-        c.priceClp = p.price;
-        c.priceText = p.text;
-      }
-    } catch {
-      /* sin ficha: el evento entra igual, con precio por confirmar */
+  let solicitudes = 0;
+  const counts = new Map<string, number>();
+  const pendiente = (c: EventCandidate, code: string) => {
+    c.reasons.push(code);
+    counts.set(code, (counts.get(code) || 0) + 1);
+  };
+  for (const c of [...candidatos].sort((a, b) => a.date.localeCompare(b.date))) {
+    if (c.priceClp !== null) continue;
+    if (solicitudes >= tope) {
+      pendiente(c, 'PRICE_BUDGET');
+      continue;
     }
+    solicitudes += 1;
+    let r = await fetcher(c.detailUrl).catch(() => null);
+    if (!r || r.status !== 200) {
+      const url = new URL(c.detailUrl);
+      // Solo el alias HTTPS del mismo proveedor: nunca cambiar la procedencia.
+      if (url.protocol === 'https:' && url.hostname === 'www.portaldisc.com' && !url.port && !url.username && !url.password) {
+        url.hostname = 'portaldisc.com';
+        if (solicitudes < tope) {
+          solicitudes += 1;
+          r = await fetcher(url.toString()).catch(() => null);
+        } else pendiente(c, 'PRICE_BUDGET');
+      }
+    }
+    if (!r || r.status !== 200) {
+      pendiente(c, r ? `PRICE_HTTP_${r.status}` : 'PRICE_NETWORK');
+      continue;
+    }
+    const p = precioDeFicha(r.body);
+    if (p) {
+      c.priceClp = p.price;
+      c.priceText = p.text;
+    } else pendiente(c, 'PRICE_NOT_FOUND');
   }
-  return candidatos;
+  return { candidates: candidatos, diagnostics: [...counts].map(([code, n]) => `${code}=${n}`) };
 }
 
 /**
@@ -115,7 +135,7 @@ export const portaldiscCartelera: Adapter = {
       if (candidate) candidates.push(candidate);
       else parseFailures += 1;
     }
-    return { itemsFound: cards.length, candidates: await conPrecio(candidates, fetcher), parseFailures };
+    return { itemsFound: cards.length, ...await conPrecio(candidates, fetcher), parseFailures };
   },
 };
 
@@ -179,6 +199,6 @@ export const portaldiscRegion: Adapter = {
       if (candidate) candidates.push(candidate);
       else parseFailures += 1;
     }
-    return { itemsFound: chunks.length - 1 - fuera, candidates: await conPrecio(candidates, fetcher), parseFailures };
+    return { itemsFound: chunks.length - 1 - fuera, ...await conPrecio(candidates, fetcher), parseFailures };
   },
 };

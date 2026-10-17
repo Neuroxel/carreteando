@@ -89,6 +89,8 @@ export interface EventCandidate {
   status?: 'scheduled' | 'cancelled' | 'postponed';
 }
 export interface AdapterResult {
+  /** Partial enrichment problems; agenda ingestion may still succeed. */
+  diagnostics?: string[];
   itemsFound: number;
   candidates: EventCandidate[];
   parseFailures: number;
