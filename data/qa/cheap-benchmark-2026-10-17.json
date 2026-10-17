@@ -1,0 +1,132 @@
+{
+ "fecha": "2026-10-17",
+ "descripcion": "Benchmark externo verificado a mano el 17-oct-2026: eventos confirmados en su ticketera, reabiertos uno a uno. Base: candidatos Gemini + cartelera pública. No es un puntaje público.",
+ "eventos": [
+  {
+   "titulo": "Trío Certero: Bailanta y Sapukai",
+   "lugar": "Casa de la Cultura de Valparaíso",
+   "precio_min": 10000,
+   "acceso": "pago",
+   "fuente": "https://www.portaldisc.com/evento/bailantaysapukai"
+  },
+  {
+   "titulo": "Subirenbuscadelaire",
+   "lugar": "Espacio Barcelona",
+   "precio_min": 7000,
+   "acceso": "pago",
+   "fuente": "https://www.portaldisc.com/evento/subirenbuscadelairevalpo"
+  },
+  {
+   "titulo": "Mono Guitarra + Dösifa",
+   "lugar": "Espacio Musa",
+   "precio_min": 2500,
+   "acceso": "pago",
+   "fuente": "https://www.portaldisc.com/evento/folkquilpue17deoctubre"
+  },
+  {
+   "titulo": "Ninfa Folk",
+   "lugar": "Espacio Guestro",
+   "precio_min": 8000,
+   "acceso": "pago",
+   "fuente": "https://www.portaldisc.com/evento/primersencilloninfafolkespacioguestro"
+  },
+  {
+   "titulo": "Seba & El Monstruo",
+   "lugar": "Teatro IPA",
+   "precio_min": 6000,
+   "acceso": "pago",
+   "fuente": "https://www.portaldisc.com/evento/llenode97"
+  },
+  {
+   "titulo": "Camila Moreno",
+   "lugar": "Teatro Mauri SCD",
+   "precio_min": 6000,
+   "acceso": "pago",
+   "fuente": "https://www.portaldisc.com/evento/camilamorenolaultimaluzenteatromauri"
+  },
+  {
+   "titulo": "Metal Attack",
+   "lugar": "Club Segundo Piso",
+   "precio_min": 0,
+   "acceso": "gratis_condicional",
+   "fuente": "https://www.portaldisc.com/evento/metalattackenclubsegundopiso"
+  },
+  {
+   "titulo": "Shadow Dance",
+   "lugar": "Cassot Bar",
+   "precio_min": 5000,
+   "acceso": "pago",
+   "fuente": "https://www.portaldisc.com/evento/shadowdance3"
+  },
+  {
+   "titulo": "Fiesta Infinito Pop",
+   "lugar": "Trotamundos Valparaíso",
+   "precio_min": 0,
+   "acceso": "gratis_condicional",
+   "fuente": "https://www.passline.com/eventos/fiesta-infinito-pop-post-show"
+  },
+  {
+   "titulo": "WAUW",
+   "lugar": "Alto San Andrés",
+   "precio_min": 0,
+   "acceso": "gratis_condicional",
+   "fuente": "https://www.passline.com/eventos/wauw-la-mas-iconic-karaoke-fiesta-17-oct-alto-san-andres"
+  },
+  {
+   "titulo": "Fiesta + Extended",
+   "lugar": "The House",
+   "precio_min": 1000,
+   "acceso": "pago",
+   "fuente": "https://vesti.cl/events/sabado-17-fiesta-extended"
+  },
+  {
+   "titulo": "Tributo a Amy Winehouse",
+   "lugar": "Klanu Rock Bar",
+   "precio_min": 3000,
+   "acceso": "pago",
+   "fuente": "https://www.passline.com/eventos/tributo-a-amy-winehouse-en-klanu-rock-bar-valparaiso"
+  },
+  {
+   "titulo": "Sábado en Garage",
+   "lugar": "Garage 597",
+   "precio_min": 0,
+   "acceso": "gratis_condicional",
+   "fuente": "https://www.passline.com/eventos/sabado-17-octubre"
+  },
+  {
+   "titulo": "Sábado Prime",
+   "lugar": "Hollywood Experience Viña",
+   "precio_min": 0,
+   "acceso": "gratis_condicional",
+   "fuente": "https://vesti.cl/events/sabado-prime-en-hollywood-vina-o-sabado-17-de-octubre-2026"
+  },
+  {
+   "titulo": "Manda Viña sábado",
+   "lugar": "Manda",
+   "precio_min": 0,
+   "acceso": "gratis_condicional",
+   "fuente": "https://vesti.cl/events/manda-vina-sabado-17-de-octubre"
+  },
+  {
+   "titulo": "Columbia",
+   "lugar": "Brisamar",
+   "precio_min": 8000,
+   "acceso": "pago",
+   "fuente": "https://www.passline.com/eventos/columbia-sabado-17-de-octubre"
+  },
+  {
+   "titulo": "La primera generación del reggaetón",
+   "lugar": "Open Quillota",
+   "precio_min": 10000,
+   "acceso": "pago",
+   "fuente": "https://vesti.cl/events/la-primera-generacion-del-reggaeton-laser-concept"
+  },
+  {
+   "titulo": "Alex Anwandter",
+   "lugar": "Trotamundos Valparaíso",
+   "precio_min": null,
+   "acceso": "desconocido",
+   "fuente": "https://www.passline.com/eventos/alex-anwandter-en-valparaiso-fiesta-trotamundos"
+  }
+ ]
+}
