@@ -31,27 +31,57 @@ lo que solo puede hacer el dueño o un abogado.
   Vercel, en la cookie de admin y en el `User-Agent` del lector de fuentes: no
   aporta nada cambiarlos y podría romper accesos.
 
-## Dominio: cómo cambiar sin duplicar páginas
+## Dominio: plan `dondesalgo.cl` (preparado 17-oct-2026, no ejecutado)
 
-La dirección canónica sale de `NEXT_PUBLIC_SITE_URL` (`lib/site.ts`). Hoy no
-está definida, así que se usa `https://carreteando.vercel.app`. **No cambiarla
-hasta que el dominio esté registrado y apuntando a Vercel.**
+**No cambiar el dominio principal hasta validar el piloto con usuarios reales.**
+Hoy la canónica es `https://dondesalgo.vercel.app` (`NEXT_PUBLIC_SITE_URL` sin
+definir → `lib/site.ts`). `carreteando.vercel.app` redirige 308 a ella
+(`next.config.mjs`). Nada de esto requiere tocar la base.
 
-Orden cuando el dominio exista:
+Ya queda listo en el código: `metadataBase`, canónicos, Open Graph, JSON-LD,
+`sitemap.xml`, `robots.txt`, enlaces para compartir e IndexNow salen de
+`NEXT_PUBLIC_SITE_URL`. Los endpoints con control de origen (`/api/ambiente`,
+`/api/medir`, aportes) comparan contra el host de la propia solicitud, así que
+funcionan en cualquier dominio sin lista de orígenes. La app no usa redirects
+de Supabase Auth.
 
-1. Vercel → proyecto `carreteando` → Domains: agregar `dondesalgo.cl` y
-   `www.dondesalgo.cl` (www redirige a la raíz).
-2. Configurar los registros DNS que pide Vercel en NIC Chile y esperar el
-   certificado.
-3. En Vercel, redirigir `carreteando.vercel.app` → `dondesalgo.cl` con 308.
-4. Variable `NEXT_PUBLIC_SITE_URL=https://dondesalgo.cl` en Production y
-   volver a desplegar: canónicos, sitemap, robots, Open Graph y JSON-LD pasan
-   al dominio nuevo.
-5. Search Console (propiedad de dominio) y Bing Webmaster: dar de alta el
-   dominio, enviar `/sitemap.xml`. Recién ahí, no antes.
-6. Revisar con `curl -I https://carreteando.vercel.app/` que responda 308.
+### A. Vercel (proyecto `carreteando`, equipo Neuroxel)
+1. Registrar `dondesalgo.cl` en NIC Chile (lo hace el dueño; nada se compró desde aquí).
+2. Domains → agregar `dondesalgo.cl` (principal) y `www.dondesalgo.cl` con
+   "Redirect to `dondesalgo.cl`" permanente (308).
+3. **Conservar** `dondesalgo.vercel.app` asignado al proyecto, sirviendo normal.
 
-Las vistas previas por rama están protegidas por Vercel y no se indexan.
+### B. DNS
+Copiar **exactamente** los registros que Vercel muestre al agregar cada dominio
+(apex y `www`) y cargarlos en NIC Chile. No se documentan valores por adelantado:
+hay que usar los que entregue Vercel ese día. Registrar aquí fecha y valores
+una vez cargados. Esperar el certificado (candado en Domains).
+
+### C. App (un solo redeploy)
+1. Comprobar `curl -I https://dondesalgo.cl/` → 200 con HTTPS válido, y
+   `curl -I https://www.dondesalgo.cl/` → 308 a la raíz.
+2. Production env `NEXT_PUBLIC_SITE_URL=https://dondesalgo.cl` y redeploy.
+3. Verificar en `https://dondesalgo.cl/`: `<link rel="canonical">`, `og:image`,
+   `/sitemap.xml`, `/robots.txt` (`host` y `sitemap`), `/indexnow-key.txt`.
+4. Cambio menor de código pendiente para ese día: `lib/venues.ts` → `propia()`
+   reconoce como propias solo `carreteando.vercel.app` y `dondesalgo.vercel.app`;
+   agregar `https://dondesalgo.cl`.
+5. Search Console (propiedad de dominio) y Bing Webmaster: alta y envío de `/sitemap.xml`.
+
+### D. Redirect del dominio viejo (solo después de C)
+Con `.cl` validado: `dondesalgo.vercel.app/*` → `https://dondesalgo.cl/*`
+permanente, como regla `has: host` en `next.config.mjs` (igual que la de
+`carreteando.vercel.app`, que pasa a apuntar directo a `.cl` para evitar dos
+saltos). PR con test del redirect; **no activarlo antes** de comprobar HTTPS
+y funcionamiento del `.cl`.
+
+### E. Rollback (sin tocar la base)
+1. Si el redirect de D ya está: revert de ese PR y deploy (o "Promote" del
+   deployment anterior en Vercel), y `dondesalgo.vercel.app` vuelve a servir.
+2. Quitar `NEXT_PUBLIC_SITE_URL` (o volver a `https://dondesalgo.vercel.app`) y
+   redeploy: canónicos, sitemap y OG vuelven a `.vercel.app`.
+3. El dominio `.cl` puede quedar asignado sin ser canónico; se retira de
+   Domains solo si falla su certificado o DNS.
 
 ## SEO tras el cambio de marca
 
