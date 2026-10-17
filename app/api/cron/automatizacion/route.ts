@@ -18,6 +18,8 @@ export async function GET(request: Request) {
   if (!db) return reply({ error: 'Base no disponible.' }, 503);
   if (!(await cronAutorizado(request, db))) return reply({ error: 'Unauthorized' }, 401);
   const modo = new URL(request.url).searchParams.get('modo');
+  // Cierre de una revisión editorial directa: misma autoridad, sin reevaluar la cola.
+  if (modo === 'refresh') return reply({ snapshot_refreshed: await refrescarPublico() });
   if (modo === 'backtest') return reply(await backtest(db));
   // La selección editorial (puente manual, programas oficiales) entra también
   // aquí, sin esperar la próxima ingesta. Solo inserta: nunca pisa nada.

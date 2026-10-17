@@ -64,8 +64,11 @@ export const getPublicSnapshot = unstable_cache(build, ['public-snapshot-v1'], {
 /** Pide regenerar lo público. Nunca rompe a quien lo llama (fuera de Next, o si falla, no pasa nada). */
 export async function refrescarPublico(tag: string = SNAPSHOT_TAG) {
   try {
-    const { revalidateTag } = await import('next/cache');
+    const { revalidateTag, revalidatePath } = await import('next/cache');
     revalidateTag(tag);
+    // La API y el HTML prerenderizado deben mostrar la misma publicación.
+    revalidatePath('/', 'page');
+    revalidatePath('/explorar', 'page');
     return true;
   } catch {
     return false;
