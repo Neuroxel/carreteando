@@ -1,3 +1,4 @@
+import catalogo from '../data/catalogo-publico.json';
 import { addDays } from './event-extraction';
 import { SOURCES } from './sources/registry';
 import type { SourceDefinition } from './sources/types';
@@ -44,7 +45,7 @@ export interface ReporteCobertura {
   hasta: string;
   locales: CoberturaLocal[];
   porDia: Record<string, string[]>;
-  resumen: Record<EstadoLocal, number> & { locales: number; rutas: number; rutasBloqueadas: number; rutasPendientes: number };
+  resumen: Record<EstadoLocal, number> & { locales: number; sinRutas: number; rutas: number; rutasBloqueadas: number; rutasPendientes: number };
 }
 
 const TIPO_ADAPTADOR: Record<string, TipoRuta> = {
@@ -85,7 +86,15 @@ export function rutasPorLocal(fuentes: SourceDefinition[] = SOURCES, locales: Ru
 export function reporteCobertura(
   estados: Map<string, EstadoFuente>,
   hoy: string,
-  opciones: { dias?: number; vigenciaHoras?: number; ahora?: Date; fuentes?: SourceDefinition[]; locales?: RutasLocal[] } = {},
+  opciones: {
+    dias?: number;
+    vigenciaHoras?: number;
+    ahora?: Date;
+    fuentes?: SourceDefinition[];
+    locales?: RutasLocal[];
+    /** El universo a cubrir: un local sin rutas cuenta como pendiente, nunca se omite. */
+    catalogo?: { slug: string; nombre: string; comuna: string }[];
+  } = {},
 ): ReporteCobertura {
   const hasta = addDays(hoy, (opciones.dias ?? 7) - 1);
   const ahora = (opciones.ahora ?? new Date()).getTime();
@@ -95,7 +104,10 @@ export function reporteCobertura(
   let rutas = 0;
   let rutasBloqueadas = 0;
   let rutasPendientes = 0;
-  for (const [slug, l] of rutasPorLocal(opciones.fuentes, opciones.locales)) {
+  const conRutas = rutasPorLocal(opciones.fuentes, opciones.locales);
+  for (const c of opciones.catalogo ?? catalogo.locales)
+    if (!conRutas.has(c.slug)) conRutas.set(c.slug, { nombre: c.nombre, comuna: c.comuna, rutas: [] });
+  for (const [slug, l] of conRutas) {
     const chequeos: ChequeoRuta[] = l.rutas.map((r) => {
       rutas += 1;
       if (r.acceso !== 'auto') {
@@ -117,7 +129,9 @@ export function reporteCobertura(
     const fechas = [...new Set(chequeos.flatMap((c) => c.fechas))].sort();
     const estado: EstadoLocal = fechas.length
       ? 'FOUND'
-      : chequeos.every((c) => c.estado === 'ROUTE_EMPTY')
+      : !chequeos.length
+        ? 'PENDING'
+        : chequeos.every((c) => c.estado === 'ROUTE_EMPTY')
         ? 'NO_ANNOUNCEMENT_FOUND'
         : chequeos.every((c) => c.estado === 'ROUTE_EMPTY' || c.estado === 'BLOCKED')
           ? 'BLOCKED'
@@ -134,6 +148,7 @@ export function reporteCobertura(
     porDia,
     resumen: {
       locales: locales.length,
+      sinRutas: locales.filter((l) => !l.rutas.length).length,
       rutas,
       rutasBloqueadas,
       rutasPendientes,

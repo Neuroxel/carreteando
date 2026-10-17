@@ -1,6 +1,6 @@
 import { toChileDateString } from '../../event-extraction';
 import { buildCandidate, fechaVerificada, parseSpanishDate, parseTime, stripTags } from '../normalize';
-import { SourceError, type Adapter, type AdapterResult, type EventCandidate, type Fetcher } from '../types';
+import { SourceError, esPlazoAgotado, type Adapter, type AdapterResult, type EventCandidate, type Fetcher } from '../types';
 import { ciudadDe } from './jsonld';
 const CARD_SEPARATOR = 'class="album"';
 const HREF = /href="(\/evento\/[A-Za-z0-9_-]+)"/;
@@ -53,20 +53,26 @@ async function conPrecio(candidatos: EventCandidate[], fetcher: Fetcher, tope = 
       continue;
     }
     solicitudes += 1;
-    let r = await fetcher(c.detailUrl).catch(() => null);
-    if (!r || r.status !== 200) {
+    let plazo = false;
+    const pedir = (u: string) =>
+      fetcher(u).catch((e) => {
+        plazo ||= esPlazoAgotado(e);
+        return null;
+      });
+    let r = await pedir(c.detailUrl);
+    if (!plazo && (!r || r.status !== 200)) {
       const url = new URL(c.detailUrl);
       // Solo el alias HTTPS del mismo proveedor: nunca cambiar la procedencia.
       if (url.protocol === 'https:' && url.hostname === 'www.portaldisc.com' && !url.port && !url.username && !url.password) {
         url.hostname = 'portaldisc.com';
         if (solicitudes < tope) {
           solicitudes += 1;
-          r = await fetcher(url.toString()).catch(() => null);
+          r = await pedir(url.toString());
         } else pendiente(c, 'PRICE_BUDGET');
       }
     }
     if (!r || r.status !== 200) {
-      pendiente(c, r ? `PRICE_HTTP_${r.status}` : 'PRICE_NETWORK');
+      pendiente(c, plazo ? 'PRICE_DEADLINE' : r ? `PRICE_HTTP_${r.status}` : 'PRICE_NETWORK');
       continue;
     }
     const p = precioDeFicha(r.body);

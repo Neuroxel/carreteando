@@ -106,7 +106,7 @@ Se hicieron los puntos 1, 2, 3 (sobre `metrics` de la corrida, sin tabla nueva) 
 - **Rutas por local** (`data/venue-routes.json`, `lib/venue-routes.ts`):
   - Siembra: rutas verificadas el 17/10 para Woo Club (Evently y Vesti), Studio (Vesti), Pagano (Passline, bloqueada), Máscara (Ecopass, bloqueada) y El Huevo (Instagram, bloqueada).
   - Las carteleras de PortalTickets ya registradas cuentan como rutas de su local.
-  - Las pruebas exigen tipo y host exacto, motivo en cada ruta manual o bloqueada, y slug presente en `data/catalogo-publico-slugs.json`, sacado del snapshot público.
+  - Las pruebas exigen tipo y host exacto, motivo en cada ruta manual o bloqueada, y slug presente en `data/catalogo-publico.json` (slug, nombre y comuna del snapshot público).
 - **Adaptadores con host exacto** (`lib/sources/hosts.ts`):
   - Vesti (`vesti-company`): una solicitud por perfil. Lee `dateIni` en UTC y lo pasa a hora de Chile; el texto del servidor dice "Dom 18 oct, 01:00" para un sábado a las 22:00.
   - Evently (`evently-agenda`, solo `wooclub.evently.cl`): agenda más hasta 4 fichas con sus tickets. Como máximo 9 solicitudes.
@@ -115,15 +115,21 @@ Se hicieron los puntos 1, 2, 3 (sobre `metrics` de la corrida, sin tabla nueva) 
 - **Cobertura local × día** (`lib/coverage.ts`):
   - Cada corrida del cron guarda `metrics.coverage`, con estado por ruta (`FOUND`, `ROUTE_EMPTY`, `BLOCKED`, `ERROR`, `PENDING`) y por local (`FOUND`, `NO_ANNOUNCEMENT_FOUND`, `BLOCKED`, `PENDING`), para una ventana de 7 días.
   - Una revisión de más de 48 h no cuenta.
+  - El universo es el catálogo público completo: un local sin rutas aparece como `PENDING` (`resumen.sinRutas`), nunca se omite para aparentar cobertura.
   - **Límite:** para las fuentes que no corrieron hoy, las fechas salen de `events.source_id`. Un evento que llegó primero por otra fuente no aparece en la ruta que solo le sumó evidencia.
 - **Rotación comprobable:**
-  - Una prueba simula días con el presupuesto real de 16 fuentes por corrida y verifica que toda fuente activa se lee dentro de su ciclo.
-  - El despacho deja de empezar fuentes a los 180 s (`PLAZO_DESPACHO_MS`), para no chocar con los 300 s de Vercel. Lo que no alcanza queda vencido (`metrics.sources_postponed`) y encabeza la corrida siguiente. Sin corridas extra ni gastos.
+  - **Cupo reservado:** un cuarto del presupuesto (`RESERVA_ATRASADAS`: 4 de 16) va siempre a las fuentes más atrasadas por turno, y corren primero. Así, aunque más de 16 fuentes sean urgentes cada 6 h, las normales no se quedan fuera para siempre.
+  - **Prueba de rotación:** con carga mixta mayor que el presupuesto (20 urgentes de verdad), toda fuente normal se lee dentro de su ciclo.
+  - **Plazo de 180 s** (`PLAZO_DESPACHO_MS`), contra los 300 s de Vercel. Se mira antes de cada solicitud, no solo al empezar una fuente:
+    - Pasado el plazo, la solicitud no se hace y la fuente lo anota (`PRICE_DEADLINE`, `DETAIL_DEADLINE`).
+    - Una fuente que ni alcanzó a leer su agenda queda vencida (`metrics.sources_postponed`), sin contar como fallo ni correr su turno.
+  - Sin corridas extra ni gastos.
 - **Deduplicación editorial en todos los estados** (`lib/editorial-dedupe.ts`):
   - Antes de insertar se compara URL de origen + fecha contra la base completa: pública, cola, inactiva, rechazada o duplicada. Caso real: Cómpeta ya estaba en cola desde el listado regional.
-  - Nada se reactiva. Si la consulta falla, no se inserta.
-  - Activo en `/api/cron/scrape` y en la importación del admin.
-  - **Pendiente para Codex:** llamar a `sinDuplicadosDeFuente` en `app/api/cron/automatizacion/route.ts` cuando cierre su hotfix (ese archivo no se tocó a propósito).
+  - Nada se reactiva.
+  - **Consulta paginada de a 1000 filas:** PostgREST corta cada respuesta en 1000 aunque se pida más.
+  - **Falla cerrado:** si la base falla o se llega al tope de páginas, no se inserta nada.
+  - Activo en `/api/cron/scrape`, en `automatizacion` (sin tocar `modo=refresh` ni `backtest`) y en la importación del admin.
 - **Cinzano:** el sitio dejó el tipo de WordPress `cinzano_event` por su API (`/cinzano-api/cinzano/v1/events`), y la fuente `cinzano-agenda` ahora la lee. El precio va con su cargo. La disponibilidad no se inventa: si la API dice `few-tickets` con stock 0 y sin venta habilitada, el texto dice "sin venta en línea habilitada al revisar" y el candidato lleva `AVAILABILITY_CONFLICT`.
 
 **Fuera de este PR:** base de datos, migraciones, UI, Instagram/Apify, secretos y despliegue.

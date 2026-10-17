@@ -2,7 +2,7 @@ import { addDays, toChileDateString } from '../../event-extraction';
 import { hostEvently } from '../hosts';
 import { buildCandidate, decodeEntities } from '../normalize';
 import { fechaHoraChile, textoRsc, valorDesde } from '../rsc';
-import { SourceError, type Adapter, type AdapterResult, type EventCandidate, type Fetcher } from '../types';
+import { SourceError, esPlazoAgotado, type Adapter, type AdapterResult, type EventCandidate, type Fetcher } from '../types';
 import { HORIZONTE_DIAS } from './vesti';
 
 /** Por corrida: como mucho 4 fechas próximas, con ficha y tickets cada una (8 solicitudes + la agenda). */
@@ -97,9 +97,13 @@ export async function leerEvently(
       anotar(null, 'DETAIL_BUDGET');
       continue;
     }
-    const ficha = await fetcher(f.url).catch(() => null);
+    let plazo = false;
+    const ficha = await fetcher(f.url).catch((e) => {
+      plazo = esPlazoAgotado(e);
+      return null;
+    });
     if (!ficha || ficha.status !== 200) {
-      anotar(null, ficha ? `DETAIL_HTTP_${ficha.status}` : 'DETAIL_NETWORK');
+      anotar(null, plazo ? 'DETAIL_DEADLINE' : ficha ? `DETAIL_HTTP_${ficha.status}` : 'DETAIL_NETWORK');
       continue;
     }
     const ld = eventoDeFicha(ficha.body);
@@ -130,12 +134,20 @@ export async function leerEvently(
       parseFailures += 1;
       continue;
     }
-    const tickets = await fetcher(`${f.url}/tickets`).catch(() => null);
+    let plazoTickets = false;
+    const tickets = await fetcher(`${f.url}/tickets`).catch((e) => {
+      plazoTickets = esPlazoAgotado(e);
+      return null;
+    });
     const precio = tickets && tickets.status === 200 ? precioDeTickets(tickets.body) : null;
     if (precio) {
       c.priceClp = precio.price;
       c.priceText = precio.text;
-    } else anotar(c, tickets ? (tickets.status === 200 ? 'PRICE_NOT_FOUND' : `PRICE_HTTP_${tickets.status}`) : 'PRICE_NETWORK');
+    } else
+      anotar(
+        c,
+        plazoTickets ? 'PRICE_DEADLINE' : tickets ? (tickets.status === 200 ? 'PRICE_NOT_FOUND' : `PRICE_HTTP_${tickets.status}`) : 'PRICE_NETWORK',
+      );
     candidates.push(c);
   }
   return {

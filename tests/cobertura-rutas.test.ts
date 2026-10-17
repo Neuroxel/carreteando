@@ -1,14 +1,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import catalogo from '../data/catalogo-publico-slugs.json';
+import catalogo from '../data/catalogo-publico.json';
 import { leerVesti, vestiCompany } from '../lib/sources/adapters/vesti';
 import { eventlyAgenda, leerEvently } from '../lib/sources/adapters/evently';
 import { leerCinzano } from '../lib/sources/adapters/cinzano';
 import { SOURCES } from '../lib/sources/registry';
 import { afichePara, dispatchSources, dueSources } from '../lib/sources/dispatcher';
 import { RUTAS_LOCALES, fuentesDeRutas, validarRutas, type RutasLocal } from '../lib/venue-routes';
-import { separarExistentes, urlComparable } from '../lib/editorial-dedupe';
+import { separarExistentes, sinDuplicadosDeFuente, urlComparable } from '../lib/editorial-dedupe';
 import { reporteCobertura, type EstadoFuente } from '../lib/coverage';
 import type { Fetcher, SourceDefinition } from '../lib/sources/types';
 
@@ -100,7 +100,7 @@ test('Cinzano: API oficial con precio y cargo; la disponibilidad no se inventa',
 
 test('rutas por local: forma válida, slugs del catálogo y hosts exactos', () => {
   assert.deepEqual(validarRutas(RUTAS_LOCALES), []);
-  const slugs = new Set(catalogo.slugs);
+  const slugs = new Set(catalogo.locales.map((l) => l.slug));
   for (const l of RUTAS_LOCALES) assert.ok(slugs.has(l.slug), `${l.slug} no está en el catálogo público`);
   const malas: RutasLocal[] = [
     {
@@ -205,28 +205,131 @@ test('rotación: con 16 fuentes por día, toda fuente activa se lee dentro de su
   for (const id of activas) assert.ok(dias * 3 - 1 - (ultima.get(id) ?? -99) <= max, id);
 });
 
-test('plazo: las fuentes que no alcanzan a empezar quedan vencidas para la próxima corrida', async () => {
-  // Base falsa: todo responde vacío y todas las fuentes figuran vencidas.
-  const filas = SOURCES.map((s) => ({ id: s.id, active: true, next_check_at: '2026-10-01T00:00:00.000Z', last_checked_at: null }));
-  const cadena = (tabla: string, op = '') => {
-    const p: Record<string, unknown> = {};
-    const self = new Proxy(p, {
-      get(_, k) {
-        if (k === 'then') return (res: (v: unknown) => void) => res({ data: tabla === 'event_sources' && op === 'select' ? filas : [], error: null });
-        return (..._args: unknown[]) => cadena(tabla, op || String(k));
+/** Base falsa: cada consulta responde vacío salvo `event_sources`; anota las escrituras. */
+function baseFalsa(filas: unknown[], escrituras: string[] = []) {
+  const cadena = (tabla: string, op = ''): unknown =>
+    new Proxy(
+      {},
+      {
+        get(_, k) {
+          if (k === 'then')
+            return (res: (v: unknown) => void) => res({ data: tabla === 'event_sources' && op === 'select' ? filas : [], error: null });
+          return () => {
+            if (['insert', 'update', 'upsert'].includes(String(k))) escrituras.push(`${tabla}.${String(k)}`);
+            return cadena(tabla, op || String(k));
+          };
+        },
       },
-    });
-    return self;
-  };
-  const db = { from: (t: string) => cadena(t) };
+    );
+  return { from: (t: string) => cadena(t) };
+}
+
+test('plazo: las fuentes que no alcanzan a empezar quedan vencidas para la próxima corrida', async () => {
+  const filas = SOURCES.map((s) => ({ id: s.id, active: true, next_check_at: '2026-10-01T00:00:00.000Z', last_checked_at: null }));
   let t = 0;
-  const actualizadas: string[] = [];
-  const r = await dispatchSources(db, 5, async () => ({ status: 503, body: '' }), new Date('2026-10-17T18:00:00Z'), {
+  const r = await dispatchSources(baseFalsa(filas), 5, async () => ({ status: 503, body: '' }), new Date('2026-10-17T18:00:00Z'), {
     plazoMs: 180_000,
-    reloj: () => (t += 100_000),
+    // 60 s por consulta al reloj: la primera fuente y su agenda caben; la segunda ya no empieza.
+    reloj: () => (t += 60_000),
   });
   assert.equal(r.due, 5);
   assert.equal(r.ran, 1);
   assert.equal(r.postergadas.length, 4);
-  assert.equal(actualizadas.length, 0);
+});
+
+test('plazo: se mira antes de cada solicitud y conserva los diagnósticos dentro de una fuente', async () => {
+  const id = 'ruta-evently-agenda-woo-club-valparaiso-osm';
+  const filas = [{ id, active: true, next_check_at: '2026-10-01T00:00:00.000Z', last_checked_at: null }];
+  const pedidas: string[] = [];
+  let t = 0;
+  // Cada consulta al reloj avanza 50 s: alcanzan la agenda y la primera ficha; los tickets y la siguiente ficha no.
+  const r = await dispatchSources(baseFalsa(filas), 16, fetcherFixtures(pedidas), new Date('2026-10-17T18:00:00Z'), {
+    plazoMs: 180_000,
+    reloj: () => (t += 50_000),
+  });
+  assert.deepEqual(pedidas, ['https://wooclub.evently.cl/', 'https://wooclub.evently.cl/Sabawoo-x-Ley-C-Sale-17-10-2026']);
+  assert.equal(r.ran, 1);
+  assert.deepEqual(r.postergadas, []);
+  assert.match(r.reports[0].error || '', /PRICE_DEADLINE=1/);
+  assert.match(r.reports[0].error || '', /DETAIL_DEADLINE=1/);
+  assert.deepEqual(r.reports[0].fechas, ['2026-10-17']);
+});
+
+test('plazo: si ni la agenda alcanza, la fuente queda vencida sin contar como fallo', async () => {
+  const id = 'ruta-evently-agenda-woo-club-valparaiso-osm';
+  const escrituras: string[] = [];
+  const filas = [{ id, active: true, next_check_at: '2026-10-01T00:00:00.000Z', last_checked_at: null }];
+  const pedidas: string[] = [];
+  let t = 0;
+  // El primer chequeo (antes de la fuente) pasa; el de la agenda ya no.
+  const r = await dispatchSources(baseFalsa(filas, escrituras), 16, fetcherFixtures(pedidas), new Date('2026-10-17T18:00:00Z'), {
+    plazoMs: 150_000,
+    reloj: () => (t += 100_000),
+  });
+  assert.deepEqual(pedidas, []);
+  assert.deepEqual([r.ran, r.postergadas], [0, [id]]);
+  assert.ok(!escrituras.includes('event_sources.update'), 'no se corrió su turno ni se anotó un fallo');
+});
+
+test('rotación con urgencia real: más urgentes que presupuesto no dejan sin leer a las normales', () => {
+  const presupuesto = 16;
+  const ids = SOURCES.map((s) => s.id);
+  // Más de 16 fuentes con evento esta noche, todos los días: urgencia cada 6 h.
+  const urgentes = new Map(ids.slice(0, 20).map((id) => [id, 6]));
+  const normales = ids.slice(20);
+  assert.ok(urgentes.size > presupuesto && normales.length > 0);
+  const filas = SOURCES.map((s) => ({ id: s.id, active: true, next_check_at: '2026-10-16T00:00:00.000Z', last_checked_at: null as string | null }));
+  const leidas = new Map<string, number[]>();
+  for (let d = 0; d < 12; d++) {
+    const ahora = new Date(Date.UTC(2026, 9, 17 + d, 18));
+    const elegidas = dueSources(filas, ahora, presupuesto, urgentes);
+    assert.ok(elegidas.length <= presupuesto);
+    for (const s of elegidas) {
+      const f = filas.find((x) => x.id === s.id)!;
+      f.last_checked_at = ahora.toISOString();
+      f.next_check_at = new Date(ahora.getTime() + s.refreshHours * 3600_000).toISOString();
+      leidas.set(s.id, [...(leidas.get(s.id) || []), d]);
+    }
+  }
+  // Sin cupo reservado, las 20 urgentes llenarían los 16 lugares cada día.
+  const reserva = Math.floor(presupuesto * 0.25);
+  const ciclo = Math.ceil(ids.length / reserva);
+  for (const id of normales) {
+    const dias = leidas.get(id) || [];
+    assert.ok(dias.length > 0 && dias[0] < ciclo, `${id} esperó demasiado: ${dias}`);
+    for (let i = 1; i < dias.length; i++) assert.ok(dias[i] - dias[i - 1] <= ciclo, `${id}: ${dias}`);
+  }
+});
+
+test('deduplicación editorial: pagina hasta el final y falla cerrado si no cabe', async () => {
+  const fila = { instagram_id: 'curated-x', instagram_url: 'https://vesti.cl/events/x', date_text: '2026-10-17' };
+  const paginas = (lotes: unknown[][], error: unknown = null) => {
+    let n = 0;
+    const cadena: Record<string, unknown> = {};
+    for (const k of ['select', 'in', 'order']) cadena[k] = () => cadena;
+    cadena.range = () => Promise.resolve({ data: lotes[n++] ?? [], error });
+    return { db: { from: () => cadena }, llamadas: () => n };
+  };
+  const relleno = (k: number) => Array.from({ length: k }, (_, i) => ({ id: i, instagram_id: `a${i}`, date_text: '2026-10-17', instagram_url: `https://x.cl/${i}`, source_detail_url: null }));
+  // El duplicado está en la segunda página: con un solo pedido se habría colado.
+  const dos = paginas([relleno(2), [{ id: 99, instagram_id: 'src-y', date_text: '2026-10-17', instagram_url: 'https://vesti.cl/events/x', source_detail_url: null }]]);
+  const r = await sinDuplicadosDeFuente(dos.db, [fila], 2, 5);
+  assert.deepEqual([r.nuevas.length, r.omitidas[0]?.existente, dos.llamadas()], [0, 99, 2]);
+  const sinFin = paginas([relleno(2), relleno(2), relleno(2), relleno(2)]);
+  await assert.rejects(sinDuplicadosDeFuente(sinFin.db, [fila], 2, 3), /DB_EDITORIAL_DEDUPE_TRUNCATED/);
+  await assert.rejects(sinDuplicadosDeFuente(paginas([], { message: 'x' }).db, [fila], 2, 3), /DB_EDITORIAL_DEDUPE/);
+});
+
+test('cobertura: un local del catálogo sin rutas cuenta como pendiente, no desaparece', () => {
+  const r = reporteCobertura(new Map(), '2026-10-17', {
+    ahora: new Date('2026-10-17T19:00:00Z'),
+    catalogo: [{ slug: 'local-sin-rutas', nombre: 'Sin Rutas', comuna: 'Quilpué' }],
+  });
+  const l = r.locales.find((x) => x.slug === 'local-sin-rutas');
+  assert.deepEqual([l?.estado, l?.rutas.length], ['PENDING', 0]);
+  assert.ok(r.resumen.sinRutas >= 1);
+  // Con el catálogo real, todos los locales publicados están en el reporte.
+  const real = reporteCobertura(new Map(), '2026-10-17', { ahora: new Date('2026-10-17T19:00:00Z') });
+  for (const c of catalogo.locales) assert.ok(real.locales.some((x) => x.slug === c.slug), c.slug);
+  assert.equal(real.resumen.FOUND + real.resumen.NO_ANNOUNCEMENT_FOUND + real.resumen.BLOCKED + real.resumen.PENDING, real.resumen.locales);
 });

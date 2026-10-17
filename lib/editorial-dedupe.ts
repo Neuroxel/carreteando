@@ -59,15 +59,30 @@ export function separarExistentes<T extends FilaEditorial>(filas: T[], existente
   return { nuevas, omitidas };
 }
 
-/** Consulta por fecha (todas las disposiciones) y compara URLs en código. Si la base falla, no se inserta nada. */
-export async function sinDuplicadosDeFuente<T extends FilaEditorial>(db: Db, filas: T[]) {
+/** PostgREST corta cada respuesta en 1000 filas aunque se pida más: se pagina siempre. */
+export const PAGINA_DEDUPE = 1000;
+/** Tope de páginas: si se alcanza sin terminar, se falla cerrado en vez de comparar contra una lista truncada. */
+export const MAX_PAGINAS_DEDUPE = 20;
+
+/**
+ * Consulta por fecha (todas las disposiciones), paginada por id, y compara URLs
+ * en código. Si la base falla o el resultado no cabe completo, no se inserta nada.
+ */
+export async function sinDuplicadosDeFuente<T extends FilaEditorial>(db: Db, filas: T[], pagina = PAGINA_DEDUPE, maxPaginas = MAX_PAGINAS_DEDUPE) {
   if (!filas.length) return { nuevas: filas, omitidas: [] as ReturnType<typeof separarExistentes>['omitidas'] };
   const fechas = [...new Set(filas.map((f) => f.date_text))];
-  const { data, error } = await db
-    .from('events')
-    .select('id,instagram_id,date_text,instagram_url,source_detail_url,disposition,moderation_status')
-    .in('date_text', fechas)
-    .limit(5000);
-  if (error) throw new Error('DB_EDITORIAL_DEDUPE');
-  return separarExistentes(filas, (data || []) as Existente[]);
+  const existentes: Existente[] = [];
+  for (let n = 0; ; n++) {
+    if (n >= maxPaginas) throw new Error('DB_EDITORIAL_DEDUPE_TRUNCATED');
+    const { data, error } = await db
+      .from('events')
+      .select('id,instagram_id,date_text,instagram_url,source_detail_url,disposition,moderation_status')
+      .in('date_text', fechas)
+      .order('id', { ascending: true })
+      .range(n * pagina, (n + 1) * pagina - 1);
+    if (error || !Array.isArray(data)) throw new Error('DB_EDITORIAL_DEDUPE');
+    existentes.push(...(data as Existente[]));
+    if (data.length < pagina) break;
+  }
+  return separarExistentes(filas, existentes);
 }

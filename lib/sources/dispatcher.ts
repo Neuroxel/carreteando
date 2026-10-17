@@ -4,7 +4,7 @@ import { ADAPTERS, MANUAL_SOURCES, SOURCES } from './registry';
 import { clasificar, type Relevancia } from './relevance';
 import { authorityOf, originGroupOf, statusFromText } from './evidence';
 import { hostPermitido } from '../image-hosts';
-import { SourceError, type EventCandidate, type Fetcher, type SourceDefinition } from './types';
+import { PLAZO_AGOTADO, SourceError, type EventCandidate, type Fetcher, type SourceDefinition } from './types';
 const USER_AGENT = 'CarreteandoBot/1.0 (+https://dondesalgo.vercel.app/confianza)';
 const MAX_BYTES = 3_000_000;
 export const httpFetcher: Fetcher = async (url) => {
@@ -484,6 +484,8 @@ export function urgencia(horasHastaEvento: number): number | null {
   if (horasHastaEvento <= 72) return 12;
   return null;
 }
+/** Fracción del presupuesto que siempre va a las fuentes más atrasadas por turno. */
+export const RESERVA_ATRASADAS = 0.25;
 /** The daily cron is a dispatcher: it refreshes whatever is due, never everything. */
 export function dueSources(
   rows: { id: string; active: boolean; next_check_at: string; last_checked_at?: string | null }[],
@@ -498,8 +500,19 @@ export function dueSources(
     const ultima = row.last_checked_at ? Date.parse(row.last_checked_at) : 0;
     return now.getTime() - ultima >= cada * 3600_000 - TOLERANCIA_RELOJ_MS;
   };
-  const due = rows
-    .filter((row) => row.active && (new Date(row.next_check_at).getTime() <= limite || urgente(row)))
+  const porTurno = (row: (typeof rows)[number]) => new Date(row.next_check_at).getTime() <= limite;
+  const vencidas = rows.filter((row) => row.active && (porTurno(row) || urgente(row)));
+  // Cupo reservado para las más atrasadas por turno: si las urgentes llenaran
+  // siempre el presupuesto, una fuente normal no se leería nunca. Van primero,
+  // así tampoco el plazo de la corrida las deja fuera.
+  const reserva = Math.floor(limit * RESERVA_ATRASADAS);
+  const reservadas = vencidas
+    .filter(porTurno)
+    .sort((a, b) => a.next_check_at.localeCompare(b.next_check_at) || a.id.localeCompare(b.id))
+    .slice(0, reserva);
+  const elegidas = new Set(reservadas.map((r) => r.id));
+  const due = vencidas
+    .filter((row) => !elegidas.has(row.id))
     // Primero lo que tiene eventos encima; después, por antigüedad.
     // Primero lo que tiene un evento más cerca (6 h antes que 12 h), y entre
     // ellas la que lleva más tiempo sin leerse; después, el turno normal.
@@ -510,8 +523,8 @@ export function dueSources(
         (urgente(a) ? (a.last_checked_at || '').localeCompare(b.last_checked_at || '') : 0) ||
         a.next_check_at.localeCompare(b.next_check_at),
     )
-    .slice(0, limit);
-  return due
+    .slice(0, limit - reservadas.length);
+  return [...reservadas, ...due]
     .map((row) => SOURCES.find((source) => source.id === row.id))
     .filter((source): source is SourceDefinition => Boolean(source));
 }
@@ -606,12 +619,25 @@ export async function dispatchSources(
   const reloj2 = options.reloj || Date.now;
   const inicio = reloj2();
   const plazo = options.plazoMs ?? PLAZO_DESPACHO_MS;
+  const agotado = () => reloj2() - inicio >= plazo;
+  // El plazo se mira antes de CADA solicitud, no solo al empezar una fuente:
+  // una cartelera con 24 fichas no puede seguir pidiendo pasado el límite.
+  const conPlazo: Fetcher = (url) => {
+    if (agotado()) return Promise.reject(new SourceError(PLAZO_AGOTADO));
+    return fetcher(url);
+  };
   for (const source of due) {
-    if (reloj2() - inicio >= plazo) {
+    if (agotado()) {
       postergadas.push(source.id);
       continue;
     }
-    const report = await runSource(source, db, fetcher, toChileDateString(reloj), options);
+    const report = await runSource(source, db, conPlazo, toChileDateString(reloj), options);
+    // Si ni la agenda alcanzó a pedirse, la fuente no se leyó: sigue vencida,
+    // sin contar como fallo ni correr su turno.
+    if (report.error === PLAZO_AGOTADO) {
+      postergadas.push(source.id);
+      continue;
+    }
     reports.push(report);
     const next = new Date(reloj.getTime() + source.refreshHours * 3600_000).toISOString();
     await db.from('ingestion_source_runs').insert([

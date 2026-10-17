@@ -1,0 +1,742 @@
+{
+ "fuente": "https://dondesalgo.vercel.app/api/snapshot",
+ "generado": "2026-10-17T16:06:54.991Z",
+ "nota": "Catálogo público (locales publicados). Una ruta por local debe apuntar a uno de estos; los que no tienen ruta cuentan como PENDING en el reporte de cobertura.",
+ "locales": [
+  {
+   "slug": "a-mano-gin",
+   "nombre": "A Mano Gin & Burgers",
+   "comuna": "Viña del Mar"
+  },
+  {
+   "slug": "alcazaba",
+   "nombre": "Alcazaba",
+   "comuna": "Viña del Mar"
+  },
+  {
+   "slug": "anakena-calera",
+   "nombre": "Anakena Terraza-Bar",
+   "comuna": "La Calera"
+  },
+  {
+   "slug": "angel-s-place-valparaiso",
+   "nombre": "Angel's Place",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "aula-magna-usm",
+   "nombre": "Teatro Aula Magna USM",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "balada-el-huevo",
+   "nombre": "Balada El Huevo",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "balmaceda-arte-joven-valparaiso-valparaiso",
+   "nombre": "Balmaceda Arte Joven - Valparaíso",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "bar-cinzano",
+   "nombre": "Bar Cinzano",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "bar-de-pisco",
+   "nombre": "Bar de Pisco",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "bar-del-tio",
+   "nombre": "Bar del Tío",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "bar-la-morada",
+   "nombre": "Bar La Morada",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "bar-la-virgen-renaca",
+   "nombre": "Bar La Virgen Reñaca",
+   "comuna": "Reñaca"
+  },
+  {
+   "slug": "bar-la-virgen-vina",
+   "nombre": "Bar La Virgen Viña del Mar",
+   "comuna": "Viña del Mar"
+  },
+  {
+   "slug": "bar-las-olas-renaca",
+   "nombre": "Bar Las Olas",
+   "comuna": "Reñaca"
+  },
+  {
+   "slug": "bar-oui-oui",
+   "nombre": "Bar Oui Oui",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "bar-restaurant-victoria",
+   "nombre": "Bar Restaurant Victoria",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "bar-tercer-tiempo",
+   "nombre": "Bar 3T Tercer Tiempo",
+   "comuna": "Viña del Mar"
+  },
+  {
+   "slug": "bar-terraza-miaw",
+   "nombre": "Bar Terraza Miaw",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "bar-token",
+   "nombre": "Bar Token",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "bar-vienes",
+   "nombre": "Bar Vienés",
+   "comuna": "Viña del Mar"
+  },
+  {
+   "slug": "barbones-comedy-vina-del-mar",
+   "nombre": "Barbones Comedy",
+   "comuna": "Viña del Mar"
+  },
+  {
+   "slug": "barbones-curauma",
+   "nombre": "Barbones Curauma",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "bargono-vina-del-mar-osm",
+   "nombre": "Bargoño",
+   "comuna": "Viña del Mar"
+  },
+  {
+   "slug": "baron-rooftop",
+   "nombre": "Barón Rooftop",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "barra-central-renaca",
+   "nombre": "Barra Central Reñaca",
+   "comuna": "Reñaca"
+  },
+  {
+   "slug": "blanco-centro-de-eventos",
+   "nombre": "Blanco Centro de Eventos",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "bloom-bar-nikkei",
+   "nombre": "Bloom Bar Nikkei",
+   "comuna": "Viña del Mar"
+  },
+  {
+   "slug": "bocabar-concon",
+   "nombre": "Bocabar",
+   "comuna": "Concón"
+  },
+  {
+   "slug": "cafe-rock-villa-alemana",
+   "nombre": "Café Rock",
+   "comuna": "Villa Alemana"
+  },
+  {
+   "slug": "cafe-teatro-vp-valparaiso-profundo-valparaiso",
+   "nombre": "Valparaíso Profundo · Café Teatro",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "casa-de-la-cultura-valparaiso",
+   "nombre": "Casa de la Cultura de Valparaíso",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "casa-lagunita-puchuncavi",
+   "nombre": "Casa Lagunita",
+   "comuna": "Puchuncaví"
+  },
+  {
+   "slug": "cassot-bar",
+   "nombre": "Cassot Bar",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "centro-cultural-casa-polanco",
+   "nombre": "Centro Cultural Casa Polanco",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "cerveceria-anfiteatro",
+   "nombre": "Cervecería Anfiteatro",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "cerveceria-oh",
+   "nombre": "Cervecería OH",
+   "comuna": "Viña del Mar"
+  },
+  {
+   "slug": "cerveceria-run-run",
+   "nombre": "Cervecería Run Run",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "cervezocracia",
+   "nombre": "Cervezocracia",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "chicago-bar-concon",
+   "nombre": "Chicago Bar",
+   "comuna": "Concón"
+  },
+  {
+   "slug": "cine-arte-vina",
+   "nombre": "Cine Arte Viña del Mar",
+   "comuna": "Viña del Mar"
+  },
+  {
+   "slug": "club-aleman-valparaiso",
+   "nombre": "Club Alemán de Valparaíso",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "club-arabe-vina",
+   "nombre": "Castillo del Mar",
+   "comuna": "Viña del Mar"
+  },
+  {
+   "slug": "club-delirio",
+   "nombre": "Club Delirio",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "club-gordos-vina",
+   "nombre": "Club Gordos Viña",
+   "comuna": "Viña del Mar"
+  },
+  {
+   "slug": "club-segundo-piso",
+   "nombre": "Club Segundo Piso",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "club-tendedero",
+   "nombre": "Club Tendedero",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "conclave-1929",
+   "nombre": "Cónclave 1929",
+   "comuna": "Viña del Mar"
+  },
+  {
+   "slug": "corazon-continto",
+   "nombre": "Corazón Continto",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "deja-vu-concon",
+   "nombre": "Déjà Vu Bar Social",
+   "comuna": "Concón"
+  },
+  {
+   "slug": "del-barrio",
+   "nombre": "Del Barrio",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "discoteca-evolution",
+   "nombre": "Discoteca Evolution",
+   "comuna": "Quillota"
+  },
+  {
+   "slug": "el-26-quilpue",
+   "nombre": "El 26 Quilpué",
+   "comuna": "Quilpué"
+  },
+  {
+   "slug": "el-canario-valpo",
+   "nombre": "El Canario",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "el-fogon-de-los-deseos",
+   "nombre": "El Fogón de los Deseos",
+   "comuna": "Quilpué"
+  },
+  {
+   "slug": "el-gato-en-la-ventana",
+   "nombre": "El Gato en la Ventana",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "el-journal",
+   "nombre": "El Journal",
+   "comuna": "Viña del Mar"
+  },
+  {
+   "slug": "el-parque-quilpue",
+   "nombre": "El Parque Quilpué",
+   "comuna": "Quilpué"
+  },
+  {
+   "slug": "el-pasaje",
+   "nombre": "El Pasaje",
+   "comuna": "Viña del Mar"
+  },
+  {
+   "slug": "el-patagual",
+   "nombre": "El Patagual",
+   "comuna": "Olmué"
+  },
+  {
+   "slug": "el-pimenton",
+   "nombre": "El Pimentón",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "el-rincon-de-las-guitarras",
+   "nombre": "El Rincón de las Guitarras",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "el-var-vina",
+   "nombre": "El VAR",
+   "comuna": "Viña del Mar"
+  },
+  {
+   "slug": "emporio-echaurren",
+   "nombre": "Emporio Echaurren",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "enjoy-vina-del-mar-vina-del-mar",
+   "nombre": "Enjoy Viña del Mar",
+   "comuna": "Viña del Mar"
+  },
+  {
+   "slug": "espacio-barcelona",
+   "nombre": "Espacio Barcelona",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "espacio-guestro",
+   "nombre": "Espacio Guestro",
+   "comuna": "Limache"
+  },
+  {
+   "slug": "espacio-la-compania",
+   "nombre": "Espacio la Compañía",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "espacio-musa",
+   "nombre": "Espacio Musa",
+   "comuna": "Quilpué"
+  },
+  {
+   "slug": "espantapajaros-karaoke",
+   "nombre": "Espantapájaros Karaoke",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "ex-club-880-valparaiso-valparaiso",
+   "nombre": "Ex Club 880",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "fauna-rooftop",
+   "nombre": "Fauna Hotel Rooftop",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "ferri-restobar",
+   "nombre": "Ferri Restobar",
+   "comuna": "Viña del Mar"
+  },
+  {
+   "slug": "friends-concon",
+   "nombre": "Friends Concón",
+   "comuna": "Concón"
+  },
+  {
+   "slug": "galeria-rosmarino",
+   "nombre": "Galería Rosmarino",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "garage-597-quillota",
+   "nombre": "Garage 597",
+   "comuna": "Quillota"
+  },
+  {
+   "slug": "garden-quilpue",
+   "nombre": "Garden Quilpué",
+   "comuna": "Quilpué"
+  },
+  {
+   "slug": "glasgow-pub-vina",
+   "nombre": "Glasgow Pub",
+   "comuna": "Viña del Mar"
+  },
+  {
+   "slug": "greiscol-restobar",
+   "nombre": "Greiscol Restobar",
+   "comuna": "Quillota"
+  },
+  {
+   "slug": "hollywood-experience-vina",
+   "nombre": "Hollywood Experience Viña",
+   "comuna": "Viña del Mar"
+  },
+  {
+   "slug": "hotzenplotz",
+   "nombre": "Hotzenplotz",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "jarbar-rooftop",
+   "nombre": "JarBar Rooftop",
+   "comuna": "Viña del Mar"
+  },
+  {
+   "slug": "juglar-bar",
+   "nombre": "Juglar Bar",
+   "comuna": "Viña del Mar"
+  },
+  {
+   "slug": "klanu-rock-bar",
+   "nombre": "Klanu Rock Bar",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "la-barra-limache-limache",
+   "nombre": "La Barra Limache",
+   "comuna": "Limache"
+  },
+  {
+   "slug": "la-chingana-del-barrio",
+   "nombre": "La Chingana del Barrio",
+   "comuna": "Viña del Mar"
+  },
+  {
+   "slug": "la-colombina",
+   "nombre": "La Colombina",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "la-para-kultural",
+   "nombre": "La Pará Kultural",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "la-pastora-calera",
+   "nombre": "La Pastora Restobar",
+   "comuna": "La Calera"
+  },
+  {
+   "slug": "la-shoperia-4-1-2-vina-del-mar-osm",
+   "nombre": "Schopería 4 1/2",
+   "comuna": "Viña del Mar"
+  },
+  {
+   "slug": "la-sirenita-quintero",
+   "nombre": "La Sirenita Restobar",
+   "comuna": "Quintero"
+  },
+  {
+   "slug": "lemutt-bar",
+   "nombre": "Lemutt Bar",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "liberty",
+   "nombre": "Liberty",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "los-alquinta-del-puerto",
+   "nombre": "Los Alquinta del Puerto",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "madame-claude",
+   "nombre": "Madame Claude",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "magura-curauma",
+   "nombre": "Magura",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "maleza-valparaiso",
+   "nombre": "Maleza",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "malizioso",
+   "nombre": "MaliZioso Pizzería",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "manda-renaca",
+   "nombre": "Manda",
+   "comuna": "Reñaca"
+  },
+  {
+   "slug": "manda-vina",
+   "nombre": "Manda",
+   "comuna": "Viña del Mar"
+  },
+  {
+   "slug": "mascara-pub",
+   "nombre": "Máscara",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "multiespacio-condell",
+   "nombre": "Multiespacio Condell",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "nativo-restobar",
+   "nombre": "Nativo Restobar",
+   "comuna": "Limache"
+  },
+  {
+   "slug": "okko-music-lab-renaca",
+   "nombre": "Okko music lab",
+   "comuna": "Concón"
+  },
+  {
+   "slug": "open-plaza-concon",
+   "nombre": "Open Plaza Concón",
+   "comuna": "Concón"
+  },
+  {
+   "slug": "open-quillota",
+   "nombre": "Open Quillota",
+   "comuna": "Quillota"
+  },
+  {
+   "slug": "ovo-enjoy-vina",
+   "nombre": "Ovo Nightclub & Sala Cenit",
+   "comuna": "Viña del Mar"
+  },
+  {
+   "slug": "pagano-club",
+   "nombre": "Pagano",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "pajarito",
+   "nombre": "Pajarito",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "palladium-quintero",
+   "nombre": "Palladium Discotheque",
+   "comuna": "Quintero"
+  },
+  {
+   "slug": "panic-house",
+   "nombre": "Panic House",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "parque-cultural-valparaiso",
+   "nombre": "Parque Cultural de Valparaíso",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "pasaje-coyotl",
+   "nombre": "Pasaje Coyotl",
+   "comuna": "Viña del Mar"
+  },
+  {
+   "slug": "patio-central",
+   "nombre": "Patio Central",
+   "comuna": "Viña del Mar"
+  },
+  {
+   "slug": "pattos-shop",
+   "nombre": "Patto´s Schop",
+   "comuna": "Quintero"
+  },
+  {
+   "slug": "poseidon-bar-valparaiso",
+   "nombre": "Poseidón Bar",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "proa",
+   "nombre": "Proa",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "psiquis-bar",
+   "nombre": "Psiquis Bar",
+   "comuna": "Viña del Mar"
+  },
+  {
+   "slug": "pub-verde-mostaza",
+   "nombre": "Pub Verde Mostaza",
+   "comuna": "Villa Alemana"
+  },
+  {
+   "slug": "quinta-vergara",
+   "nombre": "Anfiteatro Quinta Vergara",
+   "comuna": "Viña del Mar"
+  },
+  {
+   "slug": "refineria-concon",
+   "nombre": "Club Deportivo Refinería Concón",
+   "comuna": "Concón"
+  },
+  {
+   "slug": "rio-magico",
+   "nombre": "Río Mágico",
+   "comuna": "Viña del Mar"
+  },
+  {
+   "slug": "rufino-vina-del-mar",
+   "nombre": "Rufino Viña del Mar",
+   "comuna": "Viña del Mar"
+  },
+  {
+   "slug": "sala-negra-uv",
+   "nombre": "Sala Negra UV",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "sporting-vina",
+   "nombre": "Sporting Viña del Mar",
+   "comuna": "Viña del Mar"
+  },
+  {
+   "slug": "stoney-quintero",
+   "nombre": "Stoney Bar",
+   "comuna": "Quintero"
+  },
+  {
+   "slug": "studio-valparaiso",
+   "nombre": "Studio Valparaíso",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "sushiweb-quilpue",
+   "nombre": "SushiWeb",
+   "comuna": "Quilpué"
+  },
+  {
+   "slug": "tabeerna-quillota",
+   "nombre": "Tabeerna",
+   "comuna": "Quillota"
+  },
+  {
+   "slug": "taussbrau",
+   "nombre": "Cervecería TaussBräu",
+   "comuna": "Limache"
+  },
+  {
+   "slug": "teatro-ipa",
+   "nombre": "Teatro IPA",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "teatro-mauri-scd",
+   "nombre": "Teatro Mauri SCD",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "teatro-municipal-valparaiso",
+   "nombre": "Teatro Municipal de Valparaíso",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "teatro-municipal-vina",
+   "nombre": "Teatro Municipal de Viña del Mar",
+   "comuna": "Viña del Mar"
+  },
+  {
+   "slug": "teatro-pompeya",
+   "nombre": "Teatro Pompeya",
+   "comuna": "Villa Alemana"
+  },
+  {
+   "slug": "teatro-quilpue",
+   "nombre": "Teatro Quilpué",
+   "comuna": "Quilpué"
+  },
+  {
+   "slug": "terra-resto-bar-calera",
+   "nombre": "Terra Resto Bar",
+   "comuna": "La Calera"
+  },
+  {
+   "slug": "terra-viva-olmue",
+   "nombre": "Centro de Eventos Terra Viva",
+   "comuna": "Olmué"
+  },
+  {
+   "slug": "terraza-bellavista",
+   "nombre": "Terraza Bellavista",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "tribu-quilpue-quilpue",
+   "nombre": "Tribu Quilpue",
+   "comuna": "Quilpué"
+  },
+  {
+   "slug": "trotamundos-quilpue",
+   "nombre": "Trotamundos Terraza",
+   "comuna": "Quilpué"
+  },
+  {
+   "slug": "trotamundos-valparaiso",
+   "nombre": "Trotamundos Valparaíso",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "uk-bar",
+   "nombre": "UK Bar",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "valentino-club",
+   "nombre": "Valentino Club",
+   "comuna": "Quillota"
+  },
+  {
+   "slug": "vina-stage-vina-del-mar",
+   "nombre": "Viña Stage",
+   "comuna": "Viña del Mar"
+  },
+  {
+   "slug": "waikiki-quintero",
+   "nombre": "Restaurante y Bar Waikiki",
+   "comuna": "Quintero"
+  },
+  {
+   "slug": "woo-club-valparaiso-osm",
+   "nombre": "Woo Club",
+   "comuna": "Valparaíso"
+  },
+  {
+   "slug": "yazoo-pub",
+   "nombre": "YAZOO Pub",
+   "comuna": "Concón"
+  }
+ ]
+}

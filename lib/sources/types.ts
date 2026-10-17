@@ -100,6 +100,9 @@ export interface Adapter {
   run(source: SourceDefinition, fetcher: Fetcher): Promise<AdapterResult>;
 }
 export type Fetcher = (url: string) => Promise<{ status: number; body: string }>;
+/** El plazo de la corrida se agotó antes de esta solicitud: no se pidió. */
+export const PLAZO_AGOTADO = 'PLAZO_AGOTADO';
+export const esPlazoAgotado = (e: unknown) => e instanceof SourceError && e.code === PLAZO_AGOTADO;
 export class SourceError extends Error {
   constructor(readonly code: string) {
     super(code);
