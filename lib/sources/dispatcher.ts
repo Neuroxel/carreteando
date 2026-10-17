@@ -157,6 +157,7 @@ export async function runSource(
     const result = await adapter.run(source, fetcher);
     report.itemsFound = result.itemsFound;
     report.parseFailures = result.parseFailures;
+    report.error = result.diagnostics?.join(' · ') || null;
     candidates = result.candidates;
     report.ok = true;
   } catch (error) {
