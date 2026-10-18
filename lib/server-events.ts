@@ -17,8 +17,13 @@ export const PUBLIC_CACHE = { revalidate: 300, tags: ['public-snapshot'] };
 export async function readEvents(id?: string): Promise<EventsResult> {
   const checkedAt = new Date().toISOString();
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key =
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  // Lectura solo del servidor. Con la clave secreta, la política RLS (que corta la
+  // fecha a medianoche) no esconde la noche del sábado antes de las 05:00; los
+  // filtros públicos van explícitos en la consulta y la clave nunca llega al cliente.
+  const secreta = process.env.SUPABASE_SECRET_KEY;
+  const key = secreta?.startsWith('sb_secret_')
+    ? secreta
+    : process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) return { status: 'error', events: [], checkedAt };
   const query = new URLSearchParams({
     select: COLUMNS,
