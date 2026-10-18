@@ -344,7 +344,7 @@ async function contextoDe(db: Db, source: SourceDefinition, today: string) {
   const conPrecio = new Set<string>();
   for (const r of data as { source_detail_url?: string | null; instagram_url?: string | null }[])
     for (const u of [r.source_detail_url, r.instagram_url]) if (u) conPrecio.add(u);
-  return { conPrecio };
+  return { conPrecio, today };
 }
 
 /** Una persona con nombre tocó el evento en el panel: sus datos no se pisan. */

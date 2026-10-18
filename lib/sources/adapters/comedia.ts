@@ -100,7 +100,7 @@ export function leerComedyPass(json: unknown, source: { id: string }, today = to
 
 export const comedyPassStore: Adapter = {
   id: 'comedypass-store',
-  async run(source, fetcher) {
+  async run(source, fetcher, ctx) {
     if (source.publicUrl !== COMEDYPASS_API) throw new SourceError('HOST_NO_PERMITIDO');
     const r = await fetcher(COMEDYPASS_API);
     if (r.status !== 200) throw new SourceError(`HTTP_${r.status}`);
@@ -110,7 +110,7 @@ export const comedyPassStore: Adapter = {
     } catch {
       throw new SourceError('PAGINA_INESPERADA');
     }
-    return leerComedyPass(json, source);
+    return leerComedyPass(json, source, ctx?.today);
   },
 };
 
@@ -222,8 +222,8 @@ export async function pedirComediaTicket(fetcher: Fetcher, maxPaginas = 8) {
 
 export const comediaTicketApi: Adapter = {
   id: 'comediaticket-api',
-  async run(source, fetcher) {
+  async run(source, fetcher, ctx) {
     if (source.publicUrl !== COMEDIATICKET_API) throw new SourceError('HOST_NO_PERMITIDO');
-    return leerComediaTicket(await pedirComediaTicket(fetcher), source);
+    return leerComediaTicket(await pedirComediaTicket(fetcher), source, ctx?.today);
   },
 };

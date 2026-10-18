@@ -189,8 +189,8 @@ export function enlacesDeListas(
  */
 export const jsonldEvents: Adapter = {
   id: 'jsonld-events',
-  async run(source, fetcher: Fetcher): Promise<AdapterResult> {
-    const today = toChileDateString();
+  async run(source, fetcher: Fetcher, ctx): Promise<AdapterResult> {
+    const today = ctx?.today ?? toChileDateString();
     let paginas = [source.publicUrl];
     if (source.config?.listUrls) {
       // - `listUrls`: páginas índice (portada, productoras); se siguen los

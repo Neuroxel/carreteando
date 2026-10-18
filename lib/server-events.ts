@@ -1,7 +1,7 @@
 import 'server-only';
 import { cache } from 'react';
 import { dbRowToEvento, EventRow } from './events';
-import { toChileDateString } from './event-extraction';
+import { fechaDeLaNoche } from './event-extraction';
 import { Evento } from './types';
 export type EventsResult =
   | { status: 'ok'; events: Evento[]; checkedAt: string }
@@ -24,7 +24,7 @@ export async function readEvents(id?: string): Promise<EventsResult> {
     select: COLUMNS,
     is_active: 'eq.true',
     moderation_status: 'eq.approved',
-    date_text: `gte.${toChileDateString(checkedAt)}`,
+    date_text: `gte.${fechaDeLaNoche(checkedAt)}`,
     order: 'date_text.asc,instagram_id.asc',
     limit: id ? '1' : '300',
   });

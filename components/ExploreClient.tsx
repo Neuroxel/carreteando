@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState, type MouseEvent } from 'react';
 import { diversifyByVenue, esBarato, filterEvents, nocheAntes, ordenarPorPrecio } from '../lib/events';
-import { toChileDateString } from '../lib/event-extraction';
+import { fechaDeLaNoche } from '../lib/event-extraction';
 import { parseFilters } from '../lib/filters';
 import { CIUDADES, type FiltrosEvento } from '../lib/types';
 import { escenasConLugares, lugarEnEscena } from '../lib/escenas';
@@ -78,12 +78,12 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
   const defecto = home ? 'hoy' : 'futuro';
   const [snap, setSnap] = useState(snapshot);
   const [estado, setEstado] = useState<Estado>(() => leer('', defecto));
-  // "Hoy" se calcula en el teléfono: un snapshot viejo nunca revive eventos pasados.
-  const [today, setToday] = useState(() => toChileDateString(new Date(snapshot.generatedAt)));
   const [ahora, setAhora] = useState(() => Date.parse(snapshot.generatedAt));
+  // "Hoy" se calcula en el teléfono con el reloj que avanza: un snapshot viejo nunca
+  // revive eventos pasados, y la noche del sábado sigue siendo "hoy" hasta las 05:00.
+  const today = useMemo(() => fechaDeLaNoche(new Date(ahora)), [ahora]);
 
   useEffect(() => {
-    setToday(toChileDateString(new Date()));
     setAhora(Date.now());
     setEstado(leer(location.search, defecto));
     const alVolver = () => setEstado(leer(location.search, defecto));
@@ -102,7 +102,6 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
           const nuevo = (await r.json()) as PublicSnapshot;
           if (nuevo.status === 'ok') setSnap(nuevo);
         }
-        setToday(toChileDateString(new Date()));
         setAhora(Date.now());
       } catch {
         /* sin red: se sigue usando lo que hay */

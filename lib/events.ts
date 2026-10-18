@@ -7,6 +7,7 @@ import {
   inferCity,
   normalizeText,
   toChileDateString,
+  fechaDeLaNoche,
   parseTimestamp,
   validIsoDate,
 } from './event-extraction';
@@ -181,7 +182,7 @@ export function nocheAntes<T extends Pick<Evento, 'fecha' | 'hora'>>(eventos: T[
   return salida;
 }
 export function getChileTodayStr(): string {
-  return toChileDateString(new Date());
+  return fechaDeLaNoche(new Date());
 }
 export function filterEvents(
   events: Evento[],

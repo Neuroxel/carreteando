@@ -36,8 +36,8 @@ function fechaUnix(value: string | null | undefined) {
  */
 export const usmEventos: Adapter = {
   id: 'usm-eventos',
-  async run(source, fetcher): Promise<AdapterResult> {
-    const today = toChileDateString();
+  async run(source, fetcher, ctx): Promise<AdapterResult> {
+    const today = ctx?.today ?? toChileDateString();
     const url = `${source.publicUrl.replace(/\/$/, '')}/wp-json/wp/v2/eventos?per_page=50&_fields=link,title,acf`;
     const response = await fetcher(url);
     if (response.status !== 200) throw new SourceError(`HTTP_${response.status}`);

@@ -75,9 +75,9 @@ function textOf(post: WpPost) {
  */
 export const wpEventsList: Adapter = {
   id: 'wp-events-list',
-  async run(source, fetcher): Promise<AdapterResult> {
+  async run(source, fetcher, ctx): Promise<AdapterResult> {
     const posts = await wpPosts(source, fetcher);
-    const today = toChileDateString();
+    const today = ctx?.today ?? toChileDateString();
     const candidates = [];
     let parseFailures = 0;
     for (const post of posts) {
@@ -123,9 +123,9 @@ export const wpEventsList: Adapter = {
  */
 export const wpDatedSlug: Adapter = {
   id: 'wp-dated-slug',
-  async run(source, fetcher): Promise<AdapterResult> {
+  async run(source, fetcher, ctx): Promise<AdapterResult> {
     const posts = await wpPosts(source, fetcher);
-    const today = toChileDateString();
+    const today = ctx?.today ?? toChileDateString();
     const candidates = [];
     let parseFailures = 0;
     for (const post of posts) {
@@ -169,9 +169,9 @@ const NOCHE =
  */
 export const wpNewsScan: Adapter = {
   id: 'wp-news-scan',
-  async run(source, fetcher): Promise<AdapterResult> {
+  async run(source, fetcher, ctx): Promise<AdapterResult> {
     const posts = await wpPosts(source, fetcher);
-    const today = toChileDateString();
+    const today = ctx?.today ?? toChileDateString();
     const candidates = [];
     let parseFailures = 0;
     for (const post of posts) {

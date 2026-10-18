@@ -166,7 +166,7 @@ test('Cinzano: el ticket vendible más barato manda sobre el listado; lectura ac
     }
   };
   const fuente = sourceById('cinzano-agenda')!;
-  const res = await ADAPTERS[fuente.adapter].run(fuente, fetcher);
+  const res = await ADAPTERS[fuente.adapter].run(fuente, fetcher, { today: '2026-10-17' });
   const por = (d: string) => res.candidates.find((c) => c.date === d)!;
   // 23-oct: el listado dice $10.000; el ticket dice invitación gratuita hasta las 23:00.
   assert.deepEqual([por('2026-10-23').priceClp, por('2026-10-23').priceText], [0, 'Invitacion gratuita hasta las 23:00 · Entrada despues de las 23:00 $10.000 + $1.000 cargo']);

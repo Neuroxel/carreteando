@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getPublicEvent } from '../../../lib/server-events';
 import { eventDateLabel } from '../../../lib/events';
-import { toChileDateString } from '../../../lib/event-extraction';
+import { fechaDeLaNoche } from '../../../lib/event-extraction';
 import { breadcrumbJsonLd, eventJsonLd, safeJsonLd } from '../../../lib/event-seo';
 import EventImage from '../../../components/EventImage';
 import ShareButton from '../../../components/ShareButton';
@@ -48,7 +48,7 @@ export default async function Detail({ params }: Props) {
   if (r.status === 'error') throw new Error('EVENT_BACKEND_UNAVAILABLE');
   const e = r.events[0];
   if (!e) notFound();
-  const today = toChileDateString(r.checkedAt);
+  const today = fechaDeLaNoche(r.checkedAt);
   // Reporting how a night is going only makes sense on the night itself.
   const enVivo = e.fecha === today ? await liveFor('event', e.id) : null;
   const category =
