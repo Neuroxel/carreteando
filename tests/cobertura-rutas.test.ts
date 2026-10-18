@@ -240,7 +240,9 @@ test('plazo: las fuentes que no alcanzan a empezar quedan vencidas para la próx
   assert.equal(r.postergadas.length, 4);
 });
 
-test('plazo: se mira antes de cada solicitud y conserva los diagnósticos dentro de una fuente', async () => {
+test('plazo: se mira antes de cada solicitud y conserva los diagnósticos dentro de una fuente', async (tc) => {
+  // Las fixtures son del 17-oct: el reloj de la prueba se fija en esa tarde.
+  tc.mock.timers.enable({ apis: ['Date'], now: Date.parse('2026-10-17T17:59:00Z') });
   const id = 'ruta-evently-agenda-woo-club-valparaiso-osm';
   const filas = [{ id, active: true, next_check_at: '2026-10-01T00:00:00.000Z', last_checked_at: null }];
   const pedidas: string[] = [];

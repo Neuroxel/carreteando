@@ -40,11 +40,11 @@ export function dtstart(p: { value: string; params: string }): { date: string; t
 /** Calendario público ICS/webcal: uno de los formatos más estables que existen. */
 export const icsCalendar: Adapter = {
   id: 'ics-calendar',
-  async run(source, fetcher): Promise<AdapterResult> {
+  async run(source, fetcher, ctx): Promise<AdapterResult> {
     const r = await fetcher(source.config?.icsUrl || source.publicUrl);
     if (r.status !== 200) throw new SourceError(`HTTP_${r.status}`);
     if (!r.body.includes('BEGIN:VCALENDAR')) throw new SourceError('NO_ES_ICS');
-    const today = toChileDateString();
+    const today = ctx?.today ?? toChileDateString();
     const eventos = parseIcs(r.body);
     const candidates: EventCandidate[] = [];
     let parseFailures = 0;

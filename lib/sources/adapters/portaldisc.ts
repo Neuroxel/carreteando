@@ -185,7 +185,7 @@ export const portaldiscCartelera: Adapter = {
     if (response.status !== 200) throw new SourceError(`HTTP_${response.status}`);
     const body = response.body;
     if (!body.includes('PRÓXIMOS EVENTOS')) throw new SourceError('PAGINA_INESPERADA');
-    const today = toChileDateString();
+    const today = ctx?.today ?? toChileDateString();
     // A lookahead-delimited regex silently dropped the last card on any page
     // with a single event, which is most venue pages most weeks.
     const cards = body.split(CARD_SEPARATOR).slice(1);
@@ -247,7 +247,7 @@ export const portaldiscRegion: Adapter = {
     if (response.status !== 200) throw new SourceError(`HTTP_${response.status}`);
     const chunks = response.body.split('class="info_responsivo"');
     if (chunks.length < 2) throw new SourceError('PAGINA_INESPERADA');
-    const today = toChileDateString();
+    const today = ctx?.today ?? toChileDateString();
     const candidates = [];
     let parseFailures = 0;
     let fuera = 0;

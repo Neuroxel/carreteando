@@ -23,8 +23,8 @@ const FECHA_HORA = /^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2})/;
  */
 export const tribeEvents: Adapter = {
   id: 'tribe-events',
-  async run(source, fetcher): Promise<AdapterResult> {
-    const today = toChileDateString();
+  async run(source, fetcher, ctx): Promise<AdapterResult> {
+    const today = ctx?.today ?? toChileDateString();
     const perPage = source.config?.perPage || '50';
     const url = `${source.publicUrl.replace(/\/$/, '')}/wp-json/tribe/events/v1/events?per_page=${perPage}&start_date=${today}`;
     const response = await fetcher(url);

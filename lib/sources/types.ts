@@ -100,6 +100,8 @@ export interface EventCandidate {
 export interface AdapterContext {
   /** Fichas de esta fuente que ya tienen precio guardado: se releen después de las que no. */
   conPrecio?: Set<string>;
+  /** Fecha de Chile de la corrida: los adaptadores no leen el reloj por su cuenta. */
+  today?: string;
 }
 export interface AdapterResult {
   /** Partial enrichment problems; agenda ingestion may still succeed. */

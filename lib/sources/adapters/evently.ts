@@ -66,8 +66,8 @@ export function precioDeTickets(html: string): { price: number | null; text: str
  */
 export const eventlyAgenda: Adapter = {
   id: 'evently-agenda',
-  async run(source, fetcher) {
-    return leerEvently(source, fetcher);
+  async run(source, fetcher, ctx) {
+    return leerEvently(source, fetcher, ctx?.today);
   },
 };
 export async function leerEvently(

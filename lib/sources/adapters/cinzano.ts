@@ -173,7 +173,7 @@ export async function conTicketsCinzano(candidatos: EventCandidate[], fetcher: F
 
 export const cinzanoApi: Adapter = {
   id: 'cinzano-api',
-  async run(source, fetcher) {
+  async run(source, fetcher, ctx) {
     if (source.publicUrl !== API) throw new SourceError('HOST_NO_PERMITIDO');
     const r = await fetcher(API);
     if (r.status !== 200) throw new SourceError(`HTTP_${r.status}`);
@@ -183,7 +183,7 @@ export const cinzanoApi: Adapter = {
     } catch {
       throw new SourceError('PAGINA_INESPERADA');
     }
-    const r2 = leerCinzano(json, source);
+    const r2 = leerCinzano(json, source, ctx?.today);
     await conTicketsCinzano(r2.candidates, fetcher);
     return r2;
   },

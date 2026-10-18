@@ -59,6 +59,17 @@ export function toChileDateString(value: string | number | Date | null = new Dat
     day: '2-digit',
   }).format(date);
 }
+/**
+ * La noche de un día dura hasta las 05:00 de Chile: el sábado a las 02:00 sigue
+ * siendo "hoy sábado". Esta fecha decide qué se muestra y qué vence; el resto
+ * (fechas de fuentes, formularios) usa el calendario normal.
+ */
+export const CORTE_NOCHE_HORAS = 5;
+export function fechaDeLaNoche(value: string | number | Date | null = new Date()): string {
+  const date = parseTimestamp(value);
+  if (!date) throw new Error('Invalid timestamp');
+  return toChileDateString(new Date(date.getTime() - CORTE_NOCHE_HORAS * 3_600_000));
+}
 export function addDays(date: string, days: number): string {
   const d = new Date(`${date}T12:00:00Z`);
   d.setUTCDate(d.getUTCDate() + days);

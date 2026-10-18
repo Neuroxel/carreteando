@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getPublicVenue } from '../../../lib/server-venues';
 import { getPublicEvents } from '../../../lib/server-events';
-import { toChileDateString } from '../../../lib/event-extraction';
+import { fechaDeLaNoche } from '../../../lib/event-extraction';
 import { eventDateLabel } from '../../../lib/events';
 import { FUENTES_LUGAR, NIVEL_PRECIO, fechaCorta, zonaSlug } from '../../../lib/venues';
 import ShareButton from '../../../components/ShareButton';
@@ -42,7 +42,7 @@ export default async function VenueDetail({ params }: Props) {
   const l = r.lugares[0];
   if (!l) notFound();
   const [events, enVivo] = await Promise.all([getPublicEvents(), liveFor('venue', l.slug)]);
-  const today = toChileDateString(new Date());
+  const today = fechaDeLaNoche(new Date());
   const agenda = events.events.filter((e) => e.lugar === l.nombre && e.fecha >= today);
   const maps = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
     [l.nombre, l.direccion, l.ciudad, 'Chile'].filter(Boolean).join(', '),

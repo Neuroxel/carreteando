@@ -5,7 +5,7 @@
  * cambia el estado. Cada decisión queda en automation_decisions con el estado
  * anterior, para poder ver por qué pasó y deshacerla.
  */
-import { toChileDateString } from '../event-extraction';
+import { fechaDeLaNoche, toChileDateString } from '../event-extraction';
 import { CIUDADES } from '../types';
 import { httpFetcher, looksLikeSameEvent, normalizedTitle } from './dispatcher';
 import { agruparPorHora, horasCompatibles } from '../occurrence';
@@ -219,7 +219,8 @@ function patchFor(decision: Decision, r: Row, reasons: string[], now: Date): Row
 
 export async function reevaluate(db: Db, now = new Date(), forced?: EngineMode): Promise<EngineReport> {
   const mode = forced || (await engineMode(db));
-  const today = toChileDateString(now);
+  // Vencer con la fecha de la noche: el carrete del sábado no vence a las 00:00.
+  const today = fechaDeLaNoche(now);
   const ayer = toChileDateString(new Date(now.getTime() - 86_400_000));
   const { data } = await db
     .from('events')
@@ -320,7 +321,7 @@ export async function backtest(db: Db) {
           : 'sin_etiqueta';
     const ev = (evidence.get(r.id) || []).filter((e) => e.authority !== 'human');
     const asOf = r.scraped_at ? new Date(r.scraped_at) : new Date(`${r.date_text}T12:00:00Z`);
-    const res = evaluateEventEvidence(stateFrom({ ...r, disposition: 'review' }, new Set()), ev, tierOf, toChileDateString(asOf), asOf);
+    const res = evaluateEventEvidence(stateFrom({ ...r, disposition: 'review' }, new Set()), ev, tierOf, fechaDeLaNoche(asOf), asOf);
     out.push({
       event_id: r.id,
       decision: res.decision,

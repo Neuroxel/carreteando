@@ -5,7 +5,7 @@ import VenueCard from '../../../components/VenueCard';
 import EventCard from '../../../components/EventCard';
 import { getPublicVenues } from '../../../lib/server-venues';
 import { getPublicEvents } from '../../../lib/server-events';
-import { toChileDateString } from '../../../lib/event-extraction';
+import { fechaDeLaNoche } from '../../../lib/event-extraction';
 import { zonaSlug, zonasDe } from '../../../lib/venues';
 import { breadcrumbJsonLd, safeJsonLd } from '../../../lib/event-seo';
 /**
@@ -41,7 +41,7 @@ export default async function Zone({ params }: Props) {
   const z = await findZone(slug);
   if (!z) notFound();
   const events = await getPublicEvents();
-  const today = toChileDateString(new Date());
+  const today = fechaDeLaNoche(new Date());
   const nombres = new Set(z.lugares.map((l) => l.nombre));
   const agenda = events.events.filter((e) => e.lugar && nombres.has(e.lugar));
   const conteo = new Map<string, number>();

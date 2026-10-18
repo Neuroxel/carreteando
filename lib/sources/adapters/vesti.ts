@@ -79,12 +79,12 @@ export function leerVesti(html: string, source: { id: string; commune: string; v
  */
 export const vestiCompany: Adapter = {
   id: 'vesti-company',
-  async run(source, fetcher) {
+  async run(source, fetcher, ctx) {
     const url = new URL(source.publicUrl);
     if (url.protocol !== 'https:' || !hostVesti(url.hostname) || !/^\/company\/[a-z0-9-]+\/?$/.test(url.pathname))
       throw new SourceError('HOST_NO_PERMITIDO');
     const r = await fetcher(url.toString());
     if (r.status !== 200) throw new SourceError(`HTTP_${r.status}`);
-    return leerVesti(r.body, source);
+    return leerVesti(r.body, source, ctx?.today);
   },
 };

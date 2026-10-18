@@ -19,7 +19,7 @@ import { estadosDeFuentes, reporteCobertura } from '../../../../lib/coverage';
 import { dispatchSources } from '../../../../lib/sources/dispatcher';
 import { notifyIndexNow } from '../../../../lib/indexnow';
 import { engineMode, reevaluate } from '../../../../lib/sources/automation';
-import { parseTimestamp, toChileDateString } from '../../../../lib/event-extraction';
+import { fechaDeLaNoche, parseTimestamp, toChileDateString } from '../../../../lib/event-extraction';
 export const maxDuration = 300;
 export const dynamic = 'force-dynamic';
 class IngestionError extends Error {
@@ -92,11 +92,12 @@ export async function GET(request: Request) {
   }
   try {
     // Expiry is also enforced on every public read and by RLS; cleanup does not reactivate anything.
+    // La noche de ayer sigue vigente hasta las 05:00 de Chile.
     const expire = await db
       .from('events')
       .update({ is_active: false })
       .eq('is_active', true)
-      .lt('date_text', toChileDateString(new Date()));
+      .lt('date_text', fechaDeLaNoche(new Date()));
     if (expire.error) throw new IngestionError('DB_EXPIRE');
     const editorial = editorialRows();
     metrics.editorial_reviewed = editorial.length;
