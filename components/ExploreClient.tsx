@@ -303,9 +303,10 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
         filterEvents(todos, { ...filtros, escena: 'todos' }, today),
         filtros.ciudad === 'todos' ? snap.venues : snap.venues.filter((l) => l.ciudad === filtros.ciudad),
       ),
-      todayCount: filterEvents(todos, { fecha: 'hoy' }, today).length,
+      // Cada pestaña cuenta lo que mostraría al tocarla: mismos filtros (comuna, zona, búsqueda), otra fecha.
+      todayCount: enZona(filterEvents(todos, { ...filtros, fecha: 'hoy' }, today)).length,
       baratos: filterEvents(todos, { ...filtros, precio: 'todos', escena: 'todos' }, today).filter(esBarato).length,
-      mananaCount: filterEvents(todos, { fecha: 'manana' }, today).length,
+      mananaCount: enZona(filterEvents(todos, { ...filtros, fecha: 'manana' }, today)).length,
       busquedaEventos: filtros.busqueda ? filterEvents(todos, { fecha: 'futuro', busqueda: filtros.busqueda }, today).length : 0,
       lugaresHallados: filtros.busqueda ? buscarLugares(snap.venues, filtros.busqueda) : [],
       zonasHalladas: filtros.busqueda ? buscarZonas(snap.venues, filtros.busqueda) : [],
@@ -323,7 +324,7 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
               .sort((a, b) => b.eventos - a.eventos || a.t.nombre.localeCompare(b.t.nombre, 'es'))
           : [],
     };
-  }, [todos, snap.venues, filtros, today, lugarDe]);
+  }, [todos, snap.venues, filtros, today, lugarDe, enZona]);
   const lugaresVisibles = useMemo(() => {
     const coincidencias = new Set(events.map(lugarDe));
     const escena = filtros.escena && filtros.escena !== 'todos' ? filtros.escena : null;
