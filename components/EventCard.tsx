@@ -9,12 +9,15 @@ export default function EventCard({
   today,
   priority = false,
   estado,
+  madrugada = false,
 }: {
   evento: Evento;
   today?: string;
   priority?: boolean;
   /** Solo se muestra lo que se sabe: "Ya empezó" no significa que haya terminado. */
   estado?: EstadoTemporal;
+  /** 00:00–04:59: "Esta noche" en vez de "Hoy". */
+  madrugada?: boolean;
 }) {
   return (
     <article className="event-card">
@@ -42,7 +45,7 @@ export default function EventCard({
       </Link>
       <div className="event-card-body">
         <div className="card-category">
-          <time dateTime={e.fecha}>{eventDateLabel(e.fecha, today)}</time>
+          <time dateTime={e.fecha}>{eventDateLabel(e.fecha, today, madrugada)}</time>
           <span>{e.hora ? `${e.hora} h` : 'Hora por confirmar'}</span>
           {estado === 'iniciado' && <span className="card-estado">Ya empezó</span>}
           {estado === 'finalizado' && <span className="card-estado card-estado-fin">Terminó</span>}
@@ -65,7 +68,7 @@ export default function EventCard({
           <ShareButton
             id={e.id}
             title={e.nombre}
-            details={`${eventDateLabel(e.fecha, today)} · ${e.lugar || e.ciudad}`}
+            details={`${eventDateLabel(e.fecha, today, madrugada)} · ${e.lugar || e.ciudad}`}
             compact
           />
         </div>

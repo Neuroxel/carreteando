@@ -222,9 +222,14 @@ export function filterEvents(
         a.nombre.localeCompare(b.nombre),
     );
 }
-export function eventDateLabel(date: string, today = getChileTodayStr()): string {
-  if (date === today) return 'Hoy';
-  if (date === addDays(today, 1)) return 'Mañana';
+/**
+ * Entre las 00:00 y las 04:59 la noche de ayer sigue siendo "hoy" por dentro,
+ * pero el teléfono ya marca otro día: se dice "Esta noche" y el día siguiente
+ * va con su nombre, nunca "Mañana" (que confunde a las 02:00).
+ */
+export function eventDateLabel(date: string, today = getChileTodayStr(), madrugada = false): string {
+  if (date === today) return madrugada ? 'Esta noche' : 'Hoy';
+  if (date === addDays(today, 1) && !madrugada) return 'Mañana';
   return new Intl.DateTimeFormat('es-CL', {
     day: 'numeric',
     month: 'short',

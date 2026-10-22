@@ -64,3 +64,20 @@ test('la política pública de la base usa el mismo corte de las 05:00', () => {
   assert.match(sql, /CREATE POLICY "Public read"[\s\S]*now\(\)\) - interval '5 hours'/);
   assert.equal((sql.match(/interval '5 hours'/g) || []).length, 2, 'política y vista recent_events');
 });
+
+test('de madrugada se dice "Esta noche" y el día siguiente por su nombre', async () => {
+  const { eventDateLabel } = await import('../lib/events');
+  const { esMadrugada, nombreDia } = await import('../lib/temporal');
+  const dos = ahoraEnChile(chile('2026-10-18T02:00:00'));
+  assert.equal(esMadrugada(dos), true);
+  assert.equal(esMadrugada(ahoraEnChile(chile('2026-10-18T05:00:00'))), false);
+  assert.equal(esMadrugada(ahoraEnChile(chile('2026-10-17T23:00:00'))), false);
+  const hoy = fechaDeLaNoche(chile('2026-10-18T02:00:00'));
+  assert.equal(eventDateLabel('2026-10-17', hoy, true), 'Esta noche');
+  assert.notEqual(eventDateLabel('2026-10-18', hoy, true), 'Mañana');
+  assert.equal(nombreDia('2026-10-18'), 'Domingo');
+  assert.equal(eventDateLabel('2026-10-17', '2026-10-17', false), 'Hoy');
+  // Los cortes siguen iguales.
+  for (const [h, f] of [['2026-10-17T23:00:00', '2026-10-17'], ['2026-10-18T00:30:00', '2026-10-17'], ['2026-10-18T02:00:00', '2026-10-17'], ['2026-10-18T04:59:00', '2026-10-17'], ['2026-10-18T05:00:00', '2026-10-18']])
+    assert.equal(fechaDeLaNoche(chile(h)), f, h);
+});

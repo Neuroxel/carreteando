@@ -1,4 +1,5 @@
 import { minutosDelDia } from './occurrence';
+import { CORTE_NOCHE_HORAS } from './event-extraction';
 
 /**
  * Estado temporal de un evento, sin inventar duraciones:
@@ -60,3 +61,11 @@ export function porEstadoTemporal<T extends { fecha: string; hora?: string | nul
     .sort((a, b) => a.o - b.o || a.i - b.i)
     .map((x) => x.e);
 }
+
+/** 00:00–04:59: la noche anterior sigue. Solo cambia cómo se dice, no qué se muestra. */
+export const esMadrugada = (ahora: AhoraChile) => ahora.minutos < CORTE_NOCHE_HORAS * 60;
+/** Nombre del día ("Domingo") para no decir "Mañana" de madrugada. */
+export const nombreDia = (fecha: string) => {
+  const d = new Intl.DateTimeFormat('es-CL', { weekday: 'long', timeZone: 'UTC' }).format(new Date(`${fecha}T12:00:00Z`));
+  return d.charAt(0).toUpperCase() + d.slice(1);
+};
