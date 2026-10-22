@@ -1,0 +1,1100 @@
+{
+ "nota": "Territorios verificados contra la fuente oficial. Por ahora solo Valparaíso (cerros y sectores, SIG municipal) tiene polígonos verificados; las demás comunas quedan pendientes hasta tener una capa oficial verificada.",
+ "territorios": [
+  {
+   "id": "comuna-valparaiso",
+   "slug": "valparaiso",
+   "nombre": "Valparaíso",
+   "comuna": "Valparaíso",
+   "nivel": "comuna",
+   "parent": null,
+   "aliases": [
+    "Valpo"
+   ],
+   "source": "Catálogo de comunas de Dónde Salgo",
+   "source_type": "catalogo",
+   "source_url": null,
+   "verified_at": "2026-10-22"
+  },
+  {
+   "id": "sector-valparaiso-almendral",
+   "slug": "valparaiso-almendral",
+   "nombre": "Almendral",
+   "comuna": "Valparaíso",
+   "nivel": "sector",
+   "parent": "comuna-valparaiso",
+   "nombre_oficial": "SECTOR ALMENDRAL",
+   "source": "Municipalidad de Valparaíso, SECPLA · Depto. SIG — Cerros y Sectores de la comuna",
+   "source_type": "sig_municipal",
+   "source_url": "https://services8.arcgis.com/5BaAHTQ4nRVz57H5/arcgis/rest/services/CERROS_Y_SECTORES_DE_LA_COMUNA_DE_VALPARA%C3%8DSO/FeatureServer/0",
+   "verified_at": "2026-10-22",
+   "aliases": [
+    "SECTOR ALMENDRAL"
+   ],
+   "centroide": [
+    -71.60714,
+    -33.04915
+   ]
+  },
+  {
+   "id": "sector-valparaiso-barrio-o-higgins",
+   "slug": "valparaiso-barrio-o-higgins",
+   "nombre": "Barrio O'Higgins",
+   "comuna": "Valparaíso",
+   "nivel": "sector",
+   "parent": "comuna-valparaiso",
+   "nombre_oficial": "BARRIO O´HIGGINS",
+   "source": "Municipalidad de Valparaíso, SECPLA · Depto. SIG — Cerros y Sectores de la comuna",
+   "source_type": "sig_municipal",
+   "source_url": "https://services8.arcgis.com/5BaAHTQ4nRVz57H5/arcgis/rest/services/CERROS_Y_SECTORES_DE_LA_COMUNA_DE_VALPARA%C3%8DSO/FeatureServer/0",
+   "verified_at": "2026-10-22",
+   "aliases": [
+    "BARRIO O´HIGGINS"
+   ],
+   "centroide": [
+    -71.59343,
+    -33.0585
+   ]
+  },
+  {
+   "id": "sector-valparaiso-barrio-puerto",
+   "slug": "valparaiso-barrio-puerto",
+   "nombre": "Barrio Puerto",
+   "comuna": "Valparaíso",
+   "nivel": "sector",
+   "parent": "comuna-valparaiso",
+   "nombre_oficial": "SECTOR BARRIO PUERTO",
+   "source": "Municipalidad de Valparaíso, SECPLA · Depto. SIG — Cerros y Sectores de la comuna",
+   "source_type": "sig_municipal",
+   "source_url": "https://services8.arcgis.com/5BaAHTQ4nRVz57H5/arcgis/rest/services/CERROS_Y_SECTORES_DE_LA_COMUNA_DE_VALPARA%C3%8DSO/FeatureServer/0",
+   "verified_at": "2026-10-22",
+   "aliases": [
+    "SECTOR BARRIO PUERTO"
+   ],
+   "centroide": [
+    -71.63091,
+    -33.03636
+   ]
+  },
+  {
+   "id": "sector-valparaiso-barrio-santa-elena",
+   "slug": "valparaiso-barrio-santa-elena",
+   "nombre": "Barrio Santa Elena",
+   "comuna": "Valparaíso",
+   "nivel": "sector",
+   "parent": "comuna-valparaiso",
+   "nombre_oficial": "BARRIO SANTA ELENA",
+   "source": "Municipalidad de Valparaíso, SECPLA · Depto. SIG — Cerros y Sectores de la comuna",
+   "source_type": "sig_municipal",
+   "source_url": "https://services8.arcgis.com/5BaAHTQ4nRVz57H5/arcgis/rest/services/CERROS_Y_SECTORES_DE_LA_COMUNA_DE_VALPARA%C3%8DSO/FeatureServer/0",
+   "verified_at": "2026-10-22",
+   "aliases": [
+    "BARRIO SANTA ELENA"
+   ],
+   "centroide": [
+    -71.60056,
+    -33.05908
+   ]
+  },
+  {
+   "id": "sector-valparaiso-centro",
+   "slug": "valparaiso-centro",
+   "nombre": "Centro",
+   "comuna": "Valparaíso",
+   "nivel": "sector",
+   "parent": "comuna-valparaiso",
+   "nombre_oficial": "SECTOR CENTRO",
+   "source": "Municipalidad de Valparaíso, SECPLA · Depto. SIG — Cerros y Sectores de la comuna",
+   "source_type": "sig_municipal",
+   "source_url": "https://services8.arcgis.com/5BaAHTQ4nRVz57H5/arcgis/rest/services/CERROS_Y_SECTORES_DE_LA_COMUNA_DE_VALPARA%C3%8DSO/FeatureServer/0",
+   "verified_at": "2026-10-22",
+   "aliases": [
+    "SECTOR CENTRO"
+   ],
+   "centroide": [
+    -71.62462,
+    -33.04354
+   ]
+  },
+  {
+   "id": "sector-valparaiso-cerro-alegre",
+   "slug": "valparaiso-cerro-alegre",
+   "nombre": "Cerro Alegre",
+   "comuna": "Valparaíso",
+   "nivel": "sector",
+   "parent": "comuna-valparaiso",
+   "nombre_oficial": "Cº ALEGRE",
+   "source": "Municipalidad de Valparaíso, SECPLA · Depto. SIG — Cerros y Sectores de la comuna",
+   "source_type": "sig_municipal",
+   "source_url": "https://services8.arcgis.com/5BaAHTQ4nRVz57H5/arcgis/rest/services/CERROS_Y_SECTORES_DE_LA_COMUNA_DE_VALPARA%C3%8DSO/FeatureServer/0",
+   "verified_at": "2026-10-22",
+   "aliases": [
+    "Cº ALEGRE"
+   ],
+   "centroide": [
+    -71.63421,
+    -33.04892
+   ]
+  },
+  {
+   "id": "sector-valparaiso-cerro-arrayan",
+   "slug": "valparaiso-cerro-arrayan",
+   "nombre": "Cerro Arrayán",
+   "comuna": "Valparaíso",
+   "nivel": "sector",
+   "parent": "comuna-valparaiso",
+   "nombre_oficial": "Cº ARRAYAN",
+   "source": "Municipalidad de Valparaíso, SECPLA · Depto. SIG — Cerros y Sectores de la comuna",
+   "source_type": "sig_municipal",
+   "source_url": "https://services8.arcgis.com/5BaAHTQ4nRVz57H5/arcgis/rest/services/CERROS_Y_SECTORES_DE_LA_COMUNA_DE_VALPARA%C3%8DSO/FeatureServer/0",
+   "verified_at": "2026-10-22",
+   "aliases": [
+    "Cº ARRAYAN"
+   ],
+   "centroide": [
+    -71.63343,
+    -33.03403
+   ]
+  },
+  {
+   "id": "sector-valparaiso-cerro-artilleria",
+   "slug": "valparaiso-cerro-artilleria",
+   "nombre": "Cerro Artillería",
+   "comuna": "Valparaíso",
+   "nivel": "sector",
+   "parent": "comuna-valparaiso",
+   "nombre_oficial": "Cº ARTILLERIA",
+   "source": "Municipalidad de Valparaíso, SECPLA · Depto. SIG — Cerros y Sectores de la comuna",
+   "source_type": "sig_municipal",
+   "source_url": "https://services8.arcgis.com/5BaAHTQ4nRVz57H5/arcgis/rest/services/CERROS_Y_SECTORES_DE_LA_COMUNA_DE_VALPARA%C3%8DSO/FeatureServer/0",
+   "verified_at": "2026-10-22",
+   "aliases": [
+    "Cº ARTILLERIA"
+   ],
+   "centroide": [
+    -71.63254,
+    -33.03177
+   ]
+  },
+  {
+   "id": "sector-valparaiso-cerro-baron",
+   "slug": "valparaiso-cerro-baron",
+   "nombre": "Cerro Barón",
+   "comuna": "Valparaíso",
+   "nivel": "sector",
+   "parent": "comuna-valparaiso",
+   "nombre_oficial": "Cº BARON",
+   "source": "Municipalidad de Valparaíso, SECPLA · Depto. SIG — Cerros y Sectores de la comuna",
+   "source_type": "sig_municipal",
+   "source_url": "https://services8.arcgis.com/5BaAHTQ4nRVz57H5/arcgis/rest/services/CERROS_Y_SECTORES_DE_LA_COMUNA_DE_VALPARA%C3%8DSO/FeatureServer/0",
+   "verified_at": "2026-10-22",
+   "aliases": [
+    "Cº BARON"
+   ],
+   "centroide": [
+    -71.59882,
+    -33.04229
+   ]
+  },
+  {
+   "id": "sector-valparaiso-cerro-bellavista",
+   "slug": "valparaiso-cerro-bellavista",
+   "nombre": "Cerro Bellavista",
+   "comuna": "Valparaíso",
+   "nivel": "sector",
+   "parent": "comuna-valparaiso",
+   "nombre_oficial": "Cº BELLAVISTA",
+   "source": "Municipalidad de Valparaíso, SECPLA · Depto. SIG — Cerros y Sectores de la comuna",
+   "source_type": "sig_municipal",
+   "source_url": "https://services8.arcgis.com/5BaAHTQ4nRVz57H5/arcgis/rest/services/CERROS_Y_SECTORES_DE_LA_COMUNA_DE_VALPARA%C3%8DSO/FeatureServer/0",
+   "verified_at": "2026-10-22",
+   "aliases": [
+    "Cº BELLAVISTA"
+   ],
+   "centroide": [
+    -71.62226,
+    -33.04832
+   ]
+  },
+  {
+   "id": "sector-valparaiso-cerro-concepcion",
+   "slug": "valparaiso-cerro-concepcion",
+   "nombre": "Cerro Concepción",
+   "comuna": "Valparaíso",
+   "nivel": "sector",
+   "parent": "comuna-valparaiso",
+   "nombre_oficial": "Cº CONCEPCION",
+   "source": "Municipalidad de Valparaíso, SECPLA · Depto. SIG — Cerros y Sectores de la comuna",
+   "source_type": "sig_municipal",
+   "source_url": "https://services8.arcgis.com/5BaAHTQ4nRVz57H5/arcgis/rest/services/CERROS_Y_SECTORES_DE_LA_COMUNA_DE_VALPARA%C3%8DSO/FeatureServer/0",
+   "verified_at": "2026-10-22",
+   "aliases": [
+    "Cº CONCEPCION"
+   ],
+   "centroide": [
+    -71.62667,
+    -33.04184
+   ]
+  },
+  {
+   "id": "sector-valparaiso-cerro-cordillera",
+   "slug": "valparaiso-cerro-cordillera",
+   "nombre": "Cerro Cordillera",
+   "comuna": "Valparaíso",
+   "nivel": "sector",
+   "parent": "comuna-valparaiso",
+   "nombre_oficial": "Cº CORDILLERA",
+   "source": "Municipalidad de Valparaíso, SECPLA · Depto. SIG — Cerros y Sectores de la comuna",
+   "source_type": "sig_municipal",
+   "source_url": "https://services8.arcgis.com/5BaAHTQ4nRVz57H5/arcgis/rest/services/CERROS_Y_SECTORES_DE_LA_COMUNA_DE_VALPARA%C3%8DSO/FeatureServer/0",
+   "verified_at": "2026-10-22",
+   "aliases": [
+    "Cº CORDILLERA"
+   ],
+   "centroide": [
+    -71.63892,
+    -33.04388
+   ]
+  },
+  {
+   "id": "sector-valparaiso-cerro-carcel",
+   "slug": "valparaiso-cerro-carcel",
+   "nombre": "Cerro Cárcel",
+   "comuna": "Valparaíso",
+   "nivel": "sector",
+   "parent": "comuna-valparaiso",
+   "nombre_oficial": "Cº CARCEL",
+   "source": "Municipalidad de Valparaíso, SECPLA · Depto. SIG — Cerros y Sectores de la comuna",
+   "source_type": "sig_municipal",
+   "source_url": "https://services8.arcgis.com/5BaAHTQ4nRVz57H5/arcgis/rest/services/CERROS_Y_SECTORES_DE_LA_COMUNA_DE_VALPARA%C3%8DSO/FeatureServer/0",
+   "verified_at": "2026-10-22",
+   "aliases": [
+    "Cº CARCEL"
+   ],
+   "centroide": [
+    -71.63223,
+    -33.05024
+   ]
+  },
+  {
+   "id": "sector-valparaiso-cerro-el-litre",
+   "slug": "valparaiso-cerro-el-litre",
+   "nombre": "Cerro El Litre",
+   "comuna": "Valparaíso",
+   "nivel": "sector",
+   "parent": "comuna-valparaiso",
+   "nombre_oficial": "Cº EL LITRE",
+   "source": "Municipalidad de Valparaíso, SECPLA · Depto. SIG — Cerros y Sectores de la comuna",
+   "source_type": "sig_municipal",
+   "source_url": "https://services8.arcgis.com/5BaAHTQ4nRVz57H5/arcgis/rest/services/CERROS_Y_SECTORES_DE_LA_COMUNA_DE_VALPARA%C3%8DSO/FeatureServer/0",
+   "verified_at": "2026-10-22",
+   "aliases": [
+    "Cº EL LITRE"
+   ],
+   "centroide": [
+    -71.61021,
+    -33.05752
+   ]
+  },
+  {
+   "id": "sector-valparaiso-cerro-esperanza",
+   "slug": "valparaiso-cerro-esperanza",
+   "nombre": "Cerro Esperanza",
+   "comuna": "Valparaíso",
+   "nivel": "sector",
+   "parent": "comuna-valparaiso",
+   "nombre_oficial": "Cº ESPERANZA",
+   "source": "Municipalidad de Valparaíso, SECPLA · Depto. SIG — Cerros y Sectores de la comuna",
+   "source_type": "sig_municipal",
+   "source_url": "https://services8.arcgis.com/5BaAHTQ4nRVz57H5/arcgis/rest/services/CERROS_Y_SECTORES_DE_LA_COMUNA_DE_VALPARA%C3%8DSO/FeatureServer/0",
+   "verified_at": "2026-10-22",
+   "aliases": [
+    "Cº ESPERANZA"
+   ],
+   "centroide": [
+    -71.58273,
+    -33.03765
+   ]
+  },
+  {
+   "id": "sector-valparaiso-cerro-florida",
+   "slug": "valparaiso-cerro-florida",
+   "nombre": "Cerro Florida",
+   "comuna": "Valparaíso",
+   "nivel": "sector",
+   "parent": "comuna-valparaiso",
+   "nombre_oficial": "Cº FLORIDA",
+   "source": "Municipalidad de Valparaíso, SECPLA · Depto. SIG — Cerros y Sectores de la comuna",
+   "source_type": "sig_municipal",
+   "source_url": "https://services8.arcgis.com/5BaAHTQ4nRVz57H5/arcgis/rest/services/CERROS_Y_SECTORES_DE_LA_COMUNA_DE_VALPARA%C3%8DSO/FeatureServer/0",
+   "verified_at": "2026-10-22",
+   "aliases": [
+    "Cº FLORIDA"
+   ],
+   "centroide": [
+    -71.6226,
+    -33.05497
+   ]
+  },
+  {
+   "id": "sector-valparaiso-cerro-jimenez",
+   "slug": "valparaiso-cerro-jimenez",
+   "nombre": "Cerro Jiménez",
+   "comuna": "Valparaíso",
+   "nivel": "sector",
+   "parent": "comuna-valparaiso",
+   "nombre_oficial": "Cº JIMENEZ",
+   "source": "Municipalidad de Valparaíso, SECPLA · Depto. SIG — Cerros y Sectores de la comuna",
+   "source_type": "sig_municipal",
+   "source_url": "https://services8.arcgis.com/5BaAHTQ4nRVz57H5/arcgis/rest/services/CERROS_Y_SECTORES_DE_LA_COMUNA_DE_VALPARA%C3%8DSO/FeatureServer/0",
+   "verified_at": "2026-10-22",
+   "aliases": [
+    "Cº JIMENEZ"
+   ],
+   "centroide": [
+    -71.63353,
+    -33.05691
+   ]
+  },
+  {
+   "id": "sector-valparaiso-cerro-la-cruz",
+   "slug": "valparaiso-cerro-la-cruz",
+   "nombre": "Cerro La Cruz",
+   "comuna": "Valparaíso",
+   "nivel": "sector",
+   "parent": "comuna-valparaiso",
+   "nombre_oficial": "Cº LA CRUZ",
+   "source": "Municipalidad de Valparaíso, SECPLA · Depto. SIG — Cerros y Sectores de la comuna",
+   "source_type": "sig_municipal",
+   "source_url": "https://services8.arcgis.com/5BaAHTQ4nRVz57H5/arcgis/rest/services/CERROS_Y_SECTORES_DE_LA_COMUNA_DE_VALPARA%C3%8DSO/FeatureServer/0",
+   "verified_at": "2026-10-22",
+   "aliases": [
+    "Cº LA CRUZ"
+   ],
+   "centroide": [
+    -71.61251,
+    -33.06029
+   ]
+  },
+  {
+   "id": "sector-valparaiso-cerro-la-loma",
+   "slug": "valparaiso-cerro-la-loma",
+   "nombre": "Cerro La Loma",
+   "comuna": "Valparaíso",
+   "nivel": "sector",
+   "parent": "comuna-valparaiso",
+   "nombre_oficial": "Cº LA LOMA",
+   "source": "Municipalidad de Valparaíso, SECPLA · Depto. SIG — Cerros y Sectores de la comuna",
+   "source_type": "sig_municipal",
+   "source_url": "https://services8.arcgis.com/5BaAHTQ4nRVz57H5/arcgis/rest/services/CERROS_Y_SECTORES_DE_LA_COMUNA_DE_VALPARA%C3%8DSO/FeatureServer/0",
+   "verified_at": "2026-10-22",
+   "aliases": [
+    "Cº LA LOMA"
+   ],
+   "centroide": [
+    -71.62887,
+    -33.04948
+   ]
+  },
+  {
+   "id": "sector-valparaiso-cerro-la-virgen",
+   "slug": "valparaiso-cerro-la-virgen",
+   "nombre": "Cerro La Virgen",
+   "comuna": "Valparaíso",
+   "nivel": "sector",
+   "parent": "comuna-valparaiso",
+   "nombre_oficial": "Cº LA VIRGEN",
+   "source": "Municipalidad de Valparaíso, SECPLA · Depto. SIG — Cerros y Sectores de la comuna",
+   "source_type": "sig_municipal",
+   "source_url": "https://services8.arcgis.com/5BaAHTQ4nRVz57H5/arcgis/rest/services/CERROS_Y_SECTORES_DE_LA_COMUNA_DE_VALPARA%C3%8DSO/FeatureServer/0",
+   "verified_at": "2026-10-22",
+   "aliases": [
+    "Cº LA VIRGEN"
+   ],
+   "centroide": [
+    -71.6023,
+    -33.05773
+   ]
+  },
+  {
+   "id": "sector-valparaiso-cerro-larrain",
+   "slug": "valparaiso-cerro-larrain",
+   "nombre": "Cerro Larraín",
+   "comuna": "Valparaíso",
+   "nivel": "sector",
+   "parent": "comuna-valparaiso",
+   "nombre_oficial": "Cº LARRAIN",
+   "source": "Municipalidad de Valparaíso, SECPLA · Depto. SIG — Cerros y Sectores de la comuna",
+   "source_type": "sig_municipal",
+   "source_url": "https://services8.arcgis.com/5BaAHTQ4nRVz57H5/arcgis/rest/services/CERROS_Y_SECTORES_DE_LA_COMUNA_DE_VALPARA%C3%8DSO/FeatureServer/0",
+   "verified_at": "2026-10-22",
+   "aliases": [
+    "Cº LARRAIN"
+   ],
+   "centroide": [
+    -71.59956,
+    -33.0469
+   ]
+  },
+  {
+   "id": "sector-valparaiso-cerro-las-canas",
+   "slug": "valparaiso-cerro-las-canas",
+   "nombre": "Cerro Las Cañas",
+   "comuna": "Valparaíso",
+   "nivel": "sector",
+   "parent": "comuna-valparaiso",
+   "nombre_oficial": "Cº LAS CAÑAS",
+   "source": "Municipalidad de Valparaíso, SECPLA · Depto. SIG — Cerros y Sectores de la comuna",
+   "source_type": "sig_municipal",
+   "source_url": "https://services8.arcgis.com/5BaAHTQ4nRVz57H5/arcgis/rest/services/CERROS_Y_SECTORES_DE_LA_COMUNA_DE_VALPARA%C3%8DSO/FeatureServer/0",
+   "verified_at": "2026-10-22",
+   "aliases": [
+    "Cº LAS CAÑAS"
+   ],
+   "centroide": [
+    -71.60802,
+    -33.06019
+   ]
+  },
+  {
+   "id": "sector-valparaiso-cerro-las-delicias",
+   "slug": "valparaiso-cerro-las-delicias",
+   "nombre": "Cerro Las Delicias",
+   "comuna": "Valparaíso",
+   "nivel": "sector",
+   "parent": "comuna-valparaiso",
+   "nombre_oficial": "Cº LAS DELICIAS",
+   "source": "Municipalidad de Valparaíso, SECPLA · Depto. SIG — Cerros y Sectores de la comuna",
+   "source_type": "sig_municipal",
+   "source_url": "https://services8.arcgis.com/5BaAHTQ4nRVz57H5/arcgis/rest/services/CERROS_Y_SECTORES_DE_LA_COMUNA_DE_VALPARA%C3%8DSO/FeatureServer/0",
+   "verified_at": "2026-10-22",
+   "aliases": [
+    "Cº LAS DELICIAS"
+   ],
+   "centroide": [
+    -71.58768,
+    -33.05731
+   ]
+  },
+  {
+   "id": "sector-valparaiso-cerro-las-perdices",
+   "slug": "valparaiso-cerro-las-perdices",
+   "nombre": "Cerro Las Perdices",
+   "comuna": "Valparaíso",
+   "nivel": "sector",
+   "parent": "comuna-valparaiso",
+   "nombre_oficial": "Cº LAS PERDICES",
+   "source": "Municipalidad de Valparaíso, SECPLA · Depto. SIG — Cerros y Sectores de la comuna",
+   "source_type": "sig_municipal",
+   "source_url": "https://services8.arcgis.com/5BaAHTQ4nRVz57H5/arcgis/rest/services/CERROS_Y_SECTORES_DE_LA_COMUNA_DE_VALPARA%C3%8DSO/FeatureServer/0",
+   "verified_at": "2026-10-22",
+   "aliases": [
+    "Cº LAS PERDICES"
+   ],
+   "centroide": [
+    -71.63685,
+    -33.03617
+   ]
+  },
+  {
+   "id": "sector-valparaiso-cerro-lecheros",
+   "slug": "valparaiso-cerro-lecheros",
+   "nombre": "Cerro Lecheros",
+   "comuna": "Valparaíso",
+   "nivel": "sector",
+   "parent": "comuna-valparaiso",
+   "nombre_oficial": "Cº LECHEROS",
+   "source": "Municipalidad de Valparaíso, SECPLA · Depto. SIG — Cerros y Sectores de la comuna",
+   "source_type": "sig_municipal",
+   "source_url": "https://services8.arcgis.com/5BaAHTQ4nRVz57H5/arcgis/rest/services/CERROS_Y_SECTORES_DE_LA_COMUNA_DE_VALPARA%C3%8DSO/FeatureServer/0",
+   "verified_at": "2026-10-22",
+   "aliases": [
+    "Cº LECHEROS"
+   ],
+   "centroide": [
+    -71.60192,
+    -33.04364
+   ]
+  },
+  {
+   "id": "sector-valparaiso-cerro-loceras",
+   "slug": "valparaiso-cerro-loceras",
+   "nombre": "Cerro Loceras",
+   "comuna": "Valparaíso",
+   "nivel": "sector",
+   "parent": "comuna-valparaiso",
+   "nombre_oficial": "Cº LOCERAS",
+   "source": "Municipalidad de Valparaíso, SECPLA · Depto. SIG — Cerros y Sectores de la comuna",
+   "source_type": "sig_municipal",
+   "source_url": "https://services8.arcgis.com/5BaAHTQ4nRVz57H5/arcgis/rest/services/CERROS_Y_SECTORES_DE_LA_COMUNA_DE_VALPARA%C3%8DSO/FeatureServer/0",
+   "verified_at": "2026-10-22",
+   "aliases": [
+    "Cº LOCERAS"
+   ],
+   "centroide": [
+    -71.6368,
+    -33.04087
+   ]
+  },
+  {
+   "id": "sector-valparaiso-cerro-mariposa",
+   "slug": "valparaiso-cerro-mariposa",
+   "nombre": "Cerro Mariposa",
+   "comuna": "Valparaíso",
+   "nivel": "sector",
+   "parent": "comuna-valparaiso",
+   "nombre_oficial": "Cº MARIPOSA",
+   "source": "Municipalidad de Valparaíso, SECPLA · Depto. SIG — Cerros y Sectores de la comuna",
+   "source_type": "sig_municipal",
+   "source_url": "https://services8.arcgis.com/5BaAHTQ4nRVz57H5/arcgis/rest/services/CERROS_Y_SECTORES_DE_LA_COMUNA_DE_VALPARA%C3%8DSO/FeatureServer/0",
+   "verified_at": "2026-10-22",
+   "aliases": [
+    "Cº MARIPOSA"
+   ],
+   "centroide": [
+    -71.61891,
+    -33.05801
+   ]
+  },
+  {
+   "id": "sector-valparaiso-cerro-merced",
+   "slug": "valparaiso-cerro-merced",
+   "nombre": "Cerro Merced",
+   "comuna": "Valparaíso",
+   "nivel": "sector",
+   "parent": "comuna-valparaiso",
+   "nombre_oficial": "Cº MERCED",
+   "source": "Municipalidad de Valparaíso, SECPLA · Depto. SIG — Cerros y Sectores de la comuna",
+   "source_type": "sig_municipal",
+   "source_url": "https://services8.arcgis.com/5BaAHTQ4nRVz57H5/arcgis/rest/services/CERROS_Y_SECTORES_DE_LA_COMUNA_DE_VALPARA%C3%8DSO/FeatureServer/0",
+   "verified_at": "2026-10-22",
+   "aliases": [
+    "Cº MERCED"
+   ],
+   "centroide": [
+    -71.60507,
+    -33.05574
+   ]
+  },
+  {
+   "id": "sector-valparaiso-cerro-mesilla",
+   "slug": "valparaiso-cerro-mesilla",
+   "nombre": "Cerro Mesilla",
+   "comuna": "Valparaíso",
+   "nivel": "sector",
+   "parent": "comuna-valparaiso",
+   "nombre_oficial": "Cº MESILLA",
+   "source": "Municipalidad de Valparaíso, SECPLA · Depto. SIG — Cerros y Sectores de la comuna",
+   "source_type": "sig_municipal",
+   "source_url": "https://services8.arcgis.com/5BaAHTQ4nRVz57H5/arcgis/rest/services/CERROS_Y_SECTORES_DE_LA_COMUNA_DE_VALPARA%C3%8DSO/FeatureServer/0",
+   "verified_at": "2026-10-22",
+   "aliases": [
+    "Cº MESILLA"
+   ],
+   "centroide": [
+    -71.63714,
+    -33.03395
+   ]
+  },
+  {
+   "id": "sector-valparaiso-cerro-miraflores",
+   "slug": "valparaiso-cerro-miraflores",
+   "nombre": "Cerro Miraflores",
+   "comuna": "Valparaíso",
+   "nivel": "sector",
+   "parent": "comuna-valparaiso",
+   "nombre_oficial": "Cº MIRAFLORES",
+   "source": "Municipalidad de Valparaíso, SECPLA · Depto. SIG — Cerros y Sectores de la comuna",
+   "source_type": "sig_municipal",
+   "source_url": "https://services8.arcgis.com/5BaAHTQ4nRVz57H5/arcgis/rest/services/CERROS_Y_SECTORES_DE_LA_COMUNA_DE_VALPARA%C3%8DSO/FeatureServer/0",
+   "verified_at": "2026-10-22",
+   "aliases": [
+    "Cº MIRAFLORES"
+   ],
+   "centroide": [
+    -71.63023,
+    -33.04572
+   ]
+  },
+  {
+   "id": "sector-valparaiso-cerro-molino",
+   "slug": "valparaiso-cerro-molino",
+   "nombre": "Cerro Molino",
+   "comuna": "Valparaíso",
+   "nivel": "sector",
+   "parent": "comuna-valparaiso",
+   "nombre_oficial": "Cº MOLINO",
+   "source": "Municipalidad de Valparaíso, SECPLA · Depto. SIG — Cerros y Sectores de la comuna",
+   "source_type": "sig_municipal",
+   "source_url": "https://services8.arcgis.com/5BaAHTQ4nRVz57H5/arcgis/rest/services/CERROS_Y_SECTORES_DE_LA_COMUNA_DE_VALPARA%C3%8DSO/FeatureServer/0",
+   "verified_at": "2026-10-22",
+   "aliases": [
+    "Cº MOLINO"
+   ],
+   "centroide": [
+    -71.59744,
+    -33.05146
+   ]
+  },
+  {
+   "id": "sector-valparaiso-cerro-monjas",
+   "slug": "valparaiso-cerro-monjas",
+   "nombre": "Cerro Monjas",
+   "comuna": "Valparaíso",
+   "nivel": "sector",
+   "parent": "comuna-valparaiso",
+   "nombre_oficial": "Cº MONJAS",
+   "source": "Municipalidad de Valparaíso, SECPLA · Depto. SIG — Cerros y Sectores de la comuna",
+   "source_type": "sig_municipal",
+   "source_url": "https://services8.arcgis.com/5BaAHTQ4nRVz57H5/arcgis/rest/services/CERROS_Y_SECTORES_DE_LA_COMUNA_DE_VALPARA%C3%8DSO/FeatureServer/0",
+   "verified_at": "2026-10-22",
+   "aliases": [
+    "Cº MONJAS"
+   ],
+   "centroide": [
+    -71.61603,
+    -33.05365
+   ]
+  },
+  {
+   "id": "sector-valparaiso-cerro-panteon",
+   "slug": "valparaiso-cerro-panteon",
+   "nombre": "Cerro Panteón",
+   "comuna": "Valparaíso",
+   "nivel": "sector",
+   "parent": "comuna-valparaiso",
+   "nombre_oficial": "Cº PANTEON",
+   "source": "Municipalidad de Valparaíso, SECPLA · Depto. SIG — Cerros y Sectores de la comuna",
+   "source_type": "sig_municipal",
+   "source_url": "https://services8.arcgis.com/5BaAHTQ4nRVz57H5/arcgis/rest/services/CERROS_Y_SECTORES_DE_LA_COMUNA_DE_VALPARA%C3%8DSO/FeatureServer/0",
+   "verified_at": "2026-10-22",
+   "aliases": [
+    "Cº PANTEON"
+   ],
+   "centroide": [
+    -71.62542,
+    -33.04537
+   ]
+  },
+  {
+   "id": "sector-valparaiso-cerro-placeres",
+   "slug": "valparaiso-cerro-placeres",
+   "nombre": "Cerro Placeres",
+   "comuna": "Valparaíso",
+   "nivel": "sector",
+   "parent": "comuna-valparaiso",
+   "nombre_oficial": "Cº PLACERES",
+   "source": "Municipalidad de Valparaíso, SECPLA · Depto. SIG — Cerros y Sectores de la comuna",
+   "source_type": "sig_municipal",
+   "source_url": "https://services8.arcgis.com/5BaAHTQ4nRVz57H5/arcgis/rest/services/CERROS_Y_SECTORES_DE_LA_COMUNA_DE_VALPARA%C3%8DSO/FeatureServer/0",
+   "verified_at": "2026-10-22",
+   "aliases": [
+    "Cº PLACERES"
+   ],
+   "centroide": [
+    -71.57929,
+    -33.04711
+   ]
+  },
+  {
+   "id": "sector-valparaiso-cerro-playa-ancha",
+   "slug": "valparaiso-cerro-playa-ancha",
+   "nombre": "Cerro Playa Ancha",
+   "comuna": "Valparaíso",
+   "nivel": "sector",
+   "parent": "comuna-valparaiso",
+   "nombre_oficial": "Cº PLAYA ANCHA",
+   "source": "Municipalidad de Valparaíso, SECPLA · Depto. SIG — Cerros y Sectores de la comuna",
+   "source_type": "sig_municipal",
+   "source_url": "https://services8.arcgis.com/5BaAHTQ4nRVz57H5/arcgis/rest/services/CERROS_Y_SECTORES_DE_LA_COMUNA_DE_VALPARA%C3%8DSO/FeatureServer/0",
+   "verified_at": "2026-10-22",
+   "aliases": [
+    "Cº PLAYA ANCHA"
+   ],
+   "centroide": [
+    -71.6418,
+    -33.02974
+   ]
+  },
+  {
+   "id": "sector-valparaiso-cerro-polanco",
+   "slug": "valparaiso-cerro-polanco",
+   "nombre": "Cerro Polanco",
+   "comuna": "Valparaíso",
+   "nivel": "sector",
+   "parent": "comuna-valparaiso",
+   "nombre_oficial": "Cº POLANCO",
+   "source": "Municipalidad de Valparaíso, SECPLA · Depto. SIG — Cerros y Sectores de la comuna",
+   "source_type": "sig_municipal",
+   "source_url": "https://services8.arcgis.com/5BaAHTQ4nRVz57H5/arcgis/rest/services/CERROS_Y_SECTORES_DE_LA_COMUNA_DE_VALPARA%C3%8DSO/FeatureServer/0",
+   "verified_at": "2026-10-22",
+   "aliases": [
+    "Cº POLANCO"
+   ],
+   "centroide": [
+    -71.59518,
+    -33.04925
+   ]
+  },
+  {
+   "id": "sector-valparaiso-cerro-ramaditas",
+   "slug": "valparaiso-cerro-ramaditas",
+   "nombre": "Cerro Ramaditas",
+   "comuna": "Valparaíso",
+   "nivel": "sector",
+   "parent": "comuna-valparaiso",
+   "nombre_oficial": "Cº RAMADITAS",
+   "source": "Municipalidad de Valparaíso, SECPLA · Depto. SIG — Cerros y Sectores de la comuna",
+   "source_type": "sig_municipal",
+   "source_url": "https://services8.arcgis.com/5BaAHTQ4nRVz57H5/arcgis/rest/services/CERROS_Y_SECTORES_DE_LA_COMUNA_DE_VALPARA%C3%8DSO/FeatureServer/0",
+   "verified_at": "2026-10-22",
+   "aliases": [
+    "Cº RAMADITAS"
+   ],
+   "centroide": [
+    -71.59744,
+    -33.06035
+   ]
+  },
+  {
+   "id": "sector-valparaiso-cerro-recreo",
+   "slug": "valparaiso-cerro-recreo",
+   "nombre": "Cerro Recreo",
+   "comuna": "Valparaíso",
+   "nivel": "sector",
+   "parent": "comuna-valparaiso",
+   "nombre_oficial": "Cº RECREO",
+   "source": "Municipalidad de Valparaíso, SECPLA · Depto. SIG — Cerros y Sectores de la comuna",
+   "source_type": "sig_municipal",
+   "source_url": "https://services8.arcgis.com/5BaAHTQ4nRVz57H5/arcgis/rest/services/CERROS_Y_SECTORES_DE_LA_COMUNA_DE_VALPARA%C3%8DSO/FeatureServer/0",
+   "verified_at": "2026-10-22",
+   "aliases": [
+    "Cº RECREO"
+   ],
+   "centroide": [
+    -71.59997,
+    -33.04944
+   ]
+  },
+  {
+   "id": "sector-valparaiso-cerro-rocuant",
+   "slug": "valparaiso-cerro-rocuant",
+   "nombre": "Cerro Rocuant",
+   "comuna": "Valparaíso",
+   "nivel": "sector",
+   "parent": "comuna-valparaiso",
+   "nombre_oficial": "Cº ROCUANT",
+   "source": "Municipalidad de Valparaíso, SECPLA · Depto. SIG — Cerros y Sectores de la comuna",
+   "source_type": "sig_municipal",
+   "source_url": "https://services8.arcgis.com/5BaAHTQ4nRVz57H5/arcgis/rest/services/CERROS_Y_SECTORES_DE_LA_COMUNA_DE_VALPARA%C3%8DSO/FeatureServer/0",
+   "verified_at": "2026-10-22",
+   "aliases": [
+    "Cº ROCUANT"
+   ],
+   "centroide": [
+    -71.5922,
+    -33.06508
+   ]
+  },
+  {
+   "id": "sector-valparaiso-cerro-rodriguez",
+   "slug": "valparaiso-cerro-rodriguez",
+   "nombre": "Cerro Rodríguez",
+   "comuna": "Valparaíso",
+   "nivel": "sector",
+   "parent": "comuna-valparaiso",
+   "nombre_oficial": "Cº RODRIGUEZ",
+   "source": "Municipalidad de Valparaíso, SECPLA · Depto. SIG — Cerros y Sectores de la comuna",
+   "source_type": "sig_municipal",
+   "source_url": "https://services8.arcgis.com/5BaAHTQ4nRVz57H5/arcgis/rest/services/CERROS_Y_SECTORES_DE_LA_COMUNA_DE_VALPARA%C3%8DSO/FeatureServer/0",
+   "verified_at": "2026-10-22",
+   "aliases": [
+    "Cº RODRIGUEZ"
+   ],
+   "centroide": [
+    -71.60078,
+    -33.04828
+   ]
+  },
+  {
+   "id": "sector-valparaiso-cerro-san-francisco",
+   "slug": "valparaiso-cerro-san-francisco",
+   "nombre": "Cerro San Francisco",
+   "comuna": "Valparaíso",
+   "nivel": "sector",
+   "parent": "comuna-valparaiso",
+   "nombre_oficial": "Cº SAN FRANCISCO",
+   "source": "Municipalidad de Valparaíso, SECPLA · Depto. SIG — Cerros y Sectores de la comuna",
+   "source_type": "sig_municipal",
+   "source_url": "https://services8.arcgis.com/5BaAHTQ4nRVz57H5/arcgis/rest/services/CERROS_Y_SECTORES_DE_LA_COMUNA_DE_VALPARA%C3%8DSO/FeatureServer/0",
+   "verified_at": "2026-10-22",
+   "aliases": [
+    "Cº SAN FRANCISCO"
+   ],
+   "centroide": [
+    -71.63496,
+    -33.04144
+   ]
+  },
+  {
+   "id": "sector-valparaiso-cerro-san-juan-de-dios",
+   "slug": "valparaiso-cerro-san-juan-de-dios",
+   "nombre": "Cerro San Juan de Dios",
+   "comuna": "Valparaíso",
+   "nivel": "sector",
+   "parent": "comuna-valparaiso",
+   "nombre_oficial": "Cº SAN JUAN DE DIOS",
+   "source": "Municipalidad de Valparaíso, SECPLA · Depto. SIG — Cerros y Sectores de la comuna",
+   "source_type": "sig_municipal",
+   "source_url": "https://services8.arcgis.com/5BaAHTQ4nRVz57H5/arcgis/rest/services/CERROS_Y_SECTORES_DE_LA_COMUNA_DE_VALPARA%C3%8DSO/FeatureServer/0",
+   "verified_at": "2026-10-22",
+   "aliases": [
+    "Cº SAN JUAN DE DIOS"
+   ],
+   "centroide": [
+    -71.63011,
+    -33.0568
+   ]
+  },
+  {
+   "id": "sector-valparaiso-cerro-san-roque",
+   "slug": "valparaiso-cerro-san-roque",
+   "nombre": "Cerro San Roque",
+   "comuna": "Valparaíso",
+   "nivel": "sector",
+   "parent": "comuna-valparaiso",
+   "nombre_oficial": "Cº SAN ROQUE",
+   "source": "Municipalidad de Valparaíso, SECPLA · Depto. SIG — Cerros y Sectores de la comuna",
+   "source_type": "sig_municipal",
+   "source_url": "https://services8.arcgis.com/5BaAHTQ4nRVz57H5/arcgis/rest/services/CERROS_Y_SECTORES_DE_LA_COMUNA_DE_VALPARA%C3%8DSO/FeatureServer/0",
+   "verified_at": "2026-10-22",
+   "aliases": [
+    "Cº SAN ROQUE"
+   ],
+   "centroide": [
+    -71.58592,
+    -33.06971
+   ]
+  },
+  {
+   "id": "sector-valparaiso-cerro-santo-domingo",
+   "slug": "valparaiso-cerro-santo-domingo",
+   "nombre": "Cerro Santo Domingo",
+   "comuna": "Valparaíso",
+   "nivel": "sector",
+   "parent": "comuna-valparaiso",
+   "nombre_oficial": "Cº SANTO DOMINGO",
+   "source": "Municipalidad de Valparaíso, SECPLA · Depto. SIG — Cerros y Sectores de la comuna",
+   "source_type": "sig_municipal",
+   "source_url": "https://services8.arcgis.com/5BaAHTQ4nRVz57H5/arcgis/rest/services/CERROS_Y_SECTORES_DE_LA_COMUNA_DE_VALPARA%C3%8DSO/FeatureServer/0",
+   "verified_at": "2026-10-22",
+   "aliases": [
+    "Cº SANTO DOMINGO"
+   ],
+   "centroide": [
+    -71.63445,
+    -33.03528
+   ]
+  },
+  {
+   "id": "sector-valparaiso-cerro-toro",
+   "slug": "valparaiso-cerro-toro",
+   "nombre": "Cerro Toro",
+   "comuna": "Valparaíso",
+   "nivel": "sector",
+   "parent": "comuna-valparaiso",
+   "nombre_oficial": "Cº TORO",
+   "source": "Municipalidad de Valparaíso, SECPLA · Depto. SIG — Cerros y Sectores de la comuna",
+   "source_type": "sig_municipal",
+   "source_url": "https://services8.arcgis.com/5BaAHTQ4nRVz57H5/arcgis/rest/services/CERROS_Y_SECTORES_DE_LA_COMUNA_DE_VALPARA%C3%8DSO/FeatureServer/0",
+   "verified_at": "2026-10-22",
+   "aliases": [
+    "Cº TORO"
+   ],
+   "centroide": [
+    -71.63831,
+    -33.03718
+   ]
+  },
+  {
+   "id": "sector-valparaiso-cerro-yungay",
+   "slug": "valparaiso-cerro-yungay",
+   "nombre": "Cerro Yungay",
+   "comuna": "Valparaíso",
+   "nivel": "sector",
+   "parent": "comuna-valparaiso",
+   "nombre_oficial": "Cº YUNGAY",
+   "source": "Municipalidad de Valparaíso, SECPLA · Depto. SIG — Cerros y Sectores de la comuna",
+   "source_type": "sig_municipal",
+   "source_url": "https://services8.arcgis.com/5BaAHTQ4nRVz57H5/arcgis/rest/services/CERROS_Y_SECTORES_DE_LA_COMUNA_DE_VALPARA%C3%8DSO/FeatureServer/0",
+   "verified_at": "2026-10-22",
+   "aliases": [
+    "Cº YUNGAY"
+   ],
+   "centroide": [
+    -71.62628,
+    -33.05504
+   ]
+  },
+  {
+   "id": "sector-valparaiso-laguna-verde",
+   "slug": "valparaiso-laguna-verde",
+   "nombre": "Laguna Verde",
+   "comuna": "Valparaíso",
+   "nivel": "sector",
+   "parent": "comuna-valparaiso",
+   "nombre_oficial": "SECTOR LAGUNA VERDE",
+   "source": "Municipalidad de Valparaíso, SECPLA · Depto. SIG — Cerros y Sectores de la comuna",
+   "source_type": "sig_municipal",
+   "source_url": "https://services8.arcgis.com/5BaAHTQ4nRVz57H5/arcgis/rest/services/CERROS_Y_SECTORES_DE_LA_COMUNA_DE_VALPARA%C3%8DSO/FeatureServer/0",
+   "verified_at": "2026-10-22",
+   "aliases": [
+    "SECTOR LAGUNA VERDE"
+   ],
+   "centroide": [
+    -71.66534,
+    -33.10122
+   ]
+  },
+  {
+   "id": "sector-valparaiso-placilla-de-penuelas",
+   "slug": "valparaiso-placilla-de-penuelas",
+   "nombre": "Placilla de Peñuelas",
+   "comuna": "Valparaíso",
+   "nivel": "sector",
+   "parent": "comuna-valparaiso",
+   "nombre_oficial": "SECTOR PLACILLA DE PEÑUELAS",
+   "source": "Municipalidad de Valparaíso, SECPLA · Depto. SIG — Cerros y Sectores de la comuna",
+   "source_type": "sig_municipal",
+   "source_url": "https://services8.arcgis.com/5BaAHTQ4nRVz57H5/arcgis/rest/services/CERROS_Y_SECTORES_DE_LA_COMUNA_DE_VALPARA%C3%8DSO/FeatureServer/0",
+   "verified_at": "2026-10-22",
+   "aliases": [
+    "SECTOR PLACILLA DE PEÑUELAS"
+   ],
+   "centroide": [
+    -71.56324,
+    -33.12046
+   ]
+  },
+  {
+   "id": "sector-valparaiso-poblacion-quebrada-verde",
+   "slug": "valparaiso-poblacion-quebrada-verde",
+   "nombre": "Población Quebrada Verde",
+   "comuna": "Valparaíso",
+   "nivel": "sector",
+   "parent": "comuna-valparaiso",
+   "nombre_oficial": "SECTOR POBLACION QUEBRADA VERDE",
+   "source": "Municipalidad de Valparaíso, SECPLA · Depto. SIG — Cerros y Sectores de la comuna",
+   "source_type": "sig_municipal",
+   "source_url": "https://services8.arcgis.com/5BaAHTQ4nRVz57H5/arcgis/rest/services/CERROS_Y_SECTORES_DE_LA_COMUNA_DE_VALPARA%C3%8DSO/FeatureServer/0",
+   "verified_at": "2026-10-22",
+   "aliases": [
+    "SECTOR POBLACION QUEBRADA VERDE"
+   ],
+   "centroide": [
+    -71.6487,
+    -33.04987
+   ]
+  },
+  {
+   "id": "sector-valparaiso-portales",
+   "slug": "valparaiso-portales",
+   "nombre": "Portales",
+   "comuna": "Valparaíso",
+   "nivel": "sector",
+   "parent": "comuna-valparaiso",
+   "nombre_oficial": "SECTOR PORTALES",
+   "source": "Municipalidad de Valparaíso, SECPLA · Depto. SIG — Cerros y Sectores de la comuna",
+   "source_type": "sig_municipal",
+   "source_url": "https://services8.arcgis.com/5BaAHTQ4nRVz57H5/arcgis/rest/services/CERROS_Y_SECTORES_DE_LA_COMUNA_DE_VALPARA%C3%8DSO/FeatureServer/0",
+   "verified_at": "2026-10-22",
+   "aliases": [
+    "SECTOR PORTALES"
+   ],
+   "centroide": [
+    -71.59129,
+    -33.03219
+   ]
+  },
+  {
+   "id": "sector-valparaiso-portuario",
+   "slug": "valparaiso-portuario",
+   "nombre": "Portuario",
+   "comuna": "Valparaíso",
+   "nivel": "sector",
+   "parent": "comuna-valparaiso",
+   "nombre_oficial": "SECTOR PORTUARIO",
+   "source": "Municipalidad de Valparaíso, SECPLA · Depto. SIG — Cerros y Sectores de la comuna",
+   "source_type": "sig_municipal",
+   "source_url": "https://services8.arcgis.com/5BaAHTQ4nRVz57H5/arcgis/rest/services/CERROS_Y_SECTORES_DE_LA_COMUNA_DE_VALPARA%C3%8DSO/FeatureServer/0",
+   "verified_at": "2026-10-22",
+   "aliases": [
+    "SECTOR PORTUARIO"
+   ],
+   "centroide": [
+    -71.62905,
+    -33.0296
+   ]
+  },
+  {
+   "id": "sector-valparaiso-rodelillo",
+   "slug": "valparaiso-rodelillo",
+   "nombre": "Rodelillo",
+   "comuna": "Valparaíso",
+   "nivel": "sector",
+   "parent": "comuna-valparaiso",
+   "nombre_oficial": "SECTOR RODELILLO",
+   "source": "Municipalidad de Valparaíso, SECPLA · Depto. SIG — Cerros y Sectores de la comuna",
+   "source_type": "sig_municipal",
+   "source_url": "https://services8.arcgis.com/5BaAHTQ4nRVz57H5/arcgis/rest/services/CERROS_Y_SECTORES_DE_LA_COMUNA_DE_VALPARA%C3%8DSO/FeatureServer/0",
+   "verified_at": "2026-10-22",
+   "aliases": [
+    "SECTOR RODELILLO"
+   ],
+   "centroide": [
+    -71.57715,
+    -33.05535
+   ]
+  },
+  {
+   "id": "sector-valparaiso-tranque-de-la-luz",
+   "slug": "valparaiso-tranque-de-la-luz",
+   "nombre": "Tranque de la Luz",
+   "comuna": "Valparaíso",
+   "nivel": "sector",
+   "parent": "comuna-valparaiso",
+   "nombre_oficial": "SECTOR TRANQUE DE LA LUZ",
+   "source": "Municipalidad de Valparaíso, SECPLA · Depto. SIG — Cerros y Sectores de la comuna",
+   "source_type": "sig_municipal",
+   "source_url": "https://services8.arcgis.com/5BaAHTQ4nRVz57H5/arcgis/rest/services/CERROS_Y_SECTORES_DE_LA_COMUNA_DE_VALPARA%C3%8DSO/FeatureServer/0",
+   "verified_at": "2026-10-22",
+   "aliases": [
+    "SECTOR TRANQUE DE LA LUZ"
+   ],
+   "centroide": [
+    -71.59305,
+    -33.13204
+   ]
+  },
+  {
+   "id": "sector-valparaiso-yolanda",
+   "slug": "valparaiso-yolanda",
+   "nombre": "Yolanda",
+   "comuna": "Valparaíso",
+   "nivel": "sector",
+   "parent": "comuna-valparaiso",
+   "nombre_oficial": "SECTOR YOLANDA",
+   "source": "Municipalidad de Valparaíso, SECPLA · Depto. SIG — Cerros y Sectores de la comuna",
+   "source_type": "sig_municipal",
+   "source_url": "https://services8.arcgis.com/5BaAHTQ4nRVz57H5/arcgis/rest/services/CERROS_Y_SECTORES_DE_LA_COMUNA_DE_VALPARA%C3%8DSO/FeatureServer/0",
+   "verified_at": "2026-10-22",
+   "aliases": [
+    "SECTOR YOLANDA"
+   ],
+   "centroide": [
+    -71.60006,
+    -33.0365
+   ]
+  }
+ ]
+}

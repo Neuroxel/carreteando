@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } fr
 import { diversifyByVenue, sugerenciasPara, esBarato, filterEvents, nocheAntes, ordenarPorPrecio } from '../lib/events';
 import { fechaDeLaNoche } from '../lib/event-extraction';
 import { parseFilters } from '../lib/filters';
-import { CIUDADES, type FiltrosEvento } from '../lib/types';
+import { CIUDADES, type Evento, type FiltrosEvento } from '../lib/types';
 import { escenasConLugares, lugarEnEscena } from '../lib/escenas';
 import { buscarLugares, buscarZonas, zonaSlug } from '../lib/venues';
 import { puntosDeMapa } from '../lib/map';
@@ -18,6 +18,7 @@ import VenueCard from './VenueCard';
 import VenueRail from './VenueRail';
 import VenueMap from './VenueMap';
 import TituloSeccion from './TituloSeccion';
+import { RUTA_GEOMETRIAS, sectorDeLugar, territorioDe, territorioPorSlug, zonaValida, zonasDeComuna, type TerritorioGeo } from '../lib/territorios';
 import PosterDecor from './poster/PosterDecor';
 
 const SHORT: Record<string, string> = { Valparaíso: 'Valpo', 'Viña del Mar': 'Viña' };
@@ -34,7 +35,7 @@ interface Estado {
 }
 type Cambio = Partial<FiltrosEvento> & { ver?: Ver; vista?: Vista; orden?: Orden; capa?: Capa };
 /** Estado de la ubicación en palabras de quien mira; nunca mensajes técnicos. */
-function EstadoUbicacion({ gps, yo, ciudad, onUbicar }: { gps: EstadoGps; yo: Fix | null; ciudad?: string; onUbicar: () => void }) {
+function EstadoUbicacion({ gps, yo, ciudad, aqui, onUbicar }: { gps: EstadoGps; yo: Fix | null; ciudad?: string; aqui?: string | null; onUbicar: () => void }) {
   const boton = (texto: string) => (
     <button type="button" className="radar-gps-boton" onClick={onUbicar}>
       {texto}
@@ -47,6 +48,7 @@ function EstadoUbicacion({ gps, yo, ciudad, onUbicar }: { gps: EstadoGps; yo: Fi
     return (
       <p className="radar-gps" role="status">
         {gps === 'precisa' ? 'Ubicación precisa.' : `Ubicación aproximada (±${Math.round((yo?.accuracy || 0) / 10) * 10} m).`}
+        {aqui ? ` Estás en ${aqui}.` : ''}
         {viendo} Tu ubicación no sale de este teléfono.{gps === 'aproximada' ? <> {boton('Precisar')}</> : null}
       </p>
     );
@@ -75,6 +77,12 @@ function leer(search: string, defecto: string): Estado {
     capa: leerCapa(p.get('capa')),
   };
 }
+/** Cambiar de comuna suelta la zona, salvo que el cambio traiga una. */
+const conZona = (prev: FiltrosEvento, cambio: Partial<FiltrosEvento>): FiltrosEvento => ({
+  ...prev,
+  ...cambio,
+  ...(cambio.ciudad !== undefined && cambio.ciudad !== prev.ciudad && cambio.zona === undefined ? { zona: null } : {}),
+});
 /** URL limpia: solo lo que difiere del valor por defecto. */
 function aUrl(e: Estado, path: string, defecto: string) {
   const p = new URLSearchParams();
@@ -85,6 +93,8 @@ function aUrl(e: Estado, path: string, defecto: string) {
     const v = f[k];
     if (v && v !== 'todos') p.set(k, v);
   }
+  const zona = zonaValida(f.zona, f.ciudad);
+  if (zona) p.set('zona', zona);
   if (e.ver !== 'todo') p.set('ver', e.ver);
   if (e.vista !== 'lista') p.set('vista', e.vista);
   if (e.orden !== 'recomendados') p.set('orden', e.orden);
@@ -142,7 +152,7 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
       setEstado((prev) => {
         const { ver, vista, orden, capa, ...filtros } = cambio;
         const next: Estado = {
-          filtros: { ...prev.filtros, ...filtros },
+          filtros: conZona(prev.filtros, filtros),
           ver: ver ?? prev.ver,
           vista: vista ?? prev.vista,
           orden: orden ?? prev.orden,
@@ -159,7 +169,7 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
   const enlace = (cambio: Cambio) => ({
     href: aUrl(
       {
-        filtros: { ...estado.filtros, ...cambio },
+        filtros: conZona(estado.filtros, cambio),
         ver: cambio.ver ?? estado.ver,
         vista: cambio.vista ?? estado.vista,
         orden: cambio.orden ?? estado.orden,
@@ -238,11 +248,30 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
     return () => clearInterval(t);
   }, []);
   const ahoraCL = useMemo(() => ahoraEnChile(new Date(ahora)), [ahora]);
+  // Polígonos verificados: se cargan solo para el mapa o con ubicación, una vez.
+  const [geos, setGeos] = useState<TerritorioGeo[] | null>(null);
+  useEffect(() => {
+    if (geos || (vista !== 'mapa' && !yo)) return;
+    let vivo = true;
+    fetch(RUTA_GEOMETRIAS)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((g: { features?: TerritorioGeo[] } | null) => vivo && g?.features && setGeos(g.features))
+      .catch(() => undefined);
+    return () => {
+      vivo = false;
+    };
+  }, [geos, vista, yo]);
+  const territorioActual = useMemo(() => (yo && geos ? territorioDe(yo, geos) : null), [yo, geos]);
+  // Zona (sector/barrio): solo eventos de lugares cuyo sector está verificado.
+  const enZona = useCallback(
+    (lista: Evento[]) => (filtros.zona ? lista.filter((e) => sectorDeLugar(lugarDe(e)) === filtros.zona) : lista),
+    [filtros.zona, lugarDe],
+  );
   const events = useMemo(() => {
-    const lista = diversifyByVenue(filterEvents(todos, filtros, today));
+    const lista = diversifyByVenue(enZona(filterEvents(todos, filtros, today)));
     // Lo que todavía no empieza va primero; lo iniciado sigue en la lista, después.
     return orden === 'barato' ? ordenarPorPrecio(lista) : porEstadoTemporal(nocheAntes(lista), ahoraCL);
-  }, [todos, filtros, today, orden, ahoraCL]);
+  }, [todos, filtros, today, orden, ahoraCL, enZona]);
   const derivados = useMemo(() => {
     const conteoLugar = new Map<string, number>();
     const hoyPorLugar = new Map<string, string>();
@@ -253,6 +282,7 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
       if (e.fecha === today && !hoyPorLugar.has(slug)) hoyPorLugar.set(slug, e.nombre);
     }
     const lugaresZona = (filtros.ciudad === 'todos' ? snap.venues : snap.venues.filter((l) => l.ciudad === filtros.ciudad))
+      .filter((l) => !filtros.zona || sectorDeLugar(l.slug) === filtros.zona)
       .slice()
       .sort((a, b) => (conteoLugar.get(b.nombre) || 0) - (conteoLugar.get(a.nombre) || 0));
     const porCiudad = new Map<string, number>();
@@ -279,6 +309,18 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
       lugaresHallados: filtros.busqueda ? buscarLugares(snap.venues, filtros.busqueda) : [],
       zonasHalladas: filtros.busqueda ? buscarZonas(snap.venues, filtros.busqueda) : [],
       sugerencias: sugerenciasPara(todos, filtros, today),
+      // Chips de zona: solo sectores verificados con al menos un lugar ubicado en ellos.
+      zonas:
+        filtros.ciudad && filtros.ciudad !== 'todos'
+          ? zonasDeComuna(filtros.ciudad)
+              .map((t) => ({
+                t,
+                lugares: snap.venues.filter((l) => sectorDeLugar(l.slug) === t.slug).length,
+                eventos: todos.filter((e) => e.fecha >= today && e.ciudad === filtros.ciudad && sectorDeLugar(lugarDe(e)) === t.slug).length,
+              }))
+              .filter((z) => z.lugares > 0)
+              .sort((a, b) => b.eventos - a.eventos || a.t.nombre.localeCompare(b.t.nombre, 'es'))
+          : [],
     };
   }, [todos, snap.venues, filtros, today, lugarDe]);
   const lugaresVisibles = useMemo(() => {
@@ -304,9 +346,9 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
     // Un evento con final publicado y ya pasado no es una recomendación activa.
     () =>
       vista === 'mapa'
-        ? filterEvents(todos, { ...filtros, fecha: 'hoy' }, today).filter((e) => estadoTemporal(e, ahoraCL) !== 'finalizado')
+        ? enZona(filterEvents(todos, { ...filtros, fecha: 'hoy' }, today)).filter((e) => estadoTemporal(e, ahoraCL) !== 'finalizado')
         : [],
-    [vista, todos, filtros, today, ahoraCL],
+    [vista, todos, filtros, today, ahoraCL, enZona],
   );
   const lugaresMapa = useMemo(() => {
     if (vista !== 'mapa') return [];
@@ -402,6 +444,19 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
             ))}
           </div>
         </div>
+        {derivados.zonas.length > 0 && (
+          <div className="lugar-selector zona-selector" role="group" aria-label={`Zonas de ${filtros.ciudad}`}>
+            <a {...enlace({ zona: null })} className={!filtros.zona ? 'activa' : ''} aria-current={!filtros.zona ? 'true' : undefined}>
+              Todo {SHORT[filtros.ciudad || ''] || filtros.ciudad}
+            </a>
+            {derivados.zonas.map(({ t, eventos }) => (
+              <a key={t.slug} {...enlace({ zona: t.slug })} className={filtros.zona === t.slug ? 'activa' : ''} aria-current={filtros.zona === t.slug ? 'true' : undefined}>
+                {t.nombre}
+                {eventos > 0 && <span>{eventos}</span>}
+              </a>
+            ))}
+          </div>
+        )}
       </section>
       <section className={`container discovery ${home ? 'discovery-home' : ''}`} id="cartelera" aria-label="Cartelera">
         {vista === 'mapa' ? (
@@ -414,7 +469,7 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
                 Lugares
               </a>
             </div>
-            <EstadoUbicacion gps={gps} yo={yo} ciudad={filtros.ciudad} onUbicar={() => ubicar('gesto')} />
+            <EstadoUbicacion gps={gps} yo={yo} ciudad={filtros.ciudad} aqui={territorioActual?.nombre} onUbicar={() => ubicar('gesto')} />
           </div>
         ) : ver === 'lugares' ? null : (
         <div className="date-tabs" aria-label="Cuándo">
@@ -520,7 +575,18 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
         {vista === 'mapa' && (
           <>
             {puntos.length ? (
-              <VenueMap puntos={puntos} yo={yo} />
+              <VenueMap
+                puntos={puntos}
+                yo={yo}
+                territorios={geos}
+                aqui={territorioActual?.slug || null}
+                zona={filtros.zona || null}
+                conteoZona={(slug) => ({
+                  eventos: eventosHoy.filter((e) => sectorDeLugar(lugarDe(e)) === slug).length,
+                  lugares: snap.venues.filter((l) => sectorDeLugar(l.slug) === slug).length,
+                })}
+                urlZona={(t) => aUrl({ ...estado, filtros: { ...estado.filtros, ciudad: t.comuna, zona: t.slug } }, path, defecto)}
+              />
             ) : capa === 'hoy' ? (
               <div className="empty-state">
                 <h3>{eventosHoy.length ? 'Los carretes de hoy todavía no tienen ubicación verificada.' : 'No tenemos carretes confirmados para hoy acá.'}</h3>
