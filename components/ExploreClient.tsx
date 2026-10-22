@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import { diversifyByVenue, sugerenciasPara, esBarato, filterEvents, nocheAntes, ordenarPorPrecio } from '../lib/events';
-import { fechaDeLaNoche } from '../lib/event-extraction';
+import { addDays, fechaDeLaNoche } from '../lib/event-extraction';
 import { parseFilters } from '../lib/filters';
 import { CIUDADES, type Evento, type FiltrosEvento } from '../lib/types';
 import { escenasConLugares, lugarEnEscena } from '../lib/escenas';
@@ -11,7 +11,7 @@ import { puntosDeMapa } from '../lib/map';
 import { indiceDeLugares } from '../lib/venue-match';
 import type { PublicSnapshot } from '../lib/snapshot';
 import { rememberEmptySearch } from '../lib/metrics';
-import { ORDEN_TEMPORAL, ahoraEnChile, estadoTemporal, porEstadoTemporal } from '../lib/temporal';
+import { ORDEN_TEMPORAL, ahoraEnChile, esMadrugada, estadoTemporal, nombreDia, porEstadoTemporal } from '../lib/temporal';
 import { RADIOS_KM, CLAVE_GPS_NEGADO_VIEJA, ubicarEnDosFases, type EstadoGps, type Fix, leerCapa, porCercania, textoDistancia, type Capa, type Posicion } from '../lib/radar';
 import EventCard from './EventCard';
 import VenueCard from './VenueCard';
@@ -248,6 +248,7 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
     return () => clearInterval(t);
   }, []);
   const ahoraCL = useMemo(() => ahoraEnChile(new Date(ahora)), [ahora]);
+  const madrugada = esMadrugada(ahoraCL);
   // Polígonos verificados: se cargan solo para el mapa o con ubicación, una vez.
   const [geos, setGeos] = useState<TerritorioGeo[] | null>(null);
   useEffect(() => {
@@ -475,8 +476,8 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
         <div className="date-tabs" aria-label="Cuándo">
           {(
             [
-              ['hoy', 'Hoy', derivados.todayCount],
-              ['manana', 'Mañana', derivados.mananaCount],
+              ['hoy', madrugada ? 'Esta noche' : 'Hoy', derivados.todayCount],
+              ['manana', madrugada ? nombreDia(addDays(today, 1)) : 'Mañana', derivados.mananaCount],
               ['finde', 'Este finde', 0],
               ['futuro', 'Más adelante', 0],
             ] as const
@@ -652,11 +653,15 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
                 <p className="eyebrow">{filtros.ciudad === 'todos' ? 'VALPO Y ALREDEDORES' : filtros.ciudad}</p>
                 <h2>
                   {filtros.fecha === 'hoy'
-                    ? 'Hoy'
+                    ? madrugada
+                      ? 'Esta noche'
+                      : 'Hoy'
                     : filtros.fecha === 'finde'
                       ? 'Este finde'
                       : filtros.fecha === 'manana'
-                        ? 'Mañana'
+                        ? madrugada
+                          ? nombreDia(addDays(today, 1))
+                          : 'Mañana'
                         : 'Lo que se viene'}
                   <span className="heading-period">.</span>
                 </h2>
@@ -724,16 +729,22 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
             ) : (
               <div className="event-grid">
                 {events.map((e, i) => (
-                  <EventCard key={e.id} evento={e} today={today} priority={i === 0} estado={estadoTemporal(e, ahoraCL)} />
+                  <EventCard key={e.id} evento={e} today={today} priority={i === 0} estado={estadoTemporal(e, ahoraCL)} madrugada={madrugada} />
                 ))}
               </div>
             )}
             {events.length === 0 && derivados.sugerencias.length > 0 && (
               <div className="alternative-plans">
-                <h3>{filtros.ciudad && filtros.ciudad !== 'todos' ? `Otras noches en ${filtros.ciudad}` : 'Otras noches en la región'}</h3>
+                <h3>
+                  {filtros.zona
+                    ? `También en ${filtros.ciudad}, fuera de ${territorioPorSlug(filtros.zona)?.nombre || 'esta zona'}`
+                    : filtros.ciudad && filtros.ciudad !== 'todos'
+                      ? `Otras noches en ${filtros.ciudad}`
+                      : 'Otras noches en la región'}
+                </h3>
                 <div className="event-grid">
                   {derivados.sugerencias.map((e) => (
-                    <EventCard key={e.id} evento={e} today={today} estado={estadoTemporal(e, ahoraCL)} />
+                    <EventCard key={e.id} evento={e} today={today} estado={estadoTemporal(e, ahoraCL)} madrugada={madrugada} />
                   ))}
                 </div>
               </div>
