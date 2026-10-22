@@ -1,14 +1,15 @@
 import Link from 'next/link';
 import { Suspense } from 'react';
 import NavDestinos from './NavDestinos';
+import BrandLink from './BrandLink';
 import { Logo } from './Logo';
 export default function Navbar() {
   return (
     <header className="site-header">
       <div className="container nav-inner">
-        <Link prefetch={false} className="brand" href="/" aria-label="Dónde Salgo?, inicio">
+        <BrandLink className="brand">
           <Logo className="brand-logo" title="Dónde Salgo?" />
-        </Link>
+        </BrandLink>
         <nav aria-label="Navegación principal">
           <Suspense
             fallback={

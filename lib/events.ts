@@ -265,3 +265,15 @@ export function esTemporadaDieciocho(today: string): boolean {
   const md = today.slice(5);
   return md >= '09-14' && md <= '09-21';
 }
+
+/**
+ * Sugerencias cuando la búsqueda queda vacía. Si hay una comuna elegida, solo
+ * de esa comuna: una selección explícita nunca se mezcla con otras comunas.
+ */
+export function sugerenciasPara(todos: Evento[], filtros: FiltrosEvento, today: string, cuantos = 3): Evento[] {
+  const ciudad = filtros.ciudad && filtros.ciudad !== 'todos' ? filtros.ciudad : null;
+  return todos
+    .filter((e) => e.activo && e.fecha >= today && (!ciudad || e.ciudad === ciudad))
+    .filter((e, i, all) => all.findIndex((o) => o.lugar === e.lugar && o.ciudad === e.ciudad) === i)
+    .slice(0, cuantos);
+}
