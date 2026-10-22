@@ -113,6 +113,8 @@ export interface FiltrosEvento {
   precio?: 'gratis' | 'pago' | 'todos' | '5000' | '10000' | '15000';
   fecha?: 'hoy' | 'manana' | 'finde' | 'futuro' | 'semana' | 'todos';
   escena?: string;
+  /** Sector o barrio verificado dentro de la comuna elegida (slug de lib/territorios). */
+  zona?: string | null;
 }
 
 export const CATEGORIAS: {

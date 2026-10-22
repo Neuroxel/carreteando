@@ -1,0 +1,150 @@
+{
+ "nota": "Sector de cada lugar por punto-en-polígono contra la capa oficial de cerros y sectores de Valparaíso. Coordenadas exactas; las de precisión \"calle\" solo si quedan a más de 100 m de un borde. Se regenera cuando cambian coordenadas o polígonos.",
+ "generado": "2026-10-22",
+ "lugares": {
+  "aula-magna-usm": {
+   "sector": "valparaiso-cerro-placeres",
+   "lat": -33.0351828,
+   "lng": -71.5952743,
+   "precision": "exacta"
+  },
+  "bar-de-pisco": {
+   "sector": "valparaiso-cerro-alegre",
+   "lat": -33.043714,
+   "lng": -71.628422,
+   "precision": "exacta"
+  },
+  "bar-terraza-miaw": {
+   "sector": "valparaiso-cerro-alegre",
+   "lat": -33.043354,
+   "lng": -71.626139,
+   "precision": "exacta"
+  },
+  "barbones-curauma": {
+   "sector": "valparaiso-tranque-de-la-luz",
+   "lat": -33.142181,
+   "lng": -71.574864,
+   "precision": "calle"
+  },
+  "baron-rooftop": {
+   "sector": "valparaiso-almendral",
+   "lat": -33.0438095,
+   "lng": -71.606425,
+   "precision": "exacta"
+  },
+  "cafe-teatro-vp-valparaiso-profundo-valparaiso": {
+   "sector": "valparaiso-cerro-concepcion",
+   "lat": -33.0411988,
+   "lng": -71.6280565,
+   "precision": "exacta"
+  },
+  "casa-de-la-cultura-valparaiso": {
+   "sector": "valparaiso-barrio-puerto",
+   "lat": -33.038352,
+   "lng": -71.629516,
+   "precision": "exacta"
+  },
+  "cassot-bar": {
+   "sector": "valparaiso-cerro-panteon",
+   "lat": -33.046315,
+   "lng": -71.625018,
+   "precision": "exacta"
+  },
+  "cerveceria-anfiteatro": {
+   "sector": "valparaiso-cerro-alegre",
+   "lat": -33.0435003,
+   "lng": -71.6255069,
+   "precision": "exacta"
+  },
+  "cervezocracia": {
+   "sector": "valparaiso-barrio-puerto",
+   "lat": -33.037032,
+   "lng": -71.629477,
+   "precision": "exacta"
+  },
+  "club-segundo-piso": {
+   "sector": "valparaiso-almendral",
+   "lat": -33.044146,
+   "lng": -71.606163,
+   "precision": "calle"
+  },
+  "el-canario-valpo": {
+   "sector": "valparaiso-cerro-panteon",
+   "lat": -33.044133,
+   "lng": -71.626116,
+   "precision": "exacta"
+  },
+  "el-gato-en-la-ventana": {
+   "sector": "valparaiso-cerro-panteon",
+   "lat": -33.044101,
+   "lng": -71.625881,
+   "precision": "exacta"
+  },
+  "el-pimenton": {
+   "sector": "valparaiso-cerro-yungay",
+   "lat": -33.0458619,
+   "lng": -71.6241843,
+   "precision": "exacta"
+  },
+  "espacio-barcelona": {
+   "sector": "valparaiso-almendral",
+   "lat": -33.047048,
+   "lng": -71.613321,
+   "precision": "calle"
+  },
+  "espacio-la-compania": {
+   "sector": "valparaiso-almendral",
+   "lat": -33.0471163,
+   "lng": -71.6028641,
+   "precision": "exacta"
+  },
+  "liberty": {
+   "sector": "valparaiso-barrio-puerto",
+   "lat": -33.036609,
+   "lng": -71.631015,
+   "precision": "exacta"
+  },
+  "los-alquinta-del-puerto": {
+   "sector": "valparaiso-almendral",
+   "lat": -33.047048,
+   "lng": -71.613321,
+   "precision": "calle"
+  },
+  "mascara-pub": {
+   "sector": "valparaiso-centro",
+   "lat": -33.043005,
+   "lng": -71.624886,
+   "precision": "exacta"
+  },
+  "pajarito": {
+   "sector": "valparaiso-centro",
+   "lat": -33.044891,
+   "lng": -71.621995,
+   "precision": "exacta"
+  },
+  "proa": {
+   "sector": "valparaiso-barrio-puerto",
+   "lat": -33.036391,
+   "lng": -71.629139,
+   "precision": "exacta"
+  },
+  "sala-negra-uv": {
+   "sector": "valparaiso-centro",
+   "lat": -33.044365,
+   "lng": -71.619315,
+   "precision": "exacta"
+  },
+  "teatro-municipal-valparaiso": {
+   "sector": "valparaiso-almendral",
+   "lat": -33.047366,
+   "lng": -71.609995,
+   "precision": "calle"
+  },
+  "trotamundos-valparaiso": {
+   "sector": "valparaiso-centro",
+   "lat": -33.042837,
+   "lng": -71.622924,
+   "precision": "exacta"
+  }
+ }
+}

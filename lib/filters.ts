@@ -1,5 +1,6 @@
 import { CATEGORIAS, CIUDADES, FiltrosEvento, TIPOS_EVENTO } from './types';
 import { ESCENAS } from './escenas';
+import { zonaValida } from './territorios';
 /** Topes de presupuesto, en CLP, tal como van en la URL (?precio=5000). */
 export const PRESUPUESTOS = ['5000', '10000', '15000'] as const;
 export function parseFilters(params: URLSearchParams, defaultDate = 'futuro'): FiltrosEvento {
@@ -25,14 +26,16 @@ export function parseFilters(params: URLSearchParams, defaultDate = 'futuro'): F
     const v = params.get(key);
     return v && allowed.includes(v) ? v : fallback;
   };
+  const ciudad = value('ciudad', ['todos', ...CIUDADES], 'todos');
   return {
+    zona: zonaValida(params.get('zona'), ciudad),
     busqueda: (params.get('q') || '').trim().slice(0, 120),
     categoria: value(
       'categoria',
       ['todos', ...CATEGORIAS.map((c) => c.value)],
       'todos',
     ) as FiltrosEvento['categoria'],
-    ciudad: value('ciudad', ['todos', ...CIUDADES], 'todos'),
+    ciudad,
     tipo: value(
       'tipo',
       ['todos', ...TIPOS_EVENTO.map((t) => t.value)],

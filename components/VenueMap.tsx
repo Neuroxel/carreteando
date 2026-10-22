@@ -4,6 +4,7 @@ import { encuadre, type PuntoMapa } from '../lib/map';
 import { debeCentrar, type Posicion } from '../lib/radar';
 import { track } from '../lib/metrics';
 import { acentoDe } from '../lib/types';
+import type { Territorio, TerritorioGeo } from '../lib/territorios';
 const LEAFLET_CSS = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css';
 const LEAFLET_JS = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js';
 const CLUSTER_CSS =
@@ -28,6 +29,10 @@ type LeafletGlobal = {
   layerGroup: () => LeafletLayer;
   markerClusterGroup?: (options: Record<string, unknown>) => LeafletLayer;
   latLngBounds: (points: [number, number][]) => unknown;
+  geoJSON: (
+    data: unknown,
+    options: Record<string, unknown>,
+  ) => LeafletLayer & { setStyle: (s: (f: { properties: Territorio }) => Record<string, unknown>) => void };
 };
 type Grupo = { getAllChildMarkers: () => { options: { hoy?: boolean } }[] };
 type MapaLeaflet = {
@@ -35,7 +40,12 @@ type MapaLeaflet = {
   fitBounds: (bounds: unknown, options: Record<string, unknown>) => void;
   setView: (centro: [number, number], zoom: number, options?: Record<string, unknown>) => void;
   removeLayer: (capa: unknown) => void;
+  getZoom: () => number;
+  on: (evento: string, manejador: () => void) => void;
+  off: (evento: string, manejador: () => void) => void;
 };
+/** Desde este zoom se dibujan los sectores; antes solo el activo y el tuyo. */
+export const ZOOM_SECTORES = 13;
 // "Carrete hoy" significa un evento confirmado para hoy; no medimos cuánta gente hay.
 const ESTADOS: Record<string, { label: string; className: string }> = {
   vivo: { label: 'Con reportes de hoy', className: 'punto-vivo' },
@@ -95,7 +105,23 @@ function ficha(punto: PuntoMapa) {
     </p>
   </div>`;
 }
-export default function VenueMap({ puntos, yo = null }: { puntos: PuntoMapa[]; yo?: Posicion | null }) {
+export default function VenueMap({
+  puntos,
+  yo = null,
+  territorios = null,
+  aqui = null,
+  zona = null,
+  conteoZona,
+  urlZona,
+}: {
+  puntos: PuntoMapa[];
+  yo?: Posicion | null;
+  territorios?: TerritorioGeo[] | null;
+  aqui?: string | null;
+  zona?: string | null;
+  conteoZona?: (slug: string) => { eventos: number; lugares: number };
+  urlZona?: (t: Territorio) => string;
+}) {
   const contenedor = useRef<HTMLDivElement>(null);
   const mapaRef = useRef<{ L: LeafletGlobal; mapa: MapaLeaflet } | null>(null);
   const [estado, setEstado] = useState<'cargando' | 'listo' | 'error'>('cargando');
@@ -214,6 +240,52 @@ export default function VenueMap({ puntos, yo = null }: { puntos: PuntoMapa[]; y
     if (debeCentrar(yo, puntos, movidoPorPersona.current)) ref.mapa.setView([yo.lat, yo.lng], 14, { animate: false });
     return () => ref.mapa.removeLayer(marca);
   }, [yo, version, puntos]);
+  // Sectores verificados: trazo discreto que no compite con los eventos. Lejos,
+  // solo la zona elegida y la tuya; de cerca, todos. Sin etiquetas fijas.
+  const conteoRef = useRef(conteoZona);
+  conteoRef.current = conteoZona;
+  const urlRef = useRef(urlZona);
+  urlRef.current = urlZona;
+  useEffect(() => {
+    const ref = mapaRef.current;
+    if (!ref || !territorios?.length) return;
+    const destacado = (t: Territorio) => t.slug === zona || t.slug === aqui;
+    const estilo = (f: { properties: Territorio }) => {
+      const cerca = ref.mapa.getZoom() >= ZOOM_SECTORES;
+      const d = destacado(f.properties);
+      if (!cerca && !d) return { opacity: 0, fillOpacity: 0, interactive: false };
+      return {
+        color: '#b6a6ff',
+        weight: d ? 2 : 1,
+        opacity: d ? 0.8 : 0.35,
+        dashArray: d ? undefined : '3 4',
+        fillColor: '#b6a6ff',
+        fillOpacity: d ? 0.12 : 0.03,
+      };
+    };
+    const capa = ref.L.geoJSON(
+      { type: 'FeatureCollection', features: territorios },
+      {
+        style: estilo,
+        onEachFeature: (f: { properties: Territorio }, layer: { bindPopup: (html: () => string) => void }) =>
+          layer.bindPopup(() => {
+            const t = f.properties;
+            const c = conteoRef.current?.(t.slug) || { eventos: 0, lugares: 0 };
+            const url = urlRef.current?.(t);
+            return `<strong>${escapar(t.nombre)}</strong><br>${c.eventos} ${c.eventos === 1 ? 'carrete' : 'carretes'} hoy · ${c.lugares} ${c.lugares === 1 ? 'lugar' : 'lugares'}${
+              url ? `<br><a href="${escapar(url)}">Ver esta zona</a>` : ''
+            }<br><small>Límites: ${escapar(t.source.split(' — ')[0])}</small>`;
+          }),
+      },
+    );
+    capa.addTo(ref.mapa);
+    const restyle = () => capa.setStyle(estilo);
+    ref.mapa.on('zoomend', restyle);
+    return () => {
+      ref.mapa.off('zoomend', restyle);
+      ref.mapa.removeLayer(capa);
+    };
+  }, [territorios, version, zona, aqui]);
   const conteo = puntos.reduce<Record<string, number>>((acc, p) => {
     acc[p.estado] = (acc[p.estado] || 0) + 1;
     return acc;
