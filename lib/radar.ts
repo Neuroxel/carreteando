@@ -42,7 +42,95 @@ export type Capa = 'hoy' | 'lugares';
 /** El radar abre en "Carretes hoy"; "Lugares" muestra todos. `boliches` se acepta por enlaces viejos. */
 export const leerCapa = (valor: string | null): Capa => (valor === 'lugares' || valor === 'boliches' ? 'lugares' : 'hoy');
 
-/** Precisión gruesa a propósito: alcanza para ordenar por cercanía. */
-export const OPCIONES_GPS: PositionOptions = { enableHighAccuracy: false, maximumAge: 5 * 60_000, timeout: 12_000 };
-/** Si la persona dijo que no, no se vuelve a preguntar solo (solo con el botón). */
-export const CLAVE_GPS_NEGADO = 'radar-ubicacion-negada';
+/**
+ * Ubicación en dos fases, sin seguimiento permanente:
+ * 1. un primer punto rápido (puede ser grueso) para mostrar algo al tiro;
+ * 2. una ventana corta de alta precisión con watchPosition que acepta mejoras
+ *    y se cierra sola al llegar a una precisión útil o al vencer el plazo.
+ * Todo queda en el teléfono: nada de esto se manda al servidor.
+ */
+export const GPS_RAPIDO: PositionOptions = { enableHighAccuracy: false, maximumAge: 60_000, timeout: 8_000 };
+export const GPS_PRECISO: PositionOptions = { enableHighAccuracy: true, maximumAge: 0, timeout: 20_000 };
+/** Precisión suficiente para saber el sector o barrio, en metros. */
+export const PRECISION_UTIL_M = 100;
+/** Duración máxima de la ventana de alta precisión. */
+export const VENTANA_PRECISA_MS = 18_000;
+/** Radio inicial de "Cerca de mí", en km; se puede ampliar. */
+export const RADIOS_KM = [10, 25] as const;
+
+export interface Fix extends Posicion {
+  accuracy: number;
+  timestamp: number;
+}
+export type EstadoGps = 'idle' | 'buscando' | 'precisa' | 'aproximada' | 'negado' | 'no_disponible' | 'timeout' | 'sin_soporte';
+type Geo = Pick<Geolocation, 'getCurrentPosition' | 'watchPosition' | 'clearWatch'>;
+
+const fixDe = (p: GeolocationPosition): Fix => ({
+  lat: p.coords.latitude,
+  lng: p.coords.longitude,
+  accuracy: p.coords.accuracy,
+  timestamp: p.timestamp,
+});
+export const calidad = (f: Fix): 'precisa' | 'aproximada' => (f.accuracy <= PRECISION_UTIL_M ? 'precisa' : 'aproximada');
+const errorAEstado = (e: GeolocationPositionError): EstadoGps =>
+  e.code === 1 ? 'negado' : e.code === 3 ? 'timeout' : 'no_disponible';
+
+/**
+ * Ubica en dos fases. `aviso` recibe cada mejora (nunca una peor) y el estado.
+ * Devuelve una función para cortar antes; siempre termina con clearWatch.
+ */
+export function ubicarEnDosFases(
+  geo: Geo,
+  aviso: (estado: EstadoGps, fix: Fix | null) => void,
+  reloj: { setTimeout: typeof setTimeout; clearTimeout: typeof clearTimeout } = globalThis,
+) {
+  let mejor: Fix | null = null;
+  let id: number | null = null;
+  let plazo: ReturnType<typeof setTimeout> | null = null;
+  let terminado = false;
+  const cerrar = () => {
+    if (terminado) return;
+    terminado = true;
+    if (id !== null) geo.clearWatch(id);
+    if (plazo !== null) reloj.clearTimeout(plazo);
+  };
+  const aceptar = (f: Fix) => {
+    if (terminado || (mejor && f.accuracy >= mejor.accuracy)) return;
+    mejor = f;
+    aviso(calidad(f), f);
+    if (f.accuracy <= PRECISION_UTIL_M) cerrar();
+  };
+  aviso('buscando', null);
+  geo.getCurrentPosition(
+    (p) => aceptar(fixDe(p)),
+    (e) => {
+      // Sin permiso no tiene sentido abrir la ventana precisa.
+      if (e.code === 1) {
+        cerrar();
+        aviso('negado', null);
+      }
+    },
+    GPS_RAPIDO,
+  );
+  id = geo.watchPosition(
+    (p) => aceptar(fixDe(p)),
+    (e) => {
+      if (terminado) return;
+      if (e.code === 1 || !mejor) {
+        cerrar();
+        aviso(errorAEstado(e), null);
+      }
+    },
+    GPS_PRECISO,
+  );
+  plazo = reloj.setTimeout(() => {
+    if (terminado) return;
+    cerrar();
+    // Al vencer, se queda con lo mejor que llegó; sin nada, es un timeout.
+    aviso(mejor ? calidad(mejor) : 'timeout', mejor);
+  }, VENTANA_PRECISA_MS);
+  return cerrar;
+}
+
+/** Clave vieja de una "negación propia": ya no se usa; manda el permiso real del navegador. */
+export const CLAVE_GPS_NEGADO_VIEJA = 'radar-ubicacion-negada';

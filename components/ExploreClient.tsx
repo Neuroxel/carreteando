@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
-import { useCallback, useEffect, useMemo, useState, type MouseEvent } from 'react';
-import { diversifyByVenue, esBarato, filterEvents, nocheAntes, ordenarPorPrecio } from '../lib/events';
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
+import { diversifyByVenue, sugerenciasPara, esBarato, filterEvents, nocheAntes, ordenarPorPrecio } from '../lib/events';
 import { fechaDeLaNoche } from '../lib/event-extraction';
 import { parseFilters } from '../lib/filters';
 import { CIUDADES, type FiltrosEvento } from '../lib/types';
@@ -12,7 +12,7 @@ import { indiceDeLugares } from '../lib/venue-match';
 import type { PublicSnapshot } from '../lib/snapshot';
 import { rememberEmptySearch } from '../lib/metrics';
 import { ORDEN_TEMPORAL, ahoraEnChile, estadoTemporal, porEstadoTemporal } from '../lib/temporal';
-import { CLAVE_GPS_NEGADO, OPCIONES_GPS, leerCapa, porCercania, textoDistancia, type Capa, type Posicion } from '../lib/radar';
+import { RADIOS_KM, CLAVE_GPS_NEGADO_VIEJA, ubicarEnDosFases, type EstadoGps, type Fix, leerCapa, porCercania, textoDistancia, type Capa, type Posicion } from '../lib/radar';
 import EventCard from './EventCard';
 import VenueCard from './VenueCard';
 import VenueRail from './VenueRail';
@@ -33,7 +33,33 @@ interface Estado {
   capa: Capa;
 }
 type Cambio = Partial<FiltrosEvento> & { ver?: Ver; vista?: Vista; orden?: Orden; capa?: Capa };
-type Gps = 'idle' | 'pidiendo' | 'ok' | 'negado' | 'error' | 'no';
+/** Estado de la ubicación en palabras de quien mira; nunca mensajes técnicos. */
+function EstadoUbicacion({ gps, yo, ciudad, onUbicar }: { gps: EstadoGps; yo: Fix | null; ciudad?: string; onUbicar: () => void }) {
+  const boton = (texto: string) => (
+    <button type="button" className="radar-gps-boton" onClick={onUbicar}>
+      {texto}
+    </button>
+  );
+  const viendo = ciudad && ciudad !== 'todos' ? ` Viendo ${ciudad}.` : '';
+  if (gps === 'sin_soporte') return null;
+  if (gps === 'buscando') return <p className="radar-gps" role="status">Buscando tu ubicación…</p>;
+  if (gps === 'precisa' || gps === 'aproximada')
+    return (
+      <p className="radar-gps" role="status">
+        {gps === 'precisa' ? 'Ubicación precisa.' : `Ubicación aproximada (±${Math.round((yo?.accuracy || 0) / 10) * 10} m).`}
+        {viendo} Tu ubicación no sale de este teléfono.{gps === 'aproximada' ? <> {boton('Precisar')}</> : null}
+      </p>
+    );
+  if (gps === 'negado')
+    return (
+      <p className="radar-gps">
+        Sin permiso de ubicación: el mapa funciona igual. Para ver lo cercano, permite la ubicación para este sitio en los ajustes del navegador y vuelve a intentar. {boton('Volver a intentar')}
+      </p>
+    );
+  if (gps === 'timeout') return <p className="radar-gps">La ubicación se demoró demasiado. {boton('Probar otra vez')}</p>;
+  if (gps === 'no_disponible') return <p className="radar-gps">No pudimos obtener tu ubicación ahora. {boton('Probar otra vez')}</p>;
+  return boton('Usar mi ubicación');
+}
 /** Un snapshot más viejo que esto se avisa, sin bloquear nada. */
 const VIEJO_MS = 6 * 3600_000;
 /** Al volver a la pestaña, si pasó esto, se pregunta (con ETag) si hay datos nuevos. */
@@ -149,64 +175,56 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
     },
   });
 
-  // Radar: la ubicación se pide solo cuando la persona abre el Radar, una vez,
-  // y queda en este teléfono. Si dice que no, el mapa sigue igual y no se insiste.
-  const [yo, setYo] = useState<Posicion | null>(null);
-  const [gps, setGps] = useState<Gps>('idle');
-  const ubicar = useCallback((manual: boolean) => {
-    if (typeof navigator === 'undefined' || !('geolocation' in navigator)) return setGps('no');
-    if (!manual) {
-      try {
-        if (localStorage.getItem(CLAVE_GPS_NEGADO)) return setGps('negado');
-      } catch {
-        /* sin almacenamiento: se pregunta como si fuera la primera vez */
-      }
+  // Radar: la ubicación se pide solo con un gesto (tocar Radar, "Usar mi ubicación")
+  // o si el navegador ya la tiene permitida. Dos fases y se apaga sola; queda en este teléfono.
+  const [yo, setYo] = useState<Fix | null>(null);
+  const [gps, setGps] = useState<EstadoGps>('idle');
+  const cortarGps = useRef<(() => void) | null>(null);
+  const ubicar = useCallback((origen: 'gesto' | 'enlace') => {
+    if (typeof navigator === 'undefined' || !('geolocation' in navigator)) return setGps('sin_soporte');
+    try {
+      localStorage.removeItem(CLAVE_GPS_NEGADO_VIEJA);
+    } catch {
+      /* sin almacenamiento */
     }
-    setGps('pidiendo');
-    navigator.geolocation.getCurrentPosition(
-      (p) => {
-        setYo({ lat: p.coords.latitude, lng: p.coords.longitude });
-        setGps('ok');
-        try {
-          localStorage.removeItem(CLAVE_GPS_NEGADO);
-        } catch {
-          /* nada que limpiar */
-        }
-      },
-      (err) => {
-        if (err.code !== err.PERMISSION_DENIED) return setGps('error');
-        setGps('negado');
-        try {
-          localStorage.setItem(CLAVE_GPS_NEGADO, '1');
-        } catch {
-          /* igual no se vuelve a preguntar en esta visita */
-        }
-      },
-      OPCIONES_GPS,
-    );
+    const empezar = () => {
+      cortarGps.current?.();
+      cortarGps.current = ubicarEnDosFases(navigator.geolocation, (estado, fix) => {
+        setGps(estado);
+        if (fix) setYo(fix);
+      });
+    };
+    // El permiso real del navegador manda; no hay "prohibición eterna" propia.
+    if (!navigator.permissions?.query) return origen === 'gesto' ? empezar() : undefined;
+    navigator.permissions
+      .query({ name: 'geolocation' })
+      .then((r) => {
+        if (r.state === 'granted') return empezar();
+        if (r.state === 'denied') return setGps('negado');
+        // `prompt`: solo con un gesto explícito; por enlace se ofrece el botón.
+        if (origen === 'gesto') empezar();
+      })
+      .catch(() => origen === 'gesto' && empezar());
   }, []);
+  useEffect(() => () => cortarGps.current?.(), []);
   useEffect(() => {
     // Tocar Radar en la barra es el gesto que autoriza preguntar.
-    const abrir = () => ubicar(false);
+    const abrir = () => ubicar('gesto');
     window.addEventListener('radar:abrir', abrir);
-    // Desde otra página, la barra llega con ?ubicar=1; se consume y se borra.
+    // Desde otra página (o /radar), la barra llega con ?ubicar=1; se consume y se borra.
     const p = new URLSearchParams(location.search);
     if (p.get('ubicar') === '1') {
       p.delete('ubicar');
       const q = p.toString();
       history.replaceState(null, '', q ? `${location.pathname}?${q}` : location.pathname);
-      ubicar(false);
+      ubicar('gesto');
     }
     return () => window.removeEventListener('radar:abrir', abrir);
   }, [ubicar]);
   const { filtros, ver, vista, orden, capa } = estado;
   useEffect(() => {
-    // Un mapa abierto por enlace solo usa la ubicación si ya estaba permitida: sin aviso nuevo.
-    if (vista !== 'mapa' || gps !== 'idle' || !navigator.permissions) return;
-    navigator.permissions
-      .query({ name: 'geolocation' })
-      .then((r) => r.state === 'granted' && ubicar(false))
-      .catch(() => undefined);
+    // Un mapa abierto por enlace: ubica solo si ya estaba permitido; si no, ofrece el botón.
+    if (vista === 'mapa' && gps === 'idle') ubicar('enlace');
   }, [vista, gps, ubicar]);
   const todos = snap.events;
   // El lugar de cada evento: nombre, alias y misma ciudad; nunca un parecido.
@@ -260,10 +278,7 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
       busquedaEventos: filtros.busqueda ? filterEvents(todos, { fecha: 'futuro', busqueda: filtros.busqueda }, today).length : 0,
       lugaresHallados: filtros.busqueda ? buscarLugares(snap.venues, filtros.busqueda) : [],
       zonasHalladas: filtros.busqueda ? buscarZonas(snap.venues, filtros.busqueda) : [],
-      sugerencias: todos
-        .filter((e) => e.fecha >= today)
-        .filter((e, i, all) => all.findIndex((o) => o.lugar === e.lugar && o.ciudad === e.ciudad) === i)
-        .slice(0, 3),
+      sugerencias: sugerenciasPara(todos, filtros, today),
     };
   }, [todos, snap.venues, filtros, today, lugarDe]);
   const lugaresVisibles = useMemo(() => {
@@ -309,15 +324,20 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
   );
   // Cercanía: primero lo que todavía no empieza, después lo ya iniciado y al final
   // los lugares sin evento hoy; dentro de cada grupo, por distancia.
+  // "Cerca de mí": sin comuna elegida, un radio que se puede ampliar. Con comuna
+  // elegida manda la comuna (los puntos ya vienen solo de ella).
+  const [radio, setRadio] = useState<number | null>(RADIOS_KM[0]);
+  const cercaDeMi = Boolean(yo) && (!filtros.ciudad || filtros.ciudad === 'todos');
   const cercanos = useMemo(() => {
     if (!yo || !puntos.length) return [];
     const orden = (p: (typeof puntos)[number]) =>
       p.estaNoche.length ? Math.min(...p.estaNoche.map((e) => ORDEN_TEMPORAL[estadoTemporal({ fecha: today, hora: e.hora }, ahoraCL)])) : 9;
     return porCercania(puntos, yo)
       .map((x) => ({ ...x, orden: orden(x.punto) }))
+      .filter((x) => !cercaDeMi || radio === null || x.km <= radio)
       .sort((a, b) => a.orden - b.orden || a.km - b.km)
       .slice(0, 6);
-  }, [yo, puntos, today, ahoraCL]);
+  }, [yo, puntos, today, ahoraCL, cercaDeMi, radio]);
   const vigentes = todos.filter((e) => e.fecha >= today).length;
   const viejo = ahora - Date.parse(snap.generatedAt) > VIEJO_MS;
   const dateLabel = new Intl.DateTimeFormat('es-CL', {
@@ -394,22 +414,7 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
                 Lugares
               </a>
             </div>
-            {gps === 'ok' ? (
-              <p className="radar-gps">Ordenado por cercanía. Tu ubicación no sale de este teléfono.</p>
-            ) : gps === 'pidiendo' ? (
-              <p className="radar-gps" role="status">Buscando tu ubicación…</p>
-            ) : gps === 'negado' ? (
-              <p className="radar-gps">
-                Sin tu ubicación el mapa funciona igual.{' '}
-                <button type="button" className="radar-gps-boton" onClick={() => ubicar(true)}>
-                  Volver a intentar
-                </button>
-              </p>
-            ) : gps === 'no' ? null : (
-              <button type="button" className="radar-gps-boton" onClick={() => ubicar(true)}>
-                {gps === 'error' ? 'No pudimos ubicarte. Probar otra vez' : 'Ver qué hay cerca de mí'}
-              </button>
-            )}
+            <EstadoUbicacion gps={gps} yo={yo} ciudad={filtros.ciudad} onUbicar={() => ubicar('gesto')} />
           </div>
         ) : ver === 'lugares' ? null : (
         <div className="date-tabs" aria-label="Cuándo">
@@ -531,7 +536,8 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
             {cercanos.length > 0 && (
               <div className="radar-cerca">
                 <h3>
-                  Más cerca de ti<span className="heading-period">.</span>
+                  {cercaDeMi ? `Cerca de mí${radio ? ` · ${radio} km` : ' · toda la región'}` : `Más cerca de ti en ${filtros.ciudad}`}
+                  <span className="heading-period">.</span>
                 </h3>
                 <ol>
                   {cercanos.map(({ punto, km, orden }) => (
@@ -550,6 +556,18 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
                     </li>
                   ))}
                 </ol>
+                {cercaDeMi && radio !== null && (
+                  <p className="radar-radio">
+                    {RADIOS_KM.find((r) => r > radio) && (
+                      <button type="button" className="radar-gps-boton" onClick={() => setRadio(RADIOS_KM.find((r) => r > radio) ?? null)}>
+                        Ampliar radio
+                      </button>
+                    )}{' '}
+                    <button type="button" className="radar-gps-boton" onClick={() => setRadio(null)}>
+                      Toda la región
+                    </button>
+                  </p>
+                )}
                 <p className="trust-note">Distancia en línea recta, no a pie.</p>
               </div>
             )}
@@ -646,7 +664,7 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
             )}
             {events.length === 0 && derivados.sugerencias.length > 0 && (
               <div className="alternative-plans">
-                <h3>Otras noches en la región</h3>
+                <h3>{filtros.ciudad && filtros.ciudad !== 'todos' ? `Otras noches en ${filtros.ciudad}` : 'Otras noches en la región'}</h3>
                 <div className="event-grid">
                   {derivados.sugerencias.map((e) => (
                     <EventCard key={e.id} evento={e} today={today} estado={estadoTemporal(e, ahoraCL)} />
