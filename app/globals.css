@@ -1990,3 +1990,29 @@ html[data-edicion="3d"] body {
 .asistente > *, .asistente-pregunta, .shortlist, .shortlist ol > li { min-width:0; }
 .asistente-opciones { max-width:100%; }
 .shortlist a, .shortlist strong, .shortlist-lugares a { overflow-wrap:anywhere; }
+
+/* Bienvenida: pantalla completa aparte, una pregunta a la vez. */
+.bienvenida { position:fixed; inset:0; z-index:3000; overflow-y:auto; background:var(--bg); color:var(--text); display:flex; justify-content:center; padding:max(16px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom)); }
+.bienvenida-marco { width:100%; max-width:560px; display:flex; flex-direction:column; gap:18px; }
+.bienvenida-logo { width:min(220px, 55vw); height:auto; margin-top:8px; color:var(--text); }
+.bienvenida-paso { display:flex; flex-direction:column; gap:16px; animation:bienvenida-entra .22s ease-out both; }
+.bienvenida h1 { margin:0; font-size:clamp(30px, 8.5vw, 48px); line-height:1.05; outline:none; text-wrap:balance; }
+.bienvenida-opciones { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:10px; }
+.bienvenida-opcion { display:flex; align-items:center; gap:10px; min-height:64px; padding:12px; border-radius:var(--radius-sm); border:1.5px solid var(--line); background:var(--surface); color:var(--text); font:inherit; text-align:left; cursor:pointer; min-width:0; }
+.bienvenida-opcion > span[aria-hidden] { font-size:22px; flex:none; }
+.bienvenida-opcion strong { display:block; font-size:15px; overflow-wrap:anywhere; }
+.bienvenida-opcion small { display:block; color:var(--muted); font-size:12px; line-height:1.3; overflow-wrap:anywhere; }
+.bienvenida-opcion:hover, .bienvenida-opcion:focus-visible { border-color:var(--accent); outline:none; }
+.bienvenida-opciones-donde .bienvenida-opcion { min-height:52px; }
+.bienvenida-cuando { display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; font-size:14px; color:var(--muted); }
+.bienvenida-cuando strong { color:var(--text); }
+.bienvenida-cuando-opciones { display:flex; flex-wrap:wrap; gap:8px; width:100%; }
+.bienvenida-cuando-opciones button { min-height:40px; padding:0 14px; border-radius:999px; border:1.5px solid var(--line); background:transparent; color:var(--text); font:inherit; font-size:14px; cursor:pointer; }
+.bienvenida-cuando-opciones button[aria-pressed="true"] { border-color:var(--accent); background:var(--surface-raised); }
+.bienvenida-link { align-self:flex-start; min-height:40px; padding:0; border:0; background:none; color:var(--text); font:inherit; font-size:14px; text-decoration:underline; text-underline-offset:3px; cursor:pointer; }
+.bienvenida-saltar { align-self:center; margin-top:auto; min-height:44px; padding:0 22px; border-radius:999px; border:1.5px solid var(--line); background:transparent; color:var(--text); font:inherit; font-weight:600; cursor:pointer; }
+.bienvenida button:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+@keyframes bienvenida-entra { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+@media (prefers-reduced-motion: reduce) { .bienvenida-paso { animation:none; } }
+@media (min-width: 720px) { .bienvenida { align-items:center; } }
+.ayuda-elegir { background:transparent; font:inherit; cursor:pointer; }

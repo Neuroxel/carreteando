@@ -18,6 +18,8 @@ import VenueCard from './VenueCard';
 import VenueRail from './VenueRail';
 import VenueMap from './VenueMap';
 import TituloSeccion from './TituloSeccion';
+import Bienvenida from './Bienvenida';
+import { debeMostrar, filtrosFinales, sesion, type Donde, type EstadoBienvenida } from '../lib/bienvenida';
 import BrandLink from './BrandLink';
 import { LogoApilado } from './Logo';
 import { cuantos, eventosLista, eventosRadar, lugarObjeto, lugaresLista, lugaresRadar, type Contexto, type Modo } from '../lib/resultados';
@@ -451,6 +453,29 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
       ? lugaresBaseDe(snap.venues, filtros).filter((l) => intencion.lugar(l)).slice(0, 4)
       : [];
   const sugerida = intencionDeBusqueda(filtros.busqueda);
+
+  // Bienvenida: pantalla aparte, una vez por sesión y solo en una entrada limpia a "/".
+  const [bienvenida, setBienvenida] = useState(false);
+  useEffect(() => {
+    if (!home) return;
+    if (debeMostrar({ pathname: location.pathname, search: location.search, hash: location.hash, vista: sesion.vista() })) {
+      sesion.marcar('vista');
+      setBienvenida(true);
+    }
+  }, [home]);
+  const terminarBienvenida = (b: EstadoBienvenida, d: Donde) => {
+    sesion.marcar('completada');
+    setBienvenida(false);
+    // Una sola entrada de historial: la URL filtrada final.
+    ir({ ...filtrosFinales(b, d), escena: 'todos', precio: 'todos', busqueda: '', ver: 'todo', vista: 'lista' });
+    if (d.tipo === 'cerca') ubicar('gesto');
+    requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'auto' }));
+  };
+  const saltarBienvenida = useCallback(() => {
+    sesion.marcar('omitida');
+    setBienvenida(false);
+  }, []);
+  const intencionesConOferta = INTENCIONES.filter((i) => n({ plan: i.slug, fecha: 'futuro', ciudad: 'todos', cerca: false, zona: null }) > 0).map((i) => i.slug);
   const filtrosUI = (
         <details className="discovery-options"><summary>Filtros{filtrosActivos > 0 ? ` (${filtrosActivos})` : ''}</summary>
         {escenasVisibles.length > 0 && (
@@ -603,83 +628,10 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
           </div>
         )}
       </section>
-      {home && vista === 'lista' && ver !== 'lugares' && (
-        <section className="container asistente" aria-labelledby="asistente-titulo">
-          <div className="asistente-pregunta">
-            <h2 id="asistente-titulo">¿Qué quieres hacer?</h2>
-            <div className="asistente-opciones" role="group" aria-label="Qué quieres hacer">
-              {INTENCIONES.map((i) => {
-                const activa = filtros.plan === i.slug;
-                const cuantas = n({ plan: i.slug });
-                if (!activa && cuantas === 0) return null;
-                return (
-                  <a
-                    key={i.slug}
-                    href={enlace({ plan: activa ? null : i.slug }).href}
-                    onClick={(ev) => {
-                      enlace({ plan: activa ? null : i.slug }).onClick(ev);
-                      if (!activa) trackLater('intent_selected');
-                    }}
-                    className={`asistente-chip ${activa ? 'activa' : ''}`}
-                    aria-current={activa ? 'true' : undefined}
-                    title={i.descripcion}
-                  >
-                    <span aria-hidden="true">{i.icono}</span> {i.label}
-                    {activa ? <span className="chip-n" aria-label={`Quitar ${i.label}`}>✕</span> : <span className="chip-n">{cuantas}</span>}
-                  </a>
-                );
-              })}
-            </div>
-          </div>
-          <div className="asistente-pregunta">
-            <h3>¿Cuándo?</h3>
-            <div className="asistente-opciones" role="group" aria-label="Cuándo">
-              {(
-                [
-                  ['hoy', 'Esta noche'],
-                  ['manana', madrugada ? nombreDia(addDays(today, 1)) : 'Mañana'],
-                  ['finde', 'Este finde'],
-                  ['futuro', 'Más adelante'],
-                ] as const
-              ).map(([v, label]) => (
-                <a key={v} {...enlace({ fecha: v })} className={`asistente-chip ${filtros.fecha === v ? 'activa' : ''}`} aria-current={filtros.fecha === v ? 'true' : undefined}>
-                  {label} <span className="chip-n">{n({ fecha: v })}</span>
-                </a>
-              ))}
-            </div>
-          </div>
-          <div className="asistente-pregunta">
-            <h3>¿Dónde?</h3>
-            <div className="asistente-opciones" role="group" aria-label="Dónde">
-              <a
-                href={aUrl({ ...estado, filtros: conZona(filtros, { cerca: true, ciudad: 'todos', zona: null }) }, path, defecto)}
-                onClick={(e) => {
-                  if (e.metaKey || e.ctrlKey || e.shiftKey) return;
-                  e.preventDefault();
-                  ir({ cerca: true, ciudad: 'todos', zona: null });
-                  // Tocar "Cerca de mí" es el gesto: mismo GPS que Radar, una sola vez.
-                  ubicar('gesto');
-                  trackLater('filter');
-                }}
-                className={`asistente-chip ${filtros.cerca ? 'activa' : ''}`}
-                aria-current={filtros.cerca ? 'true' : undefined}
-              >
-                <span aria-hidden="true">📍</span> Cerca de mí
-              </a>
-              <a {...enlace({ ciudad: 'todos', cerca: false })} className={`asistente-chip ${filtros.ciudad === 'todos' && !filtros.cerca ? 'activa' : ''}`}>
-                Toda la región <span className="chip-n">{n({ ciudad: 'todos', cerca: false })}</span>
-              </a>
-              {derivados.ciudadesConOferta.map((c) => {
-                const cuantas = n({ ciudad: c });
-                return (
-                  <a key={c} {...enlace({ ciudad: c })} className={`asistente-chip ${filtros.ciudad === c ? 'activa' : ''}`} aria-current={filtros.ciudad === c ? 'true' : undefined}>
-                    {SHORT[c] || c} <span className="chip-n">{cuantas}</span>
-                  </a>
-                );
-              })}
-            </div>
-            {filtros.cerca && <EstadoUbicacion gps={gps} yo={yo} aqui={territorioActual?.nombre} onUbicar={() => ubicar('gesto')} />}
-          </div>
+      {/* Resultado de la bienvenida: solo con una intención elegida; la portada normal no lo muestra. */}
+      {home && vista === 'lista' && ver !== 'lugares' && intencion && (
+        <section className="container asistente resultado-bienvenida" aria-label="Te recomendamos">
+          {filtros.cerca && <EstadoUbicacion gps={gps} yo={yo} aqui={territorioActual?.nombre} onUbicar={() => ubicar('gesto')} />}
           {asistenteActivo && (
             <div className="shortlist" aria-live="polite">
               {recomendados.length > 0 ? (
@@ -788,6 +740,11 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
               <span aria-hidden="true">⌖</span> Mapa
             </a>
           </div>
+          {home && (
+            <button type="button" className="radar-cta ayuda-elegir" onClick={() => setBienvenida(true)}>
+              <span aria-hidden="true">✨</span> Ayúdame a elegir
+            </button>
+          )}
           {vista === 'lista' && (
             <a className="radar-cta" href={urlRadar} onClick={abrirRadar}>
               <span aria-hidden="true">📍</span> Ver mapa y carretes cerca de mí
@@ -1066,6 +1023,15 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
           </Link>
         </div>
       </section>
+      {bienvenida && (
+        <Bienvenida
+          intenciones={intencionesConOferta}
+          comunas={derivados.ciudadesConOferta}
+          etiquetaManana={madrugada ? nombreDia(addDays(today, 1)) : 'Mañana'}
+          onTerminar={terminarBienvenida}
+          onSaltar={saltarBienvenida}
+        />
+      )}
     </>
   );
 }
