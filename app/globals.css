@@ -2148,6 +2148,10 @@ html.bv-revela main > section { animation:bv-acerca .68s cubic-bezier(.2,.7,.2,1
 /* La cara oculta de la carta no recibe toques: antes, aunque estaba de espaldas
    e inerte, tapaba a la visible y el toque no llegaba (botones que "no funcionaban"). */
 .bv-cara[aria-hidden="true"] { pointer-events:none; }
+/* Ni la escena ni la carta reciben toques (su plano 3D puede quedar delante de
+   los botones al inclinarse en escritorio); solo la cara activa. */
+.bv-escena, .bv-carta { pointer-events:none; }
+.bv-cara:not([aria-hidden="true"]) { pointer-events:auto; }
 .bv-carta:not(.bv-girada) .bv-dorso, .bv-carta.bv-girada .bv-frente { visibility:hidden; transition:visibility 0s .72s; }
 .bv-fase-girando .bv-cara { visibility:visible; transition:none; }
 
