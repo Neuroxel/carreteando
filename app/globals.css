@@ -2226,3 +2226,68 @@ html.bv-revela main > section { animation:bv-acerca .68s cubic-bezier(.2,.7,.2,1
   .bv-muro:not(.bv-muro-chico) > .bv-afiche:not(.bv-ancho) .bv-ilustracion { width:clamp(84px, 9.5vw, 124px); }
   .bv-muro:not(.bv-muro-chico) > .bv-afiche:not(.bv-ancho) .bv-afiche-texto { padding-top:0; }
 }
+
+
+/* ─── Bienvenida cine: canto (extrusión), luz y transiciones según el nivel del
+   dispositivo (data-nivel = baja | media | alta, lib/capacidad.ts). La función
+   es idéntica en los tres; en "baja" no se agrega nada de esto. */
+.bv-afiche { clip-path:none; background:transparent !important; isolation:isolate;
+  transform:perspective(700px) rotate(var(--giro)) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); }
+.bv-afiche > :not(.bv-canto):not(.bv-papel) { position:relative; z-index:2; }
+.bv-afiche > .bv-cinta { position:absolute; z-index:3; }
+.bv-muro > .bv-afiche:not(.bv-ancho) .bv-ilustracion { position:absolute; z-index:2; }
+.bv-muro.bv-muro-chico > .bv-afiche .bv-ilustracion { position:relative; }
+.bv-papel, .bv-canto { position:absolute; inset:0; clip-path:var(--roto); pointer-events:none; }
+.bv-papel { z-index:1; background-color:var(--crema, #EFE3D3);
+  background-image:radial-gradient(rgba(19,19,29,.16) .8px, transparent 1px), radial-gradient(rgba(19,19,29,.09) .7px, transparent 1px), radial-gradient(rgba(19,19,29,.05) 1px, transparent 1.4px);
+  background-size:4px 4px, 6px 6px, 11px 11px; background-position:0 0, 2px 3px, 5px 1px; }
+.bv-elegido .bv-papel, .bv-cerca .bv-papel, .bv-afiche-cuando[aria-pressed="true"] .bv-papel { background-color:var(--accent); }
+.bv-elegido::after { clip-path:var(--roto); z-index:1; }
+/* El canto: capas de papel más oscuro corridas hacia donde no mira la luz. */
+.bv-canto { z-index:0; display:none; background:#a99c8a;
+  transform:translate(calc(var(--ex, .7px) * var(--i)), calc(var(--ey, 1px) * var(--i))); }
+.bv-canto-1 { --i:1; background:#cfc3b1; } .bv-canto-2 { --i:2; background:#bfb2a0; } .bv-canto-3 { --i:3; }
+.bv-canto-3 { background:#ada08e; } .bv-canto-4 { --i:4; background:#9d907e; } .bv-canto-5 { --i:5; background:#8c7f6e; } .bv-canto-6 { --i:6; background:#3a3530; }
+.bv-elegido .bv-canto, .bv-cerca .bv-canto { background:#9e3a4b; }
+[data-nivel="media"] .bv-canto-1, [data-nivel="media"] .bv-canto-2, [data-nivel="media"] .bv-canto-3, [data-nivel="media"] .bv-canto-4 { display:block; }
+[data-nivel="alta"] .bv-canto { display:block; }
+/* Al presionar el afiche se hunde y el canto se acorta; en alta, además, se levanta al pasar. */
+[data-nivel="media"] .bv-afiche:active, [data-nivel="alta"] .bv-afiche:active { --ex:.25px; --ey:.35px; }
+[data-nivel="alta"] .bv-afiche { transition:transform .12s ease-out; }
+.bv-afiche:hover { transform:perspective(700px) rotate(var(--giro)) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateY(-2px); }
+.bv-afiche:active { transform:perspective(700px) rotate(var(--giro)) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) scale(.98); }
+/* Brillo del papel que se mueve con la inclinación (alta). */
+[data-nivel="alta"] .bv-papel::after { content:""; position:absolute; inset:0; background:linear-gradient(115deg, transparent 35%, rgba(255,250,240,.38) 50%, transparent 65%) no-repeat;
+  background-size:220% 100%; background-position:var(--sx, 50%) 0; mix-blend-mode:soft-light; }
+
+/* Luz: fugas cálidas y frías; en alta siguen al puntero/giroscopio y hay rayos solares. */
+.bv-luz { position:fixed; inset:0; z-index:4; pointer-events:none; display:none; mix-blend-mode:screen; overflow:hidden; }
+[data-nivel="media"] .bv-luz, [data-nivel="alta"] .bv-luz { display:block; }
+[data-nivel="media"] .bv-luz { background:radial-gradient(circle at 78% 12%, rgba(255,128,96,.28), transparent 34%), radial-gradient(circle at 12% 88%, rgba(150,128,255,.22), transparent 40%); }
+[data-nivel="alta"] .bv-luz { background:radial-gradient(circle at var(--luz-x, 78%) var(--luz-y, 12%), rgba(255,150,105,.34), transparent 32%), radial-gradient(circle at calc(100% - var(--luz-x, 78%)) calc(100% - var(--luz-y, 12%)), rgba(150,128,255,.26), transparent 42%); }
+[data-nivel="alta"] .bv-luz::before { content:""; position:absolute; left:var(--luz-x, 78%); top:var(--luz-y, 12%); width:240vmax; height:240vmax; margin:-120vmax 0 0 -120vmax;
+  background:repeating-conic-gradient(from 0deg, rgba(255,214,170,.11) 0deg 3deg, transparent 3deg 11deg);
+  -webkit-mask-image:radial-gradient(circle, #000 0, rgba(0,0,0,.6) 18%, transparent 46%); mask-image:radial-gradient(circle, #000 0, rgba(0,0,0,.6) 18%, transparent 46%);
+  animation:bv-rayos 70s linear infinite; }
+@keyframes bv-rayos { to { transform:rotate(360deg); } }
+
+/* Cine: barras de letterbox y destello en el giro y en la salida (media y alta). */
+.bv-cine { position:fixed; left:0; right:0; height:9vh; z-index:6; background:#050508; pointer-events:none; display:none; transform:scaleY(0); transition:transform .32s cubic-bezier(.6,0,.3,1); }
+.bv-cine-a { top:0; transform-origin:top; } .bv-cine-b { bottom:0; transform-origin:bottom; }
+[data-nivel="media"] .bv-cine, [data-nivel="alta"] .bv-cine { display:block; }
+.bv-fase-girando .bv-cine, .bv-fase-ticket .bv-cine, .bv-fase-saliendo .bv-cine { transform:scaleY(1); }
+.bv-destello { position:fixed; inset:0; z-index:5; pointer-events:none; display:none; opacity:0; mix-blend-mode:screen;
+  background:radial-gradient(circle at var(--luz-x, 70%) var(--luz-y, 20%), rgba(255,236,214,.85), rgba(255,120,110,.25) 30%, transparent 60%); }
+[data-nivel="media"] .bv-destello, [data-nivel="alta"] .bv-destello { display:block; }
+.bv-fase-girando .bv-destello { animation:bv-destello .72s ease-out both; }
+.bv-fase-saliendo .bv-destello { animation:bv-destello .68s ease-in both; }
+@keyframes bv-destello { 0% { opacity:0; } 40% { opacity:.75; } 100% { opacity:0; } }
+/* Alta: la cámara se mueve más (dolly + leve giro) en el cambio de pregunta y en la salida. */
+[data-nivel="alta"].bv-fase-girando .bv-escena { animation:bv-dolly .72s cubic-bezier(.6,0,.3,1) both; }
+@keyframes bv-dolly { 0%,100% { transform:none; } 50% { transform:translateZ(-320px) rotateZ(-3deg) scale(.9); } }
+[data-nivel="alta"].bv-fase-saliendo .bv-escena { animation:bv-alejar-alta .68s cubic-bezier(.55,0,.2,1) both; }
+@keyframes bv-alejar-alta { 0% { opacity:1; transform:none; } 30% { opacity:1; transform:translateZ(60px) rotateX(-4deg); } 100% { opacity:0; transform:translateZ(-2200px) rotateX(38deg) rotateZ(-10deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .bv-luz, .bv-cine, .bv-destello, .bv-canto { display:none !important; }
+  .bv-afiche { transform:none !important; }
+}
