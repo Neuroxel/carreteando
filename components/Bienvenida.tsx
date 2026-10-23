@@ -5,6 +5,7 @@ import { INICIO, avanzar, type Donde, type EstadoBienvenida, type Fecha } from '
 import type { EstadoGps } from '../lib/radar';
 import { LogoApilado, Q } from './Logo';
 import Pictograma from './Pictograma';
+import Ilustracion from './Ilustracion';
 import PosterDecor from './poster/PosterDecor';
 
 /** Tiempos (ms). Con movimiento reducido todo pasa a fundidos cortos. */
@@ -182,6 +183,12 @@ export default function Bienvenida({
   return (
     <div className={`bienvenida bv-fase-${fase}`} role="dialog" aria-modal="true" aria-labelledby="bienvenida-pregunta" aria-busy={fase !== 'normal'}>
       <PosterDecor variant="home" />
+      {/* Flechas sueltas, como una constelación de afiche: decorativas, al fondo. */}
+      <svg className="bv-flechas" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <g fill="none" stroke="currentColor" strokeWidth=".35" strokeLinecap="round" vectorEffect="non-scaling-stroke">
+          <path vectorEffect="non-scaling-stroke" d="M0 0H8.0M6.0 -1.6L8.0 0L6.0 1.6M0 0l-1.5 -1.5M0 0l-1.5 1.5M1.5 0l-1.5 -1.5M1.5 0l-1.5 1.5" transform="translate(86.0 32.1) rotate(250)" /><path vectorEffect="non-scaling-stroke" d="M0 0H9.7M7.699999999999999 -1.6L9.7 0L7.699999999999999 1.6M0 0l-1.5 -1.5M0 0l-1.5 1.5M1.5 0l-1.5 -1.5M1.5 0l-1.5 1.5" transform="translate(57.7 45.8) rotate(302)" /><path vectorEffect="non-scaling-stroke" d="M0 0H8.5M6.5 -1.6L8.5 0L6.5 1.6M0 0l-1.5 -1.5M0 0l-1.5 1.5M1.5 0l-1.5 -1.5M1.5 0l-1.5 1.5" transform="translate(47.5 65.8) rotate(22)" /><path vectorEffect="non-scaling-stroke" d="M0 0H6.4M4.4 -1.6L6.4 0L4.4 1.6M0 0l-1.5 -1.5M0 0l-1.5 1.5M1.5 0l-1.5 -1.5M1.5 0l-1.5 1.5" transform="translate(64.1 97.3) rotate(296)" /><path vectorEffect="non-scaling-stroke" d="M0 0H7.3M5.3 -1.6L7.3 0L5.3 1.6M0 0l-1.5 -1.5M0 0l-1.5 1.5M1.5 0l-1.5 -1.5M1.5 0l-1.5 1.5" transform="translate(39.0 66.2) rotate(8)" /><path vectorEffect="non-scaling-stroke" d="M0 0H8.8M6.800000000000001 -1.6L8.8 0L6.800000000000001 1.6M0 0l-1.5 -1.5M0 0l-1.5 1.5M1.5 0l-1.5 -1.5M1.5 0l-1.5 1.5" transform="translate(18.1 13.2) rotate(21)" /><path vectorEffect="non-scaling-stroke" d="M0 0H9.4M7.4 -1.6L9.4 0L7.4 1.6M0 0l-1.5 -1.5M0 0l-1.5 1.5M1.5 0l-1.5 -1.5M1.5 0l-1.5 1.5" transform="translate(14.4 25.8) rotate(141)" /><path vectorEffect="non-scaling-stroke" d="M0 0H9.4M7.4 -1.6L9.4 0L7.4 1.6M0 0l-1.5 -1.5M0 0l-1.5 1.5M1.5 0l-1.5 -1.5M1.5 0l-1.5 1.5" transform="translate(9.7 45.1) rotate(198)" /><path vectorEffect="non-scaling-stroke" d="M0 0H7.1M5.1 -1.6L7.1 0L5.1 1.6M0 0l-1.5 -1.5M0 0l-1.5 1.5M1.5 0l-1.5 -1.5M1.5 0l-1.5 1.5" transform="translate(80.7 84.9) rotate(100)" /><path vectorEffect="non-scaling-stroke" d="M0 0H5.8M3.8 -1.6L5.8 0L3.8 1.6M0 0l-1.5 -1.5M0 0l-1.5 1.5M1.5 0l-1.5 -1.5M1.5 0l-1.5 1.5" transform="translate(36.4 86.9) rotate(345)" /><path vectorEffect="non-scaling-stroke" d="M0 0H7.4M5.4 -1.6L7.4 0L5.4 1.6M0 0l-1.5 -1.5M0 0l-1.5 1.5M1.5 0l-1.5 -1.5M1.5 0l-1.5 1.5" transform="translate(18.9 24.3) rotate(84)" /><path vectorEffect="non-scaling-stroke" d="M0 0H7.1M5.1 -1.6L7.1 0L5.1 1.6M0 0l-1.5 -1.5M0 0l-1.5 1.5M1.5 0l-1.5 -1.5M1.5 0l-1.5 1.5" transform="translate(58.6 27.2) rotate(1)" /><path vectorEffect="non-scaling-stroke" d="M0 0H8.5M6.5 -1.6L8.5 0L6.5 1.6M0 0l-1.5 -1.5M0 0l-1.5 1.5M1.5 0l-1.5 -1.5M1.5 0l-1.5 1.5" transform="translate(37.4 56.4) rotate(343)" /><path vectorEffect="non-scaling-stroke" d="M0 0H5.3M3.3 -1.6L5.3 0L3.3 1.6M0 0l-1.5 -1.5M0 0l-1.5 1.5M1.5 0l-1.5 -1.5M1.5 0l-1.5 1.5" transform="translate(51.5 61.3) rotate(243)" /><path vectorEffect="non-scaling-stroke" d="M0 0H9.0M7.0 -1.6L9.0 0L7.0 1.6M0 0l-1.5 -1.5M0 0l-1.5 1.5M1.5 0l-1.5 -1.5M1.5 0l-1.5 1.5" transform="translate(88.4 76.9) rotate(315)" /><path vectorEffect="non-scaling-stroke" d="M0 0H8.2M6.199999999999999 -1.6L8.2 0L6.199999999999999 1.6M0 0l-1.5 -1.5M0 0l-1.5 1.5M1.5 0l-1.5 -1.5M1.5 0l-1.5 1.5" transform="translate(39.7 40.3) rotate(37)" />
+        </g>
+      </svg>
       {/* El "?" de la marca: quieto al fondo, crece en cada cambio de pregunta. */}
       <svg className="bv-signo" viewBox="0 -720 600 740" aria-hidden="true">
         <path className="bv-signo-sombra" d={Q} transform="translate(14 8)" />
@@ -196,7 +203,7 @@ export default function Bienvenida({
             <h1 id={s.paso === 'que' ? 'bienvenida-pregunta' : undefined} ref={s.paso === 'que' ? titulo : undefined} tabIndex={-1}>
               ¿Qué quieres hacer?
             </h1>
-            <p className="bv-sub">Dos toques y te mostramos dónde ir.</p>
+            <p className="bv-sub bv-tira">Dos toques y te mostramos dónde ir.</p>
             <div className="bv-muro">
               {grandes.map((i, n) => (
                 <button
@@ -208,9 +215,12 @@ export default function Bienvenida({
                   aria-pressed={elegida === i.slug}
                 >
                   <span className="bv-cinta" aria-hidden="true" />
-                  <Pictograma id={i.slug} className="bv-picto" />
-                  <strong>{i.label}</strong>
-                  <small>{i.descripcion}</small>
+                  <span className="bv-afiche-texto">
+                    <Pictograma id={i.slug} className="bv-picto" />
+                    <strong>{i.label}</strong>
+                    <small>{i.descripcion}</small>
+                  </span>
+                  <Ilustracion id={i.slug} className="bv-ilustracion" />
                 </button>
               ))}
             </div>
@@ -227,6 +237,7 @@ export default function Bienvenida({
                   >
                     <Pictograma id={i.slug} className="bv-picto" />
                     <strong>{i.label}</strong>
+                    <Ilustracion id={i.slug} className="bv-ilustracion bv-ilustracion-chica" />
                   </button>
                 ))}
               </div>

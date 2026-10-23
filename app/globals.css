@@ -2171,3 +2171,46 @@ html.bv-revela main > section { animation:bv-acerca .68s cubic-bezier(.2,.7,.2,1
 .elegir-otra-vez { justify-self:start; min-height:40px; padding:0 14px; border-radius:999px; border:1.5px solid var(--accent); background:transparent; color:var(--text); font:inherit; font-weight:600; cursor:pointer; }
 .elegir-otra-vez:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
 @media (prefers-reduced-motion: reduce) { .bv-carta:not(.bv-girada) .bv-dorso, .bv-carta.bv-girada .bv-frente { transition:none; } }
+
+
+/* ─── Bienvenida en puntillismo (referencia de Carlos): papel rasgado, tipografía
+   de máquina, ilustraciones de puntos y flechas sueltas sobre el spray violeta. */
+.bienvenida { --roto:polygon(0.0% 0.8%, 3.8% 0.4%, 7.7% 1.7%, 11.5% 0.2%, 15.4% 1.4%, 19.2% 1.0%, 23.1% 0.2%, 26.9% 1.3%, 30.8% 0.1%, 34.6% 1.1%, 38.5% 0.2%, 42.3% 0.2%, 46.2% 1.1%, 50.0% 2.1%, 53.8% 0.3%, 57.7% 0.6%, 61.5% 1.6%, 65.4% 2.5%, 69.2% 1.5%, 73.1% 1.0%, 76.9% 2.5%, 80.8% 0.1%, 84.6% 2.2%, 88.5% 0.8%, 92.3% 0.4%, 96.2% 0.3%, 100.0% 0.8%, 100% 42%, 99.8% 69%, 100.0% 98.3%, 96.2% 99.0%, 92.3% 98.6%, 88.5% 99.8%, 84.6% 99.8%, 80.8% 99.5%, 76.9% 98.2%, 73.1% 98.9%, 69.2% 99.2%, 65.4% 98.5%, 61.5% 98.8%, 57.7% 99.2%, 53.8% 97.9%, 50.0% 98.2%, 46.2% 99.4%, 42.3% 98.5%, 38.5% 98.6%, 34.6% 97.7%, 30.8% 98.1%, 26.9% 99.3%, 23.1% 97.5%, 19.2% 99.7%, 15.4% 98.9%, 11.5% 98.0%, 7.7% 99.6%, 3.8% 98.7%, 0.0% 99.9%, 0.7% 66%, 0% 34%); }
+.bv-flechas { position:fixed; inset:0; width:100%; height:100%; z-index:0; color:var(--crema, #EFE3D3); opacity:.28; pointer-events:none; }
+/* Títulos en tiras de papel rasgado, tinta oscura y máquina de escribir. */
+.bienvenida h1 { align-self:flex-start; padding:10px 16px 8px; background:var(--crema, #EFE3D3); color:var(--tinta, #13131D);
+  font-family:var(--f-maquina, 'Courier New', monospace); font-weight:400; -webkit-text-stroke:1.2px currentColor; letter-spacing:-.01em;
+  font-size:clamp(28px, 8.4vw, 56px); line-height:1; clip-path:var(--roto); transform:rotate(-1.2deg); }
+.bv-tira { align-self:flex-start; margin:-8px 0 6px 14px; padding:5px 12px; background:var(--crema, #EFE3D3); color:var(--tinta, #13131D); opacity:1;
+  font-size:14px; clip-path:var(--roto); transform:rotate(1deg); }
+/* Afiches: papel rasgado con grano de impresión, sin sombra de tarjeta. */
+.bv-afiche { clip-path:var(--roto); box-shadow:none; border-radius:0; display:grid; grid-template-columns:minmax(0, 1fr) auto; align-items:end; gap:4px 8px;
+  padding:16px 12px 14px 14px; background-color:var(--crema, #EFE3D3);
+  background-image:radial-gradient(rgba(19,19,29,.16) .8px, transparent 1px), radial-gradient(rgba(19,19,29,.09) .7px, transparent 1px), radial-gradient(rgba(19,19,29,.05) 1px, transparent 1.4px);
+  background-size:4px 4px, 6px 6px, 11px 11px; background-position:0 0, 2px 3px, 5px 1px; }
+.bv-afiche::before { content:none; }
+.bv-afiche-texto { display:flex; flex-direction:column; align-items:flex-start; gap:4px; min-width:0; }
+.bv-afiche strong { font-family:var(--f-maquina, 'Courier New', monospace); font-weight:400; -webkit-text-stroke:.9px currentColor; text-transform:uppercase; letter-spacing:0; font-size:clamp(17px, 4.8vw, 24px); }
+.bv-afiche small { font-size:11.5px; opacity:.8; }
+.bv-ilustracion { width:clamp(64px, 20vw, 120px); height:auto; color:var(--tinta, #13131D); align-self:center; }
+.bv-ancho { grid-template-columns:minmax(0, 1fr) auto; }
+.bv-ancho .bv-ilustracion { width:clamp(90px, 28vw, 140px); }
+/* En 2 columnas angostas, la ilustración va arriba a la derecha y el texto abajo. */
+.bv-muro > .bv-afiche:not(.bv-ancho) { grid-template-columns:1fr; }
+.bv-muro > .bv-afiche:not(.bv-ancho) .bv-ilustracion { position:absolute; top:8px; right:6px; width:clamp(56px, 17vw, 96px); opacity:.95; }
+.bv-muro > .bv-afiche:not(.bv-ancho) .bv-afiche-texto { padding-top:clamp(34px, 11vw, 64px); }
+.bv-muro-chico .bv-afiche { grid-template-columns:auto minmax(0, 1fr) auto; align-items:center; }
+.bv-ilustracion-chica { width:clamp(40px, 12vw, 64px) !important; position:static !important; }
+.bv-muro-chico .bv-afiche .bv-afiche-texto { padding-top:0 !important; }
+/* Elegido: el papel pasa a coral con la tinta corrida. */
+.bv-elegido { background-color:var(--accent); }
+.bv-elegido .bv-ilustracion { color:var(--tinta, #13131D); }
+.bv-afiche-lugar, .bv-afiche-cuando { grid-template-columns:1fr; }
+.bv-cerca { background-color:var(--accent); grid-template-columns:auto minmax(0, 1fr); }
+.bv-memoria { background:var(--crema, #EFE3D3); color:var(--tinta, #13131D); border:0; clip-path:var(--roto); }
+@media (min-width: 720px) {
+  .bv-muro > .bv-afiche:not(.bv-ancho) { grid-template-columns:minmax(0, 1fr) auto; }
+  .bv-muro > .bv-afiche:not(.bv-ancho) .bv-ilustracion { position:static; width:clamp(80px, 9vw, 120px); }
+  .bv-muro > .bv-afiche:not(.bv-ancho) .bv-afiche-texto { padding-top:0; }
+}
+@media (prefers-reduced-motion: reduce) { .bienvenida h1, .bv-tira { transform:none; } }
