@@ -2291,3 +2291,12 @@ html.bv-revela main > section { animation:bv-acerca .68s cubic-bezier(.2,.7,.2,1
   .bv-luz, .bv-cine, .bv-destello, .bv-canto { display:none !important; }
   .bv-afiche { transform:none !important; }
 }
+
+/* Afiches chicos en móvil: sin el ícono chico (la ilustración ya cumple ese papel),
+   así "SORPRÉNDEME" no choca con el planeta y nunca se parte. */
+@media (max-width: 719px) {
+  .bv-muro.bv-muro-chico > .bv-afiche { grid-template-columns:minmax(0, 1fr) auto; gap:6px; }
+  .bv-muro.bv-muro-chico > .bv-afiche .bv-picto { display:none; }
+  .bv-muro.bv-muro-chico > .bv-afiche strong { white-space:nowrap; font-size:clamp(13px, 3.7vw, 16px); }
+  .bv-muro.bv-muro-chico > .bv-afiche .bv-ilustracion { width:clamp(34px, 10vw, 48px); }
+}
