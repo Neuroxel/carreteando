@@ -12,7 +12,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // de la base lanza, y la caché sigue sirviendo el último sitemap bueno.
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return fijas;
   const [r, v] = await Promise.all([getPublicEvents(), getPublicVenues()]);
-  if (r.status === 'error') throw new Error('SITEMAP_BACKEND_UNAVAILABLE');
+  if (r.status === 'error') {
+    // En el build, una caída momentánea de la base no puede tumbar el deploy:
+    // sale con las rutas fijas y se regenera en la próxima revalidación (1 h).
+    if (process.env.NEXT_PHASE === 'phase-production-build') return fijas;
+    throw new Error('SITEMAP_BACKEND_UNAVAILABLE');
+  }
   return [
     ...fijas,
     ...r.events.map((e) => ({
