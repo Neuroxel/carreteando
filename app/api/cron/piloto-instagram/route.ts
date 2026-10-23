@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getAdminDb } from '../../../../lib/server-db';
 import { cronAutorizado } from '../../../../lib/cron-auth';
 import { presupuestoApify } from '../../../../lib/apify-budget';
+import { guardarMarcas, leerMarcas, marcasNuevas, ventanaActor } from '../../../../lib/instagram-incremental';
 import {
   ACTORES,
   PILOT_COHORTS,
@@ -68,10 +69,13 @@ export async function GET(request: Request) {
   let runId: string | null = null;
   try {
     const maxItems = cuentas.length * PILOT_LIMITS.postsPerAccount;
+    // Incremental: ventana desde las marcas de agua por cuenta (máximo 7 días en el piloto).
+    const marcas = await leerMarcas(db, cuentas);
+    const ventana = ventanaActor(cuentas, marcas, new Date(), 7);
     const start = obj(
       (await api(`acts/${actor}/runs?timeout=240&maxItems=${maxItems}&maxTotalChargeUsd=${tope}`, {
         method: 'POST',
-        body: JSON.stringify(entradaActor(actor, cuentas, PILOT_LIMITS.postsPerAccount, PILOT_LIMITS.newerThan)),
+        body: JSON.stringify(entradaActor(actor, cuentas, PILOT_LIMITS.postsPerAccount, ventana)),
       })) as unknown,
     );
     let run = obj(start.data);
@@ -127,10 +131,18 @@ export async function GET(request: Request) {
         { onConflict: 'username', ignoreDuplicates: true },
       );
     const leidas = [...new Set(rows.map((r) => r.account))];
-    for (const u of leidas) {
-      const ult = rows.filter((r) => r.account === u).map((r) => r.posted_at).filter(Boolean).sort().pop() || null;
-      await db.from('instagram_accounts').update({ last_scraped_at: new Date().toISOString(), ...(ult ? { last_post_at: ult } : {}) }).eq('username', u);
-    }
+    // La marca avanza solo aquí (corrida exitosa) y nunca en cuentas saturadas.
+    await guardarMarcas(
+      db,
+      marcasNuevas({
+        exito: true,
+        marcas,
+        posts: rows.map((r) => ({ cuenta: r.account, publicado: r.posted_at ?? null })),
+        porCuenta: PILOT_LIMITS.postsPerAccount,
+        totalMax: maxItems,
+      }),
+    );
+    for (const u of leidas) if (!marcas.has(u)) await db.from('instagram_accounts').update({ last_scraped_at: new Date().toISOString() }).eq('username', u);
     const cost = typeof run.usageTotalUsd === 'number' ? run.usageTotalUsd : null;
     const lleno = (f: (x: Record<string, unknown>) => unknown) => crudos.filter((x) => Boolean(f(x))).length;
     const summary = {

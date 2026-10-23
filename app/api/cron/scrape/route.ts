@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { refrescarPublico } from '../../../../lib/snapshot';
 import { getAdminDb } from '../../../../lib/server-db';
 import { presupuestoApify } from '../../../../lib/apify-budget';
+import { guardarMarcas, leerMarcas, marcasNuevas, ventanaActor } from '../../../../lib/instagram-incremental';
 import { cronAutorizado } from '../../../../lib/cron-auth';
 import {
   boundedResultsLimit,
@@ -22,6 +23,7 @@ import { engineMode, reevaluate } from '../../../../lib/sources/automation';
 import { fechaDeLaNoche, parseTimestamp, toChileDateString } from '../../../../lib/event-extraction';
 export const maxDuration = 300;
 export const dynamic = 'force-dynamic';
+const MAX_ITEMS = 40;
 class IngestionError extends Error {
   constructor(readonly code: string) {
     super(code);
@@ -217,14 +219,18 @@ export async function GET(request: Request) {
       if (omitida.error) throw new IngestionError('DB_FINISH');
       return reply({ success: true, run_id: runId, skipped: presupuesto.motivo, ...metrics });
     }
+    // Incremental: la ventana sale de las marcas de agua por cuenta (con solape).
+    const marcas = await leerMarcas(db, ACTIVE_SOURCES);
+    const ventana = ventanaActor(ACTIVE_SOURCES, marcas, new Date());
+    metrics.instagram_window = ventana;
     const start = record(
-      await apify(`acts/${actor}/runs?timeout=180&maxItems=40&maxTotalChargeUsd=${presupuesto.maxTotalChargeUsd}`, {
+      await apify(`acts/${actor}/runs?timeout=180&maxItems=${MAX_ITEMS}&maxTotalChargeUsd=${presupuesto.maxTotalChargeUsd}`, {
         method: 'POST',
         body: JSON.stringify({
           directUrls: ACTIVE_SOURCES.map((h) => `https://www.instagram.com/${h}/`),
           resultsType: 'posts',
           resultsLimit: limit,
-          onlyPostsNewerThan: '14 days',
+          onlyPostsNewerThan: ventana,
           addParentData: false,
         }),
       }),
@@ -362,6 +368,19 @@ export async function GET(request: Request) {
       })
       .eq('id', runId);
     if (saved.error) throw new IngestionError('DB_FINISH');
+    // Solo tras una corrida exitosa, y sin avanzar cuentas saturadas.
+    const avanzar = marcasNuevas({
+      exito: true,
+      marcas,
+      // Todo lo devuelto por el actor (no solo lo nuevo): así se detecta la saturación.
+      posts: items.map((item) => ({
+        cuenta: postOwner(item) || '',
+        publicado: parseTimestamp(item.timestamp ?? item.takenAt ?? item.takenAtIso ?? item.publishedAt)?.toISOString() || null,
+      })),
+      porCuenta: limit,
+      totalMax: MAX_ITEMS,
+    });
+    await guardarMarcas(db, avanzar).catch(() => undefined);
     console.info('[ingestion]', JSON.stringify({ run_id: runId, ...metrics }));
     return reply({
       success: true,
