@@ -174,5 +174,6 @@ test('3D: carta de dos caras (¿Qué? / ¿Dónde?), cara oculta inerte, giro y a
 test('toques: la cara oculta de la carta no tapa a la visible; volver a elegir está a mano', () => {
   const css = src('app/globals.css');
   assert.match(css, /\.bv-cara\[aria-hidden="true"\] \{ pointer-events:none; \}/);
+  assert.match(css, /\.bv-escena, \.bv-carta \{ pointer-events:none; \}\s*\.bv-cara:not\(\[aria-hidden="true"\]\) \{ pointer-events:auto; \}/);
   assert.match(src('components/ExploreClient.tsx'), /className="elegir-otra-vez" onClick=\{\(\) => setBienvenida\(true\)\}/);
 });
