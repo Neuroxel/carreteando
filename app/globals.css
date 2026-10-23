@@ -1985,3 +1985,8 @@ html[data-edicion="3d"] body {
 .shortlist-lugares h4 { margin:0 0 4px; font-size:14px; }
 .busqueda-intencion { margin:6px 0 0; font-size:14px; }
 .lugar-selector a > span { margin-left:2px; }
+
+/* Las filas de chips se desplazan dentro de su caja: los hijos de la grilla no pueden ensancharla. */
+.asistente > *, .asistente-pregunta, .shortlist, .shortlist ol > li { min-width:0; }
+.asistente-opciones { max-width:100%; }
+.shortlist a, .shortlist strong, .shortlist-lugares a { overflow-wrap:anywhere; }
