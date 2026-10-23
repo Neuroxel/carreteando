@@ -18,6 +18,9 @@ export const METRICS = [
   'instagram_click',
   'zero_result_search',
   'venue_proposal',
+  // Asistente: agregados, sin ubicación ni datos de la persona.
+  'intent_selected',
+  'view_all',
 ] as const;
 export type Metric = (typeof METRICS)[number];
 const pendientes = new Set<Metric>();

@@ -115,6 +115,10 @@ export interface FiltrosEvento {
   escena?: string;
   /** Sector o barrio verificado dentro de la comuna elegida (slug de lib/territorios). */
   zona?: string | null;
+  /** Intención ("¿qué quieres hacer?"), slug de lib/intenciones. */
+  plan?: string | null;
+  /** "Cerca de mí": ordenar por la ubicación del teléfono. Una comuna elegida manda. */
+  cerca?: boolean;
 }
 
 export const CATEGORIAS: {
