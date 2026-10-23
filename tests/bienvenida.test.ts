@@ -146,3 +146,8 @@ test('afiches, no pills: el muro usa tarjetas y el "?" de la marca hace la trans
   assert.match(b, /Buscando qué hay cerca…/);
   assert.match(b, /Otras comunas/);
 });
+
+test('build: una caída momentánea de la base no tumba el deploy por el sitemap', () => {
+  const s = src('app/sitemap.ts');
+  assert.match(s, /if \(process\.env\.NEXT_PHASE === 'phase-production-build'\) return fijas;\s*throw new Error\('SITEMAP_BACKEND_UNAVAILABLE'\)/);
+});
