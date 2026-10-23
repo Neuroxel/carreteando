@@ -104,6 +104,12 @@ No hacer un modal pequeño sobre la home: debe sentirse como una pantalla de ent
 
 ## Secuencia
 
+La bienvenida V1 debe tener **dos pasos por defecto**, siguiendo la aclaración final de Carlos.
+
+La fecha por defecto al terminar es **Esta noche**. La home normal ya tiene pestañas de fecha, así que no conviene convertir la bienvenida en un formulario de tres preguntas.
+
+Debe existir una acción secundaria discreta `Cambiar cuándo` para quien quiera planificar otro día, pero NO es paso obligatorio.
+
 ### Paso 1 — ¿Qué quieres hacer?
 
 Opciones canónicas ya implementadas:
@@ -144,17 +150,17 @@ Reglas:
 - precisión >500 m no afirma barrio;
 - comuna manual manda sobre GPS.
 
-### Paso 3 — ¿Cuándo?
+### Fecha — secundaria, no obligatoria
 
-Mantener este paso, pero hacerlo rápido.
+Al completar el Paso 2:
+- usar `Esta noche` por defecto;
+- entrar directamente a la home normal filtrada.
 
-Opciones:
+Si la persona toca `Cambiar cuándo` durante la bienvenida, mostrar una pantalla opcional con:
 - Esta noche
 - Mañana
 - Este finde
 - Más adelante
-
-`Esta noche` puede ir preseleccionado visualmente como default, pero no ejecutar hasta que la persona confirme o use `Saltar`.
 
 Entre 00:00–04:59 conserva la fecha nocturna canónica hasta las 05:00.
 
@@ -327,10 +333,11 @@ Verificar:
 
 ### Flujo
 
-- Qué → Dónde → Cuándo → home filtrada.
+- Qué → Dónde → home filtrada con Esta noche.
+- Qué → Dónde → Cambiar cuándo → home filtrada.
 - Saltar en paso 1.
 - Saltar en paso 2.
-- Saltar en paso 3.
+- Saltar desde fecha opcional.
 - Cerca de mí con prompt/granted/denied.
 - comuna manual.
 - reload de URL final.
@@ -393,6 +400,8 @@ Aplicar migración de métricas; no participa en el layout.
 - la home ya no contiene preguntas duplicadas;
 - wizard es una bienvenida separada;
 - una pregunta por pantalla;
+- dos pasos por defecto: Qué → Dónde;
+- fecha por defecto Esta noche, con cambio opcional;
 - final desemboca en home normal filtrada;
 - saltar siempre disponible;
 - no reaparece durante la sesión;
