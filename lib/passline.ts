@@ -7,6 +7,7 @@
  */
 import cola from '../data/passline-cola.json';
 import { CIUDADES } from './types';
+import { looksLikeSameEvent } from './sources/dispatcher';
 
 export type EstadoPassline = 'por_revisar' | 'verificado' | 'descartado';
 export interface FilaPassline {
@@ -75,4 +76,19 @@ export function editorialesDePassline(filas: FilaPassline[] = PASSLINE_COLA) {
       review_basis: `Passline verificado a mano por ${f.verificado_por} (cola "Passline hoy"); descubierto por ${f.descubierto_por}.`,
       moment: null,
     })) as unknown as typeof import('../data/editorial-events.json');
+}
+/**
+ * La cola es una lista versionada; la verdad de lo publicado está en la DB.
+ * Cruza cada fila del día con los eventos de esa fecha (título parecido) para que
+ * el reporte no pida revisar lo que operación ya publicó ni motive otro import.
+ */
+export function reconciliarPassline(
+  cola: ReturnType<typeof passlineDelDia>,
+  eventos: { title: string | null; date_text: string; disposition: string | null }[],
+) {
+  return cola.map((f) => {
+    const enDb = eventos.find((e) => e.date_text === f.fecha && e.title && e.disposition !== 'duplicate' && looksLikeSameEvent(e.title, f.evento));
+    const estado_db = enDb?.disposition ?? null;
+    return { ...f, estado_db, estado: estado_db === 'public' ? ('publicado' as const) : f.estado };
+  });
 }

@@ -153,3 +153,18 @@ test('ingesta: si vencer eventos falla, la corrida sigue y deja el error de Post
   assert.doesNotMatch(src, /throw new IngestionError\('DB_EXPIRE'\)/);
   assert.match(src, /metrics\.expire_error = \{/);
 });
+
+test('passline_hoy reconcilia con la DB: lo ya público no queda por revisar', async () => {
+  const { reconciliarPassline, passlineDelDia, PASSLINE_COLA } = await import('../lib/passline');
+  const cola = passlineDelDia(PASSLINE_COLA, '2026-10-23');
+  const r = reconciliarPassline(cola, [
+    { title: 'Las Vidas de Charly en Trotamundos', date_text: '2026-10-23', disposition: 'public' },
+    { title: 'Camionero', date_text: '2026-10-23', disposition: 'review' },
+    { title: 'Camionero', date_text: '2026-10-30', disposition: 'public' },
+  ]);
+  const por = (t: string) => r.find((f) => f.evento === t)!;
+  assert.equal(por('Las Vidas de Charly').estado, 'publicado');
+  assert.equal(por('Camionero').estado, 'por_revisar');
+  assert.equal(por('Camionero').estado_db, 'review');
+  assert.equal(por('Fiesta de Halloween - Averno').estado_db, null);
+});

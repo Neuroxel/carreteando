@@ -6,7 +6,7 @@ import { saludCobertura, siguienteAccion, type FilaEvento, type FilaFuente } fro
 import { estadosDeFuentes, reporteCobertura } from '../../../../lib/coverage';
 import { SOURCES } from '../../../../lib/sources/registry';
 import { getPublicSnapshot } from '../../../../lib/snapshot';
-import { PASSLINE_COLA, passlineDelDia } from '../../../../lib/passline';
+import { PASSLINE_COLA, passlineDelDia, reconciliarPassline } from '../../../../lib/passline';
 
 export const dynamic = 'force-dynamic';
 const reply = (body: unknown, status = 200) => NextResponse.json(body, { status, headers: { 'Cache-Control': 'no-store' } });
@@ -23,13 +23,14 @@ export async function GET(request: Request) {
   const ahora = new Date();
   const pedida = new URL(request.url).searchParams.get('fecha');
   const fecha = pedida && /^\d{4}-\d{2}-\d{2}$/.test(pedida) ? pedida : fechaDeLaNoche(ahora);
-  const [fuentes, eventos, snap, corrida] = await Promise.all([
+  const [fuentes, eventos, snap, corrida, delDia] = await Promise.all([
     db
       .from('event_sources')
       .select('id,active,last_checked_at,last_success_at,last_error,consecutive_failures,candidate_count,parse_failure_count,next_check_at'),
     db.from('events').select('city,date_text,disposition,source_id').gte('date_text', fecha).lte('date_text', addDays(fecha, 6)).limit(5000),
     getPublicSnapshot().catch(() => null),
     db.from('ingestion_runs').select('status,started_at,completed_at,error_code').order('started_at', { ascending: false }).limit(1),
+    db.from('events').select('title,date_text,disposition').eq('date_text', fecha).limit(500),
   ]);
   if (fuentes.error || eventos.error) return reply({ error: 'DB' }, 503);
   const salud = saludCobertura({
@@ -57,7 +58,7 @@ export async function GET(request: Request) {
   return reply({
     ...salud,
     ultima_corrida: corrida.data?.[0] ?? null,
-    passline_hoy: passlineDelDia(PASSLINE_COLA, fecha),
+    passline_hoy: reconciliarPassline(passlineDelDia(PASSLINE_COLA, fecha), delDia.data || []),
     locales: { resumen: cobertura.resumen, detalle: locales },
   });
 }
