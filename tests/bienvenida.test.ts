@@ -68,12 +68,81 @@ test('la portada ya no trae el asistente embebido; la bienvenida es aparte y nun
   // Saltar desde una home filtrada vuelve a la portada limpia.
   assert.match(explore, /const saltarBienvenida = useCallback\(\(\) => \{[\s\S]*?history\.pushState\(null, '', '\/'\)/);
   // "Cerca de mí" usa el mismo GPS (ubicar('gesto')), no otro.
-  assert.match(explore, /if \(d\.tipo === 'cerca'\) ubicar\('gesto'\)/);
+  assert.match(explore, /onCerca=\{\(\) => ubicar\('gesto'\)\}/);
   assert.doesNotMatch(bienvenida, /geolocation/);
 });
 
-test('CSS: sin desborde y respeta movimiento reducido', () => {
+test('CSS: sin desborde, safe area, 100dvh y movimiento reducido', () => {
   const css = src('app/globals.css');
-  assert.match(css, /\.bienvenida-opciones \{ display:grid; grid-template-columns:repeat\(2, minmax\(0, 1fr\)\)/);
-  assert.match(css, /prefers-reduced-motion: reduce\) \{ \.bienvenida-paso \{ animation:none; \}/);
+  const bloque = css.slice(css.indexOf('Bienvenida "Afiche Vivo"'), css.indexOf('.ayuda-elegir {'));
+  assert.match(bloque, /\.bienvenida \{[^}]*height:100dvh/);
+  assert.match(bloque, /env\(safe-area-inset-bottom\)/);
+  assert.match(bloque, /\.bv-muro \{ display:grid; grid-template-columns:repeat\(2, minmax\(0, 1fr\)\)/);
+  assert.match(bloque, /overflow-x:hidden/);
+  // Solo transform y opacity en las animaciones (nada de width/height/top/left ni blur).
+  for (const kf of bloque.match(/@keyframes [\w-]+ \{[\s\S]*?\}\s*\}/g) || []) assert.doesNotMatch(kf, /width|height|top:|left:|blur|filter/, kf.slice(0, 40));
+  // Movimiento reducido: sin escalas ni barridos, solo fundidos.
+  const reducido = bloque.slice(bloque.indexOf('@media (prefers-reduced-motion: reduce)'));
+  assert.match(reducido, /\.bv-fase-signo \.bv-signo \{ animation:none; \}/);
+  assert.match(reducido, /\.bv-elegido[^{]*\{ animation:none; \}/);
+  assert.match(reducido, /bv-fundido/);
+});
+
+test('?elegir=1 la abre a pedido y se consume sin perder el resto de la URL', async () => {
+  const { leerElegir } = await import('../lib/bienvenida');
+  assert.deepEqual(leerElegir('?elegir=1'), { forzar: true, search: '' });
+  assert.deepEqual(leerElegir('?ciudad=Quilpu%C3%A9&elegir=1'), { forzar: true, search: '?ciudad=Quilpu%C3%A9' });
+  assert.deepEqual(leerElegir('?ciudad=Quilpu%C3%A9'), { forzar: false, search: '?ciudad=Quilpu%C3%A9' });
+  assert.deepEqual(leerElegir(''), { forzar: false, search: '' });
+  const explore = src('components/ExploreClient.tsx');
+  assert.match(explore, /if \(forzar\) history\.replaceState/);
+});
+
+test('doble toque: una elección se ejecuta una sola vez; volver no corre mientras anima', () => {
+  const uno = avanzar(INICIO, { tipo: 'tocar', plan: 'bailar' });
+  assert.equal(uno.bloqueado, true);
+  const doble = avanzar(uno, { tipo: 'tocar', plan: 'comedia' });
+  assert.equal(doble.plan, 'bailar', 'el segundo toque se ignora');
+  assert.equal(avanzar(uno, { tipo: 'volver' }), uno, 'volver no corre durante la transición');
+  const dos = avanzar(uno, { tipo: 'elegir', plan: 'bailar' });
+  assert.deepEqual([dos.paso, dos.bloqueado], ['donde', false]);
+  // El componente también corta con una referencia sincrónica (dos toques en el mismo frame).
+  const b = src('components/Bienvenida.tsx');
+  assert.match(b, /if \(ocupado\.current\) return;\s*ocupado\.current = true;/);
+  // Sin animación igual funciona: los tiempos reducidos llegan al mismo final.
+  assert.match(b, /TIEMPOS_REDUCIDOS = \{ golpe: 0, salida: 0/);
+});
+
+test('sin destello: el telón se pone solo cuando la bienvenida va a abrir', async () => {
+  const { SCRIPT_SIN_DESTELLO } = await import('../lib/bienvenida');
+  const correr = (search: string, hash = '', guardado: string | null = null, pathname = '/') => {
+    const clases = new Set<string>();
+    const env = {
+      location: { pathname, search, hash },
+      sessionStorage: { getItem: () => guardado },
+      document: { documentElement: { classList: { add: (c: string) => clases.add(c), remove: (c: string) => clases.delete(c) } } },
+      setTimeout: () => 0,
+    };
+    new Function('location', 'sessionStorage', 'document', 'setTimeout', SCRIPT_SIN_DESTELLO)(env.location, env.sessionStorage, env.document, env.setTimeout);
+    return clases.has('bv-pendiente');
+  };
+  assert.equal(correr(''), true, 'primera visita limpia: se tapa antes de pintar');
+  assert.equal(correr('', '', 'vista'), false, 'ya vista: portada normal');
+  assert.equal(correr('?ciudad=Quilpu%C3%A9'), false, 'URL filtrada: nunca');
+  assert.equal(correr('?elegir=1', '', 'vista'), true, 'a pedido');
+  assert.equal(correr('', '#cartelera'), false);
+  assert.equal(correr('', '', null, '/explorar'), false);
+  assert.match(src('app/layout.tsx'), /dangerouslySetInnerHTML=\{\{ __html: SCRIPT_SIN_DESTELLO \}\}/);
+  assert.match(src('components/Bienvenida.tsx'), /classList\.remove\('bv-pendiente'\)/);
+  assert.match(src('components/ExploreClient.tsx'), /else document\.documentElement\.classList\.remove\('bv-pendiente'\)/);
+});
+
+test('afiches, no pills: el muro usa tarjetas y el "?" de la marca hace la transición', () => {
+  const b = src('components/Bienvenida.tsx');
+  assert.match(b, /className=\{claseAfiche/);
+  assert.doesNotMatch(b, /asistente-chip|chip-n/);
+  assert.match(b, /<path className="bv-signo-tinta" d=\{Q\}/);
+  assert.match(b, /Dos toques y te mostramos dónde ir\./);
+  assert.match(b, /Buscando qué hay cerca…/);
+  assert.match(b, /Otras comunas/);
 });

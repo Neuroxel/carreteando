@@ -1991,28 +1991,120 @@ html[data-edicion="3d"] body {
 .asistente-opciones { max-width:100%; }
 .shortlist a, .shortlist strong, .shortlist-lugares a { overflow-wrap:anywhere; }
 
-/* Bienvenida: pantalla completa aparte, una pregunta a la vez. */
-.bienvenida { position:fixed; inset:0; z-index:3000; overflow-y:auto; background:var(--bg); color:var(--text); display:flex; justify-content:center; padding:max(16px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom)); }
-.bienvenida-marco { width:100%; max-width:560px; display:flex; flex-direction:column; gap:18px; }
-.bienvenida-logo { width:min(220px, 55vw); height:auto; margin-top:8px; color:var(--text); }
-.bienvenida-paso { display:flex; flex-direction:column; gap:16px; animation:bienvenida-entra .22s ease-out both; }
-.bienvenida h1 { margin:0; font-size:clamp(30px, 8.5vw, 48px); line-height:1.05; outline:none; text-wrap:balance; }
-.bienvenida-opciones { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:10px; }
-.bienvenida-opcion { display:flex; align-items:center; gap:10px; min-height:64px; padding:12px; border-radius:var(--radius-sm); border:1.5px solid var(--line); background:var(--surface); color:var(--text); font:inherit; text-align:left; cursor:pointer; min-width:0; }
-.bienvenida-opcion > span[aria-hidden] { font-size:22px; flex:none; }
-.bienvenida-opcion strong { display:block; font-size:15px; overflow-wrap:anywhere; }
-.bienvenida-opcion small { display:block; color:var(--muted); font-size:12px; line-height:1.3; overflow-wrap:anywhere; }
-.bienvenida-opcion:hover, .bienvenida-opcion:focus-visible { border-color:var(--accent); outline:none; }
-.bienvenida-opciones-donde .bienvenida-opcion { min-height:52px; }
-.bienvenida-cuando { display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; font-size:14px; color:var(--muted); }
-.bienvenida-cuando strong { color:var(--text); }
-.bienvenida-cuando-opciones { display:flex; flex-wrap:wrap; gap:8px; width:100%; }
-.bienvenida-cuando-opciones button { min-height:40px; padding:0 14px; border-radius:999px; border:1.5px solid var(--line); background:transparent; color:var(--text); font:inherit; font-size:14px; cursor:pointer; }
-.bienvenida-cuando-opciones button[aria-pressed="true"] { border-color:var(--accent); background:var(--surface-raised); }
-.bienvenida-link { align-self:flex-start; min-height:40px; padding:0; border:0; background:none; color:var(--text); font:inherit; font-size:14px; text-decoration:underline; text-underline-offset:3px; cursor:pointer; }
-.bienvenida-saltar { align-self:center; margin-top:auto; min-height:44px; padding:0 22px; border-radius:999px; border:1.5px solid var(--line); background:transparent; color:var(--text); font:inherit; font-weight:600; cursor:pointer; }
-.bienvenida button:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
-@keyframes bienvenida-entra { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
-@media (prefers-reduced-motion: reduce) { .bienvenida-paso { animation:none; } }
-@media (min-width: 720px) { .bienvenida { align-items:center; } }
+/* ─── Bienvenida "Afiche Vivo" ─────────────────────────────────────────────
+   Muro nocturno + afiches de papel con tinta desregistrada. Solo se animan
+   transform y opacity (60 fps en Android medio). Movimiento reducido: fundidos. */
+html.bv-pendiente body::after { content:""; position:fixed; inset:0; z-index:2999; background:var(--bg); }
+.bienvenida { position:fixed; inset:0; z-index:3000; height:100dvh; overflow-x:hidden; overflow-y:auto; overscroll-behavior:contain;
+  background:var(--bg); color:var(--crema, var(--text)); display:flex; justify-content:center;
+  padding:max(14px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); }
+.bienvenida .poster-decor { position:fixed; opacity:.55; }
+.bienvenida-marco { position:relative; z-index:1; width:100%; max-width:920px; min-height:100%; display:flex; flex-direction:column; gap:14px; }
+.bienvenida-logo { width:min(150px, 38vw); height:auto; color:var(--crema, var(--text)); opacity:.92; }
+.bienvenida-paso { display:flex; flex-direction:column; gap:14px; }
+.bienvenida h1 { margin:6px 0 0; font-family:var(--f-cartel, Georgia, serif); font-weight:900; font-size:clamp(34px, 10vw, 64px); line-height:.98; letter-spacing:-.02em; outline:none; text-wrap:balance; color:var(--crema, var(--text)); }
+.bv-sub { margin:-4px 0 4px; font-family:var(--f-maquina, monospace); font-size:15px; color:var(--crema, var(--text)); opacity:.85; }
+
+/* El "?" de la marca, quieto al fondo; crece en el cambio de pregunta. */
+.bv-signo { position:fixed; z-index:0; right:-6vw; bottom:6vh; width:min(62vw, 420px); height:auto; opacity:.10; transform:rotate(-8deg); pointer-events:none; }
+.bv-signo-tinta { fill:var(--accent); }
+.bv-signo-sombra { fill:var(--accent-2); }
+.bv-fase-signo .bv-signo { animation:bv-signo .38s cubic-bezier(.6,0,.3,1) both; }
+@keyframes bv-signo {
+  0% { opacity:.1; transform:rotate(-8deg) scale(1); }
+  45% { opacity:.95; transform:translate(-30vw,-28vh) rotate(-4deg) scale(5.5); }
+  100% { opacity:0; transform:translate(-30vw,-28vh) rotate(0deg) scale(9); }
+}
+
+/* Muro de afiches: 2 columnas en móvil, 3 en escritorio; nunca una fila eterna. */
+.bv-muro { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:12px; }
+.bv-ancho { grid-column:1 / -1; }
+.bv-afiche { --giro:0deg; position:relative; min-width:0; display:flex; flex-direction:column; align-items:flex-start; gap:4px; min-height:104px; padding:14px 14px 12px;
+  border:0; border-radius:3px; cursor:pointer; text-align:left; font:inherit;
+  background:var(--crema, #EFE3D3); color:var(--tinta, #13131D);
+  box-shadow:4px 4px 0 var(--accent-2), 0 10px 22px rgba(0,0,0,.35);
+  transform:rotate(var(--giro)); transition:transform .15s ease, opacity .2s ease; touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
+/* Borde de ticket: línea punteada impresa adentro. */
+.bv-afiche::before { content:""; position:absolute; inset:6px; border:1.5px dashed rgba(19,19,29,.28); border-radius:2px; pointer-events:none; }
+.bv-afiche strong { font-family:var(--f-cartel, Georgia, serif); font-weight:900; font-size:clamp(19px, 5.4vw, 26px); line-height:1; text-transform:uppercase; letter-spacing:-.01em; overflow-wrap:anywhere; }
+.bv-afiche small { font-family:var(--f-maquina, monospace); font-size:12px; line-height:1.25; opacity:.75; overflow-wrap:anywhere; }
+.bv-picto { width:30px; height:30px; flex:none; color:var(--tinta, #13131D); }
+.bv-ancho { flex-direction:row; align-items:center; gap:12px; min-height:84px; }
+.bv-ancho > strong + small, .bv-ancho small { flex-basis:100%; }
+.bv-ancho { flex-wrap:wrap; }
+.bv-afiche:hover { transform:rotate(var(--giro)) translateY(-2px); }
+.bv-afiche:focus-visible { outline:3px solid var(--accent); outline-offset:3px; }
+.bv-afiche:active { transform:rotate(var(--giro)) scale(.98); }
+.bv-muro-chico .bv-afiche { min-height:58px; flex-direction:row; align-items:center; gap:10px; padding:10px 12px; }
+.bv-muro-chico .bv-afiche strong { font-size:16px; }
+.bv-muro-chico .bv-picto { width:24px; height:24px; }
+
+/* Elegir: golpe 1 → 1,04 → 0,98, coral y tinta corrida; los demás se van. */
+.bv-elegido { background:var(--accent); color:var(--tinta, #13131D); animation:bv-golpe .17s ease-out both; z-index:2; }
+.bv-elegido::after { content:""; position:absolute; inset:0; border-radius:3px; background:var(--accent-2); mix-blend-mode:multiply; opacity:.35; transform:translate(5px, 3px); animation:bv-tinta .23s ease-out both; pointer-events:none; }
+.bv-se-va { opacity:0; transform:rotate(var(--giro)) translateY(14px) scale(.96); transition:opacity .2s ease, transform .23s ease; pointer-events:none; }
+@keyframes bv-golpe { 0% { transform:rotate(var(--giro)) scale(1); } 55% { transform:rotate(0deg) scale(1.04); } 100% { transform:rotate(0deg) scale(.98); } }
+@keyframes bv-tinta { from { transform:translate(0,0); opacity:0; } to { transform:translate(5px,3px); opacity:.35; } }
+.bv-fase-signo .bienvenida-paso { animation:bv-cambio .38s ease both; }
+@keyframes bv-cambio { 0% { opacity:1; transform:none; } 45% { opacity:0; transform:scale(.97); } 55% { opacity:0; transform:scale(1.03); } 100% { opacity:1; transform:none; } }
+
+/* Paso 2: la elección queda arriba, chica. */
+.bv-memoria { align-self:flex-start; display:inline-flex; align-items:center; gap:6px; min-height:36px; padding:0 12px; border-radius:3px; border:1.5px solid var(--accent); background:transparent; color:var(--crema, var(--text)); font-family:var(--f-maquina, monospace); font-size:14px; cursor:pointer; transform:rotate(-1deg); }
+.bv-memoria-cambiar { opacity:.7; text-decoration:underline; text-underline-offset:3px; font-size:12px; }
+.bv-afiche-lugar { min-height:64px; justify-content:center; }
+.bv-afiche-lugar strong { font-size:clamp(17px, 4.8vw, 22px); }
+.bv-cerca { background:var(--accent); }
+.bv-radar { position:relative; display:grid; place-items:center; width:44px; height:44px; flex:none; }
+.bv-radar::before, .bv-radar::after { content:""; position:absolute; inset:0; border-radius:50%; border:2px solid var(--tinta, #13131D); opacity:0; }
+.bv-buscando .bv-radar::before { animation:bv-pulso 1.1s ease-out infinite; }
+.bv-buscando .bv-radar::after { animation:bv-pulso 1.1s ease-out .55s infinite; }
+@keyframes bv-pulso { from { transform:scale(.5); opacity:.8; } to { transform:scale(1.6); opacity:0; } }
+.bv-aviso { margin:0; font-family:var(--f-maquina, monospace); font-size:14px; }
+.bv-secundarias { display:flex; flex-wrap:wrap; gap:6px 18px; }
+.bienvenida-cuando { display:flex; flex-wrap:wrap; align-items:center; gap:6px 10px; font-family:var(--f-maquina, monospace); font-size:14px; color:var(--crema, var(--text)); opacity:.9; }
+.bienvenida-cuando-opciones { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:10px; width:100%; margin-top:4px; }
+.bv-afiche-cuando { min-height:52px; justify-content:center; }
+.bv-afiche-cuando strong { font-size:16px; }
+.bv-afiche-cuando[aria-pressed="true"] { background:var(--accent); }
+.bienvenida-link { min-height:40px; padding:0; border:0; background:none; color:var(--crema, var(--text)); font-family:var(--f-maquina, monospace); font-size:14px; text-decoration:underline; text-underline-offset:3px; cursor:pointer; }
+.bienvenida-saltar { align-self:center; margin-top:auto; min-height:44px; padding:0 18px; border:0; background:none; color:var(--crema, var(--text)); opacity:.75; font-family:var(--f-maquina, monospace); font-size:14px; letter-spacing:.06em; text-transform:uppercase; cursor:pointer; }
+.bienvenida button:focus-visible { outline:3px solid var(--accent); outline-offset:3px; }
+
+/* Final: ticket de la decisión, y la portada se revela por debajo. */
+.bv-ticket { position:fixed; z-index:3; inset:0; display:grid; place-items:center; pointer-events:none; padding:16px; }
+.bv-ticket span { display:block; max-width:min(92vw, 640px); padding:16px 18px; background:var(--crema, #EFE3D3); color:var(--tinta, #13131D); font-family:var(--f-cartel, Georgia, serif); font-weight:900; font-size:clamp(18px, 5.6vw, 30px); line-height:1.1; text-transform:uppercase; text-align:center; overflow-wrap:anywhere;
+  box-shadow:5px 5px 0 var(--accent), 0 18px 40px rgba(0,0,0,.45); transform:rotate(-2deg); animation:bv-sello .26s cubic-bezier(.2,.9,.3,1.2) both; }
+@keyframes bv-sello { from { opacity:0; transform:rotate(-6deg) scale(1.25); } to { opacity:1; transform:rotate(-2deg) scale(1); } }
+.bv-fase-ticket .bienvenida-marco { opacity:.15; transition:opacity .2s ease; }
+.bv-fase-saliendo { animation:bv-sale .52s cubic-bezier(.7,0,.3,1) both; }
+.bv-fase-saliendo .bv-ticket span { animation:bv-cae .52s cubic-bezier(.5,0,.75,0) both; }
+@keyframes bv-sale { 0% { transform:none; } 100% { transform:translateY(-100%); } }
+@keyframes bv-cae { from { transform:rotate(-2deg); opacity:1; } to { transform:translateY(60vh) rotate(4deg) scale(.7); opacity:0; } }
+html.bv-revela main > section { animation:bv-revela .5s ease-out both; }
+@keyframes bv-revela { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:none; } }
+
+@media (min-width: 720px) {
+  .bienvenida { align-items:flex-start; padding-top:max(28px, env(safe-area-inset-top)); }
+  .bv-muro { grid-template-columns:repeat(3, minmax(0, 1fr)); gap:16px; }
+  .bv-ancho { grid-column:auto; flex-direction:column; align-items:flex-start; }
+  .bv-cerca { grid-column:1 / -1; flex-direction:row; align-items:center; }
+  .bv-muro-chico { grid-template-columns:repeat(3, minmax(0, 1fr)); }
+  .bienvenida-cuando-opciones { grid-template-columns:repeat(4, minmax(0, 1fr)); }
+  .bv-signo { right:4vw; bottom:4vh; width:min(36vw, 460px); }
+}
+/* Landscape bajo (teléfono acostado): sin centrar, se desplaza si hace falta. */
+@media (max-height: 480px) { .bv-afiche { min-height:70px; } .bienvenida h1 { font-size:30px; } }
+@media (prefers-reduced-motion: reduce) {
+  .bv-afiche, .bv-afiche:hover, .bv-afiche:active { transform:none; transition:opacity .12s linear; }
+  .bv-elegido, .bv-elegido::after, .bv-buscando .bv-radar::before, .bv-buscando .bv-radar::after, .bv-ticket span { animation:none; }
+  .bv-se-va { transform:none; transition:opacity .12s linear; }
+  .bv-fase-signo .bv-signo { animation:none; }
+  .bv-fase-signo .bienvenida-paso { animation:bv-fundido .12s linear both; }
+  .bv-fase-saliendo { animation:bv-fundido-sale .14s linear both; }
+  .bv-fase-saliendo .bv-ticket span { animation:none; }
+  html.bv-revela main > section { animation:bv-fundido .14s linear both; }
+  .bv-memoria, .bv-ticket span { transform:none; }
+}
+@keyframes bv-fundido { from { opacity:0; } to { opacity:1; } }
+@keyframes bv-fundido-sale { from { opacity:1; } to { opacity:0; } }
 .ayuda-elegir { background:transparent; font:inherit; cursor:pointer; }
