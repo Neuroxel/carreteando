@@ -74,4 +74,6 @@ test('inicio y radar: un solo camino', () => {
   // Lista/Mapa ya no viven dentro de Filtros.
   const filtros = explore.slice(explore.indexOf('const filtrosUI = ('), explore.indexOf('return (\n    <>'));
   assert.doesNotMatch(filtros, /'mapa', 'Mapa'|Usar mi ubicación/);
+  // La escena activa no muestra su número: tocarla quita el filtro.
+  assert.match(explore, /activa \? <span className="chip-n" aria-label=\{`Quitar filtro/);
 });

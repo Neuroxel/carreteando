@@ -417,7 +417,8 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
               const activa = filtros.escena === x.slug;
               return (
                 <a key={x.slug} {...enlace({ escena: activa ? 'todos' : x.slug })} className={`chip ${activa ? 'selected' : ''}`} aria-current={activa ? 'true' : undefined}>
-                  {x.label} <span className="chip-n">{x.n}</span>
+                  {/* Activa: tocarla quita el filtro, así que no muestra un número que no se cumpliría. */}
+                  {x.label} {activa ? <span className="chip-n" aria-label={`Quitar filtro ${x.label}`}>✕</span> : <span className="chip-n">{x.n}</span>}
                 </a>
               );
             })}
