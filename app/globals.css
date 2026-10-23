@@ -2120,6 +2120,10 @@ html.bv-revela main > section { animation:bv-revela .5s ease-out both; }
 .bv-carta { display:grid; transform-style:preserve-3d; transform:rotateX(var(--incl-x)) rotateY(var(--incl-y)); transition:transform .25s ease-out; }
 .bv-carta.bv-girada { transform:rotateX(var(--incl-x)) rotateY(calc(180deg + var(--incl-y))); }
 .bv-fase-girando .bv-carta { transition:transform .72s cubic-bezier(.65,0,.25,1); }
+/* Fuera del giro la carta queda en su posición final sin depender de que la
+   transición termine (ahorro de batería o pestaña en segundo plano pueden
+   congelarla): el estado lo deciden los temporizadores, no la animación. */
+.bv-fase-normal .bv-carta, .bv-fase-buscando .bv-carta, .bv-fase-ticket .bv-carta { transition:none; }
 .bv-cara { grid-area:1 / 1; backface-visibility:hidden; -webkit-backface-visibility:hidden; transform:translateZ(1px); }
 .bv-dorso { transform:rotateY(180deg) translateZ(1px); }
 /* Mientras gira, la carta se agranda apenas (respira hacia la cámara). */
