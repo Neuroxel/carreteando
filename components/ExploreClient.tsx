@@ -6,11 +6,11 @@ import { addDays, fechaDeLaNoche } from '../lib/event-extraction';
 import { parseFilters } from '../lib/filters';
 import { CIUDADES, type Evento, type FiltrosEvento } from '../lib/types';
 import { ESCENAS } from '../lib/escenas';
-import { buscarLugares, buscarZonas, zonaSlug } from '../lib/venues';
+import { type Lugar, buscarLugares, buscarZonas, zonaSlug } from '../lib/venues';
 import { puntosDeMapa } from '../lib/map';
 import { indiceDeLugares } from '../lib/venue-match';
 import type { PublicSnapshot } from '../lib/snapshot';
-import { rememberEmptySearch } from '../lib/metrics';
+import { rememberEmptySearch, trackLater } from '../lib/metrics';
 import { ORDEN_TEMPORAL, ahoraEnChile, esMadrugada, estadoTemporal, nombreDia, porEstadoTemporal } from '../lib/temporal';
 import { PRECISION_ZONA_M, fixUtil, RADIOS_KM, CLAVE_GPS_NEGADO_VIEJA, ubicarEnDosFases, type EstadoGps, type Fix, leerCapa, porCercania, textoDistancia, type Capa, type Posicion } from '../lib/radar';
 import EventCard from './EventCard';
@@ -20,7 +20,9 @@ import VenueMap from './VenueMap';
 import TituloSeccion from './TituloSeccion';
 import BrandLink from './BrandLink';
 import { LogoApilado } from './Logo';
-import { cuantos, eventosLista, eventosRadar, lugaresLista, lugaresRadar, type Contexto, type Modo } from '../lib/resultados';
+import { cuantos, eventosLista, eventosRadar, lugarObjeto, lugaresLista, lugaresRadar, type Contexto, type Modo } from '../lib/resultados';
+import { INTENCIONES, intencionDeBusqueda, intencionPorSlug } from '../lib/intenciones';
+import { recomendar } from '../lib/recomendar';
 import { RUTA_GEOMETRIAS, sectorDeLugar, territorioDe, territorioPorSlug, zonaValida, zonasDeComuna, type TerritorioGeo } from '../lib/territorios';
 import PosterDecor from './poster/PosterDecor';
 
@@ -82,7 +84,12 @@ const conZona = (prev: FiltrosEvento, cambio: Partial<FiltrosEvento>): FiltrosEv
   ...prev,
   ...cambio,
   ...(cambio.ciudad !== undefined && cambio.ciudad !== prev.ciudad && cambio.zona === undefined ? { zona: null } : {}),
+  // Elegir una comuna apaga "Cerca de mí": la selección manual manda.
+  ...(cambio.ciudad !== undefined && cambio.ciudad !== 'todos' ? { cerca: false } : {}),
 });
+/** Lugares de la comuna y zona elegidas (para completar el asistente con lugares). */
+const lugaresBaseDe = (venues: Lugar[], f: FiltrosEvento) =>
+  venues.filter((l) => (!f.ciudad || f.ciudad === 'todos' || l.ciudad === f.ciudad) && (!f.zona || sectorDeLugar(l.slug) === f.zona));
 /** URL limpia: solo lo que difiere del valor por defecto. */
 function aUrl(e: Estado, path: string, defecto: string) {
   const p = new URLSearchParams();
@@ -95,6 +102,8 @@ function aUrl(e: Estado, path: string, defecto: string) {
   }
   const zona = zonaValida(f.zona, f.ciudad);
   if (zona) p.set('zona', zona);
+  if (f.plan && intencionPorSlug(f.plan)) p.set('plan', f.plan);
+  if (f.cerca && (!f.ciudad || f.ciudad === 'todos')) p.set('cerca', '1');
   if (e.ver !== 'todo') p.set('ver', e.ver);
   if (e.vista !== 'lista') p.set('vista', e.vista);
   if (e.orden !== 'recomendados') p.set('orden', e.orden);
@@ -244,9 +253,9 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
   const { filtros, ver, vista, orden, capa } = estado;
   useEffect(() => {
     // Un mapa abierto por enlace: ubica solo si ya estaba permitido; si no, ofrece el botón.
-    enRadar.current = vista === 'mapa';
-    if (vista === 'mapa' && gps === 'idle') ubicar('enlace');
-  }, [vista, gps, ubicar]);
+    enRadar.current = vista === 'mapa' || Boolean(filtros.cerca);
+    if ((vista === 'mapa' || filtros.cerca) && gps === 'idle') ubicar('enlace');
+  }, [vista, gps, ubicar, filtros.cerca]);
   /**
    * Abrir el Radar con un gesto: la barra (Radar), el botón Mapa y "Ver mapa y
    * carretes cerca de mí" llegan al mismo estado (comuna y zona se conservan,
@@ -409,8 +418,41 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
   }).format(new Date(`${today}T15:00:00Z`));
 
   // Filtros secundarios (escena, presupuesto, orden, qué mostrar). Lista/Mapa y la ubicación van fuera.
+  // Filtros secundarios activos, uno por cada cosa que cambia el resultado.
+  const filtrosActivos = [
+    filtros.escena && filtros.escena !== 'todos',
+    filtros.precio && filtros.precio !== 'todos',
+    orden !== 'recomendados',
+    ver === 'eventos',
+  ].filter(Boolean).length;
+
+  // Asistente: intención + cuándo + dónde → "Te recomendamos" (3–6) y "Ver todas".
+  const intencion = intencionPorSlug(filtros.plan);
+  const asistenteActivo = Boolean(intencion || filtros.cerca);
+  const recomendados = useMemo(() => {
+    if (!asistenteActivo || vista !== 'lista') return [];
+    const cands = eventosLista(ctx, filtros).map((e) => {
+      const l = lugarObjeto(ctx, e);
+      const calce = intencion ? intencion.evento(e, l) || 'lugar' : 'exacto';
+      return { e, calce, lugar: l?.slug || null, sector: sectorDeLugar(l?.slug || null), pos: l && l.lat != null && l.lng != null ? { lat: l.lat, lng: l.lng } : null };
+    });
+    return recomendar(cands, {
+      ahora: ahoraCL,
+      today,
+      madrugada,
+      yo: filtros.cerca ? yo : null,
+      zonaPersona: territorioActual?.slug || null,
+      diverso: intencion?.slug === 'sorprendeme',
+    });
+  }, [asistenteActivo, vista, ctx, filtros, intencion, ahoraCL, today, madrugada, yo, territorioActual]);
+  // Pocos eventos: lugares que calzan con la intención, en un bloque aparte.
+  const lugaresSugeridos =
+    intencion && intencion.slug !== 'sorprendeme' && recomendados.length < 3
+      ? lugaresBaseDe(snap.venues, filtros).filter((l) => intencion.lugar(l)).slice(0, 4)
+      : [];
+  const sugerida = intencionDeBusqueda(filtros.busqueda);
   const filtrosUI = (
-        <details className="discovery-options"><summary>Filtros{(filtros.escena !== 'todos' || (filtros.precio && filtros.precio !== 'todos') || orden !== 'recomendados' || ver === 'eventos') ? ' · activos' : ''}</summary>
+        <details className="discovery-options"><summary>Filtros{filtrosActivos > 0 ? ` (${filtrosActivos})` : ''}</summary>
         {escenasVisibles.length > 0 && (
           <div className="escenas" aria-label="Escenas">
             {escenasVisibles.map((x) => {
@@ -515,7 +557,7 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
               maxLength={120}
               value={filtros.busqueda || ''}
               onChange={(e) => ir({ busqueda: e.target.value.slice(0, 120) }, true)}
-              placeholder="Buscar lugar, fiesta, artista o zona"
+              placeholder="¿Qué quieres hacer? Ej: bailar, rock, karaoke, Cerro Alegre…"
             />
             {filtros.busqueda ? (
               <button type="button" aria-label="Borrar búsqueda" onClick={() => ir({ busqueda: '' })}>
@@ -527,6 +569,13 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
               </button>
             )}
           </form>
+          {sugerida && sugerida.slug !== filtros.plan && (
+            <p className="busqueda-intencion">
+              <a {...enlace({ plan: sugerida.slug, busqueda: '' })}>
+                <span aria-hidden="true">{sugerida.icono}</span> Ver recomendaciones para «{sugerida.label}»
+              </a>
+            </p>
+          )}
           {/* Dónde estás es la primera pregunta. Selección manual; nunca se pide ubicación. */}
           <div className="lugar-selector" role="group" aria-label="Elegir ciudad">
             <a {...enlace({ ciudad: 'todos' })} className={filtros.ciudad === 'todos' ? 'activa' : ''} aria-current={filtros.ciudad === 'todos' ? 'true' : undefined}>
@@ -535,7 +584,7 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
             {derivados.ciudadesConOferta.map((c) => (
               <a key={c} {...enlace({ ciudad: c })} className={filtros.ciudad === c ? 'activa' : ''} aria-current={filtros.ciudad === c ? 'true' : undefined}>
                 {SHORT[c] || c}
-                {n({ ciudad: c }) > 0 && <span>{n({ ciudad: c })}</span>}
+                {n({ ciudad: c }) > 0 && <> <span>{n({ ciudad: c })}</span></>}
               </a>
             ))}
           </div>
@@ -554,6 +603,150 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
           </div>
         )}
       </section>
+      {home && vista === 'lista' && ver !== 'lugares' && (
+        <section className="container asistente" aria-labelledby="asistente-titulo">
+          <div className="asistente-pregunta">
+            <h2 id="asistente-titulo">¿Qué quieres hacer?</h2>
+            <div className="asistente-opciones" role="group" aria-label="Qué quieres hacer">
+              {INTENCIONES.map((i) => {
+                const activa = filtros.plan === i.slug;
+                const cuantas = n({ plan: i.slug });
+                if (!activa && cuantas === 0) return null;
+                return (
+                  <a
+                    key={i.slug}
+                    href={enlace({ plan: activa ? null : i.slug }).href}
+                    onClick={(ev) => {
+                      enlace({ plan: activa ? null : i.slug }).onClick(ev);
+                      if (!activa) trackLater('intent_selected');
+                    }}
+                    className={`asistente-chip ${activa ? 'activa' : ''}`}
+                    aria-current={activa ? 'true' : undefined}
+                    title={i.descripcion}
+                  >
+                    <span aria-hidden="true">{i.icono}</span> {i.label}
+                    {activa ? <span className="chip-n" aria-label={`Quitar ${i.label}`}>✕</span> : <span className="chip-n">{cuantas}</span>}
+                  </a>
+                );
+              })}
+            </div>
+          </div>
+          <div className="asistente-pregunta">
+            <h3>¿Cuándo?</h3>
+            <div className="asistente-opciones" role="group" aria-label="Cuándo">
+              {(
+                [
+                  ['hoy', 'Esta noche'],
+                  ['manana', madrugada ? nombreDia(addDays(today, 1)) : 'Mañana'],
+                  ['finde', 'Este finde'],
+                  ['futuro', 'Más adelante'],
+                ] as const
+              ).map(([v, label]) => (
+                <a key={v} {...enlace({ fecha: v })} className={`asistente-chip ${filtros.fecha === v ? 'activa' : ''}`} aria-current={filtros.fecha === v ? 'true' : undefined}>
+                  {label} <span className="chip-n">{n({ fecha: v })}</span>
+                </a>
+              ))}
+            </div>
+          </div>
+          <div className="asistente-pregunta">
+            <h3>¿Dónde?</h3>
+            <div className="asistente-opciones" role="group" aria-label="Dónde">
+              <a
+                href={aUrl({ ...estado, filtros: conZona(filtros, { cerca: true, ciudad: 'todos', zona: null }) }, path, defecto)}
+                onClick={(e) => {
+                  if (e.metaKey || e.ctrlKey || e.shiftKey) return;
+                  e.preventDefault();
+                  ir({ cerca: true, ciudad: 'todos', zona: null });
+                  // Tocar "Cerca de mí" es el gesto: mismo GPS que Radar, una sola vez.
+                  ubicar('gesto');
+                  trackLater('filter');
+                }}
+                className={`asistente-chip ${filtros.cerca ? 'activa' : ''}`}
+                aria-current={filtros.cerca ? 'true' : undefined}
+              >
+                <span aria-hidden="true">📍</span> Cerca de mí
+              </a>
+              <a {...enlace({ ciudad: 'todos', cerca: false })} className={`asistente-chip ${filtros.ciudad === 'todos' && !filtros.cerca ? 'activa' : ''}`}>
+                Toda la región <span className="chip-n">{n({ ciudad: 'todos', cerca: false })}</span>
+              </a>
+              {derivados.ciudadesConOferta.map((c) => {
+                const cuantas = n({ ciudad: c });
+                return (
+                  <a key={c} {...enlace({ ciudad: c })} className={`asistente-chip ${filtros.ciudad === c ? 'activa' : ''}`} aria-current={filtros.ciudad === c ? 'true' : undefined}>
+                    {SHORT[c] || c} <span className="chip-n">{cuantas}</span>
+                  </a>
+                );
+              })}
+            </div>
+            {filtros.cerca && <EstadoUbicacion gps={gps} yo={yo} aqui={territorioActual?.nombre} onUbicar={() => ubicar('gesto')} />}
+          </div>
+          {asistenteActivo && (
+            <div className="shortlist" aria-live="polite">
+              {recomendados.length > 0 ? (
+                <>
+                  <h3>Te recomendamos</h3>
+                  <ol>
+                    {recomendados.map(({ e, razones }) => (
+                      <li key={e.id}>
+                        <Link prefetch={false} href={`/evento/${encodeURIComponent(e.id)}`}>
+                          <strong>{e.nombre}</strong>
+                          <span className="shortlist-lugar">{e.lugar || 'Lugar por confirmar'}</span>
+                        </Link>
+                        <ul className="razones" aria-label="Por qué aparece">
+                          {razones.map((r) => (
+                            <li key={r}>{gps === 'muy_aproximada' && r.startsWith('A ') ? `${r} (aprox.)` : r}</li>
+                          ))}
+                        </ul>
+                      </li>
+                    ))}
+                  </ol>
+                </>
+              ) : (
+                <p className="shortlist-vacia">
+                  No encontramos {intencion ? intencion.label.toLowerCase() : 'planes'} con estos filtros.{' '}
+                  {filtros.fecha !== 'finde' && <a {...enlace({ fecha: 'finde' })}>Ver este finde</a>}
+                  {filtros.ciudad !== 'todos' && <> · <a {...enlace({ ciudad: 'todos' })}>Ver toda la región</a></>}
+                </p>
+              )}
+              {lugaresSugeridos.length > 0 && (
+                <div className="shortlist-lugares">
+                  <h4>Lugares para {intencion?.label.toLowerCase()}{filtros.ciudad !== 'todos' ? ` en ${filtros.ciudad}` : ''}</h4>
+                  <ul>
+                    {lugaresSugeridos.map((l) => (
+                      <li key={l.slug}>
+                        <Link prefetch={false} href={`/lugar/${l.slug}`}>
+                          {l.nombre} <span>{l.ciudad}</span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {events.length > recomendados.length && (
+                <a
+                  className="button button-outline"
+                  href="#cartelera"
+                  onClick={() => trackLater('view_all')}
+                >
+                  Ver todas las {events.length} opciones
+                </a>
+              )}
+            </div>
+          )}
+          <a
+            className="asistente-todo"
+            {...enlace({ plan: null, cerca: false })}
+            onClick={(e) => {
+              if (e.metaKey || e.ctrlKey || e.shiftKey) return;
+              e.preventDefault();
+              ir({ plan: null, cerca: false });
+              requestAnimationFrame(() => document.getElementById('cartelera')?.scrollIntoView({ block: 'start' }));
+            }}
+          >
+            Ver todos los carretes →
+          </a>
+        </section>
+      )}
       <section className={`container discovery ${home ? 'discovery-home' : ''}`} id="cartelera" aria-label="Cartelera">
         {vista === 'mapa' ? (
           <div className="radar-cabecera">

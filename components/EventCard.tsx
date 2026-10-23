@@ -1,3 +1,4 @@
+import { precioCorto } from '../lib/precio';
 import Link from 'next/link';
 import { Evento } from '../lib/types';
 import { eventDateLabel } from '../lib/events';
@@ -19,6 +20,7 @@ export default function EventCard({
   /** 00:00–04:59: "Esta noche" en vez de "Hoy". */
   madrugada?: boolean;
 }) {
+  const precio = precioCorto(e);
   return (
     <article className="event-card">
       <Link
@@ -49,6 +51,8 @@ export default function EventCard({
           <span>{e.hora ? `${e.hora} h` : 'Hora por confirmar'}</span>
           {estado === 'iniciado' && <span className="card-estado">Ya empezó</span>}
           {estado === 'finalizado' && <span className="card-estado card-estado-fin">Terminó</span>}
+          {/* El precio se escanea junto a la hora; la condición completa sigue abajo. */}
+          <span className={`card-precio card-precio-${precio.tipo}`}>{precio.texto}</span>
         </div>
         <h3>
           <Link href={`/evento/${encodeURIComponent(e.id)}`} prefetch={false}>

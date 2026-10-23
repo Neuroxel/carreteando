@@ -1,5 +1,6 @@
 import type { Evento } from './types';
 import type { Lugar } from './venues';
+import { esComedia } from './comedia';
 const plano = (v: string) =>
   ` ${v
     .toLowerCase()
@@ -20,6 +21,7 @@ export const ESCENAS: { slug: string; label: string; test: (e: Evento, t: string
   { slug: 'urbano', label: 'Urbano', test: (e, t) => e.categoria === 'reggaeton' || / (reggaeton|perreo|trap) /.test(t) },
   { slug: 'queer', label: 'Queer', test: (_e, t) => / (drag|queer|lgbt|disidencia|pride) /.test(t) },
   { slug: 'karaoke', label: 'Karaoke', test: (_e, t) => / karaoke /.test(t) },
+  { slug: 'comedia', label: 'Comedia', test: (e) => esComedia(e) },
   { slug: 'escena-cultural', label: 'Teatro y cultura', test: (e) => e.tipo === 'noche_cultural' },
 ];
 export function enEscena(e: Evento, slug: string) {
@@ -42,6 +44,7 @@ const ESCENA_LUGAR: Record<string, { tipos: string[]; tags: string[] }> = {
   urbano: { tipos: [], tags: ['reggaeton', 'urbano', 'trap'] },
   queer: { tipos: ['queer'], tags: ['queer', 'drag', 'lgbt'] },
   karaoke: { tipos: ['karaoke'], tags: ['karaoke'] },
+  comedia: { tipos: [], tags: ['comedia', 'humor'] },
   'escena-cultural': { tipos: ['teatro', 'centro-cultural'], tags: ['cultural', 'teatro'] },
 };
 export function lugarEnEscena(l: Pick<Lugar, 'tipo' | 'tags'>, slug: string) {
