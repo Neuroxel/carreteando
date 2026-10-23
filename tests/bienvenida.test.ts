@@ -177,3 +177,7 @@ test('toques: la cara oculta de la carta no tapa a la visible; volver a elegir e
   assert.match(css, /\.bv-escena, \.bv-carta \{ pointer-events:none; \}\s*\.bv-cara:not\(\[aria-hidden="true"\]\) \{ pointer-events:auto; \}/);
   assert.match(src('components/ExploreClient.tsx'), /className="elegir-otra-vez" onClick=\{\(\) => setBienvenida\(true\)\}/);
 });
+
+test('giro robusto: fuera de la fase de giro la carta salta a su posición final', () => {
+  assert.match(src('app/globals.css'), /\.bv-fase-normal \.bv-carta, \.bv-fase-buscando \.bv-carta, \.bv-fase-ticket \.bv-carta \{ transition:none; \}/);
+});
