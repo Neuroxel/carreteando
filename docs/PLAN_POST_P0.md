@@ -93,7 +93,7 @@ Solo planificación. La implementación grande empieza después del cierre del P
 
 **Qué se mide por tarea:** acierto (sí/no), tiempo hasta el resultado y número de toques. Se anotan las dudas en voz alta. Se hace antes y después de A–C.
 
-**Umbral para considerar un rediseño global:** acierto por debajo del 80 % o una mediana de más de 6 toques en una tarea. Si no se cruza, solo ajustes focalizados.
+**Objetivos provisionales (hipótesis, no un estándar validado):** acierto por debajo del 80 % o una mediana de más de 6 toques en una tarea abren la discusión de un rediseño global. Se recalibran con la primera ronda; si no se cruzan, solo ajustes focalizados.
 
 ## E · SEO y analítica: auditar antes de agregar
 
@@ -108,7 +108,7 @@ Solo planificación. La implementación grande empieza después del cierre del P
 
 **Métricas**
 - Búsqueda sin resultados: ya existe, `zero_result_search`.
-- Selección de fecha: una sola métrica nueva `date_selected`, sin la fecha concreta. Como mucho un bucket: `atajo`, `dia` o `rango`.
+- Selección de fecha: **propuesta, no se emite aún**. Requiere antes una migración que amplíe el CHECK de nombres de métrica en la DB (la hace operación). Sería una sola métrica nueva `date_selected`, sin la fecha concreta. Como mucho un bucket: `atajo`, `dia` o `rango`.
 - Clic a la fuente: ya existe, `source`.
 - **Reglas:** sin PII ni texto buscado, sin scripts de terceros nuevos y sin duplicar eventos que ya se cuentan.
 
@@ -122,3 +122,16 @@ Solo planificación. La implementación grande empieza después del cierre del P
 - Criterio verificable: un test que confirme que el orden orgánico es idéntico con y sin `destacado`.
 
 **Delegación:** el dueño autoriza a Claude y Nexo. Antigravity no se usa (sin saldo). La identidad de Nexo está por confirmar, y no se toca ningún proyecto ajeno.
+
+## Estado al cierre del P0 (23-oct, 12:19 Chile; observado por operación)
+
+**Estado de la cobertura**
+- Cobertura HEALTHY y Passline 4/4 publicados.
+- El snapshot coincide con la DB: 108 de 108 eventos públicos futuros.
+- `DB_EXPIRE` no se volvió a reproducir, pero **no hay causa confirmada**.
+
+**HEALTHY mide que las corridas funcionan, no que la cobertura esté completa:** todavía hay 112 locales sin rutas.
+
+**Siguiente encargo de implementación**
+- Acotado a rango de fechas + wizard, con QA móvil sobre el preview.
+- Sin merge automático del código.
