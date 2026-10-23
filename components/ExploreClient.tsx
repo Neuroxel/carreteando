@@ -471,9 +471,15 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
     if (d.tipo === 'cerca') ubicar('gesto');
     requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'auto' }));
   };
+  // "Ver todo" siempre lleva a la portada limpia, aunque se haya reabierto desde una home filtrada.
   const saltarBienvenida = useCallback(() => {
     sesion.marcar('omitida');
     setBienvenida(false);
+    if (location.pathname !== '/' || location.search || location.hash) {
+      history.pushState(null, '', '/');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    }
+    window.scrollTo({ top: 0, behavior: 'auto' });
   }, []);
   const intencionesConOferta = INTENCIONES.filter((i) => n({ plan: i.slug, fecha: 'futuro', ciudad: 'todos', cerca: false, zona: null }) > 0).map((i) => i.slug);
   const filtrosUI = (

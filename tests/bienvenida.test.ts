@@ -65,6 +65,8 @@ test('la portada ya no trae el asistente embebido; la bienvenida es aparte y nun
   assert.match(bienvenida, /Ver todo/);
   assert.match(bienvenida, /role="dialog" aria-modal="true"/);
   assert.match(bienvenida, /Escape/);
+  // Saltar desde una home filtrada vuelve a la portada limpia.
+  assert.match(explore, /const saltarBienvenida = useCallback\(\(\) => \{[\s\S]*?history\.pushState\(null, '', '\/'\)/);
   // "Cerca de mí" usa el mismo GPS (ubicar('gesto')), no otro.
   assert.match(explore, /if \(d\.tipo === 'cerca'\) ubicar\('gesto'\)/);
   assert.doesNotMatch(bienvenida, /geolocation/);
