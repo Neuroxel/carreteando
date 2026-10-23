@@ -2214,3 +2214,15 @@ html.bv-revela main > section { animation:bv-acerca .68s cubic-bezier(.2,.7,.2,1
   .bv-muro > .bv-afiche:not(.bv-ancho) .bv-afiche-texto { padding-top:0; }
 }
 @media (prefers-reduced-motion: reduce) { .bienvenida h1, .bv-tira { transform:none; } }
+
+/* Afiches chicos (Algo tranqui, Sorpréndeme): ícono · título · ilustración en una fila. */
+.bv-muro.bv-muro-chico > .bv-afiche { grid-template-columns:auto minmax(0, 1fr) auto; align-items:center; justify-items:start; padding:10px 10px 10px 12px; }
+.bv-muro.bv-muro-chico > .bv-afiche strong { justify-self:start; text-align:left; font-size:clamp(14px, 3.9vw, 18px); }
+.bv-muro.bv-muro-chico > .bv-afiche .bv-ilustracion { position:static; width:clamp(42px, 12vw, 68px); }
+/* En 2 columnas, ilustraciones más presentes. */
+.bv-muro:not(.bv-muro-chico) > .bv-afiche:not(.bv-ancho) .bv-ilustracion { width:clamp(68px, 21vw, 110px); top:6px; right:4px; }
+.bv-muro:not(.bv-muro-chico) > .bv-afiche:not(.bv-ancho) .bv-afiche-texto { padding-top:clamp(44px, 14vw, 72px); }
+@media (min-width: 720px) {
+  .bv-muro:not(.bv-muro-chico) > .bv-afiche:not(.bv-ancho) .bv-ilustracion { width:clamp(84px, 9.5vw, 124px); }
+  .bv-muro:not(.bv-muro-chico) > .bv-afiche:not(.bv-ancho) .bv-afiche-texto { padding-top:0; }
+}
