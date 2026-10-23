@@ -65,7 +65,7 @@ test('la portada ya no trae el asistente embebido; la bienvenida es aparte y nun
   const bienvenida = src('components/Bienvenida.tsx');
   assert.doesNotMatch(bienvenida, /history\.|pushState|router\./);
   assert.match(bienvenida, /Ver todo/);
-  assert.match(bienvenida, /role="dialog" aria-modal="true"/);
+  assert.match(bienvenida, /role="dialog"\s+aria-modal="true"/);
   assert.match(bienvenida, /Escape/);
   // Saltar desde una home filtrada vuelve a la portada limpia.
   assert.match(explore, /const saltarBienvenida = useCallback\(\(\) => \{[\s\S]*?history\.pushState\(null, '', '\/'\)/);
@@ -153,8 +153,8 @@ test('build: una caída momentánea de la base no tumba el deploy por el sitemap
 
 test('3D: carta de dos caras (¿Qué? / ¿Dónde?), cara oculta inerte, giro y alejamiento sin librerías', () => {
   const b = src('components/Bienvenida.tsx');
-  assert.match(b, /bv-cara bv-frente" aria-hidden=\{s\.paso !== 'que'\} inert=/);
-  assert.match(b, /bv-cara bv-dorso" aria-hidden=\{s\.paso !== 'donde'\} inert=/);
+  assert.match(b, /bv-cara bv-frente"\s+aria-hidden=\{s\.paso !== 'que'\}\s+inert=/);
+  assert.match(b, /bv-cara bv-dorso"\s+aria-hidden=\{s\.paso !== 'donde'\}\s+inert=/);
   assert.match(b, /className=\{`bv-carta \$\{s\.paso === 'donde' \? 'bv-girada' : ''\}`\}/);
   assert.doesNotMatch(src('package.json'), /"three"|framer-motion/);
   const css = src('app/globals.css');
