@@ -162,6 +162,7 @@ test('3D: carta de dos caras (¿Qué? / ¿Dónde?), cara oculta inerte, giro y a
   const bloque = css.slice(css.indexOf('Bienvenida 3D'));
   assert.match(bloque, /\.bv-escena \{[^}]*perspective:1400px/);
   assert.match(bloque, /\.bv-carta \{[^}]*transform-style:preserve-3d/);
+  assert.match(bloque, /\.bienvenida-marco \{ perspective:1200px/, 'el alejamiento necesita perspectiva en el padre');
   assert.match(bloque, /\.bv-cara \{[^}]*backface-visibility:hidden/);
   assert.match(bloque, /\.bv-dorso \{ transform:rotateY\(180deg\)/);
   for (const kf of bloque.match(/@keyframes [\w-]+ \{[\s\S]*?\}\s*\}/g) || []) assert.doesNotMatch(kf, /width|height|top:|left:|blur|filter/);
