@@ -56,11 +56,12 @@ test('GPS: fix inicial impreciso → preciso; mejora y apaga el seguimiento', ()
   const { reloj } = relojFalso();
   const estados: [EstadoGps, number | null][] = [];
   ubicarEnDosFases(geo, (e, f) => estados.push([e, f?.accuracy ?? null]), reloj);
-  s.rapido!.ok(pos(-33.047, 1500));
-  s.watch!.ok(pos(-33.047, 2000)); // peor: se ignora
+  s.rapido!.ok(pos(-33.047, 2030));
+  s.watch!.ok(pos(-33.047, 2500)); // peor: se ignora
+  s.watch!.ok(pos(-33.047, 250));
   s.watch!.ok(pos(-33.047, PRECISION_UTIL_M - 20));
   s.watch!.ok(pos(-33.047, 10)); // ya terminó: se ignora
-  assert.deepEqual(estados, [['buscando', null], ['aproximada', 1500], ['precisa', 80]]);
+  assert.deepEqual(estados, [['buscando', null], ['muy_aproximada', 2030], ['aproximada', 250], ['precisa', 80]]);
   assert.deepEqual(s.cleared, [7], 'no queda siguiendo');
 });
 
@@ -70,8 +71,10 @@ test('GPS: al vencer la ventana se queda con lo mejor; sin nada es timeout', () 
   const e1: EstadoGps[] = [];
   ubicarEnDosFases(a.geo, (e) => e1.push(e), r1.reloj);
   a.s.rapido!.ok(pos(-33.04, 600));
-  r1.disparar();
-  assert.deepEqual(e1, ['buscando', 'aproximada', 'aproximada']);
+  r1.disparar(); // 18 s con ±600 m y en Radar: una prórroga
+  assert.deepEqual(a.s.cleared, [], 'sigue buscando mejora');
+  r1.disparar(); // ~30 s: se corta igual
+  assert.deepEqual(e1, ['buscando', 'muy_aproximada', 'muy_aproximada']);
   assert.deepEqual(a.s.cleared, [7]);
   const b = geoFalsa();
   const r2 = relojFalso();

@@ -32,6 +32,9 @@ export function useDestinos() {
     const q = new URLSearchParams();
     const ciudad = params.get('ciudad');
     if (ciudad) q.set('ciudad', ciudad);
+    // Radar conserva comuna y zona, igual que el botón Mapa (un solo estado de Radar).
+    const zona = params.get('zona');
+    if (id === 'radar' && ciudad && zona) q.set('zona', zona);
     if (id === 'carretes' && pathname === '/explorar') q.set('fecha', 'hoy');
     if (id === 'lugares') q.set('ver', 'lugares');
     if (id === 'radar') q.set('vista', 'mapa');

@@ -1942,3 +1942,16 @@ html[data-edicion="3d"] body {
 /* Estado temporal: "Ya empezó" no dice que terminó; "Terminó" solo con final publicado. */
 .card-estado { display:inline-flex; align-items:center; padding:1px 7px; border-radius:999px; border:1px solid currentColor; font-size:11px; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); }
 .card-estado-fin { opacity:.75; }
+
+/* Lista | Mapa fuera de Filtros: siempre visible, y el atajo a "cerca de mí". */
+.vista-barra { display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin:14px 0 6px; }
+.radar-cta { display:inline-flex; align-items:center; gap:6px; min-height:40px; padding:0 14px; border-radius:999px; border:1.5px solid var(--accent); color:var(--text); text-decoration:none; font-size:14px; font-weight:600; }
+.radar-cta:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+.radar-titulo { margin:2px 0 10px; font-size:clamp(28px, 7vw, 44px); line-height:1; }
+.radar-cabecera > .eyebrow { margin:0; }
+.hero-logo-link { display:inline-block; color:inherit; text-decoration:none; }
+.hero-logo-link:focus-visible { outline:2px solid var(--accent); outline-offset:4px; }
+.mapa-bloque { position:relative; }
+.mapa-mi-ubicacion { position:absolute; right:10px; top:10px; z-index:500; min-height:40px; padding:0 14px; border-radius:999px; border:1.5px solid var(--line); background:var(--bg, #111); color:var(--text); font:inherit; font-size:13px; cursor:pointer; }
+.mapa-mi-ubicacion:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+.vista-barra .segmented-vista { background:var(--surface); border:1px solid var(--line); }

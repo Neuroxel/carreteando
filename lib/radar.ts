@@ -53,8 +53,12 @@ export const GPS_RAPIDO: PositionOptions = { enableHighAccuracy: false, maximumA
 export const GPS_PRECISO: PositionOptions = { enableHighAccuracy: true, maximumAge: 0, timeout: 20_000 };
 /** Precisión suficiente para saber el sector o barrio, en metros. */
 export const PRECISION_UTIL_M = 100;
-/** Duración máxima de la ventana de alta precisión. */
+/** Hasta acá la ubicación sirve para decir "cerca de" una zona; sobre esto, no. */
+export const PRECISION_ZONA_M = 500;
+/** Duración de la ventana de alta precisión. */
 export const VENTANA_PRECISA_MS = 18_000;
+/** Si a los 18 s sigue sobre 500 m y la persona sigue en Radar, una sola prórroga hasta ~30 s. */
+export const PRORROGA_MS = 12_000;
 /** Radio inicial de "Cerca de mí", en km; se puede ampliar. */
 export const RADIOS_KM = [10, 25] as const;
 
@@ -62,7 +66,16 @@ export interface Fix extends Posicion {
   accuracy: number;
   timestamp: number;
 }
-export type EstadoGps = 'idle' | 'buscando' | 'precisa' | 'aproximada' | 'negado' | 'no_disponible' | 'timeout' | 'sin_soporte';
+export type EstadoGps =
+  | 'idle'
+  | 'buscando'
+  | 'precisa'
+  | 'aproximada'
+  | 'muy_aproximada'
+  | 'negado'
+  | 'no_disponible'
+  | 'timeout'
+  | 'sin_soporte';
 type Geo = Pick<Geolocation, 'getCurrentPosition' | 'watchPosition' | 'clearWatch'>;
 
 const fixDe = (p: GeolocationPosition): Fix => ({
@@ -71,7 +84,9 @@ const fixDe = (p: GeolocationPosition): Fix => ({
   accuracy: p.coords.accuracy,
   timestamp: p.timestamp,
 });
-export const calidad = (f: Fix): 'precisa' | 'aproximada' => (f.accuracy <= PRECISION_UTIL_M ? 'precisa' : 'aproximada');
+/** ≤100 m precisa; ≤500 m aproximada (sirve para "cerca de"); más, muy aproximada (no afirma zona). */
+export const calidad = (f: Fix): 'precisa' | 'aproximada' | 'muy_aproximada' =>
+  f.accuracy <= PRECISION_UTIL_M ? 'precisa' : f.accuracy <= PRECISION_ZONA_M ? 'aproximada' : 'muy_aproximada';
 const errorAEstado = (e: GeolocationPositionError): EstadoGps =>
   e.code === 1 ? 'negado' : e.code === 3 ? 'timeout' : 'no_disponible';
 
@@ -83,7 +98,9 @@ export function ubicarEnDosFases(
   geo: Geo,
   aviso: (estado: EstadoGps, fix: Fix | null) => void,
   reloj: { setTimeout: typeof setTimeout; clearTimeout: typeof clearTimeout } = globalThis,
+  sigueEnRadar: () => boolean = () => true,
 ) {
+  let prorrogado = false;
   let mejor: Fix | null = null;
   let id: number | null = null;
   let plazo: ReturnType<typeof setTimeout> | null = null;
@@ -123,14 +140,24 @@ export function ubicarEnDosFases(
     },
     GPS_PRECISO,
   );
-  plazo = reloj.setTimeout(() => {
+  const vencer = () => {
     if (terminado) return;
+    // Muy impreciso y todavía mirando el Radar: una sola prórroga, nunca seguimiento permanente.
+    if (!prorrogado && mejor && mejor.accuracy > PRECISION_ZONA_M && sigueEnRadar()) {
+      prorrogado = true;
+      plazo = reloj.setTimeout(vencer, PRORROGA_MS);
+      return;
+    }
     cerrar();
     // Al vencer, se queda con lo mejor que llegó; sin nada, es un timeout.
     aviso(mejor ? calidad(mejor) : 'timeout', mejor);
-  }, VENTANA_PRECISA_MS);
+  };
+  plazo = reloj.setTimeout(vencer, VENTANA_PRECISA_MS);
   return cerrar;
 }
 
 /** Clave vieja de una "negación propia": ya no se usa; manda el permiso real del navegador. */
 export const CLAVE_GPS_NEGADO_VIEJA = 'radar-ubicacion-negada';
+
+/** ¿Se puede recentrar con este fix, o conviene volver a precisar? (viejo o muy impreciso) */
+export const fixUtil = (f: Fix | null, ahora = Date.now()) => Boolean(f && f.accuracy <= PRECISION_ZONA_M && ahora - f.timestamp < 2 * 60_000);

@@ -113,6 +113,8 @@ export default function VenueMap({
   zona = null,
   conteoZona,
   urlZona,
+  fixValido = false,
+  onPrecisar,
 }: {
   puntos: PuntoMapa[];
   yo?: Posicion | null;
@@ -121,6 +123,10 @@ export default function VenueMap({
   zona?: string | null;
   conteoZona?: (slug: string) => { eventos: number; lugares: number };
   urlZona?: (t: Territorio) => string;
+  /** El fix actual sirve para recentrar (reciente y ≤500 m). */
+  fixValido?: boolean;
+  /** Pedir una ubicación mejor (viejo o muy impreciso). */
+  onPrecisar?: () => void;
 }) {
   const contenedor = useRef<HTMLDivElement>(null);
   const mapaRef = useRef<{ L: LeafletGlobal; mapa: MapaLeaflet } | null>(null);
@@ -286,6 +292,14 @@ export default function VenueMap({
       ref.mapa.removeLayer(capa);
     };
   }, [territorios, version, zona, aqui]);
+  // "Mi ubicación": recentra con un fix bueno; si es viejo o muy impreciso, vuelve a precisar.
+  const miUbicacion = () => {
+    const ref = mapaRef.current;
+    if (yo && fixValido && ref) {
+      movidoPorPersona.current = false;
+      ref.mapa.setView([yo.lat, yo.lng], 15, { animate: false });
+    } else onPrecisar?.();
+  };
   const conteo = puntos.reduce<Record<string, number>>((acc, p) => {
     acc[p.estado] = (acc[p.estado] || 0) + 1;
     return acc;
@@ -305,6 +319,11 @@ export default function VenueMap({
       >
         {estado === 'cargando' && <p className="mapa-cargando">Cargando el mapa…</p>}
       </div>
+      {(yo || onPrecisar) && estado === 'listo' && (
+        <button type="button" className="mapa-mi-ubicacion" onClick={miUbicacion}>
+          <span aria-hidden="true">◎</span> Mi ubicación
+        </button>
+      )}
       <ul className="mapa-leyenda">
         {(['vivo', 'fonda', 'evento', 'lugar'] as const)
           .filter((clave) => conteo[clave])

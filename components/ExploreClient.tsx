@@ -1,23 +1,26 @@
 'use client';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
-import { diversifyByVenue, sugerenciasPara, esBarato, filterEvents, nocheAntes, ordenarPorPrecio } from '../lib/events';
+import { diversifyByVenue, sugerenciasPara, filterEvents, nocheAntes, ordenarPorPrecio } from '../lib/events';
 import { addDays, fechaDeLaNoche } from '../lib/event-extraction';
 import { parseFilters } from '../lib/filters';
 import { CIUDADES, type Evento, type FiltrosEvento } from '../lib/types';
-import { escenasConLugares, lugarEnEscena } from '../lib/escenas';
+import { ESCENAS } from '../lib/escenas';
 import { buscarLugares, buscarZonas, zonaSlug } from '../lib/venues';
 import { puntosDeMapa } from '../lib/map';
 import { indiceDeLugares } from '../lib/venue-match';
 import type { PublicSnapshot } from '../lib/snapshot';
 import { rememberEmptySearch } from '../lib/metrics';
 import { ORDEN_TEMPORAL, ahoraEnChile, esMadrugada, estadoTemporal, nombreDia, porEstadoTemporal } from '../lib/temporal';
-import { RADIOS_KM, CLAVE_GPS_NEGADO_VIEJA, ubicarEnDosFases, type EstadoGps, type Fix, leerCapa, porCercania, textoDistancia, type Capa, type Posicion } from '../lib/radar';
+import { PRECISION_ZONA_M, fixUtil, RADIOS_KM, CLAVE_GPS_NEGADO_VIEJA, ubicarEnDosFases, type EstadoGps, type Fix, leerCapa, porCercania, textoDistancia, type Capa, type Posicion } from '../lib/radar';
 import EventCard from './EventCard';
 import VenueCard from './VenueCard';
 import VenueRail from './VenueRail';
 import VenueMap from './VenueMap';
 import TituloSeccion from './TituloSeccion';
+import BrandLink from './BrandLink';
+import { LogoApilado } from './Logo';
+import { cuantos, eventosLista, eventosRadar, lugaresLista, lugaresRadar, type Contexto, type Modo } from '../lib/resultados';
 import { RUTA_GEOMETRIAS, sectorDeLugar, territorioDe, territorioPorSlug, zonaValida, zonasDeComuna, type TerritorioGeo } from '../lib/territorios';
 import PosterDecor from './poster/PosterDecor';
 
@@ -34,33 +37,30 @@ interface Estado {
   capa: Capa;
 }
 type Cambio = Partial<FiltrosEvento> & { ver?: Ver; vista?: Vista; orden?: Orden; capa?: Capa };
-/** Estado de la ubicación en palabras de quien mira; nunca mensajes técnicos. */
-function EstadoUbicacion({ gps, yo, ciudad, aqui, onUbicar }: { gps: EstadoGps; yo: Fix | null; ciudad?: string; aqui?: string | null; onUbicar: () => void }) {
+/** Estado de la ubicación en palabras de quien mira: breve y sin tecnicismos. */
+function EstadoUbicacion({ gps, yo, aqui, onUbicar }: { gps: EstadoGps; yo: Fix | null; aqui?: string | null; onUbicar: () => void }) {
   const boton = (texto: string) => (
     <button type="button" className="radar-gps-boton" onClick={onUbicar}>
       {texto}
     </button>
   );
-  const viendo = ciudad && ciudad !== 'todos' ? ` Viendo ${ciudad}.` : '';
+  const m = Math.round((yo?.accuracy || 0) / 10) * 10;
+  const donde = aqui ? (gps === 'precisa' ? ` Estás en ${aqui}.` : ` Estás cerca de ${aqui}.`) : '';
   if (gps === 'sin_soporte') return null;
-  if (gps === 'buscando') return <p className="radar-gps" role="status">Buscando tu ubicación…</p>;
-  if (gps === 'precisa' || gps === 'aproximada')
+  if (gps === 'buscando') return <p className="radar-gps" role="status">Buscando carretes cerca de tu posición…</p>;
+  if (gps === 'precisa') return <p className="radar-gps" role="status">Ordenado por cercanía.{donde}</p>;
+  if (gps === 'aproximada')
+    return <p className="radar-gps" role="status">Tu ubicación es aproximada (±{m} m).{donde} {boton('Precisar ubicación')}</p>;
+  if (gps === 'muy_aproximada')
     return (
       <p className="radar-gps" role="status">
-        {gps === 'precisa' ? 'Ubicación precisa.' : `Ubicación aproximada (±${Math.round((yo?.accuracy || 0) / 10) * 10} m).`}
-        {aqui ? ` Estás en ${aqui}.` : ''}
-        {viendo} Tu ubicación no sale de este teléfono.{gps === 'aproximada' ? <> {boton('Precisar')}</> : null}
+        Tu ubicación es muy aproximada (±{m} m): las distancias son orientativas. {boton('Precisar ubicación')}
       </p>
     );
-  if (gps === 'negado')
-    return (
-      <p className="radar-gps">
-        Sin permiso de ubicación: el mapa funciona igual. Para ver lo cercano, permite la ubicación para este sitio en los ajustes del navegador y vuelve a intentar. {boton('Volver a intentar')}
-      </p>
-    );
-  if (gps === 'timeout') return <p className="radar-gps">La ubicación se demoró demasiado. {boton('Probar otra vez')}</p>;
-  if (gps === 'no_disponible') return <p className="radar-gps">No pudimos obtener tu ubicación ahora. {boton('Probar otra vez')}</p>;
-  return boton('Usar mi ubicación');
+  if (gps === 'negado') return <p className="radar-gps">Sin permiso de ubicación. Puedes activarlo en los ajustes del navegador. {boton('Volver a intentar')}</p>;
+  if (gps === 'timeout') return <p className="radar-gps">Tu ubicación tardó demasiado. {boton('Probar otra vez')}</p>;
+  if (gps === 'no_disponible') return <p className="radar-gps">No pudimos ubicarte ahora. {boton('Probar otra vez')}</p>;
+  return <p className="radar-gps">Usa tu ubicación para mostrarte qué hay cerca. {boton('Usar mi ubicación')}</p>;
 }
 /** Un snapshot más viejo que esto se avisa, sin bloquear nada. */
 const VIEJO_MS = 6 * 3600_000;
@@ -190,8 +190,13 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
   const [yo, setYo] = useState<Fix | null>(null);
   const [gps, setGps] = useState<EstadoGps>('idle');
   const cortarGps = useRef<(() => void) | null>(null);
+  // Una sola solicitud por gesto: la entrada por enlace no repite lo que ya pidió un toque.
+  const solicitado = useRef(false);
+  const enRadar = useRef(false);
   const ubicar = useCallback((origen: 'gesto' | 'enlace') => {
     if (typeof navigator === 'undefined' || !('geolocation' in navigator)) return setGps('sin_soporte');
+    if (origen === 'enlace' && solicitado.current) return;
+    if (origen === 'gesto') solicitado.current = true;
     try {
       localStorage.removeItem(CLAVE_GPS_NEGADO_VIEJA);
     } catch {
@@ -199,10 +204,15 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
     }
     const empezar = () => {
       cortarGps.current?.();
-      cortarGps.current = ubicarEnDosFases(navigator.geolocation, (estado, fix) => {
-        setGps(estado);
-        if (fix) setYo(fix);
-      });
+      cortarGps.current = ubicarEnDosFases(
+        navigator.geolocation,
+        (estado, fix) => {
+          setGps(estado);
+          if (fix) setYo(fix);
+        },
+        undefined,
+        () => enRadar.current,
+      );
     };
     // El permiso real del navegador manda; no hay "prohibición eterna" propia.
     if (!navigator.permissions?.query) return origen === 'gesto' ? empezar() : undefined;
@@ -234,8 +244,32 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
   const { filtros, ver, vista, orden, capa } = estado;
   useEffect(() => {
     // Un mapa abierto por enlace: ubica solo si ya estaba permitido; si no, ofrece el botón.
+    enRadar.current = vista === 'mapa';
     if (vista === 'mapa' && gps === 'idle') ubicar('enlace');
   }, [vista, gps, ubicar]);
+  /**
+   * Abrir el Radar con un gesto: la barra (Radar), el botón Mapa y "Ver mapa y
+   * carretes cerca de mí" llegan al mismo estado (comuna y zona se conservan,
+   * el resto vuelve al inicio del Radar) y piden la ubicación una sola vez.
+   */
+  const estadoRadar = useCallback(
+    (prev: Estado): Estado => {
+      const base = leer('', defecto);
+      return { ...base, filtros: { ...base.filtros, ciudad: prev.filtros.ciudad, zona: prev.filtros.zona }, vista: 'mapa', capa: 'hoy' };
+    },
+    [defecto],
+  );
+  const abrirRadar = (e?: MouseEvent) => {
+    if (e && (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey)) return;
+    e?.preventDefault();
+    const next = estadoRadar(estado);
+    const url = aUrl(next, path, defecto);
+    if (url !== location.pathname + location.search) history.pushState(null, '', url);
+    setEstado(next);
+    ubicar('gesto');
+    requestAnimationFrame(() => document.getElementById('cartelera')?.scrollIntoView({ block: 'start' }));
+  };
+  const urlRadar = aUrl(estadoRadar(estado), path, defecto);
   const todos = snap.events;
   // El lugar de cada evento: nombre, alias y misma ciudad; nunca un parecido.
   const lugarDe = useMemo(() => {
@@ -262,17 +296,24 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
       vivo = false;
     };
   }, [geos, vista, yo]);
-  const territorioActual = useMemo(() => (yo && geos ? territorioDe(yo, geos) : null), [yo, geos]);
-  // Zona (sector/barrio): solo eventos de lugares cuyo sector está verificado.
-  const enZona = useCallback(
-    (lista: Evento[]) => (filtros.zona ? lista.filter((e) => sectorDeLugar(lugarDe(e)) === filtros.zona) : lista),
-    [filtros.zona, lugarDe],
+  // Con más de 500 m de error no se afirma zona ni se resalta en el mapa.
+  const territorioActual = useMemo(() => (yo && geos && yo.accuracy <= PRECISION_ZONA_M ? territorioDe(yo, geos) : null), [yo, geos]);
+  // Un solo contexto para listas y contadores (lib/resultados).
+  const ctx = useMemo<Contexto>(
+    () => ({ todos, lugares: snap.venues, today, ahora: ahoraCL, lugarDe, sectorDe: sectorDeLugar }),
+    [todos, snap.venues, today, ahoraCL, lugarDe],
   );
+  const modo: Modo = { vista, ver, capa };
+  /** El número de un filtro: cuántos resultados aparecerán si se toca ahora. */
+  const n = (cambio: Partial<FiltrosEvento>) => cuantos(ctx, conZona(filtros, cambio), modo);
+  // Escenas: solo las que darían resultados al tocarlas (la activa siempre se ve).
+  const escenasVisibles = ESCENAS.map((x) => ({ ...x, n: n({ escena: x.slug }) })).filter((x) => x.n > 0 || filtros.escena === x.slug);
+  const baratos = vista === 'lista' ? n({ precio: '5000' }) : 0;
   const events = useMemo(() => {
-    const lista = diversifyByVenue(enZona(filterEvents(todos, filtros, today)));
+    const lista = diversifyByVenue(eventosLista(ctx, filtros));
     // Lo que todavía no empieza va primero; lo iniciado sigue en la lista, después.
     return orden === 'barato' ? ordenarPorPrecio(lista) : porEstadoTemporal(nocheAntes(lista), ahoraCL);
-  }, [todos, filtros, today, orden, ahoraCL, enZona]);
+  }, [ctx, filtros, orden, ahoraCL]);
   const derivados = useMemo(() => {
     const conteoLugar = new Map<string, number>();
     const hoyPorLugar = new Map<string, string>();
@@ -299,14 +340,7 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
       porCiudad,
       lugaresPorCiudad,
       ciudadesConOferta: CIUDADES.filter((c) => peso(c) > 0).sort((a, b) => peso(b) - peso(a)),
-      escenas: escenasConLugares(
-        filterEvents(todos, { ...filtros, escena: 'todos' }, today),
-        filtros.ciudad === 'todos' ? snap.venues : snap.venues.filter((l) => l.ciudad === filtros.ciudad),
-      ),
-      // Cada pestaña cuenta lo que mostraría al tocarla: mismos filtros (comuna, zona, búsqueda), otra fecha.
-      todayCount: enZona(filterEvents(todos, { ...filtros, fecha: 'hoy' }, today)).length,
-      baratos: filterEvents(todos, { ...filtros, precio: 'todos', escena: 'todos' }, today).filter(esBarato).length,
-      mananaCount: enZona(filterEvents(todos, { ...filtros, fecha: 'manana' }, today)).length,
+
       busquedaEventos: filtros.busqueda ? filterEvents(todos, { fecha: 'futuro', busqueda: filtros.busqueda }, today).length : 0,
       lugaresHallados: filtros.busqueda ? buscarLugares(snap.venues, filtros.busqueda) : [],
       zonasHalladas: filtros.busqueda ? buscarZonas(snap.venues, filtros.busqueda) : [],
@@ -324,19 +358,11 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
               .sort((a, b) => b.eventos - a.eventos || a.t.nombre.localeCompare(b.t.nombre, 'es'))
           : [],
     };
-  }, [todos, snap.venues, filtros, today, lugarDe, enZona]);
+  }, [todos, snap.venues, filtros, today, lugarDe]);
   const lugaresVisibles = useMemo(() => {
-    const coincidencias = new Set(events.map(lugarDe));
-    const escena = filtros.escena && filtros.escena !== 'todos' ? filtros.escena : null;
-    const refinar = [filtros.precio, filtros.tipo, filtros.categoria].some((v) => v && v !== 'todos');
-    return derivados.lugaresZona.filter((l) => {
-      const coincideLugar = !filtros.busqueda || derivados.lugaresHallados.some((x) => x.slug === l.slug);
-      const tieneEvento = coincidencias.has(l.slug);
-      // La escena sale primero de lo que el lugar es; un evento que calza también cuenta.
-      const coincideEscena = !escena || lugarEnEscena(l, escena) || tieneEvento;
-      return coincideLugar && coincideEscena && (!refinar || tieneEvento);
-    });
-  }, [events, filtros, derivados.lugaresZona, derivados.lugaresHallados, lugarDe]);
+    const orden = new Map(derivados.lugaresZona.map((l, i) => [l.slug, i]));
+    return lugaresLista(ctx, filtros).sort((x, y) => (orden.get(x.slug) ?? 0) - (orden.get(y.slug) ?? 0));
+  }, [ctx, filtros, derivados.lugaresZona]);
   const sinResultados = Boolean(filtros.busqueda) && derivados.busquedaEventos === 0 && derivados.lugaresHallados.length === 0 && derivados.zonasHalladas.length === 0;
   useEffect(() => {
     if (sinResultados) rememberEmptySearch(filtros.busqueda || null);
@@ -348,20 +374,11 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
     // Un evento con final publicado y ya pasado no es una recomendación activa.
     () =>
       vista === 'mapa'
-        ? enZona(filterEvents(todos, { ...filtros, fecha: 'hoy' }, today)).filter((e) => estadoTemporal(e, ahoraCL) !== 'finalizado')
+        ? eventosRadar(ctx, filtros)
         : [],
-    [vista, todos, filtros, today, ahoraCL, enZona],
+    [vista, ctx, filtros],
   );
-  const lugaresMapa = useMemo(() => {
-    if (vista !== 'mapa') return [];
-    const escena = filtros.escena && filtros.escena !== 'todos' ? filtros.escena : null;
-    const conEvento = new Set(eventosHoy.map(lugarDe));
-    return derivados.lugaresZona.filter((l) => {
-      if (capa === 'hoy') return conEvento.has(l.slug);
-      const coincideLugar = !filtros.busqueda || derivados.lugaresHallados.some((x) => x.slug === l.slug);
-      return coincideLugar && (!escena || lugarEnEscena(l, escena) || conEvento.has(l.slug));
-    });
-  }, [vista, capa, eventosHoy, filtros.busqueda, filtros.escena, derivados.lugaresZona, derivados.lugaresHallados, lugarDe]);
+  const lugaresMapa = useMemo(() => (vista === 'mapa' ? lugaresRadar(ctx, filtros, capa) : []), [vista, ctx, filtros, capa]);
   const puntos = useMemo(
     () => (vista === 'mapa' ? puntosDeMapa(lugaresMapa, eventosHoy, today, {}, lugarDe) : []),
     [vista, lugaresMapa, eventosHoy, today, lugarDe],
@@ -391,109 +408,12 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
     timeZone: 'America/Santiago',
   }).format(new Date(`${today}T15:00:00Z`));
 
-  return (
-    <>
-      <section className={`hero container ${home ? 'hero-home' : 'hero-small'}`}>
-        <PosterDecor variant={home ? 'home' : 'small'} />
-        <div className="hero-copy">
-          <p className="eyebrow">
-            <span className="status-dot" /> REGIÓN DE VALPARAÍSO <span className="hero-date">/ {dateLabel}</span>
-          </p>
-          <TituloSeccion home={home} vista={vista} ver={ver} />
-          {home && <p className="hero-lead">¿Qué hay hoy? Eventos y lugares para salir en la Región de Valparaíso.</p>}
-          <form
-            className="search-form"
-            role="search"
-            action={path}
-            onSubmit={(e) => {
-              e.preventDefault();
-              ir({ busqueda: filtros.busqueda || '' });
-            }}
-          >
-            <label htmlFor="q" className="sr-only">
-              Buscar lugar, fiesta, artista o zona
-            </label>
-            <span aria-hidden="true">⌕</span>
-            <input
-              id="q"
-              name="q"
-              type="search"
-              maxLength={120}
-              value={filtros.busqueda || ''}
-              onChange={(e) => ir({ busqueda: e.target.value.slice(0, 120) }, true)}
-              placeholder="Buscar lugar, fiesta, artista o zona"
-            />
-            {filtros.busqueda ? (
-              <button type="button" aria-label="Borrar búsqueda" onClick={() => ir({ busqueda: '' })}>
-                ✕
-              </button>
-            ) : (
-              <button aria-label="Buscar" type="submit">
-                Buscar
-              </button>
-            )}
-          </form>
-          {/* Dónde estás es la primera pregunta. Selección manual; nunca se pide ubicación. */}
-          <div className="lugar-selector" role="group" aria-label="Elegir ciudad">
-            <a {...enlace({ ciudad: 'todos' })} className={filtros.ciudad === 'todos' ? 'activa' : ''} aria-current={filtros.ciudad === 'todos' ? 'true' : undefined}>
-              Toda la región
-            </a>
-            {derivados.ciudadesConOferta.map((c) => (
-              <a key={c} {...enlace({ ciudad: c })} className={filtros.ciudad === c ? 'activa' : ''} aria-current={filtros.ciudad === c ? 'true' : undefined}>
-                {SHORT[c] || c}
-                {(derivados.porCiudad.get(c) || 0) > 0 && <span>{derivados.porCiudad.get(c)}</span>}
-              </a>
-            ))}
-          </div>
-        </div>
-        {derivados.zonas.length > 0 && (
-          <div className="lugar-selector zona-selector" role="group" aria-label={`Zonas de ${filtros.ciudad}`}>
-            <a {...enlace({ zona: null })} className={!filtros.zona ? 'activa' : ''} aria-current={!filtros.zona ? 'true' : undefined}>
-              Todo {SHORT[filtros.ciudad || ''] || filtros.ciudad}
-            </a>
-            {derivados.zonas.map(({ t, eventos }) => (
-              <a key={t.slug} {...enlace({ zona: t.slug })} className={filtros.zona === t.slug ? 'activa' : ''} aria-current={filtros.zona === t.slug ? 'true' : undefined}>
-                {t.nombre}
-                {eventos > 0 && <span>{eventos}</span>}
-              </a>
-            ))}
-          </div>
-        )}
-      </section>
-      <section className={`container discovery ${home ? 'discovery-home' : ''}`} id="cartelera" aria-label="Cartelera">
-        {vista === 'mapa' ? (
-          <div className="radar-cabecera">
-            <div className="segmented radar-capas" role="group" aria-label="Qué mostrar en el radar">
-              <a {...enlace({ capa: 'hoy' })} className={capa === 'hoy' ? 'activa' : ''} aria-current={capa === 'hoy' ? 'true' : undefined}>
-                <span className="radar-estrella" aria-hidden="true">✦</span> Carretes hoy
-              </a>
-              <a {...enlace({ capa: 'lugares' })} className={capa === 'lugares' ? 'activa' : ''} aria-current={capa === 'lugares' ? 'true' : undefined}>
-                Lugares
-              </a>
-            </div>
-            <EstadoUbicacion gps={gps} yo={yo} ciudad={filtros.ciudad} aqui={territorioActual?.nombre} onUbicar={() => ubicar('gesto')} />
-          </div>
-        ) : ver === 'lugares' ? null : (
-        <div className="date-tabs" aria-label="Cuándo">
-          {(
-            [
-              ['hoy', madrugada ? 'Esta noche' : 'Hoy', derivados.todayCount],
-              ['manana', madrugada ? nombreDia(addDays(today, 1)) : 'Mañana', derivados.mananaCount],
-              ['finde', 'Este finde', 0],
-              ['futuro', 'Más adelante', 0],
-            ] as const
-          ).map(([v, label, n]) => (
-            <a key={v} {...enlace({ fecha: v })} className={filtros.fecha === v ? 'selected' : ''} aria-current={filtros.fecha === v ? 'true' : undefined}>
-              {label}
-              {n > 0 && <span>{n}</span>}
-            </a>
-          ))}
-        </div>
-        )}
+  // Filtros secundarios (escena, presupuesto, orden, qué mostrar). Lista/Mapa y la ubicación van fuera.
+  const filtrosUI = (
         <details className="discovery-options"><summary>Filtros{(filtros.escena !== 'todos' || (filtros.precio && filtros.precio !== 'todos') || orden !== 'recomendados' || ver === 'eventos') ? ' · activos' : ''}</summary>
-        {derivados.escenas.length > 0 && (
+        {escenasVisibles.length > 0 && (
           <div className="escenas" aria-label="Escenas">
-            {derivados.escenas.map((x) => {
+            {escenasVisibles.map((x) => {
               const activa = filtros.escena === x.slug;
               return (
                 <a key={x.slug} {...enlace({ escena: activa ? 'todos' : x.slug })} className={`chip ${activa ? 'selected' : ''}`} aria-current={activa ? 'true' : undefined}>
@@ -550,23 +470,141 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
               </a>
             ))}
           </div>
-          <div className="segmented segmented-vista" role="group" aria-label="Cómo mostrarlo">
-            {(
-              [
-                ['lista', 'Lista'],
-                ['mapa', 'Mapa'],
-              ] as const
-            ).map(([v, label]) => (
-              <a key={v} {...enlace({ vista: v })} className={vista === v ? 'activa' : ''} aria-current={vista === v ? 'true' : undefined}>
-                {label}
+        </div>
+        </details>
+  );
+
+  return (
+    <>
+      <section className={`hero container ${home ? 'hero-home' : 'hero-small'}`}>
+        <PosterDecor variant={home ? 'home' : 'small'} />
+        <div className="hero-copy">
+          <p className="eyebrow">
+            <span className="status-dot" /> REGIÓN DE VALPARAÍSO <span className="hero-date">/ {dateLabel}</span>
+          </p>
+          <TituloSeccion
+            home={home}
+            vista={vista}
+            ver={ver}
+            logo={
+              // Todo el wordmark (DÓNDE SALGO y el "?") lleva al inicio limpio, igual que el logo del header.
+              <BrandLink className="hero-logo-link">
+                <LogoApilado className="hero-logo hero-logo-apilado" decorativo />
+              </BrandLink>
+            }
+          />
+          {home && <p className="hero-lead">¿Qué hay hoy? Eventos y lugares para salir en la Región de Valparaíso.</p>}
+          <form
+            className="search-form"
+            role="search"
+            action={path}
+            onSubmit={(e) => {
+              e.preventDefault();
+              ir({ busqueda: filtros.busqueda || '' });
+            }}
+          >
+            <label htmlFor="q" className="sr-only">
+              Buscar lugar, fiesta, artista o zona
+            </label>
+            <span aria-hidden="true">⌕</span>
+            <input
+              id="q"
+              name="q"
+              type="search"
+              maxLength={120}
+              value={filtros.busqueda || ''}
+              onChange={(e) => ir({ busqueda: e.target.value.slice(0, 120) }, true)}
+              placeholder="Buscar lugar, fiesta, artista o zona"
+            />
+            {filtros.busqueda ? (
+              <button type="button" aria-label="Borrar búsqueda" onClick={() => ir({ busqueda: '' })}>
+                ✕
+              </button>
+            ) : (
+              <button aria-label="Buscar" type="submit">
+                Buscar
+              </button>
+            )}
+          </form>
+          {/* Dónde estás es la primera pregunta. Selección manual; nunca se pide ubicación. */}
+          <div className="lugar-selector" role="group" aria-label="Elegir ciudad">
+            <a {...enlace({ ciudad: 'todos' })} className={filtros.ciudad === 'todos' ? 'activa' : ''} aria-current={filtros.ciudad === 'todos' ? 'true' : undefined}>
+              Toda la región
+            </a>
+            {derivados.ciudadesConOferta.map((c) => (
+              <a key={c} {...enlace({ ciudad: c })} className={filtros.ciudad === c ? 'activa' : ''} aria-current={filtros.ciudad === c ? 'true' : undefined}>
+                {SHORT[c] || c}
+                {n({ ciudad: c }) > 0 && <span>{n({ ciudad: c })}</span>}
               </a>
             ))}
           </div>
         </div>
-        </details>
-        {vista === 'lista' && ver !== 'lugares' && derivados.baratos > 0 && (filtros.precio || 'todos') === 'todos' && (
+        {derivados.zonas.length > 0 && (
+          <div className="lugar-selector zona-selector" role="group" aria-label={`Zonas de ${filtros.ciudad}`}>
+            <a {...enlace({ zona: null })} className={!filtros.zona ? 'activa' : ''} aria-current={!filtros.zona ? 'true' : undefined}>
+              Todo {SHORT[filtros.ciudad || ''] || filtros.ciudad}
+            </a>
+            {derivados.zonas.map(({ t }) => (
+              <a key={t.slug} {...enlace({ zona: t.slug })} className={filtros.zona === t.slug ? 'activa' : ''} aria-current={filtros.zona === t.slug ? 'true' : undefined}>
+                {t.nombre}
+                {n({ zona: t.slug }) > 0 && <span>{n({ zona: t.slug })}</span>}
+              </a>
+            ))}
+          </div>
+        )}
+      </section>
+      <section className={`container discovery ${home ? 'discovery-home' : ''}`} id="cartelera" aria-label="Cartelera">
+        {vista === 'mapa' ? (
+          <div className="radar-cabecera">
+            <p className="eyebrow">RADAR</p>
+            {home && <h2 className="radar-titulo">Carretes cerca de ti.</h2>}
+            <div className="segmented radar-capas" role="group" aria-label="Qué mostrar en el radar">
+              <a {...enlace({ capa: 'hoy' })} className={capa === 'hoy' ? 'activa' : ''} aria-current={capa === 'hoy' ? 'true' : undefined}>
+                <span className="radar-estrella" aria-hidden="true">✦</span> Carretes hoy
+              </a>
+              <a {...enlace({ capa: 'lugares' })} className={capa === 'lugares' ? 'activa' : ''} aria-current={capa === 'lugares' ? 'true' : undefined}>
+                Lugares
+              </a>
+            </div>
+            <EstadoUbicacion gps={gps} yo={yo} aqui={territorioActual?.nombre} onUbicar={() => ubicar('gesto')} />
+          </div>
+        ) : ver === 'lugares' ? null : (
+        <div className="date-tabs" aria-label="Cuándo">
+          {(
+            [
+              ['hoy', madrugada ? 'Esta noche' : 'Hoy', n({ fecha: 'hoy' })],
+              ['manana', madrugada ? nombreDia(addDays(today, 1)) : 'Mañana', n({ fecha: 'manana' })],
+              ['finde', 'Este finde', n({ fecha: 'finde' })],
+              ['futuro', 'Más adelante', n({ fecha: 'futuro' })],
+            ] as const
+          ).map(([v, label, n]) => (
+            <a key={v} {...enlace({ fecha: v })} className={filtros.fecha === v ? 'selected' : ''} aria-current={filtros.fecha === v ? 'true' : undefined}>
+              {label}
+              {n > 0 && <span>{n}</span>}
+            </a>
+          ))}
+        </div>
+        )}
+        <div className="vista-barra">
+          <div className="segmented segmented-vista" role="group" aria-label="Cómo mostrarlo">
+            <a {...enlace({ vista: 'lista' })} className={vista === 'lista' ? 'activa' : ''} aria-current={vista === 'lista' ? 'true' : undefined}>
+              <span aria-hidden="true">☰</span> Lista
+            </a>
+            <a href={urlRadar} onClick={abrirRadar} className={vista === 'mapa' ? 'activa' : ''} aria-current={vista === 'mapa' ? 'true' : undefined}>
+              <span aria-hidden="true">⌖</span> Mapa
+            </a>
+          </div>
+          {vista === 'lista' && (
+            <a className="radar-cta" href={urlRadar} onClick={abrirRadar}>
+              <span aria-hidden="true">📍</span> Ver mapa y carretes cerca de mí
+            </a>
+          )}
+        </div>
+        {vista === 'lista' && filtrosUI}
+
+        {vista === 'lista' && ver !== 'lugares' && baratos > 0 && (filtros.precio || 'todos') === 'todos' && (
           <a className="barato-atajo" {...enlace({ precio: '5000' })}>
-            Barato {filtros.fecha === 'hoy' ? 'hoy' : 'en estas fechas'}: {derivados.baratos} gratis o hasta $5.000
+            Barato {filtros.fecha === 'hoy' ? 'hoy' : 'en estas fechas'}: {baratos} gratis o hasta $5.000
           </a>
         )}
         {viejo && (
@@ -587,6 +625,8 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
                   eventos: eventosHoy.filter((e) => sectorDeLugar(lugarDe(e)) === slug).length,
                   lugares: snap.venues.filter((l) => sectorDeLugar(l.slug) === slug).length,
                 })}
+                fixValido={fixUtil(yo)}
+                onPrecisar={() => ubicar('gesto')}
                 urlZona={(t) => aUrl({ ...estado, filtros: { ...estado.filtros, ciudad: t.comuna, zona: t.slug } }, path, defecto)}
               />
             ) : capa === 'hoy' ? (
@@ -605,6 +645,7 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
               <div className="radar-cerca">
                 <h3>
                   {cercaDeMi ? `Cerca de mí${radio ? ` · ${radio} km` : ' · toda la región'}` : `Más cerca de ti en ${filtros.ciudad}`}
+                  {gps === 'muy_aproximada' ? ' (aprox.)' : ''}
                   <span className="heading-period">.</span>
                 </h3>
                 <ol>
@@ -647,6 +688,7 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
             </p>
           </>
         )}
+        {vista === 'mapa' && filtrosUI}
         {vista === 'lista' && ver !== 'lugares' && (
           <>
             <div className="section-heading">
@@ -655,8 +697,8 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
                 <h2>
                   {filtros.fecha === 'hoy'
                     ? madrugada
-                      ? 'Esta noche'
-                      : 'Hoy'
+                      ? 'Carretes esta noche'
+                      : 'Carretes hoy'
                     : filtros.fecha === 'finde'
                       ? 'Este finde'
                       : filtros.fecha === 'manana'
