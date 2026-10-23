@@ -2143,3 +2143,23 @@ html.bv-revela main > section { animation:bv-acerca .68s cubic-bezier(.2,.7,.2,1
   .bv-fase-saliendo { animation:bv-fundido-sale .15s linear both; }
   html.bv-revela main > section { animation:bv-fundido .15s linear both; }
 }
+
+
+/* La cara oculta de la carta no recibe toques: antes, aunque estaba de espaldas
+   e inerte, tapaba a la visible y el toque no llegaba (botones que "no funcionaban"). */
+.bv-cara[aria-hidden="true"] { pointer-events:none; }
+.bv-carta:not(.bv-girada) .bv-dorso, .bv-carta.bv-girada .bv-frente { visibility:hidden; transition:visibility 0s .72s; }
+.bv-fase-girando .bv-cara { visibility:visible; transition:none; }
+
+/* Estética del sitio en los afiches: grano de impresión, cinta adhesiva y tipografía de cartel. */
+.bv-afiche { background-image:
+    radial-gradient(rgba(19,19,29,.07) 1px, transparent 1.2px),
+    radial-gradient(rgba(19,19,29,.05) 1px, transparent 1.2px);
+  background-size:5px 5px, 7px 7px; background-position:0 0, 2px 3px; }
+.bv-cinta { position:absolute; top:-9px; left:50%; width:58px; height:18px; margin-left:-29px; background:rgba(239,227,211,.55); box-shadow:0 1px 2px rgba(0,0,0,.25); transform:rotate(calc(var(--giro) * -2)); pointer-events:none; }
+.bv-elegido .bv-cinta { background:rgba(255,255,255,.4); }
+.bv-afiche strong { font-family:var(--f-cartel, Georgia, serif); letter-spacing:-.015em; }
+.bv-afiche small { font-family:var(--f-maquina, monospace); }
+.elegir-otra-vez { justify-self:start; min-height:40px; padding:0 14px; border-radius:999px; border:1.5px solid var(--accent); background:transparent; color:var(--text); font:inherit; font-weight:600; cursor:pointer; }
+.elegir-otra-vez:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+@media (prefers-reduced-motion: reduce) { .bv-carta:not(.bv-girada) .bv-dorso, .bv-carta.bv-girada .bv-frente { transition:none; } }

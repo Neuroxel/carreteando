@@ -207,6 +207,7 @@ export default function Bienvenida({
                   onClick={() => elegir(i.slug)}
                   aria-pressed={elegida === i.slug}
                 >
+                  <span className="bv-cinta" aria-hidden="true" />
                   <Pictograma id={i.slug} className="bv-picto" />
                   <strong>{i.label}</strong>
                   <small>{i.descripcion}</small>

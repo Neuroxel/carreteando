@@ -19,7 +19,7 @@ import VenueRail from './VenueRail';
 import VenueMap from './VenueMap';
 import TituloSeccion from './TituloSeccion';
 import Bienvenida from './Bienvenida';
-import { debeMostrar, filtrosFinales, leerElegir, sesion, type Donde, type EstadoBienvenida } from '../lib/bienvenida';
+import { debeMostrar, esRegreso, filtrosFinales, leerElegir, sesion, type Donde, type EstadoBienvenida } from '../lib/bienvenida';
 import BrandLink from './BrandLink';
 import { LogoApilado } from './Logo';
 import { cuantos, eventosLista, eventosRadar, lugarObjeto, lugaresLista, lugaresRadar, type Contexto, type Modo } from '../lib/resultados';
@@ -461,7 +461,7 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
     // ?elegir=1 la abre a pedido (QA, demos) aunque ya se haya visto; se consume sin recargar.
     const { forzar, search } = leerElegir(location.search);
     if (forzar) history.replaceState(null, '', `${location.pathname}${search}${location.hash}`);
-    if (forzar || debeMostrar({ pathname: location.pathname, search: location.search, hash: location.hash, vista: sesion.vista() })) {
+    if (forzar || debeMostrar({ pathname: location.pathname, search: location.search, hash: location.hash, regreso: esRegreso() })) {
       sesion.marcar('vista');
       setBienvenida(true);
     } else document.documentElement.classList.remove('bv-pendiente');
@@ -638,6 +638,10 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
       {/* Resultado de la bienvenida: solo con una intención elegida; la portada normal no lo muestra. */}
       {home && vista === 'lista' && ver !== 'lugares' && intencion && (
         <section className="container asistente resultado-bienvenida" aria-label="Te recomendamos">
+          {/* Si se equivocó o quiere otra cosa: vuelve a la bienvenida sin buscar dónde. */}
+          <button type="button" className="elegir-otra-vez" onClick={() => setBienvenida(true)}>
+            ↺ Elegir otra vez
+          </button>
           {filtros.cerca && <EstadoUbicacion gps={gps} yo={yo} aqui={territorioActual?.nombre} onUbicar={() => ubicar('gesto')} />}
           {asistenteActivo && (
             <div className="shortlist" aria-live="polite">

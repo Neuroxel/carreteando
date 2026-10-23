@@ -46,9 +46,22 @@ export function avanzar(s: EstadoBienvenida, a: Accion): EstadoBienvenida {
   }
 }
 
-/** Solo en una entrada limpia a "/" y una vez por sesión; nunca por un enlace compartido. */
-export function debeMostrar(p: { pathname: string; search: string; hash: string; vista: boolean }) {
-  return p.pathname === '/' && !p.search && !p.hash && !p.vista;
+/**
+ * En cada carga de "/" limpio (entrar, recargar), salvo al volver con Atrás/Adelante.
+ * Nunca por un enlace con filtros. No depende de lo que recuerde el navegador:
+ * antes era una vez por sesión y quien ya la había visto no la volvía a encontrar.
+ */
+export function debeMostrar(p: { pathname: string; search: string; hash: string; regreso: boolean }) {
+  return p.pathname === '/' && !p.search && !p.hash && !p.regreso;
+}
+/** ¿Se llegó con Atrás/Adelante del navegador? */
+export function esRegreso() {
+  try {
+    const n = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
+    return n?.type === 'back_forward';
+  } catch {
+    return false;
+  }
 }
 
 /** Filtros finales: intención + dónde + cuándo (esta noche por defecto). */
@@ -98,4 +111,4 @@ export function leerElegir(search: string) {
  * no haya un destello HOME → BIENVENIDA. Mismas reglas que debeMostrar/leerElegir;
  * sin JavaScript no corre y la portada se ve normal. Nunca en una URL filtrada.
  */
-export const SCRIPT_SIN_DESTELLO = `(function(){try{var l=location,f=/[?&]elegir=1(&|$)/.test(l.search),v=null;try{v=sessionStorage.getItem('${CLAVE_BIENVENIDA}')}catch(e){v='x'}if(l.pathname==='/'&&(f||(!l.search&&!l.hash&&v===null))){document.documentElement.classList.add('bv-pendiente');setTimeout(function(){document.documentElement.classList.remove('bv-pendiente')},4000)}}catch(e){}})();`;
+export const SCRIPT_SIN_DESTELLO = `(function(){try{var l=location,f=/[?&]elegir=1(&|$)/.test(l.search),r=false;try{var n=performance.getEntriesByType('navigation')[0];r=!!n&&n.type==='back_forward'}catch(e){}if(l.pathname==='/'&&(f||(!l.search&&!l.hash&&!r))){document.documentElement.classList.add('bv-pendiente');setTimeout(function(){document.documentElement.classList.remove('bv-pendiente')},4000)}}catch(e){}})();`;
