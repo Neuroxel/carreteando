@@ -13,20 +13,36 @@ export interface EstadoBienvenida {
   plan: SlugIntencion | null;
   fecha: Fecha;
   cambiandoCuando: boolean;
+  /** Una transición en curso: mientras dura, ninguna otra elección se ejecuta (doble toque). */
+  bloqueado: boolean;
 }
-export const INICIO: EstadoBienvenida = { paso: 'que', plan: null, fecha: 'hoy', cambiandoCuando: false };
+export const INICIO: EstadoBienvenida = { paso: 'que', plan: null, fecha: 'hoy', cambiandoCuando: false, bloqueado: false };
 
-export type Accion = { tipo: 'elegir'; plan: SlugIntencion } | { tipo: 'cambiarCuando' } | { tipo: 'cuando'; fecha: Fecha } | { tipo: 'volver' };
+export type Accion =
+  | { tipo: 'tocar'; plan: SlugIntencion }
+  | { tipo: 'elegir'; plan: SlugIntencion }
+  | { tipo: 'bloquear' }
+  | { tipo: 'desbloquear' }
+  | { tipo: 'cambiarCuando' }
+  | { tipo: 'cuando'; fecha: Fecha }
+  | { tipo: 'volver' };
 export function avanzar(s: EstadoBienvenida, a: Accion): EstadoBienvenida {
   switch (a.tipo) {
+    case 'tocar':
+      // Primer toque: marca la elección y bloquea; los siguientes se ignoran hasta el cambio de paso.
+      return s.bloqueado || s.paso !== 'que' ? s : { ...s, plan: a.plan, bloqueado: true };
     case 'elegir':
-      return { ...s, plan: a.plan, paso: 'donde' };
+      return { ...s, plan: a.plan, paso: 'donde', bloqueado: false };
+    case 'bloquear':
+      return { ...s, bloqueado: true };
+    case 'desbloquear':
+      return { ...s, bloqueado: false };
     case 'cambiarCuando':
       return { ...s, cambiandoCuando: !s.cambiandoCuando };
     case 'cuando':
       return { ...s, fecha: a.fecha, cambiandoCuando: false };
     case 'volver':
-      return { ...s, paso: 'que' };
+      return s.bloqueado ? s : { ...s, paso: 'que', cambiandoCuando: false };
   }
 }
 
@@ -63,3 +79,23 @@ export const sesion = {
     }
   },
 };
+
+/**
+ * `?elegir=1` abre la bienvenida a pedido (QA, demos, "Ayúdame a elegir"
+ * compartible) aunque ya se haya visto. Se consume: la URL queda sin él y el
+ * resto del estado se conserva.
+ */
+export function leerElegir(search: string) {
+  const p = new URLSearchParams(search);
+  const forzar = p.get('elegir') === '1';
+  p.delete('elegir');
+  const q = p.toString();
+  return { forzar, search: q ? `?${q}` : '' };
+}
+
+/**
+ * Antes de pintar: si la bienvenida va a abrirse, se tapa la portada para que
+ * no haya un destello HOME → BIENVENIDA. Mismas reglas que debeMostrar/leerElegir;
+ * sin JavaScript no corre y la portada se ve normal. Nunca en una URL filtrada.
+ */
+export const SCRIPT_SIN_DESTELLO = `(function(){try{var l=location,f=/[?&]elegir=1(&|$)/.test(l.search),v=null;try{v=sessionStorage.getItem('${CLAVE_BIENVENIDA}')}catch(e){v='x'}if(l.pathname==='/'&&(f||(!l.search&&!l.hash&&v===null))){document.documentElement.classList.add('bv-pendiente');setTimeout(function(){document.documentElement.classList.remove('bv-pendiente')},4000)}}catch(e){}})();`;

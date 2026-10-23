@@ -19,7 +19,7 @@ import VenueRail from './VenueRail';
 import VenueMap from './VenueMap';
 import TituloSeccion from './TituloSeccion';
 import Bienvenida from './Bienvenida';
-import { debeMostrar, filtrosFinales, sesion, type Donde, type EstadoBienvenida } from '../lib/bienvenida';
+import { debeMostrar, filtrosFinales, leerElegir, sesion, type Donde, type EstadoBienvenida } from '../lib/bienvenida';
 import BrandLink from './BrandLink';
 import { LogoApilado } from './Logo';
 import { cuantos, eventosLista, eventosRadar, lugarObjeto, lugaresLista, lugaresRadar, type Contexto, type Modo } from '../lib/resultados';
@@ -458,23 +458,24 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
   const [bienvenida, setBienvenida] = useState(false);
   useEffect(() => {
     if (!home) return;
-    if (debeMostrar({ pathname: location.pathname, search: location.search, hash: location.hash, vista: sesion.vista() })) {
+    // ?elegir=1 la abre a pedido (QA, demos) aunque ya se haya visto; se consume sin recargar.
+    const { forzar, search } = leerElegir(location.search);
+    if (forzar) history.replaceState(null, '', `${location.pathname}${search}${location.hash}`);
+    if (forzar || debeMostrar({ pathname: location.pathname, search: location.search, hash: location.hash, vista: sesion.vista() })) {
       sesion.marcar('vista');
       setBienvenida(true);
-    }
+    } else document.documentElement.classList.remove('bv-pendiente');
   }, [home]);
   const terminarBienvenida = (b: EstadoBienvenida, d: Donde) => {
     sesion.marcar('completada');
-    setBienvenida(false);
-    // Una sola entrada de historial: la URL filtrada final.
+    // Una sola entrada de historial: la URL filtrada final. La portada se arma tapada y se revela.
     ir({ ...filtrosFinales(b, d), escena: 'todos', precio: 'todos', busqueda: '', ver: 'todo', vista: 'lista' });
-    if (d.tipo === 'cerca') ubicar('gesto');
-    requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'auto' }));
+    if (d.tipo === 'cerca' && gps === 'idle') ubicar('gesto');
+    window.scrollTo({ top: 0, behavior: 'auto' });
   };
   // "Ver todo" siempre lleva a la portada limpia, aunque se haya reabierto desde una home filtrada.
   const saltarBienvenida = useCallback(() => {
     sesion.marcar('omitida');
-    setBienvenida(false);
     if (location.pathname !== '/' || location.search || location.hash) {
       history.pushState(null, '', '/');
       window.dispatchEvent(new PopStateEvent('popstate'));
@@ -1034,8 +1035,11 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
           intenciones={intencionesConOferta}
           comunas={derivados.ciudadesConOferta}
           etiquetaManana={madrugada ? nombreDia(addDays(today, 1)) : 'Mañana'}
+          gps={gps}
+          onCerca={() => ubicar('gesto')}
           onTerminar={terminarBienvenida}
           onSaltar={saltarBienvenida}
+          onCerrado={() => setBienvenida(false)}
         />
       )}
     </>
