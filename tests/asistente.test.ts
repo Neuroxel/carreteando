@@ -149,5 +149,15 @@ test('precio corto: Gratis solo sin condiciones, Desde solo si la fuente lo dice
   assert.equal(precioCorto({ precio: 0, precio_conocido: true, precio_texto: 'Entrada liberada' }).texto, 'Gratis');
   assert.equal(precioCorto({ precio: 0, precio_conocido: true, precio_texto: 'Invitación hasta 23:00 · después $10.000' }).texto, 'Gratis con condiciones');
   assert.equal(precioCorto({ precio: 0, precio_conocido: false, precio_texto: 'Agotado en Cinzano' }).tipo, 'agotado');
+  // Textos reales del 23-oct: condiciones escritas en palabras.
+  for (const t of [
+    'Invitación sin costo con inscripción previa. válida hasta las 23:00; cupos limitados.',
+    'Tickets De Cortesía Válidos Hasta Las 23 Hrs sin costo (Mayores De 18 Años)',
+    'Ticket free mujeres sin costo (Ticket válido hasta las 00:00hrs presentando cédula de identidad y pase universitario)',
+    'Desde $0 en Vesti · revisa condiciones de acceso en la ficha',
+  ])
+    assert.equal(precioCorto({ precio: 0, precio_conocido: true, precio_texto: t }).texto, 'Gratis con condiciones', t);
+  for (const t of ['Entrada gratuita: gratis', 'Ticket gratis descarga tu entrada gratis', 'Entrada liberada'])
+    assert.equal(precioCorto({ precio: 0, precio_conocido: true, precio_texto: t }).texto, 'Gratis', t);
   assert.equal(precioCorto({ precio: 0, precio_conocido: false, precio_texto: null }).texto, 'Precio por confirmar');
 });
