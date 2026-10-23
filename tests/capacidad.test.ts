@@ -42,3 +42,9 @@ test('en "baja" y con movimiento reducido no se agrega ningún efecto; la funci�
   assert.match(b, /data-nivel=\{nivel\}/);
   assert.match(b, /useState<Nivel>\('baja'\)/, 'arranca sin efectos hasta saber qué aguanta');
 });
+
+test('la cinta adhesiva nunca ocupa una celda de la grilla del afiche', () => {
+  const css = src('app/globals.css');
+  assert.match(css, /\.bv-afiche > :not\(\.bv-canto\):not\(\.bv-papel\):not\(\.bv-cinta\) \{ position:relative/);
+  assert.match(css, /\.bv-afiche > \.bv-cinta \{ position:absolute/);
+});
