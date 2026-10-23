@@ -2233,7 +2233,7 @@ html.bv-revela main > section { animation:bv-acerca .68s cubic-bezier(.2,.7,.2,1
    es idéntica en los tres; en "baja" no se agrega nada de esto. */
 .bv-afiche { clip-path:none; background:transparent !important; isolation:isolate;
   transform:perspective(700px) rotate(var(--giro)) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); }
-.bv-afiche > :not(.bv-canto):not(.bv-papel) { position:relative; z-index:2; }
+.bv-afiche > :not(.bv-canto):not(.bv-papel):not(.bv-cinta) { position:relative; z-index:2; }
 .bv-afiche > .bv-cinta { position:absolute; z-index:3; }
 .bv-muro > .bv-afiche:not(.bv-ancho) .bv-ilustracion { position:absolute; z-index:2; }
 .bv-muro.bv-muro-chico > .bv-afiche .bv-ilustracion { position:relative; }
