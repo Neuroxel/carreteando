@@ -3,6 +3,7 @@ import { validIsoDate, toChileDateString, addDays } from './event-extraction';
 import { eventKey } from './event-identity';
 import { safeImageUrl, safeWebUrl } from './safety';
 import { CIUDADES, CATEGORIAS } from './types';
+import { editorialesDePassline } from './passline';
 // Version-controlled operator approvals, not auto-approval of scraped/anonymous input.
 // Import-only: subsequent runs must never overwrite withdrawals or editorial corrections.
 /** Una imagen sin origen declarado no entra: la base lo exige y tiene razón. */
@@ -22,7 +23,8 @@ export function imagenConOrigen(
 }
 export function editorialRows(now = new Date()) {
   const today = toChileDateString(now);
-  return feed
+  // Filas versionadas a mano + filas de la cola "Passline hoy" ya verificadas por una persona.
+  return [...feed, ...editorialesDePassline()]
     .filter(
       (e) =>
         e.review_decision === 'approved' &&

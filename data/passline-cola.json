@@ -1,0 +1,9 @@
+{
+  "nota": "Cola 'Passline hoy'. Passline bloquea agentes automáticos (Cloudflare) y no se evade: estas son pistas con URL primaria de Passline para revisión humana rápida. Solo una fila con estado 'verificado' (quién y cuándo, vista humana de la URL primaria) se publica, vía el feed editorial con su procedencia. 'por_revisar' y 'descartado' nunca se publican.",
+  "eventos": [
+    { "id": "pl-trotamundos-las-vidas-de-charly-20261023", "fecha": "2026-10-23", "hora": "20:00", "evento": "Las Vidas de Charly", "recinto": "Trotamundos Valparaíso", "venue_id": "trotamundos-valparaiso", "ciudad": "Valparaíso", "url": "https://www.passline.com/venue/trotamundos-valparaiso", "descubierto_por": "incidente 23-oct (docs/COVERAGE_INCIDENT_2026-10-23.md)", "estado": "por_revisar" },
+    { "id": "pl-trotamundos-camionero-20261023", "fecha": "2026-10-23", "hora": "22:00", "evento": "Camionero", "recinto": "Trotamundos Valparaíso", "venue_id": "trotamundos-valparaiso", "ciudad": "Valparaíso", "url": "https://www.passline.com/venue/trotamundos-valparaiso", "descubierto_por": "incidente 23-oct (docs/COVERAGE_INCIDENT_2026-10-23.md)", "estado": "por_revisar" },
+    { "id": "pl-trotamundos-la-rosa-llaneras-20261023", "fecha": "2026-10-23", "hora": "23:00", "evento": "La Rosa + Llaneras del amor", "recinto": "Trotamundos Valparaíso", "venue_id": "trotamundos-valparaiso", "ciudad": "Valparaíso", "url": "https://www.passline.com/venue/trotamundos-valparaiso", "descubierto_por": "incidente 23-oct (docs/COVERAGE_INCIDENT_2026-10-23.md)", "estado": "por_revisar" },
+    { "id": "pl-averno-halloween-bar-la-playa-20261023", "fecha": "2026-10-23", "hora": "19:00", "evento": "Fiesta de Halloween - Averno", "recinto": "Bar La Playa", "venue_id": null, "ciudad": "Valparaíso", "url": "https://www.passline.com/eventos/fiesta-de-halloween-averno", "descubierto_por": "incidente 23-oct (docs/COVERAGE_INCIDENT_2026-10-23.md)", "estado": "por_revisar" }
+  ]
+}
