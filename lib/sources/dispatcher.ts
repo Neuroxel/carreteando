@@ -1,4 +1,4 @@
-import { toChileDateString } from '../event-extraction';
+import { fechaDeLaNoche, toChileDateString } from '../event-extraction';
 import { detectCategory } from '../events';
 import { ADAPTERS, MANUAL_SOURCES, SOURCES } from './registry';
 import { clasificar, type Relevancia } from './relevance';
@@ -712,6 +712,28 @@ export interface DispatchReport {
   /** Vencidas que no empezaron por plazo: siguen vencidas para la próxima corrida. */
   postergadas: string[];
 }
+/**
+ * Cadencia por TIPO de fuente, no solo por eventos ya conocidos: las ticketeras
+ * regionales y las rutas por local anuncian cosas del mismo día. Jueves, viernes
+ * y sábado (noche de Chile, hasta las 05:00) se releen cada 6 h; el resto de la
+ * semana cada 12 h. Las demás fuentes siguen con su refreshHours.
+ */
+export const FUENTES_FRECUENTES = (s: Pick<SourceDefinition, 'id' | 'accessMode'>) =>
+  s.accessMode !== 'blocked' &&
+  s.accessMode !== 'manual' &&
+  (s.id === 'portaldisc-region' || s.id === 'puntoticket-region' || s.id === 'evently-region' || s.id.startsWith('ruta-evently-') || s.id.startsWith('ruta-vesti-'));
+export function cadenciaHoras(s: Pick<SourceDefinition, 'id' | 'accessMode' | 'refreshHours'>, now: Date) {
+  if (!FUENTES_FRECUENTES(s)) return s.refreshHours;
+  const dia = new Date(`${fechaDeLaNoche(now)}T12:00:00Z`).getUTCDay(); // 4 jue, 5 vie, 6 sáb
+  return Math.min(s.refreshHours, dia >= 4 && dia <= 6 ? 6 : 12);
+}
+
+/** Suma a las urgencias (por eventos conocidos) la cadencia de las fuentes frecuentes. */
+export function conCadencia(urgentes: Map<string, number>, now: Date, fuentes: SourceDefinition[] = SOURCES) {
+  for (const s of fuentes) if (FUENTES_FRECUENTES(s)) urgentes.set(s.id, Math.min(urgentes.get(s.id) ?? Infinity, cadenciaHoras(s, now)));
+  return urgentes;
+}
+
 export async function dispatchSources(
   db: Db,
   budget = 6,
@@ -726,6 +748,9 @@ export async function dispatchSources(
     .from('event_sources')
     .select('id,active,next_check_at,last_checked_at,consecutive_failures');
   const urgentes = await sourcesWithEventsSoon(db, reloj);
+  // Las fuentes frecuentes vencen por su cadencia aunque no conozcamos eventos suyos
+  // (anuncios nuevos del mismo día). Pasan por la misma reserva anti-inanición.
+  conCadencia(urgentes, reloj);
   const due = dueSources(data || [], reloj, budget, urgentes);
   const reports: SourceRunReport[] = [];
   const postergadas: string[] = [];
@@ -752,7 +777,7 @@ export async function dispatchSources(
       continue;
     }
     reports.push(report);
-    const next = new Date(reloj.getTime() + source.refreshHours * 3600_000).toISOString();
+    const next = new Date(reloj.getTime() + cadenciaHoras(source, reloj) * 3600_000).toISOString();
     await db.from('ingestion_source_runs').insert([
       {
         source_id: source.id,

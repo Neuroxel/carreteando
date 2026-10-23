@@ -6,8 +6,19 @@
       "nombre": "Woo Club",
       "comuna": "Valparaíso",
       "rutas": [
-        { "tipo": "evently_agenda", "url": "https://wooclub.evently.cl/", "acceso": "auto", "verificada": "2026-10-17" },
-        { "tipo": "vesti_company", "url": "https://vesti.cl/company/woo-club", "acceso": "auto", "verificada": "2026-10-17", "nota": "El 17-oct decía 'SIN FECHAS PUBLICADAS' mientras Evently vendía el sábado: una ruta vacía no cierra el local." }
+        {
+          "tipo": "evently_agenda",
+          "url": "https://wooclub.evently.cl/",
+          "acceso": "auto",
+          "verificada": "2026-10-17"
+        },
+        {
+          "tipo": "vesti_company",
+          "url": "https://vesti.cl/company/woo-club",
+          "acceso": "auto",
+          "verificada": "2026-10-17",
+          "nota": "El 17-oct decía 'SIN FECHAS PUBLICADAS' mientras Evently vendía el sábado: una ruta vacía no cierra el local."
+        }
       ]
     },
     {
@@ -15,7 +26,12 @@
       "nombre": "Studio Valparaíso",
       "comuna": "Valparaíso",
       "rutas": [
-        { "tipo": "vesti_company", "url": "https://vesti.cl/company/studio-valparaiso", "acceso": "auto", "verificada": "2026-10-17" }
+        {
+          "tipo": "vesti_company",
+          "url": "https://vesti.cl/company/studio-valparaiso",
+          "acceso": "auto",
+          "verificada": "2026-10-17"
+        }
       ]
     },
     {
@@ -23,8 +39,20 @@
       "nombre": "Pagano",
       "comuna": "Valparaíso",
       "rutas": [
-        { "tipo": "passline_venue", "url": "https://www.passline.com/venue/pagano-valpo", "acceso": "bloqueado", "verificada": "2026-10-17", "nota": "Passline responde con desafío de Cloudflare a agentes identificados; no se salta. Vista humana del 17-oct: solo la dirección (Errázuriz 1852), sin fechas." },
-        { "tipo": "instagram", "url": "https://www.instagram.com/paganocl/", "acceso": "bloqueado", "verificada": "2026-10-17", "nota": "Cuenta +18: no se lee sin sesión. Solo vía Apify, hoy en pausa." }
+        {
+          "tipo": "passline_venue",
+          "url": "https://www.passline.com/venue/pagano-valpo",
+          "acceso": "bloqueado",
+          "verificada": "2026-10-17",
+          "nota": "Passline responde con desafío de Cloudflare a agentes identificados; no se salta. Vista humana del 17-oct: solo la dirección (Errázuriz 1852), sin fechas."
+        },
+        {
+          "tipo": "instagram",
+          "url": "https://www.instagram.com/paganocl/",
+          "acceso": "bloqueado",
+          "verificada": "2026-10-17",
+          "nota": "Cuenta +18: no se lee sin sesión. Solo vía Apify, hoy en pausa."
+        }
       ]
     },
     {
@@ -32,8 +60,26 @@
       "nombre": "Máscara",
       "comuna": "Valparaíso",
       "rutas": [
-        { "tipo": "ecopass", "url": "https://www.ecopass.cl/", "acceso": "bloqueado", "verificada": "2026-10-17", "nota": "Ecopass muestra la verificación de seguridad de Cloudflare; no se salta." },
-        { "tipo": "instagram", "url": "https://www.instagram.com/mascara_valparaiso/", "acceso": "bloqueado", "verificada": "2026-10-17", "nota": "Solo vía Apify, hoy en pausa." }
+        {
+          "tipo": "ecopass",
+          "url": "https://www.ecopass.cl/",
+          "acceso": "bloqueado",
+          "verificada": "2026-10-17",
+          "nota": "Ecopass muestra la verificación de seguridad de Cloudflare; no se salta."
+        },
+        {
+          "tipo": "instagram",
+          "url": "https://www.instagram.com/mascara_valparaiso/",
+          "acceso": "bloqueado",
+          "verificada": "2026-10-17",
+          "nota": "Solo vía Apify, hoy en pausa."
+        },
+        {
+          "tipo": "vesti_company",
+          "url": "https://vesti.cl/company/mascara-valparaiso",
+          "acceso": "auto",
+          "verificada": "2026-10-23"
+        }
       ]
     },
     {
@@ -41,7 +87,160 @@
       "nombre": "Balada El Huevo",
       "comuna": "Valparaíso",
       "rutas": [
-        { "tipo": "instagram", "url": "https://www.instagram.com/el.huevo/", "acceso": "bloqueado", "verificada": "2026-10-17", "nota": "Cuenta activa del local (la antigua @barelhuevo no publica desde 2016). El dominio elhuevo.cl caducó. Solo vía Apify, hoy en pausa." }
+        {
+          "tipo": "instagram",
+          "url": "https://www.instagram.com/el.huevo/",
+          "acceso": "bloqueado",
+          "verificada": "2026-10-17",
+          "nota": "Cuenta activa del local (la antigua @barelhuevo no publica desde 2016). El dominio elhuevo.cl caducó. Solo vía Apify, hoy en pausa."
+        }
+      ]
+    },
+    {
+      "slug": "chicago-bar-concon",
+      "nombre": "Chicago Bar",
+      "comuna": "Concón",
+      "rutas": [
+        {
+          "tipo": "evently_agenda",
+          "url": "https://chicagobar.evently.cl/",
+          "acceso": "auto",
+          "verificada": "2026-10-23"
+        }
+      ]
+    },
+    {
+      "slug": "okko-music-lab-renaca",
+      "nombre": "Okko music lab",
+      "comuna": "Concón",
+      "rutas": [
+        {
+          "tipo": "vesti_company",
+          "url": "https://vesti.cl/company/okko-music-lab",
+          "acceso": "auto",
+          "verificada": "2026-10-23"
+        }
+      ]
+    },
+    {
+      "slug": "garden-quilpue",
+      "nombre": "Garden Quilpué",
+      "comuna": "Quilpué",
+      "rutas": [
+        {
+          "tipo": "vesti_company",
+          "url": "https://vesti.cl/company/garden-quilpue",
+          "acceso": "auto",
+          "verificada": "2026-10-23"
+        }
+      ]
+    },
+    {
+      "slug": "manda-renaca",
+      "nombre": "Manda",
+      "comuna": "Reñaca",
+      "rutas": [
+        {
+          "tipo": "vesti_company",
+          "url": "https://vesti.cl/company/manda-renaca",
+          "acceso": "auto",
+          "verificada": "2026-10-23"
+        }
+      ]
+    },
+    {
+      "slug": "terraza-bellavista",
+      "nombre": "Terraza Bellavista",
+      "comuna": "Valparaíso",
+      "rutas": [
+        {
+          "tipo": "vesti_company",
+          "url": "https://vesti.cl/company/terraza-bellavista",
+          "acceso": "auto",
+          "verificada": "2026-10-23"
+        }
+      ]
+    },
+    {
+      "slug": "alcazaba",
+      "nombre": "Alcazaba",
+      "comuna": "Viña del Mar",
+      "rutas": [
+        {
+          "tipo": "vesti_company",
+          "url": "https://vesti.cl/company/alcazaba-vina-del-mar",
+          "acceso": "auto",
+          "verificada": "2026-10-23"
+        }
+      ]
+    },
+    {
+      "slug": "rufino-vina-del-mar",
+      "nombre": "Rufino Viña del Mar",
+      "comuna": "Viña del Mar",
+      "rutas": [
+        {
+          "tipo": "vesti_company",
+          "url": "https://vesti.cl/company/rufino-vina-del-mar",
+          "acceso": "auto",
+          "verificada": "2026-10-23"
+        }
+      ]
+    },
+    {
+      "slug": "bar-terraza-miaw",
+      "nombre": "Bar Terraza Miaw",
+      "comuna": "Valparaíso",
+      "rutas": [
+        {
+          "tipo": "evently_agenda",
+          "url": "https://terrazamiaw.evently.cl/",
+          "acceso": "auto",
+          "verificada": "2026-10-23",
+          "nota": "Perfil público con el nombre del local ('TERRAZA MIAW VALPO'); la página no repite la comuna."
+        }
+      ]
+    },
+    {
+      "slug": "club-segundo-piso",
+      "nombre": "Club Segundo Piso",
+      "comuna": "Valparaíso",
+      "rutas": [
+        {
+          "tipo": "vesti_company",
+          "url": "https://vesti.cl/company/club-segundo-piso",
+          "acceso": "auto",
+          "verificada": "2026-10-23",
+          "nota": "Perfil público con el nombre del local ('Club Segundo Piso'); la página no repite la comuna."
+        }
+      ]
+    },
+    {
+      "slug": "corazon-continto",
+      "nombre": "Corazón Continto",
+      "comuna": "Valparaíso",
+      "rutas": [
+        {
+          "tipo": "vesti_company",
+          "url": "https://vesti.cl/company/corazon-continto",
+          "acceso": "auto",
+          "verificada": "2026-10-23",
+          "nota": "Perfil público con el nombre del local ('Corazon Continto'); la página no repite la comuna."
+        }
+      ]
+    },
+    {
+      "slug": "lemutt-bar",
+      "nombre": "Lemutt Bar",
+      "comuna": "Valparaíso",
+      "rutas": [
+        {
+          "tipo": "vesti_company",
+          "url": "https://vesti.cl/company/lemutt-bar",
+          "acceso": "auto",
+          "verificada": "2026-10-23",
+          "nota": "Perfil público con el nombre del local ('Lemutt bar'); la página no repite la comuna."
+        }
       ]
     }
   ]

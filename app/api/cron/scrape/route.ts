@@ -98,7 +98,14 @@ export async function GET(request: Request) {
       .update({ is_active: false })
       .eq('is_active', true)
       .lt('date_text', fechaDeLaNoche(new Date()));
-    if (expire.error) throw new IngestionError('DB_EXPIRE');
+    // Vencer es limpieza: la lectura pública y RLS ya esconden lo pasado. Si falla,
+    // la ingesta sigue (antes abortaba la corrida entera y el cooldown de 3 h
+    // bloqueaba la siguiente) y queda el mensaje de Postgres para diagnosticar.
+    if (expire.error)
+      metrics.expire_error = {
+        code: (expire.error as { code?: string }).code ?? null,
+        message: String(expire.error.message || '').slice(0, 300),
+      };
     const editorial = editorialRows();
     metrics.editorial_reviewed = editorial.length;
     metrics.editorial_inserted = 0;
@@ -124,7 +131,9 @@ export async function GET(request: Request) {
     // Con el motor activo, la ingesta solo reúne evidencia y el motor decide;
     // en modo sombra la política anterior sigue publicando y el motor anota.
     const modoMotor = await engineMode(db);
-    const dispatch = await dispatchSources(db, 16, undefined, undefined, { deferToEngine: modoMotor === 'active' });
+    // 24 por corrida: jue–sáb las fuentes frecuentes (3 regionales + rutas por local) vencen cada 6 h.
+    // El plazo de 180 s sigue mandando: lo que no alcanza queda postergado, sin contar como falla.
+    const dispatch = await dispatchSources(db, 24, undefined, undefined, { deferToEngine: modoMotor === 'active' });
     metrics.sources_due = dispatch.due;
     metrics.sources_ran = dispatch.ran;
     metrics.sources_ok = dispatch.reports.filter((r) => r.ok).length;
