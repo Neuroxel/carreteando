@@ -18,7 +18,7 @@ export default function BrandLink({ children, className }: { children: ReactNode
     window.scrollTo({ top: 0, behavior: 'auto' });
   };
   return (
-    <Link prefetch={false} className={className} href="/" aria-label="Dónde Salgo?, inicio" onClick={onClick}>
+    <Link prefetch={false} className={className} href="/" aria-label="Ir al inicio de Dónde Salgo" onClick={onClick}>
       {children}
     </Link>
   );
