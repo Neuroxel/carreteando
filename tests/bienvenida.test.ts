@@ -6,12 +6,14 @@ import { parseFilters } from '../lib/filters';
 
 const src = (p: string) => readFileSync(new URL(`../${p}`, import.meta.url), 'utf8');
 
-test('aparece solo en "/" limpio y una vez por sesión; nunca por URL compartida', () => {
-  assert.equal(debeMostrar({ pathname: '/', search: '', hash: '', vista: false }), true, 'sesión nueva');
-  assert.equal(debeMostrar({ pathname: '/', search: '?ciudad=Quilpu%C3%A9', hash: '', vista: false }), false, 'URL filtrada');
-  assert.equal(debeMostrar({ pathname: '/', search: '', hash: '#cartelera', vista: false }), false);
-  assert.equal(debeMostrar({ pathname: '/', search: '', hash: '', vista: true }), false, 'ya vista en la sesión');
-  assert.equal(debeMostrar({ pathname: '/explorar', search: '', hash: '', vista: false }), false);
+test('aparece en cada carga de "/" limpio (entrar, recargar); nunca con filtros ni al volver con Atrás', () => {
+  assert.equal(debeMostrar({ pathname: '/', search: '', hash: '', regreso: false }), true, 'entrar o recargar');
+  assert.equal(debeMostrar({ pathname: '/', search: '?ciudad=Quilpu%C3%A9', hash: '', regreso: false }), false, 'URL filtrada');
+  assert.equal(debeMostrar({ pathname: '/', search: '', hash: '#cartelera', regreso: false }), false);
+  assert.equal(debeMostrar({ pathname: '/', search: '', hash: '', regreso: true }), false, 'Atrás/Adelante');
+  assert.equal(debeMostrar({ pathname: '/explorar', search: '', hash: '', regreso: false }), false);
+  // Ya no depende de sessionStorage: quien la vio antes la vuelve a encontrar.
+  assert.doesNotMatch(src('components/ExploreClient.tsx'), /sesion\.vista\(\)/);
 });
 
 test('pasos: Qué → Dónde; Esta noche por defecto; Cambiar cuándo es opcional; volver', () => {
@@ -115,23 +117,20 @@ test('doble toque: una elección se ejecuta una sola vez; volver no corre mientr
 
 test('sin destello: el telón se pone solo cuando la bienvenida va a abrir', async () => {
   const { SCRIPT_SIN_DESTELLO } = await import('../lib/bienvenida');
-  const correr = (search: string, hash = '', guardado: string | null = null, pathname = '/') => {
+  const correr = (search: string, hash = '', tipo = 'navigate', pathname = '/') => {
     const clases = new Set<string>();
-    const env = {
-      location: { pathname, search, hash },
-      sessionStorage: { getItem: () => guardado },
-      document: { documentElement: { classList: { add: (c: string) => clases.add(c), remove: (c: string) => clases.delete(c) } } },
-      setTimeout: () => 0,
-    };
-    new Function('location', 'sessionStorage', 'document', 'setTimeout', SCRIPT_SIN_DESTELLO)(env.location, env.sessionStorage, env.document, env.setTimeout);
+    const doc = { documentElement: { classList: { add: (c: string) => clases.add(c), remove: (c: string) => clases.delete(c) } } };
+    const perf = { getEntriesByType: () => [{ type: tipo }] };
+    new Function('location', 'performance', 'document', 'setTimeout', SCRIPT_SIN_DESTELLO)({ pathname, search, hash }, perf, doc, () => 0);
     return clases.has('bv-pendiente');
   };
-  assert.equal(correr(''), true, 'primera visita limpia: se tapa antes de pintar');
-  assert.equal(correr('', '', 'vista'), false, 'ya vista: portada normal');
+  assert.equal(correr(''), true, 'entrada limpia: se tapa antes de pintar');
+  assert.equal(correr('', '', 'reload'), true, 'recargar también');
+  assert.equal(correr('', '', 'back_forward'), false, 'volver con Atrás: portada normal');
   assert.equal(correr('?ciudad=Quilpu%C3%A9'), false, 'URL filtrada: nunca');
-  assert.equal(correr('?elegir=1', '', 'vista'), true, 'a pedido');
+  assert.equal(correr('?elegir=1', '', 'back_forward'), true, 'a pedido');
   assert.equal(correr('', '#cartelera'), false);
-  assert.equal(correr('', '', null, '/explorar'), false);
+  assert.equal(correr('', '', 'navigate', '/explorar'), false);
   assert.match(src('app/layout.tsx'), /dangerouslySetInnerHTML=\{\{ __html: SCRIPT_SIN_DESTELLO \}\}/);
   assert.match(src('components/Bienvenida.tsx'), /classList\.remove\('bv-pendiente'\)/);
   assert.match(src('components/ExploreClient.tsx'), /else document\.documentElement\.classList\.remove\('bv-pendiente'\)/);
@@ -170,4 +169,10 @@ test('3D: carta de dos caras (¿Qué? / ¿Dónde?), cara oculta inerte, giro y a
   const reducido = bloque.slice(bloque.indexOf('@media (prefers-reduced-motion: reduce)'));
   assert.match(reducido, /\.bv-carta, \.bv-carta\.bv-girada, \.bv-dorso, \.bv-cara \{ transform:none !important/);
   assert.match(reducido, /\.bv-carta:not\(\.bv-girada\) \.bv-dorso, \.bv-carta\.bv-girada \.bv-frente \{ opacity:0; visibility:hidden; \}/);
+});
+
+test('toques: la cara oculta de la carta no tapa a la visible; volver a elegir está a mano', () => {
+  const css = src('app/globals.css');
+  assert.match(css, /\.bv-cara\[aria-hidden="true"\] \{ pointer-events:none; \}/);
+  assert.match(src('components/ExploreClient.tsx'), /className="elegir-otra-vez" onClick=\{\(\) => setBienvenida\(true\)\}/);
 });
