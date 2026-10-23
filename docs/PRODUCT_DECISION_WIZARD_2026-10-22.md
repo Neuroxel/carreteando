@@ -1,56 +1,112 @@
-# Dónde Salgo — decisión de producto: asistente rápido para decidir
+# Dónde Salgo — decisión de producto: wizard de bienvenida
 
-Fecha: 22-oct-2026  
-Base: `main@be0d050` (PR #23 + #24 ya integrados)  
-Estado: especificación canónica para la siguiente iteración.
+Fecha: 23-oct-2026  
+Base funcional actual: `main@edd1268` (PR #26–#28 integrados)  
+Estado: especificación canónica corregida tras feedback directo de Carlos.
 
-## Problema de producto
+## Decisión de rama
 
-El producto ya resuelve navegación, Radar, filtros, comunas y cartografía mucho mejor que el piloto inicial, pero el feedback de usuarios reales muestra un problema superior:
+**NO revertir #26–#28 completos.**
 
-> una cartelera grande sigue obligando a mirar demasiado antes de decidir.
+La implementación actual contiene infraestructura útil que debe conservarse:
 
-El valor agregado de Dónde Salgo no debe ser solamente "tener muchos panoramas". Debe ser **reducir el tiempo de decisión** y responder rápido a preguntas del tipo:
+- `lib/intenciones.ts`;
+- clasificación de comedia;
+- ranking determinista;
+- shortlist/recomendaciones;
+- precio visible y semántica de precio;
+- `Filtros (N)`;
+- espaciado de badges de comuna;
+- tests de intenciones;
+- fix de overflow horizontal;
+- métricas del asistente.
 
-- quiero bailar hoy;
-- quiero tomar algo cerca;
-- quiero música en vivo en Valparaíso;
-- quiero algo barato en Quilpué;
-- quiero karaoke;
-- quiero reírme / ver comedia;
-- no sé qué quiero, muéstrame buenas opciones.
+El error fue de **presentación**, no de arquitectura de datos.
 
-La app no debe convertirse en un catálogo tipo Netflix donde la abundancia genera parálisis.
+El asistente fue incrustado dentro de la home, generando repetición visual con:
+- selector de comuna de la home;
+- pregunta `¿Dónde?` del asistente;
+- filtros normales;
+- buscador.
 
-## Decisión
+Carlos aclaró que quería un **wizard de bienvenida**, separado de la página.
 
-Crear un **asistente rápido de intención** en la portada.
+## Norte del producto
 
-No será un modal obligatorio ni bloqueará la cartelera.
+La experiencia correcta es:
 
-Debe poder:
-1. usarse en pocos toques;
-2. omitirse con "Ver todo";
-3. producir filtros/estado URL compartibles;
-4. terminar en resultados normales de Dónde Salgo;
-5. mostrar primero una selección corta de mejores opciones;
-6. conservar acceso a toda la cartelera.
+1. entrar a Dónde Salgo;
+2. ver una bienvenida limpia, con sólo el fondo/identidad;
+3. responder una pregunta central;
+4. esa pregunta desaparece;
+5. aparece la siguiente;
+6. al terminar, se entra a la home/cartelera normal de siempre con los filtros ya aplicados.
 
-La navegación canónica sigue siendo:
+La home NO debe contener el wizard embebido.
 
-**Carretes · Lugares · Radar · Aportar**
+## Wizard V1
 
-"Radar" se mantiene como marca de la función de proximidad porque dentro de la página ya se explica como "Carretes cerca de ti".
+### Cuándo aparece
 
-## Arquitectura de la experiencia
+Mostrar sólo en una entrada limpia a la portada:
+- pathname `/`;
+- sin filtros/plan/query que ya expresen una intención;
+- cuando no se haya completado/omitido ya en la sesión actual.
 
-### Entrada principal
+Usar `sessionStorage` o equivalente client-only para evitar mostrarlo una y otra vez dentro de la misma sesión.
 
-Encima de la cartelera, después de la identidad de marca y búsqueda:
+NO usar una cuenta.
+NO guardar coordenadas.
+NO persistir preferencias personales a largo plazo.
 
-**¿Qué quieres hacer?**
+Si el usuario llega desde:
+- URL compartida con filtros;
+- detalle de evento;
+- resultado ya filtrado;
 
-Opciones iniciales, revisadas contra los datos actuales:
+no interrumpir con la bienvenida.
+
+### Reabrir
+
+En la home normal debe existir un CTA discreto:
+
+**Ayúdame a elegir**
+
+que permita abrir el wizard voluntariamente.
+
+No volver a incrustar todas sus preguntas dentro de la home.
+
+## Presentación visual
+
+Pantalla completa / overlay de bienvenida.
+
+Usar el mismo fondo visual de Dónde Salgo.
+
+No mostrar simultáneamente:
+- buscador;
+- chips de comuna;
+- cartelera;
+- filtros;
+- shortlist;
+- selector Lista/Mapa.
+
+Sólo:
+- marca;
+- progreso mínimo;
+- pregunta;
+- opciones;
+- botón `Saltar / Ver todo`.
+
+Transición breve entre pasos.
+Respetar `prefers-reduced-motion`.
+
+No hacer un modal pequeño sobre la home: debe sentirse como una pantalla de entrada.
+
+## Secuencia
+
+### Paso 1 — ¿Qué quieres hacer?
+
+Opciones canónicas ya implementadas:
 
 - Bailar
 - Tomar algo
@@ -60,27 +116,16 @@ Opciones iniciales, revisadas contra los datos actuales:
 - Algo tranqui
 - Sorpréndeme
 
-No usar todavía:
-- "Comer" como categoría principal, porque la base actual no modela de forma fiable oferta gastronómica suficiente para prometer resultados de calidad.
-- Parques/familia como parte de esta misma vertical. Eso será otra vertical futura.
+Si una intención no tiene soporte suficiente, ocultarla.
 
-Siempre visible:
-**Ver todos los carretes**
+Al elegir:
+- guardar selección temporalmente;
+- animar salida de la pregunta;
+- pasar al siguiente paso.
 
-### Segundo paso
+### Paso 2 — ¿Dónde?
 
-**¿Cuándo?**
-
-- Ahora / Esta noche
-- Mañana
-- Este finde
-- Más adelante
-
-Entre 00:00 y 04:59, "Ahora / Esta noche" sigue usando la fecha nocturna canónica del día anterior hasta las 05:00.
-
-### Tercer paso
-
-**¿Dónde?**
+Opciones:
 
 - Cerca de mí
 - Toda la región
@@ -89,395 +134,271 @@ Entre 00:00 y 04:59, "Ahora / Esta noche" sigue usando la fecha nocturna canóni
 - Quilpué
 - Villa Alemana
 - Concón
-- demás comunas disponibles
+- otras comunas con oferta real.
 
-Si el usuario elige **Cerca de mí**:
-- usar el flujo GPS canónico de Radar;
-- no mandar coordenadas al backend;
-- si precisión >500 m, no afirmar barrio;
-- si hay territorio verificado y precisión suficiente, usarlo para ordenar/priorizar.
+`Cerca de mí` reutiliza el GPS canónico de Radar.
 
-Si el usuario selecciona una comuna manualmente:
-- la comuna manda sobre GPS.
+Reglas:
+- client-only;
+- no lat/lng al backend;
+- precisión >500 m no afirma barrio;
+- comuna manual manda sobre GPS.
 
-## No forzar un orden rígido
+### Paso 3 — ¿Cuándo?
 
-La UI puede presentarse visualmente como 3 preguntas, pero el usuario puede responder en cualquier orden.
+Mantener este paso, pero hacerlo rápido.
 
-Ejemplo:
-- Bailar
+Opciones:
 - Esta noche
-- Cerca de mí
-
-o:
-- Quilpué
-- Comedia
+- Mañana
 - Este finde
+- Más adelante
 
-Cada selección actualiza el estado del asistente y el conteo de resultados.
+`Esta noche` puede ir preseleccionado visualmente como default, pero no ejecutar hasta que la persona confirme o use `Saltar`.
 
-## Capa de intención
+Entre 00:00–04:59 conserva la fecha nocturna canónica hasta las 05:00.
 
-Crear una capa explícita, por ejemplo:
+### Final
 
-`lib/intenciones.ts`
+Al terminar:
 
-No convertir las intenciones directamente en búsquedas de texto arbitrarias.
-
-Cada intención debe tener:
-- `slug`
-- `label`
-- `description`
-- `icon`
-- regla de eventos
-- regla de lugares
-- parámetros URL canónicos
-- fallback seguro
-
-### Bailar
-
-Eventos:
-- categorías: electronica, cumbia, reggaeton;
-- tipos compatibles: club, fiesta_universitaria, festival cuando corresponda;
-- escenas: electrónica, tropical, urbano.
-
-Lugares:
-- club
-- discoteca
-- club-electronico
-- tags verificadas asociadas a baile.
-
-### Tomar algo
-
-Esta intención es principalmente de **lugares**, no necesariamente de eventos.
-
-Lugares:
-- bar
-- pub
-- terraza
-
-Puede priorizar lugares con un evento esta noche, pero no exigirlo.
-
-No afirmar "abierto ahora" salvo que exista horario verificable suficiente.
-
-### Música en vivo
-
-Eventos:
-- concierto
-- tocata
-- live
-- festival
-- peña cuando sea musical.
-
-Lugares:
-- sala-en-vivo
-- tags verificadas en-vivo, jazz, rock, tocatas.
-
-### Karaoke
-
-Eventos y lugares según:
-- escena karaoke;
-- tipo lugar karaoke;
-- coincidencia revisada actual.
-
-### Comedia
-
-La base actual NO tiene `TipoEvento=comedia`.
-
-No resolverlo con regex informal en la UI.
-
-Crear una clasificación canónica.
-
-Opción mínima:
-- nueva escena `comedia` basada en evidencia controlada de fuente/título/organizador y fixtures;
-- o un `TipoEvento` nuevo si el cambio de schema es suficientemente limpio.
-
-Debe cubrir stand-up/comedia sin meter teatro general por accidente.
-
-ComedyPass y ComediaTicket son señales claras para esta clasificación.
-
-### Algo tranqui
-
-No prometer "tranquilo" como verdad absoluta sin datos.
-
-V1 puede definirse con una combinación conservadora de:
-- noche cultural;
-- teatro/cultura;
-- ciertos lugares tipo terraza/bar con tags explícitas compatibles;
-- eventos sin categorías de club/urbano/electrónica.
-
-Etiquetar internamente como criterio editorial, no como hecho objetivo.
-
-### Sorpréndeme
-
-No aleatorio puro.
-
-Ranking diverso:
-- temporalmente útil;
-- dato verificado;
-- cercanía si hay GPS;
-- diversidad de lugar/estilo;
-- precio conocido;
-- evitar 5 resultados del mismo venue.
-
-## Resultado del asistente: evitar el problema "Netflix"
-
-Después de completar al menos una intención o restricción fuerte, NO mostrar primero 40 cards iguales.
-
-Mostrar:
-
-### "Te recomendamos"
-
-Entre 3 y 6 opciones.
-
-Cada opción debe explicar por qué está ahí con señales reales, por ejemplo:
-
-- A 1,2 km
-- Empieza a las 23:00
-- $5.000
-- En Quilpué
-- Entrada gratis
-- Ya empezó
-- Fuente oficial
-
-No inventar:
-- popularidad;
-- "ideal para una cita";
-- ambiente;
-- nivel de gente;
-- seguridad;
-- "el mejor".
-
-Luego:
-
-**Ver todas las 14 opciones**
-
-que abre la lista completa con los mismos filtros.
-
-Si no hay suficientes eventos:
-- completar con Lugares compatibles claramente separados;
-- o ampliar temporal/geográficamente con consentimiento visible.
-
-Nunca mezclar silenciosamente otra comuna.
-
-## Ranking V1
-
-Crear ranking determinista y testeable.
-
-Prioridades sugeridas:
-
-1. compatibilidad exacta con intención;
-2. estado temporal:
-   - próximo;
-   - iniciado;
-   - sin hora;
-   - finalizado explícito fuera;
-3. distancia, si GPS útil;
-4. misma comuna/zona;
-5. calidad/verificación de fuente;
-6. precio conocido;
-7. diversidad por venue.
-
-No rankear por:
-- clicks;
-- likes;
-- supuesta popularidad;
-- engagement no disponible.
-
-## Precio: hacerlo mucho más visible
-
-Feedback de usuario: el precio existe pero "sale muy piola abajo".
-
-En `EventCard`, el precio está actualmente en el bloque inferior.
-
-Cambiar jerarquía visual sin perder el orden actual de lectura.
-
-Debe poder escanearse junto con:
-- hora;
-- lugar;
-- distancia si aplica.
-
-Recomendación:
-- badge/chip de precio cerca del encabezado de metadata;
-- mantener texto completo de condición en card/ficha;
-- "Gratis" sólo si realmente es gratuito;
-- agotado no debe parecer precio comprable.
+1. cerrar completamente el wizard;
+2. marcarlo como visto/completado en la sesión;
+3. ir a la home normal;
+4. aplicar filtros resultantes;
+5. scroll a cartelera/recomendaciones;
+6. URL final reproducible.
 
 Ejemplos:
-- **$5.000**
-- **Gratis**
-- **Desde $8.000** (sólo si ese tier está comprable)
-- **Precio por confirmar**
 
-No exagerar visualmente precios desconocidos.
+`/?plan=bailar&fecha=hoy&ciudad=Quilpué`
 
-## Buscador
+`/?plan=tomar-algo&fecha=finde&cerca=1`
 
-Mantener búsqueda libre.
+La home que aparece después es la UI normal, no una home con el wizard todavía visible.
 
-Mejorar el placeholder para reflejar intención además de entidades:
+## Saltar
 
-"¿Qué quieres hacer? Ej: bailar, rock, karaoke, Cerro Alegre…"
+En TODOS los pasos:
 
-Pero:
-- el wizard no debe depender del buscador;
-- palabras como "bailar" deben mapear a la capa de intenciones, no sólo a coincidencia textual si se puede detectar con seguridad.
+**Ver todos / Saltar**
 
-## Dos modos de uso que deben convivir
+Debe:
+- cerrar bienvenida;
+- marcarla como vista en la sesión;
+- entrar a home limpia;
+- no aplicar filtros inventados.
 
-### Decidir por mí
-Wizard rápido + shortlist.
+Escape, gesto atrás y accesibilidad deben tener comportamiento claro.
 
-### Quiero explorar
-Cartelera completa + filtros + mapa + Lugares.
+## Back / navegación
 
-No esconder una detrás de la otra.
+No crear tres entradas de history por las tres preguntas.
 
-## Defectos MEDIUM pendientes del QA del 22-oct
+Los pasos son estado UI local.
 
-Corregir junto al siguiente PR visual si no se corrigieron antes:
+Al finalizar:
+- escribir una sola URL final;
+- navegar al estado filtrado.
 
-1. chips de comuna:
-   - separar visualmente nombre y badge numérico;
-   - evitar "Valpo2", "Viña1", "Quilpué1".
+Si el usuario pulsa Back desde la home filtrada, no debe recorrer artificialmente tres pantallas del wizard.
 
-2. Filtros colapsados:
-   - si existen filtros secundarios activos, mostrar cantidad:
-     - `Filtros (2)`
-   - no sólo "Filtros · activos".
+## Qué conservar de #26–#28
 
-Contar únicamente filtros secundarios realmente activos.
+### Conservar completamente
 
-## Radar
+- intenciones;
+- comedia;
+- ranking/recomendar;
+- semántica de precios;
+- badge de precio;
+- `Filtros (N)`;
+- badge comuna con separación;
+- búsqueda/intention suggestion cuando sea útil;
+- tests semánticos;
+- overflow fixes;
+- URL final de filtros;
+- GPS y Radar anteriores.
 
-No renombrar todavía "Radar".
+### Mover fuera de la home
 
-Razón:
-- ya tiene subtítulo explícito "Carretes cerca de ti.";
-- QA externo determinó que se entiende;
-- cambiar la navegación otra vez crea churn innecesario.
+- bloque `¿Qué quieres hacer?`;
+- bloque `¿Cuándo?`;
+- bloque `¿Dónde?`;
+- shortlist `Te recomendamos` generada automáticamente por tener el asistente visible.
 
-Reevaluar sólo si pruebas físicas muestran confusión persistente.
+La shortlist puede aparecer DESPUÉS de completar el wizard como sección inicial de resultados, pero sólo como consecuencia del flujo de bienvenida.
 
-## Prueba física obligatoria
+Si el usuario entra normalmente a la home después de haber omitido/completado el wizard, la página no debe volver a parecer el screenshot rechazado por Carlos.
 
-Toda lógica GPS anterior se probó con simulación.
+## Home normal después del wizard
 
-Antes de declarar completamente cerrado:
+Debe parecer esencialmente a la versión aprobada tras #23/#24:
 
-Android real:
-- Wi-Fi
-- datos móviles
-- permiso prompt/granted/denied
-- interior/exterior si es posible
-- fix inicial grueso → precisión mejorada
-- recentrar
+- buscador;
+- selección territorial;
+- fecha;
+- Lista | Mapa;
+- CTA mapa/cerca;
+- filtros;
+- Carretes;
+- Lugares.
 
-iPhone real si está disponible:
-mismos casos.
+Mantener mejoras válidas:
+- precio más visible;
+- `Filtros (N)`;
+- badges separados;
+- Radar corregido;
+- home reset;
+- territorios;
+- madrugada.
 
-Registrar:
-- navegador;
-- precisión obtenida;
-- tiempo hasta primer fix;
-- tiempo hasta fix útil;
-- territorio mostrado;
-- resultados más cercanos.
+## Shortlist
 
-## Métricas de producto sin invadir privacidad
+La infraestructura de shortlist se conserva.
 
-No registrar coordenadas.
+Después de completar el wizard:
+- puede mostrarse `Te recomendamos`;
+- 3–6 resultados;
+- luego `Ver todas las N opciones`.
 
-Sí puede registrarse de manera agregada y no identificante:
+Si el usuario saltó el wizard:
+- no forzar shortlist personalizada;
+- mostrar cartelera normal.
 
+Razones permitidas:
+- distancia;
+- hora;
+- precio;
+- comuna/zona;
+- gratis;
+- ya empezó;
+- fuente oficial.
+
+No inventar popularidad/ambiente/seguridad.
+
+## Precio
+
+Conservar #26/#27:
+
+- precio visible en card;
+- `Gratis`;
+- `Gratis con condiciones`;
+- `Desde $X` sólo si comprable;
+- `Agotado`;
+- `Precio por confirmar`.
+
+No revertir.
+
+## Métricas
+
+Conservar migración:
+`20261023090000_metrics_asistente.sql`
+
+Work/Supabase debe aplicarla cuando corresponda.
+
+Métricas útiles:
 - wizard_started
 - wizard_completed
 - wizard_skipped
 - intent_selected
+- location_mode
 - date_selected
-- location_mode = manual | gps | all_region
-- shortlist_shown
-- shortlist_opened
-- view_all_clicked
-- map_opened
+- view_all
+- map_open
 
-NO enviar lat/lng.
+No coordenadas.
 
-Objetivo de producto:
-medir si el asistente reduce fricción.
+## QA obligatorio
 
-## Criterios de aceptación V1
+### Welcome
 
-PASS si:
+360 / 375 / 390 / 430 / desktop.
 
-- se puede llegar a una shortlist en <=3 decisiones;
-- "Ver todo" siempre existe;
-- cada intención visible tiene resultados coherentes o se oculta;
-- no hay categoría basada en datos insuficientes;
-- comuna manual nunca mezcla otras comunas;
-- GPS sigue client-only;
-- shortlist explica razones verificables;
-- precio es visible al escanear;
-- URL reproduce la selección;
-- back/forward funciona;
-- mobile 360/375/390/430 sin overflow;
-- accesibilidad básica PASS;
-- tests existentes no bajan;
-- CI/Vercel verdes.
+Verificar:
+- sólo una pregunta a la vez;
+- no se ve home detrás/abajo;
+- no overflow;
+- opciones completas;
+- foco de teclado;
+- lectura accesible;
+- escape/saltar;
+- reduced motion.
 
-## División de trabajo
+### Flujo
+
+- Qué → Dónde → Cuándo → home filtrada.
+- Saltar en paso 1.
+- Saltar en paso 2.
+- Saltar en paso 3.
+- Cerca de mí con prompt/granted/denied.
+- comuna manual.
+- reload de URL final.
+- back/forward.
+- home logo.
+- reabrir con `Ayúdame a elegir`.
+
+### No repetición
+
+Después de completar:
+- navegar a Lugares;
+- Radar;
+- evento;
+- volver home;
+
+el wizard no reaparece en la misma sesión sin acción explícita.
+
+Nueva sesión limpia:
+- bienvenida vuelve a estar disponible.
+
+## PR recomendado
+
+Crear PR nuevo desde el main actual `edd1268`.
+
+NO resetear main a `be0d050`.
+NO revertir #27/#28.
+NO cherry-pick parcial desde una rama vieja.
+
+El PR debe ser principalmente:
+- extracción/recomposición del UI del asistente;
+- estado de bienvenida;
+- session gating;
+- transición a filtros normales.
+
+Evitar tocar ingestión/DB.
+
+## División
 
 ### Claude
-Ingeniería:
-- intenciones;
-- wizard;
-- ranking/shortlist;
-- URL/state;
-- precio visual;
-- fixes MEDIUM;
-- tests;
-- PR/CI/deploy.
+Implementación del wizard de bienvenida y regresión.
 
 ### Antigravity
-QA adversarial y taxonomía:
-- validar que cada intención devuelve resultados semánticamente correctos;
-- detectar falsos positivos/negativos;
-- probar first-10-seconds;
-- comparar shortlist vs "Ver todo";
-- QA físico si el entorno lo permite, sin mutar producción.
+QA adversarial de:
+- first impression;
+- claridad de cada paso;
+- abandono/saltar;
+- transición a home;
+- semántica de resultados.
 
 ### Gemini
-Benchmark/product language:
-- estudiar patrones de asistentes rápidos / decision helpers de nightlife/events;
-- proponer microcopy;
-- no modificar código;
-- no inventar features que los datos no puedan sostener.
+Sólo microcopy/benchmark:
+- comparar `¿Qué quieres hacer?` vs alternativas;
+- no cambiar arquitectura.
 
-### Work / Supabase
-Sólo cuando haga falta schema/data:
-- clasificación comedia;
-- tags de lugares;
-- migraciones;
-- QA DB/snapshot.
+### Work/Supabase
+Aplicar migración de métricas; no participa en el layout.
 
-## No hacer ahora
+## Criterio PASS
 
-- vertical familiar/niños dentro de este producto;
-- IA generativa como requisito para recomendar;
-- perfiles psicológicos/personales;
-- recomendación por edad inferida;
-- feed infinito;
-- puntuación de "popularidad" inventada;
-- reviews sin fuente;
-- tracking continuo GPS;
-- personalización que requiera cuenta.
-
-## Norte de producto
-
-Dónde Salgo debe responder:
-
-**"Dime qué quieres hacer, cuándo y dónde; yo te reduzco el ruido y te muestro pocas opciones útiles."**
-
-No:
-
-**"Aquí tienes 120 cosas, elige."**
+- la home ya no contiene preguntas duplicadas;
+- wizard es una bienvenida separada;
+- una pregunta por pantalla;
+- final desemboca en home normal filtrada;
+- saltar siempre disponible;
+- no reaparece durante la sesión;
+- se puede reabrir voluntariamente;
+- #26–#28 mantienen sus mejoras válidas;
+- 259 tests existentes no disminuyen;
+- CI verde;
+- Vercel verde;
+- móvil físico pendiente se mantiene explícito.
