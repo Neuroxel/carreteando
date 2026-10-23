@@ -2108,3 +2108,35 @@ html.bv-revela main > section { animation:bv-revela .5s ease-out both; }
 @keyframes bv-fundido { from { opacity:0; } to { opacity:1; } }
 @keyframes bv-fundido-sale { from { opacity:1; } to { opacity:0; } }
 .ayuda-elegir { background:transparent; font:inherit; cursor:pointer; }
+
+
+/* ─── Bienvenida 3D (CSS nativo, sin librerías): carta con volumen que gira ───
+   Frente: ¿Qué quieres hacer?  Dorso: ¿Dónde?  Final: la cámara se aleja.
+   Solo transform y opacity; GPU en cualquier teléfono. */
+.bv-escena { --incl-x:0deg; --incl-y:0deg; perspective:1400px; perspective-origin:50% 30%; }
+.bv-carta { display:grid; transform-style:preserve-3d; transform:rotateX(var(--incl-x)) rotateY(var(--incl-y)); transition:transform .25s ease-out; }
+.bv-carta.bv-girada { transform:rotateX(var(--incl-x)) rotateY(calc(180deg + var(--incl-y))); }
+.bv-fase-girando .bv-carta { transition:transform .72s cubic-bezier(.65,0,.25,1); }
+.bv-cara { grid-area:1 / 1; backface-visibility:hidden; -webkit-backface-visibility:hidden; transform:translateZ(1px); }
+.bv-dorso { transform:rotateY(180deg) translateZ(1px); }
+/* Mientras gira, la carta se agranda apenas (respira hacia la cámara). */
+.bv-fase-girando .bv-escena { animation:bv-respira .72s ease-in-out both; }
+@keyframes bv-respira { 0%,100% { transform:none; } 50% { transform:translateZ(-160px) scale(.94); } }
+/* Final cinematográfico: la carta y el ticket se alejan y la portada aparece. */
+.bv-fase-saliendo { animation:bv-fondo-sale .68s ease-in both; }
+.bv-fase-saliendo .bv-escena { animation:bv-alejar .68s cubic-bezier(.55,0,.2,1) both; }
+@keyframes bv-alejar { from { opacity:1; transform:none; } to { opacity:0; transform:translateZ(-1600px) rotateX(28deg) rotateZ(-6deg); } }
+@keyframes bv-fondo-sale { 0%,40% { opacity:1; } 100% { opacity:0; } }
+.bv-fase-saliendo .bv-ticket span { animation:bv-alejar .68s cubic-bezier(.55,0,.2,1) both; }
+html.bv-revela main > section { animation:bv-acerca .68s cubic-bezier(.2,.7,.2,1) both; }
+@keyframes bv-acerca { from { opacity:0; transform:scale(1.06); } to { opacity:1; transform:none; } }
+/* Afiches chicos: el título no se corta a mitad de palabra. */
+.bv-muro-chico .bv-afiche strong { overflow-wrap:normal; word-break:normal; hyphens:manual; font-size:15px; }
+@media (prefers-reduced-motion: reduce) {
+  .bv-carta, .bv-carta.bv-girada, .bv-dorso, .bv-cara { transform:none !important; transition:none; }
+  .bv-cara { backface-visibility:visible; transition:opacity .12s linear; }
+  .bv-carta:not(.bv-girada) .bv-dorso, .bv-carta.bv-girada .bv-frente { opacity:0; visibility:hidden; }
+  .bv-fase-girando .bv-escena, .bv-fase-saliendo .bv-escena, .bv-fase-saliendo .bv-ticket span { animation:none; }
+  .bv-fase-saliendo { animation:bv-fundido-sale .15s linear both; }
+  html.bv-revela main > section { animation:bv-fundido .15s linear both; }
+}

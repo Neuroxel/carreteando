@@ -8,14 +8,14 @@ import Pictograma from './Pictograma';
 import PosterDecor from './poster/PosterDecor';
 
 /** Tiempos (ms). Con movimiento reducido todo pasa a fundidos cortos. */
-export const TIEMPOS = { golpe: 170, salida: 230, signo: 380, ticket: 480, revelar: 520 } as const;
-export const TIEMPOS_REDUCIDOS = { golpe: 0, salida: 0, signo: 120, ticket: 150, revelar: 140 } as const;
+export const TIEMPOS = { golpe: 170, giro: 720, ticket: 420, revelar: 680 } as const;
+export const TIEMPOS_REDUCIDOS = { golpe: 0, giro: 120, ticket: 150, revelar: 150 } as const;
 const PRINCIPALES = ['Valparaíso', 'Viña del Mar', 'Quilpué', 'Villa Alemana', 'Concón'];
 const DESTACADAS: SlugIntencion[] = ['bailar', 'tomar-algo', 'musica-en-vivo', 'comedia', 'karaoke'];
 const GIROS = [-1.6, 1.3, -0.7, 1.5, -1.2, 0.9, -0.8, 1.1, -1.4, 0.6];
 const CON_FIX: EstadoGps[] = ['precisa', 'aproximada', 'muy_aproximada'];
 const SIN_FIX: EstadoGps[] = ['negado', 'no_disponible', 'timeout', 'sin_soporte'];
-type Fase = 'normal' | 'eligiendo' | 'signo' | 'buscando' | 'ticket' | 'saliendo';
+type Fase = 'normal' | 'eligiendo' | 'girando' | 'buscando' | 'ticket' | 'saliendo';
 
 /**
  * Bienvenida "Afiche Vivo": afiches pegados en un muro nocturno, una pregunta
@@ -105,15 +105,36 @@ export default function Bienvenida({
     dispatch({ tipo: 'tocar', plan });
     setElegida(plan);
     setFase('eligiendo');
-    const { golpe, salida, signo } = t();
-    luego(golpe + salida, () => setFase('signo'));
-    // A mitad del "?" cambia la pregunta: aparece desde detrás del signo.
-    luego(golpe + salida + signo / 2, () => dispatch({ tipo: 'elegir', plan }));
-    luego(golpe + salida + signo, () => {
+    const { golpe, giro } = t();
+    // Tras el golpe, la carta gira en 3D: al otro lado está ¿Dónde?.
+    luego(golpe, () => {
+      dispatch({ tipo: 'elegir', plan });
+      setFase('girando');
+    });
+    luego(golpe + giro, () => {
       setFase('normal');
       setElegida(null);
       ocupado.current = false;
     });
+  };
+  const volver = () => {
+    if (ocupado.current) return;
+    ocupado.current = true;
+    dispatch({ tipo: 'volver' });
+    setFase('girando');
+    luego(t().giro, () => {
+      setFase('normal');
+      ocupado.current = false;
+    });
+  };
+  // Volumen: la carta se inclina levemente hacia el dedo o el puntero (nunca en movimiento reducido).
+  const escena = useRef<HTMLDivElement>(null);
+  const inclinar = (e: { clientX: number; clientY: number }) => {
+    const el = escena.current;
+    if (!el || reducido.current) return;
+    const r = el.getBoundingClientRect();
+    el.style.setProperty('--incl-x', `${(((e.clientY - r.top) / r.height - 0.5) * -6).toFixed(2)}deg`);
+    el.style.setProperty('--incl-y', `${(((e.clientX - r.left) / r.width - 0.5) * 8).toFixed(2)}deg`);
   };
   const etiquetaFecha = (f: Fecha) => (f === 'hoy' ? 'Esta noche' : f === 'manana' ? etiquetaManana : f === 'finde' ? 'Este finde' : 'Más adelante');
   const terminar = (d: Donde) => {
@@ -152,8 +173,11 @@ export default function Bienvenida({
   const chicas = visibles.filter((i) => !DESTACADAS.includes(i.slug));
   const corredor = PRINCIPALES.filter((c) => comunas.includes(c));
   const resto = comunas.filter((c) => !PRINCIPALES.includes(c));
+  // Sin huecos en el muro: si queda un afiche solo en su fila, ocupa el ancho completo.
+  const celdas = grandes.reduce((n, i) => n + (i.slug === 'musica-en-vivo' ? 2 : 1), 0);
+  const ultimo = celdas % 2 === 1 ? grandes[grandes.length - 1]?.slug : null;
   const claseAfiche = (slug: string) =>
-    `bv-afiche ${elegida === slug ? 'bv-elegido' : elegida ? 'bv-se-va' : ''} ${slug === 'musica-en-vivo' ? 'bv-ancho' : ''}`;
+    `bv-afiche ${elegida === slug ? 'bv-elegido' : elegida ? 'bv-se-va' : ''} ${slug === 'musica-en-vivo' || slug === ultimo ? 'bv-ancho' : ''}`;
 
   return (
     <div className={`bienvenida bv-fase-${fase}`} role="dialog" aria-modal="true" aria-labelledby="bienvenida-pregunta" aria-busy={fase !== 'normal'}>
@@ -165,9 +189,11 @@ export default function Bienvenida({
       </svg>
       <div className="bienvenida-marco">
         <LogoApilado className="bienvenida-logo" decorativo />
-        {s.paso === 'que' ? (
-          <div className="bienvenida-paso" key="que">
-            <h1 id="bienvenida-pregunta" ref={titulo} tabIndex={-1}>
+        {/* Menú con volumen: una carta 3D. Al frente ¿Qué quieres hacer?, al dorso ¿Dónde?. */}
+        <div className="bv-escena" ref={escena} onPointerMove={inclinar}>
+          <div className={`bv-carta ${s.paso === 'donde' ? 'bv-girada' : ''}`}>
+          <div className="bienvenida-paso bv-cara bv-frente" aria-hidden={s.paso !== 'que'} inert={s.paso !== 'que' ? true : undefined}>
+            <h1 id={s.paso === 'que' ? 'bienvenida-pregunta' : undefined} ref={s.paso === 'que' ? titulo : undefined} tabIndex={-1}>
               ¿Qué quieres hacer?
             </h1>
             <p className="bv-sub">Dos toques y te mostramos dónde ir.</p>
@@ -205,13 +231,12 @@ export default function Bienvenida({
               </div>
             )}
           </div>
-        ) : (
-          <div className="bienvenida-paso" key="donde">
-            <button type="button" className="bv-memoria" onClick={() => !ocupado.current && dispatch({ tipo: 'volver' })} aria-label={`${intencionPorSlug(s.plan)?.label}: cambiar`}>
+          <div className="bienvenida-paso bv-cara bv-dorso" aria-hidden={s.paso !== 'donde'} inert={s.paso !== 'donde' ? true : undefined}>
+            <button type="button" className="bv-memoria" onClick={volver} aria-label={`${intencionPorSlug(s.plan)?.label}: cambiar`}>
               {intencionPorSlug(s.plan)?.label} <span aria-hidden="true">✓</span>
               <span className="bv-memoria-cambiar">cambiar</span>
             </button>
-            <h1 id="bienvenida-pregunta" ref={titulo} tabIndex={-1}>
+            <h1 id={s.paso === 'donde' ? 'bienvenida-pregunta' : undefined} ref={s.paso === 'donde' ? titulo : undefined} tabIndex={-1}>
               ¿Dónde?
             </h1>
             <div className="bv-muro">
@@ -264,7 +289,8 @@ export default function Bienvenida({
               )}
             </div>
           </div>
-        )}
+          </div>
+        </div>
         <button type="button" className="bienvenida-saltar" onClick={saltar}>
           Ver todo
         </button>

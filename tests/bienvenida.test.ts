@@ -110,7 +110,7 @@ test('doble toque: una elección se ejecuta una sola vez; volver no corre mientr
   const b = src('components/Bienvenida.tsx');
   assert.match(b, /if \(ocupado\.current\) return;\s*ocupado\.current = true;/);
   // Sin animación igual funciona: los tiempos reducidos llegan al mismo final.
-  assert.match(b, /TIEMPOS_REDUCIDOS = \{ golpe: 0, salida: 0/);
+  assert.match(b, /TIEMPOS_REDUCIDOS = \{ golpe: 0, giro: 120/);
 });
 
 test('sin destello: el telón se pone solo cuando la bienvenida va a abrir', async () => {
@@ -150,4 +150,23 @@ test('afiches, no pills: el muro usa tarjetas y el "?" de la marca hace la trans
 test('build: una caída momentánea de la base no tumba el deploy por el sitemap', () => {
   const s = src('app/sitemap.ts');
   assert.match(s, /if \(process\.env\.NEXT_PHASE === 'phase-production-build'\) return fijas;\s*throw new Error\('SITEMAP_BACKEND_UNAVAILABLE'\)/);
+});
+
+test('3D: carta de dos caras (¿Qué? / ¿Dónde?), cara oculta inerte, giro y alejamiento sin librerías', () => {
+  const b = src('components/Bienvenida.tsx');
+  assert.match(b, /bv-cara bv-frente" aria-hidden=\{s\.paso !== 'que'\} inert=/);
+  assert.match(b, /bv-cara bv-dorso" aria-hidden=\{s\.paso !== 'donde'\} inert=/);
+  assert.match(b, /className=\{`bv-carta \$\{s\.paso === 'donde' \? 'bv-girada' : ''\}`\}/);
+  assert.doesNotMatch(src('package.json'), /"three"|framer-motion/);
+  const css = src('app/globals.css');
+  const bloque = css.slice(css.indexOf('Bienvenida 3D'));
+  assert.match(bloque, /\.bv-escena \{[^}]*perspective:1400px/);
+  assert.match(bloque, /\.bv-carta \{[^}]*transform-style:preserve-3d/);
+  assert.match(bloque, /\.bv-cara \{[^}]*backface-visibility:hidden/);
+  assert.match(bloque, /\.bv-dorso \{ transform:rotateY\(180deg\)/);
+  for (const kf of bloque.match(/@keyframes [\w-]+ \{[\s\S]*?\}\s*\}/g) || []) assert.doesNotMatch(kf, /width|height|top:|left:|blur|filter/);
+  // Movimiento reducido: sin giro ni alejamiento; caras alternadas por opacidad.
+  const reducido = bloque.slice(bloque.indexOf('@media (prefers-reduced-motion: reduce)'));
+  assert.match(reducido, /\.bv-carta, \.bv-carta\.bv-girada, \.bv-dorso, \.bv-cara \{ transform:none !important/);
+  assert.match(reducido, /\.bv-carta:not\(\.bv-girada\) \.bv-dorso, \.bv-carta\.bv-girada \.bv-frente \{ opacity:0; visibility:hidden; \}/);
 });
