@@ -25,7 +25,9 @@ export type Accion =
   | { tipo: 'desbloquear' }
   | { tipo: 'cambiarCuando' }
   | { tipo: 'cuando'; fecha: Fecha }
-  | { tipo: 'volver' };
+  | { tipo: 'volver' }
+  /** Empezar por el lugar: se salta "¿Qué?" sin elegir intención (queda opcional). */
+  | { tipo: 'irDonde' };
 export function avanzar(s: EstadoBienvenida, a: Accion): EstadoBienvenida {
   switch (a.tipo) {
     case 'tocar':
@@ -41,6 +43,8 @@ export function avanzar(s: EstadoBienvenida, a: Accion): EstadoBienvenida {
       return { ...s, cambiandoCuando: !s.cambiandoCuando };
     case 'cuando':
       return { ...s, fecha: a.fecha, cambiandoCuando: false };
+    case 'irDonde':
+      return s.bloqueado || s.paso !== 'que' ? s : { ...s, plan: null, paso: 'donde', cambiandoCuando: false };
     case 'volver':
       return s.bloqueado ? s : { ...s, paso: 'que', cambiandoCuando: false };
   }

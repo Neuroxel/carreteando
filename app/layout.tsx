@@ -5,6 +5,7 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import GradientePuntero from '../components/GradientePuntero';
 import BottomNav from '../components/BottomNav';
 import { SITE_URL, SITE_DESCRIPTION } from '../lib/site';
 import { SCRIPT_SIN_DESTELLO } from '../lib/bienvenida';
@@ -39,6 +40,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </a>
         <Navbar />
         <main id="contenido">{children}</main>
+        <GradientePuntero />
         <Footer />
         <Suspense fallback={null}>
           <BottomNav />
