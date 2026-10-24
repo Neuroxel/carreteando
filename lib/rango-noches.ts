@@ -3,8 +3,9 @@ import { addDays } from './event-extraction';
 const FMT = new Intl.DateTimeFormat('es-CL', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
 const corta = (d: string) => FMT.format(new Date(`${d}T12:00:00Z`)).replace(/\.$/, '').replace('.', '');
 /** "vie 24 oct" o "vie 24 oct → dom 26 oct": siempre noches (hasta las 05:00). */
+export const mayuscula = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
 export function etiquetaRango(desde: string, hasta: string) {
-  return desde === hasta ? corta(desde) : `${corta(desde)} → ${corta(hasta)}`;
+  return mayuscula(desde === hasta ? corta(desde) : `${corta(desde)} → ${corta(hasta)}`);
 }
 /** Semanas de lunes a domingo, desde la semana de `today`. */
 export function semanasDesde(today: string, cuantas: number): string[][] {

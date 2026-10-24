@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { etiquetaRango, MESES_ADELANTE, semanasDelMes, sumarMeses } from '../lib/rango-noches';
+import { etiquetaRango, mayuscula, MESES_ADELANTE, semanasDelMes, sumarMeses } from '../lib/rango-noches';
 
 /**
  * Calendario táctil de noches: un toque elige un día, un segundo toque cierra el
@@ -31,7 +31,7 @@ export default function CalendarioNoches({
   // Abre en el mes del rango elegido (si hay), si no en el de hoy.
   const [mes, setMes] = useState(() => (desde && desde.slice(0, 7) > mesHoy ? desde.slice(0, 7) : mesHoy));
   const semanas = semanasDelMes(mes);
-  const nombreMes = new Intl.DateTimeFormat('es-CL', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${mes}-15T12:00:00Z`));
+  const nombreMes = mayuscula(new Intl.DateTimeFormat('es-CL', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${mes}-15T12:00:00Z`)));
   const tocar = (dia: string) => {
     if (!esperandoFin || !a) {
       setA(dia);
