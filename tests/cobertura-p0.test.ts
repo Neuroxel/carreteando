@@ -16,7 +16,9 @@ import type { Lugar } from '../lib/venues';
 const fx = (n: string) => readFileSync(new URL(`./fixtures/${n}`, import.meta.url), 'utf8');
 const chile = (s: string) => new Date(`${s}-03:00`);
 
-test('PortalTickets 23-oct: los 6 eventos del viernes salen con fecha, hora, lugar y confianza alta', async () => {
+test('PortalTickets 23-oct: los 6 eventos del viernes salen con fecha, hora, lugar y confianza alta', async (t) => {
+  // Reloj fijo: el adaptador descarta lo pasado y el fixture es del 23-oct.
+  t.mock.timers.enable({ apis: ['Date'], now: Date.parse('2026-10-23T15:00:00Z') });
   const html = fx('portaldisc-region-R05-2026-10-23.html');
   const r = await portaldiscRegion.run(sourceById('portaldisc-region')!, async (u) => (u.includes('/tickets/') ? { status: 200, body: html } : { status: 404, body: '' }), {});
   const esperados: [RegExp, string, string][] = [

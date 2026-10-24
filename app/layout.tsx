@@ -1,4 +1,5 @@
 import { Suspense } from 'react';
+import { Analytics } from '@vercel/analytics/next';
 import { preload } from 'react-dom';
 import Metrics from '../components/Metrics';
 import type { Metadata, Viewport } from 'next';
@@ -46,6 +47,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Suspense fallback={null}>
           <Metrics />
         </Suspense>
+        <Analytics />
       </body>
     </html>
   );
