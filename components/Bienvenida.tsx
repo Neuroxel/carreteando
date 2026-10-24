@@ -14,7 +14,7 @@ import {
   type Nivel,
 } from '../lib/capacidad';
 import PosterDecor from './poster/PosterDecor';
-import { movimientoPermitido } from './poster/sensor';
+import { EVENTO_MOVIMIENTO, movimientoPermitido } from './poster/sensor';
 
 /** Tiempos (ms). Con movimiento reducido todo pasa a fundidos cortos. */
 export const TIEMPOS = { golpe: 170, giro: 720, ticket: 420, revelar: 680 } as const;
@@ -113,7 +113,20 @@ export default function Bienvenida({
       escena.current?.style.setProperty('--incl-x', `${((0.5 - gy) * 8).toFixed(2)}deg`);
     };
     window.addEventListener('deviceorientation', orientar);
-    return () => window.removeEventListener('deviceorientation', orientar);
+    // Si la persona apaga el movimiento, la luz y la carta vuelven al reposo.
+    const apagar = () => {
+      if (movimientoPermitido()) return;
+      window.removeEventListener('deviceorientation', orientar);
+      raiz.current?.style.removeProperty('--luz-x');
+      raiz.current?.style.removeProperty('--luz-y');
+      escena.current?.style.setProperty('--incl-x', '0deg');
+      escena.current?.style.setProperty('--incl-y', '0deg');
+    };
+    window.addEventListener(EVENTO_MOVIMIENTO, apagar);
+    return () => {
+      window.removeEventListener('deviceorientation', orientar);
+      window.removeEventListener(EVENTO_MOVIMIENTO, apagar);
+    };
   }, [nivel]);
   // Cada afiche se inclina hacia el dedo/puntero y deja ver su canto (solo nivel alto).
   const inclinarAfiche = (e: { target: EventTarget | null; clientX: number; clientY: number }) => {

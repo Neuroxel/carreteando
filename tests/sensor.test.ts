@@ -78,3 +78,22 @@ test('la simulación nunca se informa como sensor real', async () => {
   assert.equal(s.lectura().fuente, 'DEBUG_SIMULATION');
   assert.equal(s.esReal(s.lectura().fuente), false);
 });
+
+test('apagar el movimiento quita las escuchas, recentra la inclinación y avisa (nada queda congelado)', async () => {
+  const s = await import('../components/poster/sensor');
+  const vistas: { x: number; y: number }[] = [];
+  const soltar = s.suscribir((l) => vistas.push({ ...l.tilt }));
+  const avisos: string[] = [];
+  (globalThis as Record<string, unknown>).Event = class { constructor(public type: string) {} };
+  (g.window as Record<string, unknown>).dispatchEvent = (e: { type: string }) => avisos.push(e.type);
+  (g.window as Record<string, unknown>).removeEventListener = (t: string, f: Fn) => (oyentes[t] = (oyentes[t] ?? []).filter((x) => x !== f));
+  s.apagarMovimiento();
+  soltar();
+  assert.equal(s.movimientoPermitido(), false);
+  assert.equal(oyentes.devicemotion?.length ?? 0, 0);
+  assert.equal(oyentes.deviceorientation?.length ?? 0, 0);
+  assert.deepEqual(s.lectura().tilt, { x: 0, y: 0 });
+  assert.equal(s.lectura().fuente, 'NONE');
+  assert.deepEqual(vistas.at(-1), { x: 0, y: 0 });
+  assert.deepEqual(avisos, [s.EVENTO_MOVIMIENTO]);
+});

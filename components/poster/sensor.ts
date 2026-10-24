@@ -191,12 +191,27 @@ export function apagarMovimiento() {
   } catch {
     /* sin almacenamiento */
   }
-  if (typeof window !== 'undefined' && escuchando) {
+  if (typeof window === 'undefined') return;
+  if (escuchando) {
     window.removeEventListener('deviceorientation', alOrientar);
     window.removeEventListener('devicemotion', alMover);
     escuchando = false;
   }
+  // Volver al reposo: sin timer pendiente, inclinación en cero y quien escucha se recentra.
+  window.clearTimeout(temporizador);
+  temporizador = 0;
+  cero = null;
+  acumulado = null;
+  gravedad = null;
+  marcas = [];
+  L.tilt = { x: 0, y: 0 };
+  L.fuente = 'NONE';
+  L.estado = 'apagado';
+  emitir();
+  window.dispatchEvent(new Event(EVENTO_MOVIMIENTO));
 }
+/** Avisa a la luz de la bienvenida y a las capas que el movimiento cambió. */
+export const EVENTO_MOVIMIENTO = 'dondesalgo:movimiento';
 export function iniciarSensores() {
   if (typeof window === 'undefined' || !movimientoPermitido()) return;
   if (!escuchando) {
