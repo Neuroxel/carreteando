@@ -204,6 +204,8 @@ export function filterEvents(
         !dentroDelPresupuesto(e, filters.precio)
       )
         return false;
+      // Rango de noches: manda sobre las pestañas de fecha.
+      if (filters.desde && filters.hasta) return e.fecha >= filters.desde && e.fecha <= filters.hasta;
       if (filters.fecha === 'hoy' && e.fecha !== today) return false;
       // Carlos: primero hoy, y en una segunda pestaña mañana.
       if (filters.fecha === 'manana' && e.fecha !== addDays(today, 1)) return false;

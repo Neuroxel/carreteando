@@ -14,6 +14,8 @@ g.window = {
   innerHeight: 800,
 };
 g.screen = { orientation: { angle: 0 } };
+const guardado: Record<string, string> = {};
+g.localStorage = { getItem: (k: string) => guardado[k] ?? null, setItem: (k: string, v: string) => (guardado[k] = v), removeItem: (k: string) => delete guardado[k] };
 Object.defineProperty(globalThis, 'performance', { value: { now: () => reloj }, configurable: true });
 const disparar = (t: string, e: unknown) => {
   reloj += 16;
@@ -25,6 +27,16 @@ const gravedad = (betaGrados: number, gammaGrados: number, signo = 1) => {
   // Convención W3C: de pie y ≈ +9,8; inclinar a la derecha (gamma +) da x negativo.
   return { accelerationIncludingGravity: { x: -9.81 * Math.sin(gm) * signo, y: 9.81 * Math.sin(b) * Math.cos(gm) * signo, z: 9.81 * Math.cos(b) * Math.cos(gm) * signo } };
 };
+
+test('sin un toque explícito no se escucha ningún sensor (opt-in)', async () => {
+  const s = await import('../components/poster/sensor');
+  s.iniciarSensores();
+  assert.equal(oyentes.devicemotion, undefined);
+  assert.equal(oyentes.deviceorientation, undefined);
+  assert.equal(s.movimientoPermitido(), false);
+  // El toque de "Activar movimiento" es el consentimiento.
+  guardado[s.CLAVE_MOVIMIENTO] = '1';
+});
 
 test('Android sin giroscopio: orientación nula, el acelerómetro toma el control y mide la inclinación', async () => {
   const s = await import('../components/poster/sensor');

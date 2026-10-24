@@ -181,3 +181,19 @@ test('toques: la cara oculta de la carta no tapa a la visible; volver a elegir e
 test('giro robusto: fuera de la fase de giro la carta salta a su posición final', () => {
   assert.match(src('app/globals.css'), /\.bv-fase-normal \.bv-carta, \.bv-fase-buscando \.bv-carta, \.bv-fase-ticket \.bv-carta \{ transition:none; \}/);
 });
+
+test('bienvenida: se puede empezar por el lugar; la intención queda opcional y se puede elegir después', async () => {
+  const { avanzar, INICIO, filtrosFinales } = await import('../lib/bienvenida');
+  const donde = avanzar(INICIO, { tipo: 'irDonde' });
+  assert.equal(donde.paso, 'donde');
+  assert.equal(donde.plan, null);
+  const conFecha = avanzar(donde, { tipo: 'cuando', fecha: 'finde' });
+  assert.deepEqual(filtrosFinales(conFecha, { tipo: 'comuna', ciudad: 'Valparaíso' }), { plan: null, fecha: 'finde', ciudad: 'Valparaíso', cerca: false, zona: null });
+  // Volver a "¿Qué?" desde ahí y elegir: conserva la fecha.
+  const que = avanzar(conFecha, { tipo: 'volver' });
+  const elegido = avanzar(que, { tipo: 'elegir', plan: 'bailar' as never });
+  assert.equal(elegido.paso, 'donde');
+  assert.equal(elegido.fecha, 'finde');
+  // Bloqueado (transición en curso): no se salta.
+  assert.equal(avanzar({ ...INICIO, bloqueado: true }, { tipo: 'irDonde' }).paso, 'que');
+});

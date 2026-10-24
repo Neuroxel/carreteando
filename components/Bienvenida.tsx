@@ -14,6 +14,7 @@ import {
   type Nivel,
 } from '../lib/capacidad';
 import PosterDecor from './poster/PosterDecor';
+import { movimientoPermitido } from './poster/sensor';
 
 /** Tiempos (ms). Con movimiento reducido todo pasa a fundidos cortos. */
 export const TIEMPOS = { golpe: 170, giro: 720, ticket: 420, revelar: 680 } as const;
@@ -93,7 +94,7 @@ export default function Bienvenida({
       vivo = false;
     };
   }, []);
-  // Luz que sigue al puntero o, en teléfonos que lo dan sin pedir permiso, al giroscopio.
+  // Luz que sigue al puntero o, si la persona lo activó, al giroscopio.
   const moverLuz = (x: number, y: number) => {
     const el = raiz.current;
     if (!el) return;
@@ -101,7 +102,8 @@ export default function Bienvenida({
     el.style.setProperty('--luz-y', `${(y * 100).toFixed(1)}%`);
   };
   useEffect(() => {
-    if (nivel === 'baja') return;
+    // El giroscopio solo si la persona activó el movimiento con un toque explícito.
+    if (nivel === 'baja' || !movimientoPermitido()) return;
     const orientar = (e: DeviceOrientationEvent) => {
       if (e.beta == null || e.gamma == null) return;
       const gx = Math.max(-30, Math.min(30, e.gamma)) / 60 + 0.5;
@@ -194,6 +196,16 @@ export default function Bienvenida({
     luego(golpe + giro, () => {
       setFase('normal');
       setElegida(null);
+      ocupado.current = false;
+    });
+  };
+  const irDonde = () => {
+    if (ocupado.current) return;
+    ocupado.current = true;
+    dispatch({ tipo: 'irDonde' });
+    setFase('girando');
+    luego(t().giro, () => {
+      setFase('normal');
       ocupado.current = false;
     });
   };
@@ -407,7 +419,12 @@ export default function Bienvenida({
               >
                 ¿Qué quieres hacer?
               </h1>
-              <p className="bv-sub bv-tira">Dos toques y te mostramos dónde ir.</p>
+              <p className="bv-sub bv-tira">
+                Dos toques y te mostramos dónde ir.{' '}
+                <button type="button" className="bienvenida-link bv-primero-donde" onClick={irDonde}>
+                  O elige primero dónde →
+                </button>
+              </p>
               <div className="bv-muro">
                 {grandes.map((i, n) => (
                   <button
@@ -458,10 +475,18 @@ export default function Bienvenida({
                 type="button"
                 className="bv-memoria"
                 onClick={volver}
-                aria-label={`${intencionPorSlug(s.plan)?.label}: cambiar`}
+                aria-label={s.plan ? `${intencionPorSlug(s.plan)?.label}: cambiar` : 'Elegir qué quieres hacer (opcional)'}
               >
-                {intencionPorSlug(s.plan)?.label} <span aria-hidden="true">✓</span>
-                <span className="bv-memoria-cambiar">cambiar</span>
+                {s.plan ? (
+                  <>
+                    {intencionPorSlug(s.plan)?.label} <span aria-hidden="true">✓</span>
+                    <span className="bv-memoria-cambiar">cambiar</span>
+                  </>
+                ) : (
+                  <>
+                    Todo tipo de plan <span className="bv-memoria-cambiar">elegir qué (opcional)</span>
+                  </>
+                )}
               </button>
               <h1
                 id={s.paso === 'donde' ? 'bienvenida-pregunta' : undefined}
