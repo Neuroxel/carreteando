@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { etiquetaRango, semanasDesde } from '../lib/rango-noches';
+import { etiquetaRango, MESES_ADELANTE, semanasDelMes, sumarMeses } from '../lib/rango-noches';
 
 /**
  * Calendario táctil de noches: un toque elige un día, un segundo toque cierra el
@@ -26,7 +26,12 @@ export default function CalendarioNoches({
   const [a, setA] = useState<string | null>(desde);
   const [b, setB] = useState<string | null>(hasta);
   const [esperandoFin, setEsperandoFin] = useState(false);
-  const semanas = semanasDesde(today, 9);
+  const mesHoy = today.slice(0, 7);
+  const mesTope = sumarMeses(mesHoy, MESES_ADELANTE);
+  // Abre en el mes del rango elegido (si hay), si no en el de hoy.
+  const [mes, setMes] = useState(() => (desde && desde.slice(0, 7) > mesHoy ? desde.slice(0, 7) : mesHoy));
+  const semanas = semanasDelMes(mes);
+  const nombreMes = new Intl.DateTimeFormat('es-CL', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${mes}-15T12:00:00Z`));
   const tocar = (dia: string) => {
     if (!esperandoFin || !a) {
       setA(dia);
@@ -40,13 +45,20 @@ export default function CalendarioNoches({
     setEsperandoFin(false);
   };
   const n = a && b ? conteo(a, b) : 0;
-  const mesDe = (d: string) =>
-    new Intl.DateTimeFormat('es-CL', { month: 'long', timeZone: 'UTC' }).format(new Date(`${d}T12:00:00Z`));
   return (
     <div className="cal-noches" role="group" aria-label="Elegir fechas">
       <p className="cal-ayuda" aria-live="polite">
         {!a ? 'Toca una noche. Para un rango, toca después la última.' : `${etiquetaRango(a, b!)}${esperandoFin ? ' · toca otra noche para un rango' : ''}`}
       </p>
+      <div className="cal-mes">
+        <button type="button" onClick={() => setMes(sumarMeses(mes, -1))} disabled={mes <= mesHoy} aria-label="Mes anterior">
+          ‹
+        </button>
+        <strong aria-live="polite">{nombreMes}</strong>
+        <button type="button" onClick={() => setMes(sumarMeses(mes, 1))} disabled={mes >= mesTope} aria-label="Mes siguiente">
+          ›
+        </button>
+      </div>
       <div className="cal-dias" aria-hidden="true">
         {['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((d, i) => (
           <span key={i}>{d}</span>
@@ -58,7 +70,8 @@ export default function CalendarioNoches({
             const pasado = dia < today;
             const enRango = a && b && dia >= a && dia <= b;
             const borde = dia === a || dia === b;
-            const primero = dia.endsWith('-01');
+            const fuera = dia.slice(0, 7) !== mes;
+            if (fuera) return <span key={dia} className="cal-relleno" aria-hidden="true" />;
             return (
               <button
                 type="button"
@@ -69,7 +82,6 @@ export default function CalendarioNoches({
                 aria-pressed={Boolean(enRango)}
                 aria-label={etiquetaRango(dia, dia)}
               >
-                {primero && <small>{mesDe(dia).slice(0, 3)}</small>}
                 {Number(dia.slice(8))}
               </button>
             );

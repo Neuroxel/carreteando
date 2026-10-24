@@ -2355,3 +2355,7 @@ html.con-puntero body::before {
     .event-card:hover { transform:translateY(-3px); }
   }
 }
+.cal-mes { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; }
+.cal-mes strong { text-transform:capitalize; font-size:15px; }
+.cal-mes button { min-width:44px; min-height:44px; border:1px solid var(--line); border-radius:10px; background:transparent; color:inherit; font-size:20px; cursor:pointer; }
+.cal-mes button:disabled { opacity:.3; cursor:default; }

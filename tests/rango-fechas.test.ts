@@ -86,3 +86,25 @@ test('Explorar: elegir fechas no pide nada al servidor (filtra el snapshot local
   // Los únicos fetch siguen siendo el ETag del snapshot y las geometrías del mapa.
   assert.equal((ex.match(/fetch\(/g) || []).length, 2);
 });
+
+test('calendario: navega por mes hasta fin de diciembre y enero (no se corta a las 9 semanas)', async () => {
+  const { semanasDelMes, sumarMeses, MESES_ADELANTE } = await import('../lib/rango-noches');
+  assert.equal(sumarMeses('2026-10', 2), '2026-12');
+  assert.equal(sumarMeses('2026-12', 1), '2027-01');
+  assert.equal(sumarMeses('2027-01', -1), '2026-12');
+  const dic = semanasDelMes('2026-12').flat().filter((d) => d.startsWith('2026-12'));
+  assert.equal(dic.length, 31);
+  assert.ok(dic.includes('2026-12-21') && dic.includes('2026-12-31'));
+  const ene = semanasDelMes('2027-01').flat().filter((d) => d.startsWith('2027-01'));
+  assert.equal(ene.length, 31);
+  assert.ok(MESES_ADELANTE >= 3, 'desde octubre se llega al menos a enero');
+  // Un rango que cruza el año queda en la URL y filtra igual.
+  assert.deepEqual(leerRango('2027-01-02', '2026-12-30'), { desde: '2026-12-30', hasta: '2027-01-02' });
+  const fin = [ev('dic31', '2026-12-31'), ev('ene1', '2027-01-01'), ev('ene3', '2027-01-03')];
+  assert.deepEqual(ids(filterEvents(fin, { desde: '2026-12-30', hasta: '2027-01-02' }, HOY)), ['dic31', 'ene1']);
+});
+test('calendario: el mes anterior no baja del mes actual; sin fetch ni query extra', () => {
+  const src = readFileSync(new URL('../components/CalendarioNoches.tsx', import.meta.url), 'utf8');
+  assert.match(src, /disabled=\{mes <= mesHoy\}/);
+  assert.match(src, /disabled=\{pasado\}/);
+});
