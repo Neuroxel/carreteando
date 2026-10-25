@@ -20,7 +20,7 @@ import { estadosDeFuentes, reporteCobertura } from '../../../../lib/coverage';
 import { dispatchSources } from '../../../../lib/sources/dispatcher';
 import { notifyIndexNow } from '../../../../lib/indexnow';
 import { engineMode, reevaluate } from '../../../../lib/sources/automation';
-import { fechaDeLaNoche, parseTimestamp, toChileDateString } from '../../../../lib/event-extraction';
+import { fechaDeLaNoche, parseTimestamp } from '../../../../lib/event-extraction';
 export const maxDuration = 300;
 export const dynamic = 'force-dynamic';
 const MAX_ITEMS = 40;
