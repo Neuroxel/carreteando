@@ -27,3 +27,15 @@ test('migración: sólo las dos funciones; sin recuperación de filas ni histori
   assert.equal((sql.match(/\bupdate public\.events\b/gi) || []).length, 1);
   assert.doesNotMatch(sql, /is_active\s*=\s*true\s*(,|where)/i);
 });
+
+test('caché: refrescar lo público invalida también /api/snapshot y lo viejo no dura más de 10 minutos', () => {
+  const lib = readFileSync(new URL('../lib/snapshot.ts', import.meta.url), 'utf8');
+  const fn = lib.slice(lib.indexOf('export async function refrescarPublico'));
+  assert.match(fn, /revalidateTag\(tag\)/);
+  assert.match(fn, /revalidatePath\('\/', 'page'\)/);
+  assert.match(fn, /revalidatePath\('\/explorar', 'page'\)/);
+  assert.match(fn, /revalidatePath\('\/api\/snapshot'\)/);
+  const api = readFileSync(new URL('../app/api/snapshot/route.ts', import.meta.url), 'utf8');
+  const swr = Number(api.match(/stale-while-revalidate=(\d+)/)?.[1]);
+  assert.ok(swr > 0 && swr <= 600, `swr=${swr}`);
+});
