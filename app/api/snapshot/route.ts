@@ -10,7 +10,8 @@ export async function GET(request: Request) {
   const etag = `"${snap.version}"`;
   const headers = {
     ETag: etag,
-    'Cache-Control': 'public, max-age=60, s-maxage=300, stale-while-revalidate=86400',
+    // Lo viejo puede servirse mientras se regenera, pero nunca más de 10 minutos.
+    'Cache-Control': 'public, max-age=60, s-maxage=300, stale-while-revalidate=600',
     'Content-Type': 'application/json; charset=utf-8',
   };
   if (request.headers.get('if-none-match') === etag) return new Response(null, { status: 304, headers });

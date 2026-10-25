@@ -69,6 +69,9 @@ export async function refrescarPublico(tag: string = SNAPSHOT_TAG) {
     // La API y el HTML prerenderizado deben mostrar la misma publicación.
     revalidatePath('/', 'page');
     revalidatePath('/explorar', 'page');
+    // /api/snapshot es una ruta ISR propia (Full Route Cache): sin esto la CDN siguió
+    // sirviendo la versión anterior después de refrescar (incidente 25-oct).
+    revalidatePath('/api/snapshot');
     return true;
   } catch {
     return false;
