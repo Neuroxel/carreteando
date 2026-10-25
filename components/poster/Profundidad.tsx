@@ -53,6 +53,14 @@ export default function Profundidad() {
     const io = new IntersectionObserver(([e]) => (visible = e.isIntersecting));
     io.observe(decor);
     const soltar = suscribir((nueva) => {
+      if (nueva.fuente === 'NONE') {
+        // Movimiento apagado: las capas vuelven suavemente al centro, nunca quedan congeladas.
+        tx = 0;
+        ty = 0;
+        decor.classList.remove('pd-movil');
+        if (!raf && visible && !document.hidden) raf = requestAnimationFrame(pintar);
+        return;
+      }
       if (!esReal(nueva.fuente) && nueva.fuente !== 'DEBUG_SIMULATION') return;
       decor.classList.add('pd-movil');
       tx = nueva.tilt.x;

@@ -2300,3 +2300,40 @@ html.bv-revela main > section { animation:bv-acerca .68s cubic-bezier(.2,.7,.2,1
   .bv-muro.bv-muro-chico > .bv-afiche strong { white-space:nowrap; font-size:clamp(13px, 3.7vw, 16px); }
   .bv-muro.bv-muro-chico > .bv-afiche .bv-ilustracion { width:clamp(34px, 10vw, 48px); }
 }
+
+/* ===== Vidrio violeta (referencia del dueño) =====
+   El canvas WebGL va detrás del muro; la tarjeta principal deja ver el vidrio
+   y mantiene su texto DOM nítido encima. Sin WebGL: vidrio CSS estático. */
+.bv-vidrio-lienzo { position:fixed; inset:0; width:100%; height:100%; z-index:0; pointer-events:none; }
+.bv-vidrio { --vidrio-texto:#f6f1ff; color:var(--vidrio-texto); border-radius:26px; }
+.bv-vidrio .bv-canto, .bv-vidrio .bv-cinta { display:none; }
+.bv-vidrio strong, .bv-vidrio small { color:var(--vidrio-texto); text-shadow:0 1px 10px rgba(30,8,80,.65); }
+.bv-vidrio .bv-ilustracion, .bv-vidrio .bv-picto { color:var(--vidrio-texto); }
+/* Con WebGL listo, el papel se vuelve transparente: el vidrio lo dibuja Three.js. */
+.bv-vidrio.bv-vidrio-listo .bv-papel { background:transparent !important; box-shadow:none; clip-path:none; }
+/* Sin WebGL (o cargando): vidrio CSS con bisel claro. Nunca deja la tarjeta vacía. */
+.bv-vidrio.bv-vidrio-fallback .bv-papel, .bv-vidrio.bv-vidrio-cargando .bv-papel {
+  clip-path:none; border-radius:26px;
+  background:
+    radial-gradient(120% 90% at 18% 10%, rgba(255,255,255,.28), transparent 42%),
+    radial-gradient(90% 120% at 85% 110%, rgba(255,79,216,.35), transparent 55%),
+    linear-gradient(150deg, #6d4bd8 0%, #3a1f8f 55%, #1f1150 100%) !important;
+  box-shadow:inset 0 0 0 1.5px rgba(238,230,255,.75), inset 0 0 0 5px rgba(160,130,255,.25), inset 0 -10px 24px rgba(10,0,40,.55), 0 18px 40px -16px rgba(124,77,255,.7);
+}
+.bv-vidrio.bv-elegido { background:transparent; }
+.bv-vidrio.bv-elegido::after { display:none; }
+
+/* Dos comienzos igual de visibles. */
+.bv-inicios { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.bv-inicio { min-height:48px; border-radius:14px; border:1.5px solid rgba(238,230,255,.55); background:rgba(40,20,110,.55); color:#f6f1ff; font:inherit; font-weight:700; font-size:15px; cursor:pointer; padding:8px 10px; }
+.bv-inicio[aria-pressed="true"] { background:linear-gradient(150deg, #7b5cff, #4a2bb8); border-color:#eee6ff; box-shadow:inset 0 1px 0 rgba(255,255,255,.45), 0 8px 20px -10px rgba(124,77,255,.8); }
+.bv-inicio:focus-visible { outline:2px solid #eee6ff; outline-offset:3px; }
+.bv-pie { display:flex; flex-wrap:wrap; gap:8px 18px; align-items:center; justify-content:center; }
+.footer-movimiento { background:none; border:0; padding:0; color:inherit; opacity:.8; font:inherit; font-size:13px; text-decoration:underline; text-underline-offset:3px; cursor:pointer; min-height:44px; }
+
+/* Elegir: la tarjeta se aleja hacia el fondo con perspectiva y se desvanece (≈620 ms). */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes bv-alejarse { 0% { transform:rotate(var(--giro)) scale(1.03); opacity:1; } 18% { transform:rotate(var(--giro)) scale(.98); opacity:1; } 100% { transform:rotate(var(--giro)) perspective(900px) translate3d(0, -10px, -420px) scale(.72); opacity:0; } }
+  .bv-elegido { animation:bv-alejarse .62s cubic-bezier(.45,0,.25,1) both !important; }
+  .bv-se-va { transition:opacity .4s ease, transform .5s cubic-bezier(.45,0,.25,1); transform:rotate(var(--giro)) perspective(900px) translate3d(0, 0, -160px) scale(.9); }
+}
