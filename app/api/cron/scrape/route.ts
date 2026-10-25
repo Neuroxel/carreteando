@@ -148,7 +148,7 @@ export async function GET(request: Request) {
     // Cobertura por local y día (solo lectura): qué rutas se revisaron, qué
     // encontraron y qué sigue bloqueado o pendiente. Un fallo aquí no tumba la corrida.
     try {
-      const hoy = toChileDateString(new Date());
+      const hoy = fechaDeLaNoche(new Date());
       const estados = await estadosDeFuentes(
         db,
         hoy,
