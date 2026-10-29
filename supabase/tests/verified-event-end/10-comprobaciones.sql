@@ -15,7 +15,9 @@ GRANT EXECUTE ON FUNCTION public.afirmar(text, boolean, text) TO anon, authentic
 SELECT afirmar('sweep llama a la excepción', position('and not public.event_ongoing_after_night_cutoff(date_text,event_time,event_end_time,now());' IN pg_get_functiondef('public.sweep_stale_events()'::regprocedure)) > 0);
 SELECT afirmar('trigger llama a la excepción', position('AND NOT public.event_ongoing_after_night_cutoff(NEW.date_text,NEW.event_time,NEW.event_end_time,now()) THEN ''expired''' IN pg_get_functiondef('public.set_event_disposition()'::regprocedure)) > 0);
 SELECT afirmar('review_item guarda event_end_time', position('event_end_time=CASE WHEN p_fields ? ''event_end_time''' IN pg_get_functiondef('public.review_item(text,text,bigint,text,text,jsonb,text)'::regprocedure)) > 0);
-SELECT afirmar('review_item conserva la guarda de corte 05:00', position('p_fields->>''date_text'' < to_char(timezone(''America/Santiago'',now()) - interval ''5 hours'',''YYYY-MM-DD'')' IN pg_get_functiondef('public.review_item(text,text,bigint,text,text,jsonb,text)'::regprocedure)) > 0);
+SELECT afirmar('review_item conserva la guarda de corte 05:00 con la excepción de fin verificado',
+  position('p_fields->>''date_text'' < to_char(timezone(''America/Santiago'',now()) - interval ''5 hours'',''YYYY-MM-DD'')
+ AND NOT public.event_ongoing_after_night_cutoff(' IN pg_get_functiondef('public.review_item(text,text,bigint,text,text,jsonb,text)'::regprocedure)) > 0);
 SELECT afirmar('search_path vacío en todas', bool_and(coalesce(array_to_string(proconfig, ','), '') LIKE '%search_path=""%'), string_agg(proname || ':' || coalesce(array_to_string(proconfig, ','), '∅'), ' '))
 FROM pg_proc WHERE pronamespace = 'public'::regnamespace AND proname IN ('sweep_stale_events','set_event_disposition','review_item','event_ongoing_after_night_cutoff','expire_stale_active_events');
 SELECT afirmar('ninguna SECURITY DEFINER nueva', NOT bool_or(prosecdef)) FROM pg_proc WHERE pronamespace = 'public'::regnamespace AND proname IN ('event_ongoing_after_night_cutoff','expire_stale_active_events');
@@ -129,11 +131,58 @@ BEGIN
   PERFORM afirmar('review_item con "" lo borra', (SELECT event_end_time FROM public.events e WHERE e.id = v_id) IS NULL);
 END $$;
 
-SET reloj.ahora = '2026-10-29 09:30Z'; -- 06:30 Chile
+-- review_item a las 05:30: aprobar un evento de anoche que sigue en curso sí; sin fin o ya terminado, no.
+INSERT INTO public.events(instagram_id,title,date_text,event_time,is_active,moderation_status) VALUES ('J-aprobar','J','2026-10-29','23:00',false,'pending');
+DO $$
+DECLARE r bigint; v_id bigint; ok boolean;
+  campos jsonb := '{"title":"Fiesta J","date_text":"2026-10-28","event_time":"23:00","instagram_url":"https://instagram.com/p/j","venue":"V","city":"Valparaíso"}';
+BEGIN
+  SELECT e.id, e.revision INTO v_id, r FROM public.events e WHERE instagram_id = 'J-aprobar';
+  BEGIN
+    PERFORM public.review_item('event', v_id::text, r, 'approve', 'agente: anoche sin fin verificado', campos, 'agente-prueba');
+    ok := false;
+  EXCEPTION WHEN raise_exception THEN ok := true; END;
+  PERFORM afirmar('05:30 · review_item rechaza aprobar anoche sin fin', ok);
+  BEGIN
+    PERFORM public.review_item('event', v_id::text, r, 'approve', 'agente: anoche, fin 05:15 ya pasó', campos || '{"event_end_time":"05:15"}', 'agente-prueba');
+    ok := false;
+  EXCEPTION WHEN raise_exception THEN ok := true; END;
+  PERFORM afirmar('05:30 · review_item rechaza anoche con fin ya pasado', ok);
+  PERFORM public.review_item('event', v_id::text, r, 'approve', 'agente: anoche, fin 06:00 verificado', campos || '{"event_end_time":"06:00"}', 'agente-prueba');
+  PERFORM afirmar('05:30 · review_item aprueba anoche con fin verificado aún futuro',
+    (SELECT is_active AND moderation_status = 'approved' AND date_text = '2026-10-28' AND event_end_time = '06:00' FROM public.events e WHERE e.id = v_id));
+  -- Guardar sin la clave usa el fin ya guardado para la guarda (clientes antiguos).
+  SELECT revision INTO r FROM public.events e WHERE e.id = v_id;
+  PERFORM public.review_item('event', v_id::text, r, 'save', 'agente: corrige el título', campos || '{"title":"Fiesta J bis"}', 'agente-prueba');
+  PERFORM afirmar('05:30 · guardar sin la clave usa el fin guardado', (SELECT title = 'Fiesta J bis' AND event_end_time = '06:00' FROM public.events e WHERE e.id = v_id));
+  BEGIN
+    SELECT revision INTO r FROM public.events e WHERE e.id = v_id;
+    PERFORM public.review_item('event', v_id::text, r, 'save', 'agente: fecha antigua', campos || '{"date_text":"2026-10-27","event_end_time":"06:00"}', 'agente-prueba');
+    ok := false;
+  EXCEPTION WHEN raise_exception THEN ok := true; END;
+  PERFORM afirmar('05:30 · review_item rechaza dos noches atrás aunque tenga fin', ok);
+END $$;
 SET ROLE anon;
-SELECT afirmar('06:30 · A ya no se ve', public.visibles() = 'F-manana', public.visibles());
+SELECT afirmar('05:30 · J aprobado se ve', position('J-aprobar' IN public.visibles()) > 0, public.visibles());
 RESET ROLE;
-SELECT afirmar('06:30 · cron vence A', public.expire_stale_active_events() = 1);
+
+SET reloj.ahora = '2026-10-29 09:30Z'; -- 06:30 Chile
+-- Ya terminó: ni siquiera con fin se puede aprobar.
+DO $$
+DECLARE r bigint; v_id bigint; ok boolean;
+BEGIN
+  INSERT INTO public.events(instagram_id,title,date_text,event_time,is_active,moderation_status) VALUES ('K-tarde','K','2026-10-29','23:00',false,'pending') RETURNING id, revision INTO v_id, r;
+  BEGIN
+    PERFORM public.review_item('event', v_id::text, r, 'approve', 'agente: anoche ya terminado',
+      '{"title":"Fiesta K","date_text":"2026-10-28","event_time":"23:00","event_end_time":"06:00","instagram_url":"https://instagram.com/p/k","venue":"V","city":"Valparaíso"}', 'agente-prueba');
+    ok := false;
+  EXCEPTION WHEN raise_exception THEN ok := true; END;
+  PERFORM afirmar('06:30 · review_item rechaza un evento de anoche ya terminado', ok);
+END $$;
+SET ROLE anon;
+SELECT afirmar('06:30 · A y J ya no se ven', public.visibles() = 'F-manana', public.visibles());
+RESET ROLE;
+SELECT afirmar('06:30 · cron vence A y J', public.expire_stale_active_events() = 2);
 SELECT afirmar('06:30 · ningún vencido revivió', NOT EXISTS (SELECT 1 FROM public.events WHERE date_text = '2026-10-28' AND is_active));
 
 SELECT CASE WHEN ok THEN 'ok   ' ELSE 'FALLA' END, prueba, detalle FROM public.resultado ORDER BY ok, prueba;

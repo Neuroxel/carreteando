@@ -13,20 +13,6 @@ ALTER TABLE public.events ADD CONSTRAINT events_end_time_valid CHECK (
 
 -- Preserve the actual deployed function and its privileges. Only extend its
 -- audited update; older callers that omit the field retain the existing value.
-DO $migration$
-DECLARE
-  definition text;
-  old_fragment text := $old$event_time=p_fields->>'event_time',venue=$old$;
-  new_fragment text := $new$event_time=p_fields->>'event_time',event_end_time=CASE WHEN p_fields ? 'event_end_time' THEN nullif(p_fields->>'event_end_time','') ELSE old_event.event_end_time END,venue=$new$;
-BEGIN
-  SELECT pg_get_functiondef('public.review_item(text,text,bigint,text,text,jsonb,text)'::regprocedure) INTO definition;
-  IF position(old_fragment IN definition) = 0 THEN
-    RAISE EXCEPTION 'review_item differs from expected definition; inspect before migration';
-  END IF;
-  EXECUTE replace(definition, old_fragment, new_fragment);
-END
-$migration$;
-
 -- Only the previous night with an explicitly verified end after the current
 -- Chilean time survives the 05:00 cutoff. Pure invoker function, no secret data.
 CREATE OR REPLACE FUNCTION public.event_ongoing_after_night_cutoff(
@@ -42,6 +28,28 @@ CREATE OR REPLACE FUNCTION public.event_ongoing_after_night_cutoff(
 $body$;
 REVOKE ALL ON FUNCTION public.event_ongoing_after_night_cutoff(text,text,text,timestamptz) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.event_ongoing_after_night_cutoff(text,text,text,timestamptz) TO anon, authenticated, service_role;
+
+-- La guarda de fecha también admite la noche anterior si su fin verificado (el
+-- que se envía o, si se omite la clave, el ya guardado) todavía no llega: así un
+-- agente puede aprobar después de las 05:00 un evento que sigue en curso.
+DO $migration$
+DECLARE
+  definition text;
+  old_fragment text := $old$event_time=p_fields->>'event_time',venue=$old$;
+  new_fragment text := $new$event_time=p_fields->>'event_time',event_end_time=CASE WHEN p_fields ? 'event_end_time' THEN nullif(p_fields->>'event_end_time','') ELSE old_event.event_end_time END,venue=$new$;
+  old_guard text := $old$IF p_fields->>'date_text' < to_char(timezone('America/Santiago',now()) - interval '5 hours','YYYY-MM-DD') OR p_fields->>'date_text' IS NULL$old$;
+  new_guard text := $new$IF (p_fields->>'date_text' < to_char(timezone('America/Santiago',now()) - interval '5 hours','YYYY-MM-DD')
+ AND NOT public.event_ongoing_after_night_cutoff(p_fields->>'date_text',p_fields->>'event_time',
+ CASE WHEN p_fields ? 'event_end_time' THEN nullif(p_fields->>'event_end_time','') ELSE old_event.event_end_time END,now()))
+ OR p_fields->>'date_text' IS NULL$new$;
+BEGIN
+  SELECT pg_get_functiondef('public.review_item(text,text,bigint,text,text,jsonb,text)'::regprocedure) INTO definition;
+  IF position(old_fragment IN definition) = 0 OR position(old_guard IN definition) = 0 THEN
+    RAISE EXCEPTION 'review_item differs from expected definition; inspect before migration';
+  END IF;
+  EXECUTE replace(replace(definition, old_fragment, new_fragment), old_guard, new_guard);
+END
+$migration$;
 
 -- Additional permissive policy covers only still-running approved events.
 CREATE POLICY "Public verified overnight end" ON public.events FOR SELECT TO anon, authenticated
