@@ -101,3 +101,11 @@ test('rotación de cinco cubre 61 cuentas en 13 corridas sin fallos', async () =
   }
   assert.equal(visited.size, 61);
 });
+
+test('cuentas incompletas conservan prioridad en la siguiente rotación', async () => {
+  const { seleccionarCuentas, cuentasCompletas } = await import('../lib/instagram-incremental');
+  const rows = ['a', 'b'].map((username, i) => ({ username, venue_id: i + 1, city: 'Valparaíso', last_checked_at: null as string | null, venues: { id: i + 1, name: `Local ${username}`, city: 'Valparaíso', is_active: true, moderation_status: 'approved', instagram_url: `https://instagram.com/${username}/` } }));
+  const completas = cuentasCompletas(['a', 'b'], [{ cuenta: 'a', publicado: hace(1), error: false }, { cuenta: 'b', publicado: null, error: false }], 3, 40);
+  for (const row of rows) if (completas.includes(row.username)) row.last_checked_at = ahora.toISOString();
+  assert.deepEqual(Object.keys(seleccionarCuentas(rows, 1)), ['b']);
+});

@@ -380,7 +380,7 @@ export async function GET(request: Request) {
       })
       .eq('id', runId);
     if (saved.error) throw new IngestionError('DB_FINISH');
-    // El intento rota también las cuentas vacías; solo evidencia completa cuenta como lectura.
+    // Las cuentas incompletas conservan prioridad para el próximo intento.
     const completas = cuentasCompletas(cuentas, items.map(item => ({
       cuenta: postOwner(item, fuentes),
       publicado: parseTimestamp(item.timestamp ?? item.takenAt ?? item.takenAtIso ?? item.publishedAt)?.toISOString() || null,
@@ -396,9 +396,9 @@ export async function GET(request: Request) {
       porCuenta: limit, totalMax: MAX_ITEMS,
     });
     await guardarMarcas(db, avanzar).catch(() => undefined);
-    const rotacion = await db.from('instagram_accounts').update({ last_checked_at: now.toISOString() }).in('username', cuentas);
-    if (rotacion.error) console.warn('[ingestion] no se pudo actualizar la rotación');
     if (completas.length) {
+      const rotacion = await db.from('instagram_accounts').update({ last_checked_at: now.toISOString() }).in('username', completas);
+      if (rotacion.error) console.warn('[ingestion] no se pudo actualizar la rotación');
       const leidas = await db.from('instagram_accounts').update({ last_scraped_at: now.toISOString() }).in('username', completas);
       if (leidas.error) console.warn('[ingestion] no se pudo actualizar lectura');
     }
