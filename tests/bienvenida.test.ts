@@ -138,7 +138,7 @@ test('sin destello: el telón se pone solo cuando la bienvenida va a abrir', asy
 
 test('afiches, no pills: el muro usa tarjetas y el "?" de la marca hace la transición', () => {
   const b = src('components/Bienvenida.tsx');
-  assert.match(b, /className=\{claseAfiche/);
+  assert.match(b, /className=\{(`\$\{)?claseAfiche/);
   assert.doesNotMatch(b, /asistente-chip|chip-n/);
   assert.match(b, /<path className="bv-signo-tinta" d=\{Q\}/);
   assert.match(b, /Dos toques y te mostramos dónde ir\./);
@@ -151,12 +151,15 @@ test('build: una caída momentánea de la base no tumba el deploy por el sitemap
   assert.match(s, /if \(process\.env\.NEXT_PHASE === 'phase-production-build'\) return fijas;\s*throw new Error\('SITEMAP_BACKEND_UNAVAILABLE'\)/);
 });
 
-test('3D: carta de dos caras (¿Qué? / ¿Dónde?), cara oculta inerte, giro y alejamiento sin librerías', () => {
+test('3D: carta de dos caras (¿Qué? / ¿Dónde?), cara oculta inerte, giro y alejamiento; Three.js sólo diferido', () => {
   const b = src('components/Bienvenida.tsx');
   assert.match(b, /bv-cara bv-frente"\s+aria-hidden=\{s\.paso !== 'que'\}\s+inert=/);
   assert.match(b, /bv-cara bv-dorso"\s+aria-hidden=\{s\.paso !== 'donde'\}\s+inert=/);
   assert.match(b, /className=\{`bv-carta \$\{s\.paso === 'donde' \? 'bv-girada' : ''\}`\}/);
-  assert.doesNotMatch(src('package.json'), /"three"|framer-motion/);
+  // Three.js (autorizado por el dueño el 25-oct) sólo en su propio chunk: nunca importado estático por la bienvenida.
+  assert.doesNotMatch(src('package.json'), /framer-motion/);
+  assert.doesNotMatch(b, /from 'three'|from 'cannon-es'/);
+  assert.match(b, /dynamic\(\(\) => import\('\.\/EscenaAfiches'\), \{ ssr: false \}\)/);
   const css = src('app/globals.css');
   const bloque = css.slice(css.indexOf('Bienvenida 3D'));
   assert.match(bloque, /\.bv-escena \{[^}]*perspective:1400px/);
@@ -180,4 +183,74 @@ test('toques: la cara oculta de la carta no tapa a la visible; volver a elegir e
 
 test('giro robusto: fuera de la fase de giro la carta salta a su posición final', () => {
   assert.match(src('app/globals.css'), /\.bv-fase-normal \.bv-carta, \.bv-fase-buscando \.bv-carta, \.bv-fase-ticket \.bv-carta \{ transition:none; \}/);
+});
+
+test('bienvenida: se puede empezar por el lugar; la intención queda opcional y se puede elegir después', async () => {
+  const { avanzar, INICIO, filtrosFinales } = await import('../lib/bienvenida');
+  const donde = avanzar(INICIO, { tipo: 'irDonde' });
+  assert.equal(donde.paso, 'donde');
+  assert.equal(donde.plan, null);
+  const conFecha = avanzar(donde, { tipo: 'cuando', fecha: 'finde' });
+  assert.deepEqual(filtrosFinales(conFecha, { tipo: 'comuna', ciudad: 'Valparaíso' }), { plan: null, fecha: 'finde', ciudad: 'Valparaíso', cerca: false, zona: null });
+  // Volver a "¿Qué?" desde ahí y elegir: conserva la fecha.
+  const que = avanzar(conFecha, { tipo: 'volver' });
+  const elegido = avanzar(que, { tipo: 'elegir', plan: 'bailar' as never });
+  assert.equal(elegido.paso, 'donde');
+  assert.equal(elegido.fecha, 'finde');
+  // Bloqueado (transición en curso): no se salta.
+  assert.equal(avanzar({ ...INICIO, bloqueado: true }, { tipo: 'irDonde' }).paso, 'que');
+});
+
+test('bienvenida: dos comienzos igual de visibles; Dónde→Qué fija el lugar y "Ver todo aquí" cierra sin intención', async () => {
+  const { avanzar, INICIO } = await import('../lib/bienvenida');
+  const b = src('components/Bienvenida.tsx');
+  assert.match(b, /Sé qué quiero hacer/);
+  assert.match(b, /Sé dónde quiero ir/);
+  assert.match(b, /Ver todo en \{nombreLugar\(s\.donde\)\}/);
+  const d = avanzar(INICIO, { tipo: 'irDonde' });
+  assert.equal(d.orden, 'donde');
+  const q = avanzar(d, { tipo: 'fijarDonde', donde: { tipo: 'comuna', ciudad: 'Viña del Mar' } });
+  assert.equal(q.paso, 'que');
+  assert.deepEqual(q.donde, { tipo: 'comuna', ciudad: 'Viña del Mar' });
+  // "cambiar" en Dónde→Qué vuelve a ¿Dónde? sin perder el camino elegido.
+  const otra = avanzar(q, { tipo: 'volver' });
+  assert.equal(otra.paso, 'donde');
+  assert.equal(otra.orden, 'donde');
+  // En el camino normal fijarDonde no hace nada.
+  assert.equal(avanzar(INICIO, { tipo: 'fijarDonde', donde: { tipo: 'region' } }), INICIO);
+});
+test('vidrio: fallback sin WebGL, pérdida de contexto, reduced-motion y pausa al ocultar; navegación con su propio temporizador', () => {
+  const v = src('components/EscenaAfiches.tsx');
+  assert.match(v, /prefers-reduced-motion: reduce\)'\)\.matches\) return onEstado\('fallback'\)/);
+  assert.match(v, /webglcontextlost/);
+  assert.match(v, /document\.hidden/);
+  assert.match(v, /pointer-events|aria-hidden="true"/);
+  const b = src('components/Bienvenida.tsx');
+  assert.match(b, /golpe: ALEJARSE_MS/);
+  assert.match(b, /luego\(golpe, \(\) => \{/, 'el paso siguiente lo dispara un temporizador, no el fin de la animación');
+});
+
+test('afiches con física: todas las intenciones y lugares, un solo canvas, DOM sincronizado y tope pequeño', async () => {
+  const b = src('components/Bienvenida.tsx');
+  // Intenciones grandes y chicas, "Cerca de mí", comunas principales y "otras comunas".
+  assert.equal((b.match(/data-fisica=""/g) || []).length, 5);
+  const e = src('components/EscenaAfiches.tsx');
+  assert.equal((e.match(/new THREE\.WebGLRenderer/g) || []).length, 1, 'un solo contexto WebGL');
+  assert.match(e, /querySelectorAll<HTMLElement>\('\[data-fisica\]'\)/);
+  assert.match(e, /--fx/);
+  const { GIRO_MAX_AFICHE } = await import('../lib/vidrio-tiempos');
+  assert.ok(GIRO_MAX_AFICHE <= 0.35, 'el área táctil casi no se mueve');
+  const css = src('app/globals.css');
+  assert.match(css, /\.bv-fisica-on \.bv-afiche\[data-fisica\][\s\S]*?rotateX\(var\(--fx, 0rad\)\) rotateY\(var\(--fy, 0rad\)\)/);
+});
+test('transición: lo elegido se aleja y los afiches siguientes llegan en cascada; reduced-motion conserva el fundido', () => {
+  const css = src('app/globals.css');
+  const prof = css.slice(css.lastIndexOf('@media (prefers-reduced-motion: no-preference)'));
+  assert.match(prof, /@keyframes bv-acercar/);
+  assert.match(prof, /animation-delay:calc\(var\(--i, 0\) \* 55ms\)/);
+  const b = src('components/Bienvenida.tsx');
+  assert.match(b, /if \(reducido\.current\) return;\s*setLlega\(true\)/);
+});
+test('Dónde→Qué: "Ver todo en {lugar}" es legible sobre la tira (tinta, no crema)', () => {
+  assert.match(src('app/globals.css'), /\.bv-tira \.bienvenida-link \{ color:var\(--tinta, #13131D\)/);
 });

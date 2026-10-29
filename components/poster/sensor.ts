@@ -172,8 +172,48 @@ function vigilar() {
  * `devicemotion` sin permiso; iOS no entrega nada hasta que se pide permiso, y
  * para un adorno no se interrumpe al usuario: ahí el afiche queda estático.
  */
-export function iniciarSensores() {
+/**
+ * Movimiento con el teléfono: SOLO si la persona lo activó con un toque explícito
+ * (pie de página, o el botón de ?3ddebug=1). Nunca se escucha en silencio y nunca
+ * es requisito para buscar.
+ */
+export const CLAVE_MOVIMIENTO = 'dondesalgo-movimiento';
+export function movimientoPermitido() {
+  try {
+    return localStorage.getItem(CLAVE_MOVIMIENTO) === '1';
+  } catch {
+    return false;
+  }
+}
+export function apagarMovimiento() {
+  try {
+    localStorage.removeItem(CLAVE_MOVIMIENTO);
+  } catch {
+    /* sin almacenamiento */
+  }
   if (typeof window === 'undefined') return;
+  if (escuchando) {
+    window.removeEventListener('deviceorientation', alOrientar);
+    window.removeEventListener('devicemotion', alMover);
+    escuchando = false;
+  }
+  // Volver al reposo: sin timer pendiente, inclinación en cero y quien escucha se recentra.
+  window.clearTimeout(temporizador);
+  temporizador = 0;
+  cero = null;
+  acumulado = null;
+  gravedad = null;
+  marcas = [];
+  L.tilt = { x: 0, y: 0 };
+  L.fuente = 'NONE';
+  L.estado = 'apagado';
+  emitir();
+  window.dispatchEvent(new Event(EVENTO_MOVIMIENTO));
+}
+/** Avisa a la luz de la bienvenida y a las capas que el movimiento cambió. */
+export const EVENTO_MOVIMIENTO = 'dondesalgo:movimiento';
+export function iniciarSensores() {
+  if (typeof window === 'undefined' || !movimientoPermitido()) return;
   if (!escuchando) {
     escuchando = true;
     window.addEventListener('deviceorientation', alOrientar, { passive: true });
@@ -200,12 +240,20 @@ export function requierePermiso() {
  * cuenta es si llegan muestras, no lo que dice el permiso.
  */
 export function pedirPermiso(): Promise<void> {
+  // Este toque ES el consentimiento explícito.
+  try {
+    localStorage.setItem(CLAVE_MOVIMIENTO, '1');
+  } catch {
+    /* sin almacenamiento: vale para esta visita */
+  }
   const w = window as unknown as { DeviceMotionEvent?: ConPermiso; DeviceOrientationEvent?: ConPermiso };
   const pedidos = [w.DeviceMotionEvent, w.DeviceOrientationEvent]
     .filter((c): c is ConPermiso & { requestPermission: () => Promise<string> } => typeof c?.requestPermission === 'function')
     .map((c) => c.requestPermission().catch(() => 'denied'));
   if (pedidos.length) L.permiso = 'pendiente';
   iniciarSensores();
+  // Aviso inmediato: quien ya está montado (escena, luz) se conecta sin recargar.
+  window.dispatchEvent(new Event(EVENTO_MOVIMIENTO));
   return Promise.all(pedidos).then((r) => {
     if (r.length) L.permiso = r.some((x) => x === 'granted') ? (L.estado === 'recibiendo' ? 'concedido' : 'pendiente') : 'denegado';
     if (L.permiso === 'denegado') {
@@ -245,3 +293,27 @@ export function suscribir(o: Oyente) {
 }
 
 export const esReal = real;
+
+/**
+ * Conexión única para quien quiera seguir la inclinación (escena 3D, luz de la
+ * bienvenida). Usa el adaptador común —orientación o, sin giroscopio, el
+ * acelerómetro— y reacciona a activar/desactivar sin recargar:
+ * `onInclinacion(tilt)` con lecturas reales, `onInclinacion(null)` para volver al reposo.
+ */
+export function conectarSensor(onInclinacion: (tilt: { x: number; y: number } | null) => void) {
+  if (typeof window === 'undefined') return () => {};
+  const alCambio = () => {
+    if (movimientoPermitido()) iniciarSensores();
+    else onInclinacion(null);
+  };
+  const soltar = suscribir((l) => {
+    if (!movimientoPermitido() || !real(l.fuente)) return onInclinacion(null);
+    if (l.estado === 'recibiendo') onInclinacion({ ...l.tilt });
+  });
+  window.addEventListener(EVENTO_MOVIMIENTO, alCambio);
+  if (movimientoPermitido()) iniciarSensores();
+  return () => {
+    soltar();
+    window.removeEventListener(EVENTO_MOVIMIENTO, alCambio);
+  };
+}

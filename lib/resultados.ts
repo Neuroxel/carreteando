@@ -7,7 +7,7 @@
 import { filterEvents } from './events';
 import { lugarEnEscena } from './escenas';
 import { buscarLugares, type Lugar } from './venues';
-import { estadoTemporal, type AhoraChile } from './temporal';
+import { visibleEnCartelera, type AhoraChile } from './temporal';
 import type { Evento, FiltrosEvento } from './types';
 import { intencionPorSlug } from './intenciones';
 
@@ -45,7 +45,7 @@ const lugaresBase = (c: Contexto, f: FiltrosEvento) =>
 const escenaDe = (f: FiltrosEvento) => (f.escena && f.escena !== 'todos' ? f.escena : null);
 
 /** Carretes (lista): eventos con todos los filtros, incluida la zona. */
-export const eventosLista = (c: Contexto, f: FiltrosEvento) => enZona(c, f, filterEvents(c.todos, f, c.today));
+export const eventosLista = (c: Contexto, f: FiltrosEvento) => enZona(c, f, filterEvents(c.todos, f, c.today)).filter((e) => visibleEnCartelera(e, c.ahora));
 
 /** Lugares (lista): lo que es de la escena o tiene un evento que calza con los filtros. */
 export function lugaresLista(c: Contexto, f: FiltrosEvento) {
@@ -61,7 +61,7 @@ export function lugaresLista(c: Contexto, f: FiltrosEvento) {
 
 /** Radar · Carretes hoy: eventos de hoy (noche hasta las 05:00) que no terminaron. */
 export const eventosRadar = (c: Contexto, f: FiltrosEvento) =>
-  enZona(c, f, filterEvents(c.todos, { ...f, fecha: 'hoy' }, c.today)).filter((e) => estadoTemporal(e, c.ahora) !== 'finalizado');
+  enZona(c, f, filterEvents(c.todos, { ...f, fecha: 'hoy' }, c.today)).filter((e) => visibleEnCartelera(e, c.ahora));
 
 /** Radar: lugares a dibujar. "Carretes hoy": solo los que tienen evento hoy. */
 export function lugaresRadar(c: Contexto, f: FiltrosEvento, capa: Modo['capa']) {

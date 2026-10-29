@@ -14,6 +14,8 @@ g.window = {
   innerHeight: 800,
 };
 g.screen = { orientation: { angle: 0 } };
+const guardado: Record<string, string> = {};
+g.localStorage = { getItem: (k: string) => guardado[k] ?? null, setItem: (k: string, v: string) => (guardado[k] = v), removeItem: (k: string) => delete guardado[k] };
 Object.defineProperty(globalThis, 'performance', { value: { now: () => reloj }, configurable: true });
 const disparar = (t: string, e: unknown) => {
   reloj += 16;
@@ -25,6 +27,16 @@ const gravedad = (betaGrados: number, gammaGrados: number, signo = 1) => {
   // Convención W3C: de pie y ≈ +9,8; inclinar a la derecha (gamma +) da x negativo.
   return { accelerationIncludingGravity: { x: -9.81 * Math.sin(gm) * signo, y: 9.81 * Math.sin(b) * Math.cos(gm) * signo, z: 9.81 * Math.cos(b) * Math.cos(gm) * signo } };
 };
+
+test('sin un toque explícito no se escucha ningún sensor (opt-in)', async () => {
+  const s = await import('../components/poster/sensor');
+  s.iniciarSensores();
+  assert.equal(oyentes.devicemotion, undefined);
+  assert.equal(oyentes.deviceorientation, undefined);
+  assert.equal(s.movimientoPermitido(), false);
+  // El toque de "Activar movimiento" es el consentimiento.
+  guardado[s.CLAVE_MOVIMIENTO] = '1';
+});
 
 test('Android sin giroscopio: orientación nula, el acelerómetro toma el control y mide la inclinación', async () => {
   const s = await import('../components/poster/sensor');
@@ -65,4 +77,23 @@ test('la simulación nunca se informa como sensor real', async () => {
   s.simular(0, 5);
   assert.equal(s.lectura().fuente, 'DEBUG_SIMULATION');
   assert.equal(s.esReal(s.lectura().fuente), false);
+});
+
+test('apagar el movimiento quita las escuchas, recentra la inclinación y avisa (nada queda congelado)', async () => {
+  const s = await import('../components/poster/sensor');
+  const vistas: { x: number; y: number }[] = [];
+  const soltar = s.suscribir((l) => vistas.push({ ...l.tilt }));
+  const avisos: string[] = [];
+  (globalThis as Record<string, unknown>).Event = class { constructor(public type: string) {} };
+  (g.window as Record<string, unknown>).dispatchEvent = (e: { type: string }) => avisos.push(e.type);
+  (g.window as Record<string, unknown>).removeEventListener = (t: string, f: Fn) => (oyentes[t] = (oyentes[t] ?? []).filter((x) => x !== f));
+  s.apagarMovimiento();
+  soltar();
+  assert.equal(s.movimientoPermitido(), false);
+  assert.equal(oyentes.devicemotion?.length ?? 0, 0);
+  assert.equal(oyentes.deviceorientation?.length ?? 0, 0);
+  assert.deepEqual(s.lectura().tilt, { x: 0, y: 0 });
+  assert.equal(s.lectura().fuente, 'NONE');
+  assert.deepEqual(vistas.at(-1), { x: 0, y: 0 });
+  assert.deepEqual(avisos, [s.EVENTO_MOVIMIENTO]);
 });
