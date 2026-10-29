@@ -11,7 +11,7 @@ import { puntosDeMapa } from '../lib/map';
 import { indiceDeLugares } from '../lib/venue-match';
 import type { PublicSnapshot } from '../lib/snapshot';
 import { rememberEmptySearch, trackLater } from '../lib/metrics';
-import { ORDEN_TEMPORAL, ahoraEnChile, esMadrugada, estadoTemporal, nombreDia, porEstadoTemporal } from '../lib/temporal';
+import { ORDEN_TEMPORAL, ahoraEnChile, esMadrugada, estadoTemporal, nombreDia, porEstadoTemporal, visibleEnCartelera } from '../lib/temporal';
 import { PRECISION_ZONA_M, fixUtil, RADIOS_KM, CLAVE_GPS_NEGADO_VIEJA, ubicarEnDosFases, type EstadoGps, type Fix, leerCapa, porCercania, textoDistancia, type Capa, type Posicion } from '../lib/radar';
 import EventCard from './EventCard';
 import VenueCard from './VenueCard';
@@ -281,7 +281,6 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
     requestAnimationFrame(() => document.getElementById('cartelera')?.scrollIntoView({ block: 'start' }));
   };
   const urlRadar = aUrl(estadoRadar(estado), path, defecto);
-  const todos = snap.events;
   // El lugar de cada evento: nombre, alias y misma ciudad; nunca un parecido.
   const lugarDe = useMemo(() => {
     const indice = indiceDeLugares(snap.venues);
@@ -293,6 +292,9 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
     return () => clearInterval(t);
   }, []);
   const ahoraCL = useMemo(() => ahoraEnChile(new Date(ahora)), [ahora]);
+  // La misma selección alimenta contadores, sugerencias, lugares y mapa.
+  const todos = useMemo(() => snap.events.filter((e) => visibleEnCartelera(e, ahoraCL)), [snap.events, ahoraCL]);
+  const ocultosEstimados = snap.events.some((e) => e.fecha >= today && estadoTemporal(e, ahoraCL) !== 'finalizado' && !visibleEnCartelera(e, ahoraCL));
   const madrugada = esMadrugada(ahoraCL);
   // Polígonos verificados: se cargan solo para el mapa o con ubicación, una vez.
   const [geos, setGeos] = useState<TerritorioGeo[] | null>(null);
@@ -352,7 +354,7 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
       lugaresPorCiudad,
       ciudadesConOferta: CIUDADES.filter((c) => peso(c) > 0).sort((a, b) => peso(b) - peso(a)),
 
-      busquedaEventos: filtros.busqueda ? filterEvents(todos, { fecha: 'futuro', busqueda: filtros.busqueda }, today).length : 0,
+      busquedaEventos: filtros.busqueda ? filterEvents(todos, { fecha: 'futuro', busqueda: filtros.busqueda }, today).filter((e) => visibleEnCartelera(e, ahoraCL)).length : 0,
       lugaresHallados: filtros.busqueda ? buscarLugares(snap.venues, filtros.busqueda) : [],
       zonasHalladas: filtros.busqueda ? buscarZonas(snap.venues, filtros.busqueda) : [],
       sugerencias: sugerenciasPara(todos, filtros, today),
@@ -369,7 +371,7 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
               .sort((a, b) => b.eventos - a.eventos || a.t.nombre.localeCompare(b.t.nombre, 'es'))
           : [],
     };
-  }, [todos, snap.venues, filtros, today, lugarDe]);
+  }, [todos, snap.venues, filtros, today, lugarDe, ahoraCL]);
   const lugaresVisibles = useMemo(() => {
     const orden = new Map(derivados.lugaresZona.map((l, i) => [l.slug, i]));
     return lugaresLista(ctx, filtros).sort((x, y) => (orden.get(x.slug) ?? 0) - (orden.get(y.slug) ?? 0));
@@ -877,6 +879,7 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
                 </span>
               )}
             </div>
+            {ocultosEstimados && <small>Sin hora de término, dejamos de mostrar el evento 8 horas después de su inicio (estimación).</small>}
             {snap.status === 'error' && vigentes === 0 ? (
               <div className="empty-state error-state" role="alert">
                 <h3>No pudimos cargar la cartelera.</h3>
