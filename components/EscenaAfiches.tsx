@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef } from 'react';
 import { arrastrar, avanzarVidrio, crearFiltroSensor, crearVidrio, empujar, FISICA, reiniciar, sentir, type Vidrio } from '../lib/vidrio-fisica';
-import { EVENTO_MOVIMIENTO, movimientoPermitido } from './poster/sensor';
+import { conectarSensor } from './poster/sensor';
 import { ACERCAR_MS, ALEJARSE_MS, ESCALON_MS, GIRO_MAX_AFICHE } from '../lib/vidrio-tiempos';
 
 const PX = 100; // 1 unidad de mundo = 100 px en el plano de los afiches
@@ -131,18 +131,19 @@ export default function EscenaAfiches({
       // Sensor: sólo con activación explícita; neutro calibrado, tope, suavizado y reset.
       const filtro = crearFiltroSensor();
       let sensorPrevio = { x: 0, y: 0 };
-      let usarSensor = movimientoPermitido();
-      const orientar = (e: DeviceOrientationEvent) => {
-        if (usarSensor && e.beta != null && e.gamma != null) filtro.leerOrientacion(e.beta, e.gamma);
-      };
-      const alMovimiento = () => {
-        usarSensor = movimientoPermitido();
-        filtro.reset();
-        sensorPrevio = { x: 0, y: 0 };
-        if (!usarSensor) for (const t of tarjetas.values()) reiniciar(t.v);
-      };
-      window.addEventListener('deviceorientation', orientar, { passive: true });
-      window.addEventListener(EVENTO_MOVIMIENTO, alMovimiento);
+      // Adaptador común: orientación o, sin giroscopio, acelerómetro; activar/desactivar sin recargar.
+      let usarSensor = false;
+      const desconectar = conectarSensor((tilt) => {
+        if (!tilt) {
+          if (usarSensor) for (const t of tarjetas.values()) reiniciar(t.v);
+          usarSensor = false;
+          filtro.reset();
+          sensorPrevio = { x: 0, y: 0 };
+          return;
+        }
+        usarSensor = true;
+        filtro.muestra(tilt.x, tilt.y);
+      });
 
       // Dedo o mouse: impulso en el punto tocado; arrastrar suma giro (como la demo).
       const ray = new THREE.Raycaster();
@@ -275,8 +276,7 @@ export default function EscenaAfiches({
         canvas.removeEventListener('webglcontextlost', perdido);
         document.removeEventListener('visibilitychange', reanudar);
         window.removeEventListener('resize', ajustar);
-        window.removeEventListener('deviceorientation', orientar);
-        window.removeEventListener(EVENTO_MOVIMIENTO, alMovimiento);
+        desconectar();
         window.removeEventListener('pointerup', levantar);
         window.removeEventListener('pointercancel', levantar);
         contenedor.removeEventListener('pointerdown', tocar);

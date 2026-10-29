@@ -20,7 +20,7 @@ import { ACERCAR_MS, ALEJARSE_MS, ESCALON_MS } from '../lib/vidrio-tiempos';
 
 // Three.js y cannon-es sólo se descargan si la bienvenida se abre (chunk aparte).
 const EscenaAfiches = dynamic(() => import('./EscenaAfiches'), { ssr: false });
-import { EVENTO_MOVIMIENTO, movimientoPermitido } from './poster/sensor';
+import { conectarSensor } from './poster/sensor';
 
 /** Tiempos (ms). Con movimiento reducido todo pasa a fundidos cortos. */
 /** `golpe`: la tarjeta elegida se aleja hacia el fondo y se desvanece antes del giro. */
@@ -112,31 +112,23 @@ export default function Bienvenida({
     el.style.setProperty('--luz-y', `${(y * 100).toFixed(1)}%`);
   };
   useEffect(() => {
-    // El giroscopio solo si la persona activó el movimiento con un toque explícito.
-    if (nivel === 'baja' || !movimientoPermitido()) return;
-    const orientar = (e: DeviceOrientationEvent) => {
-      if (e.beta == null || e.gamma == null) return;
-      const gx = Math.max(-30, Math.min(30, e.gamma)) / 60 + 0.5;
-      const gy = Math.max(-30, Math.min(30, e.beta - 40)) / 60 + 0.5;
+    // Inclinación del teléfono sólo si la persona la activó; mismo adaptador que la escena
+    // (con respaldo por acelerómetro) y sin recargar al activar o desactivar.
+    if (nivel === 'baja') return;
+    return conectarSensor((tilt) => {
+      if (!tilt) {
+        raiz.current?.style.removeProperty('--luz-x');
+        raiz.current?.style.removeProperty('--luz-y');
+        escena.current?.style.setProperty('--incl-x', '0deg');
+        escena.current?.style.setProperty('--incl-y', '0deg');
+        return;
+      }
+      const gx = tilt.x * 0.5 + 0.5;
+      const gy = tilt.y * 0.5 + 0.5;
       moverLuz(gx, gy);
       escena.current?.style.setProperty('--incl-y', `${((gx - 0.5) * 10).toFixed(2)}deg`);
       escena.current?.style.setProperty('--incl-x', `${((0.5 - gy) * 8).toFixed(2)}deg`);
-    };
-    window.addEventListener('deviceorientation', orientar);
-    // Si la persona apaga el movimiento, la luz y la carta vuelven al reposo.
-    const apagar = () => {
-      if (movimientoPermitido()) return;
-      window.removeEventListener('deviceorientation', orientar);
-      raiz.current?.style.removeProperty('--luz-x');
-      raiz.current?.style.removeProperty('--luz-y');
-      escena.current?.style.setProperty('--incl-x', '0deg');
-      escena.current?.style.setProperty('--incl-y', '0deg');
-    };
-    window.addEventListener(EVENTO_MOVIMIENTO, apagar);
-    return () => {
-      window.removeEventListener('deviceorientation', orientar);
-      window.removeEventListener(EVENTO_MOVIMIENTO, apagar);
-    };
+    });
   }, [nivel]);
   // Cada afiche se inclina hacia el dedo/puntero y deja ver su canto (solo nivel alto).
   const inclinarAfiche = (e: { target: EventTarget | null; clientX: number; clientY: number }) => {

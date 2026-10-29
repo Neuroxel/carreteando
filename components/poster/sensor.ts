@@ -252,6 +252,8 @@ export function pedirPermiso(): Promise<void> {
     .map((c) => c.requestPermission().catch(() => 'denied'));
   if (pedidos.length) L.permiso = 'pendiente';
   iniciarSensores();
+  // Aviso inmediato: quien ya está montado (escena, luz) se conecta sin recargar.
+  window.dispatchEvent(new Event(EVENTO_MOVIMIENTO));
   return Promise.all(pedidos).then((r) => {
     if (r.length) L.permiso = r.some((x) => x === 'granted') ? (L.estado === 'recibiendo' ? 'concedido' : 'pendiente') : 'denegado';
     if (L.permiso === 'denegado') {
@@ -291,3 +293,27 @@ export function suscribir(o: Oyente) {
 }
 
 export const esReal = real;
+
+/**
+ * Conexión única para quien quiera seguir la inclinación (escena 3D, luz de la
+ * bienvenida). Usa el adaptador común —orientación o, sin giroscopio, el
+ * acelerómetro— y reacciona a activar/desactivar sin recargar:
+ * `onInclinacion(tilt)` con lecturas reales, `onInclinacion(null)` para volver al reposo.
+ */
+export function conectarSensor(onInclinacion: (tilt: { x: number; y: number } | null) => void) {
+  if (typeof window === 'undefined') return () => {};
+  const alCambio = () => {
+    if (movimientoPermitido()) iniciarSensores();
+    else onInclinacion(null);
+  };
+  const soltar = suscribir((l) => {
+    if (!movimientoPermitido() || !real(l.fuente)) return onInclinacion(null);
+    if (l.estado === 'recibiendo') onInclinacion({ ...l.tilt });
+  });
+  window.addEventListener(EVENTO_MOVIMIENTO, alCambio);
+  if (movimientoPermitido()) iniciarSensores();
+  return () => {
+    soltar();
+    window.removeEventListener(EVENTO_MOVIMIENTO, alCambio);
+  };
+}
