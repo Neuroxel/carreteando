@@ -281,7 +281,6 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
     requestAnimationFrame(() => document.getElementById('cartelera')?.scrollIntoView({ block: 'start' }));
   };
   const urlRadar = aUrl(estadoRadar(estado), path, defecto);
-  const todos = snap.events;
   // El lugar de cada evento: nombre, alias y misma ciudad; nunca un parecido.
   const lugarDe = useMemo(() => {
     const indice = indiceDeLugares(snap.venues);
@@ -293,6 +292,9 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
     return () => clearInterval(t);
   }, []);
   const ahoraCL = useMemo(() => ahoraEnChile(new Date(ahora)), [ahora]);
+  // La misma selección alimenta contadores, sugerencias, lugares y mapa.
+  const todos = useMemo(() => snap.events.filter((e) => visibleEnCartelera(e, ahoraCL)), [snap.events, ahoraCL]);
+  const ocultosEstimados = snap.events.some((e) => e.fecha >= today && estadoTemporal(e, ahoraCL) !== 'finalizado' && !visibleEnCartelera(e, ahoraCL));
   const madrugada = esMadrugada(ahoraCL);
   // Polígonos verificados: se cargan solo para el mapa o con ubicación, una vez.
   const [geos, setGeos] = useState<TerritorioGeo[] | null>(null);
@@ -877,7 +879,7 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
                 </span>
               )}
             </div>
-            <p>Si no conocemos la hora de término, dejamos de mostrar el evento 8 horas después de su inicio. Es una estimación; confirma con la fuente.</p>
+            {ocultosEstimados && <small>Sin hora de término, dejamos de mostrar el evento 8 horas después de su inicio (estimación).</small>}
             {snap.status === 'error' && vigentes === 0 ? (
               <div className="empty-state error-state" role="alert">
                 <h3>No pudimos cargar la cartelera.</h3>
