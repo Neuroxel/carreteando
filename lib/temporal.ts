@@ -41,6 +41,14 @@ function minutosRelativos(fecha: string, minutos: number, hoy: string) {
   return dias * MIN_DIA + minutos;
 }
 
+/** Política provisional de cartelera, no una afirmación de que el evento terminó. */
+export function visibleEnCartelera(e: { fecha: string; hora?: string | null; fin?: string | null }, ahora: AhoraChile): boolean {
+  if (estadoTemporal(e, ahora) === 'finalizado') return false;
+  const inicio = minutosDelDia(e.hora);
+  if (inicio === null || minutosDelDia(e.fin) !== null) return true;
+  return minutosRelativos(e.fecha, inicio, ahora.fecha) + 8 * 60 > ahora.minutos;
+}
+
 export function estadoTemporal(e: { fecha: string; hora?: string | null; fin?: string | null }, ahora: AhoraChile): EstadoTemporal {
   const inicio = minutosDelDia(e.hora);
   const fin = minutosDelDia(e.fin);
