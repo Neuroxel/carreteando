@@ -48,7 +48,7 @@ test('selección: solo cuentas de locales aprobados y coincidencia de URL; rota 
   const { seleccionarCuentas } = await import('../lib/instagram-incremental');
   const venue = { id: 1, name: 'Local Uno', city: 'Valparaíso', is_active: true, moderation_status: 'approved', instagram_url: 'https://www.instagram.com/localuno/' };
   const first = { username: 'localuno', venue_id: 1, city: 'Valparaíso', last_checked_at: null, venues: venue };
-  const later = { ...first, username: 'localdos', venue_id: 2, last_checked_at: '2026-10-28T00:00:00Z', venues: { ...venue, id: 2, instagram_url: 'https://instagram.com/localdos/' } };
+  const later = { ...first, username: 'localdos', venue_id: 2, last_checked_at: '2026-10-28T00:00:00Z', last_scraped_at: '2026-10-28T00:00:00Z', venues: { ...venue, id: 2, instagram_url: 'https://instagram.com/localdos/' } };
   const wrong = { ...first, username: 'impostor' };
   const inactive = { ...first, username: 'inactivo', venues: { ...venue, instagram_url: 'https://instagram.com/inactivo/', is_active: false } };
   const sources = seleccionarCuentas([later, wrong, inactive, first], 1);
@@ -91,21 +91,62 @@ test('rotación de cinco cubre 61 cuentas en 13 corridas sin fallos', async () =
   const { seleccionarCuentas } = await import('../lib/instagram-incremental');
   const rows = Array.from({ length: 61 }, (_, i) => {
     const username = `local${i}`;
-    return { username, venue_id: i + 1, city: 'Valparaíso', last_checked_at: null as string | null, venues: { id: i + 1, name: `Local ${i}`, city: 'Valparaíso', is_active: true, moderation_status: 'approved', instagram_url: `https://instagram.com/${username}/` } };
+    return { username, venue_id: i + 1, city: 'Valparaíso', last_checked_at: null as string | null, last_scraped_at: null as string | null, venues: { id: i + 1, name: `Local ${i}`, city: 'Valparaíso', is_active: true, moderation_status: 'approved', instagram_url: `https://instagram.com/${username}/` } };
   });
   const visited = new Set<string>();
   for (let day = 0; day < 13; day++) {
     const names = Object.keys(seleccionarCuentas(rows));
     assert.ok(names.length <= 5);
-    for (const row of rows) if (names.includes(row.username)) { visited.add(row.username); row.last_checked_at = new Date(Date.UTC(2026, 9, day + 1)).toISOString(); }
+    for (const row of rows) if (names.includes(row.username)) { visited.add(row.username); row.last_checked_at = row.last_scraped_at = new Date(Date.UTC(2026, 9, day + 1)).toISOString(); }
   }
   assert.equal(visited.size, 61);
 });
 
-test('cuentas incompletas conservan prioridad en la siguiente rotación', async () => {
-  const { seleccionarCuentas, cuentasCompletas } = await import('../lib/instagram-incremental');
-  const rows = ['a', 'b'].map((username, i) => ({ username, venue_id: i + 1, city: 'Valparaíso', last_checked_at: null as string | null, venues: { id: i + 1, name: `Local ${username}`, city: 'Valparaíso', is_active: true, moderation_status: 'approved', instagram_url: `https://instagram.com/${username}/` } }));
-  const completas = cuentasCompletas(['a', 'b'], [{ cuenta: 'a', publicado: hace(1), error: false }, { cuenta: 'b', publicado: null, error: false }], 3, 40);
-  for (const row of rows) if (completas.includes(row.username)) row.last_checked_at = ahora.toISOString();
-  assert.deepEqual(Object.keys(seleccionarCuentas(rows, 1)), ['b']);
+test('una cuenta persistentemente vacía no impide avanzar: reintento acotado tras backoff', async () => {
+  const { seleccionarCuentas, cuentasCompletas, REINTENTOS_POR_CORRIDA } = await import('../lib/instagram-incremental');
+  const rows = Array.from({ length: 61 }, (_, i) => {
+    const username = i === 0 ? 'vacia' : `local${i}`;
+    return { username, venue_id: i + 1, city: 'Valparaíso', last_checked_at: null as string | null, last_scraped_at: null as string | null, venues: { id: i + 1, name: `Local ${i}`, city: 'Valparaíso', is_active: true, moderation_status: 'approved', instagram_url: `https://instagram.com/${username}/` } };
+  });
+  const visited = new Set<string>();
+  let intentosVacia = 0;
+  // Una corrida cada 12 h (la cuenta "vacia" nunca entrega evidencia).
+  for (let run = 0; run < 16; run++) {
+    const t = new Date(Date.UTC(2026, 9, 1) + run * 12 * 3_600_000);
+    const names = Object.keys(seleccionarCuentas(rows, 5, { ahora: t }));
+    assert.ok(names.length <= 5);
+    const fallidasElegidas = names.filter((n) => { const r = rows.find((x) => x.username === n)!; return r.last_checked_at && (!r.last_scraped_at || r.last_scraped_at < r.last_checked_at); });
+    assert.ok(fallidasElegidas.length <= REINTENTOS_POR_CORRIDA, `run ${run}: ${fallidasElegidas}`);
+    const completas = cuentasCompletas(names, names.filter((n) => n !== 'vacia').map((n) => ({ cuenta: n, publicado: t.toISOString(), error: false })), 3, 40);
+    for (const row of rows) {
+      if (!names.includes(row.username)) continue;
+      visited.add(row.username);
+      row.last_checked_at = t.toISOString(); // todo intento rota
+      if (completas.includes(row.username)) row.last_scraped_at = t.toISOString(); // sólo lectura completa
+    }
+    if (names.includes('vacia')) intentosVacia++;
+  }
+  assert.equal(visited.size, 61, 'todas las cuentas se revisan pese a la vacía');
+  assert.ok(intentosVacia >= 2 && intentosVacia <= 16, `la vacía se reintenta, acotado (${intentosVacia})`);
+  assert.equal(rows.find((r) => r.username === 'vacia')!.last_scraped_at, null, 'nunca se finge una lectura');
+});
+
+test('reintento: no antes del backoff y a lo más una plaza aunque todas hayan fallado', async () => {
+  const { seleccionarCuentas, BACKOFF_REINTENTO_HORAS } = await import('../lib/instagram-incremental');
+  const mk = (username: string, i: number, checked: string | null, scraped: string | null) => ({ username, venue_id: i, city: 'Valparaíso', last_checked_at: checked, last_scraped_at: scraped, venues: { id: i, name: `Local ${username}`, city: 'Valparaíso', is_active: true, moderation_status: 'approved', instagram_url: `https://instagram.com/${username}/` } });
+  const fallidas = ['f1', 'f2', 'f3', 'f4', 'f5', 'f6'].map((u, i) => mk(u, i + 1, hace(BACKOFF_REINTENTO_HORAS + 1 + i), null));
+  const nuevas = ['n1', 'n2', 'n3', 'n4', 'n5'].map((u, i) => mk(u, i + 10, null, null));
+  const elegidas = Object.keys(seleccionarCuentas([...fallidas, ...nuevas], 5, { ahora }));
+  assert.equal(elegidas.filter((u) => u.startsWith('f')).length, 1, 'una sola plaza de reintento');
+  assert.equal(elegidas[0], 'f6', 'la fallida más antigua');
+  const recien = mk('r1', 20, hace(1), null);
+  assert.ok(!Object.keys(seleccionarCuentas([recien, ...nuevas.slice(0, 1)], 1, { ahora })).includes('r1'), 'antes del backoff no se reintenta');
+});
+
+test('cron: todo intento rota, sólo lo completo es lectura y el fallo queda registrado en la corrida', () => {
+  const src = readFileSync(new URL('../app/api/cron/scrape/route.ts', import.meta.url), 'utf8');
+  assert.match(src, /update\(\{ last_checked_at: now\.toISOString\(\) \}\)\.in\('username', cuentas\)/);
+  assert.match(src, /update\(\{ last_scraped_at: now\.toISOString\(\) \}\)\.in\('username', completas\)/);
+  assert.match(src, /metrics\.instagram_incompletas = cuentas\.filter/);
+  assert.ok(src.indexOf('metrics.instagram_incompletas') < src.indexOf("status: 'succeeded',\n        completed_at"), 'se registra antes de guardar la corrida');
 });

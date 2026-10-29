@@ -64,9 +64,18 @@ export async function guardarMarcas(db: Db, nuevas: Map<string, string>, ahora =
     await db.from('instagram_accounts').update({ last_post_at, last_scraped_at: ahora.toISOString() }).eq('username', username);
 }
 
-/** Solo cuentas activas de recintos aprobados cuyo Instagram coincide con el registro. */
-export function seleccionarCuentas(rows: { username: string; venue_id: number | null; city: string | null; last_checked_at: string | null; venues: { id: number; name: string; city: string; is_active: boolean; moderation_status: string; instagram_url: string | null } | { id: number; name: string; city: string; is_active: boolean; moderation_status: string; instagram_url: string | null }[] | null }[], limite = 5) {
-  const result: Record<string, { venue: string; city: string; identity: string }> = Object.create(null);
+/** Reintentos de cuentas que fallaron: a lo más `reintentos` plazas por corrida y sólo pasado el backoff. */
+export const REINTENTOS_POR_CORRIDA = 1;
+export const BACKOFF_REINTENTO_HORAS = 6;
+/**
+ * Solo cuentas activas de recintos aprobados cuyo Instagram coincide con el registro.
+ * Rotación: primero las nunca revisadas y luego la revisión más antigua. Una cuenta
+ * cuyo último intento no fue una lectura completa (last_checked_at posterior a
+ * last_scraped_at) puede tomar una plaza de reintento acotada tras el backoff; nunca
+ * más de `reintentos` plazas, así una cuenta vacía o fallida no bloquea a las demás.
+ */
+export function seleccionarCuentas(rows: { username: string; venue_id: number | null; city: string | null; last_checked_at: string | null; last_scraped_at?: string | null; venues: { id: number; name: string; city: string; is_active: boolean; moderation_status: string; instagram_url: string | null } | { id: number; name: string; city: string; is_active: boolean; moderation_status: string; instagram_url: string | null }[] | null }[], limite = 5, opciones: { ahora?: Date; reintentos?: number; backoffHoras?: number } = {}) {
+  const validas: Record<string, { venue: string; city: string; identity: string }> = Object.create(null);
   const ordered = [...rows].sort((a, b) => (a.last_checked_at || '').localeCompare(b.last_checked_at || '') || a.username.localeCompare(b.username));
   for (const row of ordered) {
     const v = Array.isArray(row.venues) ? (row.venues.length === 1 ? row.venues[0] : null) : row.venues;
@@ -81,9 +90,16 @@ export function seleccionarCuentas(rows: { username: string; venue_id: number | 
     if (historicAccount && !sameVenue(historicAccount)) continue;
     const identities = [...new Set(Object.values(SOURCES).filter(sameVenue).map((source) => source.identity))];
     if (identities.length > 1) continue;
-    result[row.username] = { venue: v.name, city: v.city, identity: identities[0] || `venue-${v.id}` };
-    if (Object.keys(result).length >= limite) break;
+    validas[row.username] = { venue: v.name, city: v.city, identity: identities[0] || `venue-${v.id}` };
   }
+  const ahora = (opciones.ahora ?? new Date()).getTime();
+  const espera = (opciones.backoffHoras ?? BACKOFF_REINTENTO_HORAS) * 3_600_000;
+  const fallida = (r: (typeof rows)[number]) =>
+    Boolean(r.last_checked_at) && (!r.last_scraped_at || r.last_scraped_at < r.last_checked_at!) && Date.parse(r.last_checked_at!) <= ahora - espera;
+  const reintentar = ordered.filter((r) => r.username in validas && fallida(r)).slice(0, opciones.reintentos ?? REINTENTOS_POR_CORRIDA).map((r) => r.username);
+  const elegidas = [...reintentar, ...ordered.map((r) => r.username).filter((u) => u in validas && !reintentar.includes(u))].slice(0, limite);
+  const result: Record<string, { venue: string; city: string; identity: string }> = Object.create(null);
+  for (const u of elegidas) result[u] = validas[u];
   return result;
 }
 

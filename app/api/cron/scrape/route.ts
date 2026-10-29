@@ -206,10 +206,10 @@ export async function GET(request: Request) {
     }
     // La consulta falla cerrada: nunca sustituir el registro por cuentas supuestas.
     const registro = await db.from('instagram_accounts')
-      .select('username,venue_id,city,last_checked_at,venues(id,name,city,is_active,moderation_status,instagram_url)')
+      .select('username,venue_id,city,last_checked_at,last_scraped_at,venues(id,name,city,is_active,moderation_status,instagram_url)')
       .eq('status', 'active').eq('kind', 'venue').order('last_checked_at', { ascending: true, nullsFirst: true }).order('username').limit(1000);
     if (registro.error) throw new IngestionError('DB_INSTAGRAM_ACCOUNTS');
-    const fuentes = seleccionarCuentas(registro.data || []);
+    const fuentes = seleccionarCuentas(registro.data || [], 5, { ahora: new Date() });
     const cuentas = Object.keys(fuentes);
     metrics.accounts_scanned = cuentas.length;
     if (!cuentas.length) {
@@ -367,6 +367,14 @@ export async function GET(request: Request) {
         .upsert(evidence, { onConflict: 'post_id', ignoreDuplicates: true });
       if (saved.error) throw new IngestionError('DB_EVIDENCE');
     }
+    // Sólo evidencia completa cuenta como lectura; el resto queda registrado como incompleto.
+    const completas = cuentasCompletas(cuentas, items.map(item => ({
+      cuenta: postOwner(item, fuentes),
+      publicado: parseTimestamp(item.timestamp ?? item.takenAt ?? item.takenAtIso ?? item.publishedAt)?.toISOString() || null,
+      error: Boolean(item.error) || !postCode(item),
+    })), limit, MAX_ITEMS);
+    metrics.instagram_completas = completas;
+    metrics.instagram_incompletas = cuentas.filter(c => !completas.includes(c));
     const cost = typeof finalRun.usageTotalUsd === 'number' ? finalRun.usageTotalUsd : null;
     metrics.duration_ms = Date.now() - started;
     metrics.apify_cost_usd = cost;
@@ -380,12 +388,6 @@ export async function GET(request: Request) {
       })
       .eq('id', runId);
     if (saved.error) throw new IngestionError('DB_FINISH');
-    // Las cuentas incompletas conservan prioridad para el próximo intento.
-    const completas = cuentasCompletas(cuentas, items.map(item => ({
-      cuenta: postOwner(item, fuentes),
-      publicado: parseTimestamp(item.timestamp ?? item.takenAt ?? item.takenAtIso ?? item.publishedAt)?.toISOString() || null,
-      error: Boolean(item.error) || !postCode(item),
-    })), limit, MAX_ITEMS);
     // Una respuesta incompleta nunca adelanta las marcas de agua.
     const avanzar = marcasNuevas({
       exito: true, marcas,
@@ -396,9 +398,11 @@ export async function GET(request: Request) {
       porCuenta: limit, totalMax: MAX_ITEMS,
     });
     await guardarMarcas(db, avanzar).catch(() => undefined);
+    // Todo intento rota (last_checked_at): una cuenta vacía o fallida no retiene plazas.
+    // Su reintento es acotado (una plaza por corrida, tras el backoff; ver seleccionarCuentas).
+    const rotacion = await db.from('instagram_accounts').update({ last_checked_at: now.toISOString() }).in('username', cuentas);
+    if (rotacion.error) console.warn('[ingestion] no se pudo actualizar la rotación');
     if (completas.length) {
-      const rotacion = await db.from('instagram_accounts').update({ last_checked_at: now.toISOString() }).in('username', completas);
-      if (rotacion.error) console.warn('[ingestion] no se pudo actualizar la rotación');
       const leidas = await db.from('instagram_accounts').update({ last_scraped_at: now.toISOString() }).in('username', completas);
       if (leidas.error) console.warn('[ingestion] no se pudo actualizar lectura');
     }
