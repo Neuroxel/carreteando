@@ -27,12 +27,13 @@ const nextConfig = {
     ],
   },
   async redirects() {
-    return [{
-      source: '/:path*',
-      has: [{ type: 'host', value: 'carreteando.vercel.app' }],
-      destination: 'https://dondesalgo.vercel.app/:path*',
+    // Cron calls remain on their configured host; never redirect credentials.
+    return ['carreteando.vercel.app', 'dondesalgo.vercel.app'].map((host) => ({
+      source: '/:path((?!api/cron).*)',
+      has: [{ type: 'host', value: host }],
+      destination: 'https://www.dondesalgo.cl/:path',
       permanent: true,
-    }];
+    }));
   },
   async headers() {
     return [
