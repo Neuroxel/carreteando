@@ -30,11 +30,11 @@ test('pasos: Qué → Dónde; Esta noche por defecto; Cambiar cuándo es opciona
 test('final: intención + dónde + cuándo → URL reproducible (recargar y compartir)', () => {
   const s = avanzar(INICIO, { tipo: 'elegir', plan: 'musica-en-vivo' });
   const f = filtrosFinales(s, { tipo: 'comuna', ciudad: 'Quilpué' });
-  assert.deepEqual(f, { plan: 'musica-en-vivo', fecha: 'hoy', ciudad: 'Quilpué', cerca: false, zona: null });
+  assert.deepEqual(f, { plan: 'musica-en-vivo', fecha: 'hoy', desde: null, hasta: null, ciudad: 'Quilpué', cerca: false, zona: null });
   const url = new URLSearchParams({ plan: f.plan!, fecha: f.fecha, ciudad: f.ciudad });
   const r = parseFilters(url, 'hoy');
   assert.deepEqual([r.plan, r.fecha, r.ciudad, r.cerca], ['musica-en-vivo', 'hoy', 'Quilpué', false]);
-  assert.deepEqual(filtrosFinales(s, { tipo: 'cerca' }), { plan: 'musica-en-vivo', fecha: 'hoy', ciudad: 'todos', cerca: true, zona: null });
+  assert.deepEqual(filtrosFinales(s, { tipo: 'cerca' }), { plan: 'musica-en-vivo', fecha: 'hoy', desde: null, hasta: null, ciudad: 'todos', cerca: true, zona: null });
   assert.equal(filtrosFinales(s, { tipo: 'region' }).ciudad, 'todos');
 });
 
@@ -191,7 +191,7 @@ test('bienvenida: se puede empezar por el lugar; la intención queda opcional y 
   assert.equal(donde.paso, 'donde');
   assert.equal(donde.plan, null);
   const conFecha = avanzar(donde, { tipo: 'cuando', fecha: 'finde' });
-  assert.deepEqual(filtrosFinales(conFecha, { tipo: 'comuna', ciudad: 'Valparaíso' }), { plan: null, fecha: 'finde', ciudad: 'Valparaíso', cerca: false, zona: null });
+  assert.deepEqual(filtrosFinales(conFecha, { tipo: 'comuna', ciudad: 'Valparaíso' }), { plan: null, fecha: 'finde', desde: null, hasta: null, ciudad: 'Valparaíso', cerca: false, zona: null });
   // Volver a "¿Qué?" desde ahí y elegir: conserva la fecha.
   const que = avanzar(conFecha, { tipo: 'volver' });
   const elegido = avanzar(que, { tipo: 'elegir', plan: 'bailar' as never });

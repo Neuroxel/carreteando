@@ -17,10 +17,12 @@ export interface EstadoBienvenida {
   plan: SlugIntencion | null;
   fecha: Fecha;
   cambiandoCuando: boolean;
+  /** Rango de noches elegido en el calendario táctil (manda sobre `fecha`). */
+  rango: { desde: string; hasta: string } | null;
   /** Una transición en curso: mientras dura, ninguna otra elección se ejecuta (doble toque). */
   bloqueado: boolean;
 }
-export const INICIO: EstadoBienvenida = { paso: 'que', orden: 'que', donde: null, plan: null, fecha: 'hoy', cambiandoCuando: false, bloqueado: false };
+export const INICIO: EstadoBienvenida = { paso: 'que', orden: 'que', donde: null, plan: null, fecha: 'hoy', rango: null, cambiandoCuando: false, bloqueado: false };
 
 export type Accion =
   | { tipo: 'tocar'; plan: SlugIntencion }
@@ -29,6 +31,7 @@ export type Accion =
   | { tipo: 'desbloquear' }
   | { tipo: 'cambiarCuando' }
   | { tipo: 'cuando'; fecha: Fecha }
+  | { tipo: 'rango'; desde: string; hasta: string }
   | { tipo: 'volver' }
   /** Empezar por el lugar: se salta "¿Qué?" sin elegir intención (queda opcional). */
   | { tipo: 'irDonde' }
@@ -48,7 +51,9 @@ export function avanzar(s: EstadoBienvenida, a: Accion): EstadoBienvenida {
     case 'cambiarCuando':
       return { ...s, cambiandoCuando: !s.cambiandoCuando };
     case 'cuando':
-      return { ...s, fecha: a.fecha, cambiandoCuando: false };
+      return { ...s, fecha: a.fecha, rango: null, cambiandoCuando: false };
+    case 'rango':
+      return { ...s, fecha: 'futuro', rango: { desde: a.desde, hasta: a.hasta }, cambiandoCuando: false };
     case 'irDonde':
       return s.bloqueado || s.paso !== 'que' ? s : { ...s, plan: null, donde: null, orden: 'donde', paso: 'donde', cambiandoCuando: false };
     case 'fijarDonde':
@@ -84,6 +89,9 @@ export function filtrosFinales(s: EstadoBienvenida, d: Donde) {
   return {
     plan: s.plan,
     fecha: s.fecha,
+    // Rango elegido en el calendario: viaja a la URL (?desde=&hasta=); si no, sin rango.
+    desde: s.rango?.desde ?? null,
+    hasta: s.rango?.hasta ?? null,
     ciudad: d.tipo === 'comuna' ? d.ciudad : 'todos',
     cerca: d.tipo === 'cerca',
     zona: null,

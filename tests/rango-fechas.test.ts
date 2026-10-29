@@ -108,3 +108,26 @@ test('calendario: el mes anterior no baja del mes actual; sin fetch ni query ext
   assert.match(src, /disabled=\{mes <= mesHoy\}/);
   assert.match(src, /disabled=\{pasado\}/);
 });
+
+test('wizard: elegir fechas en el calendario viaja a la URL por los dos recorridos', async () => {
+  const { avanzar, INICIO, filtrosFinales } = await import('../lib/bienvenida');
+  const { fechaAUrl } = await import('../lib/filters');
+  // Qué → Dónde: se elige el rango en "Cambiar cuándo" y luego la comuna.
+  let s = avanzar(INICIO, { tipo: 'elegir', plan: 'musica-en-vivo' as never });
+  s = avanzar(s, { tipo: 'rango', desde: '2026-12-30', hasta: '2027-01-02' });
+  const f1 = filtrosFinales(s, { tipo: 'comuna', ciudad: 'Valparaíso' });
+  assert.deepEqual([f1.desde, f1.hasta, f1.fecha, f1.ciudad, f1.plan], ['2026-12-30', '2027-01-02', 'futuro', 'Valparaíso', 'musica-en-vivo']);
+  const p = new URLSearchParams();
+  fechaAUrl(p, f1, 'hoy');
+  assert.equal(p.toString(), 'desde=2026-12-30&hasta=2027-01-02');
+  // Dónde → Qué: el rango se conserva al fijar el lugar.
+  let d = avanzar(INICIO, { tipo: 'irDonde' });
+  d = avanzar(d, { tipo: 'rango', desde: '2026-11-07', hasta: '2026-11-07' });
+  d = avanzar(d, { tipo: 'fijarDonde', donde: { tipo: 'comuna', ciudad: 'Viña del Mar' } });
+  const f2 = filtrosFinales(d, d.donde!);
+  assert.deepEqual([f2.desde, f2.hasta], ['2026-11-07', '2026-11-07']);
+  // Elegir un atajo (Este finde) suelta el rango.
+  const atajo = avanzar(d, { tipo: 'cuando', fecha: 'finde' });
+  assert.equal(atajo.rango, null);
+  assert.equal(filtrosFinales(atajo, atajo.donde!).desde, null);
+});

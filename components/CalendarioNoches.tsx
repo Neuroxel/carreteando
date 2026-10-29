@@ -15,6 +15,7 @@ export default function CalendarioNoches({
   conteo,
   onElegir,
   onCerrar,
+  sinConteo = false,
 }: {
   today: string;
   desde: string | null;
@@ -22,6 +23,8 @@ export default function CalendarioNoches({
   conteo: (desde: string, hasta: string) => number;
   onElegir: (desde: string, hasta: string) => void;
   onCerrar: () => void;
+  /** En el asistente no hay cartelera filtrada que contar: el botón dice "Usar estas fechas". */
+  sinConteo?: boolean;
 }) {
   const [a, setA] = useState<string | null>(desde);
   const [b, setB] = useState<string | null>(hasta);
@@ -99,7 +102,7 @@ export default function CalendarioNoches({
           disabled={!a}
           onClick={() => a && b && onElegir(a, b)}
         >
-          {a ? `Ver ${n} ${n === 1 ? 'carrete' : 'carretes'}` : 'Elige las fechas'}
+          {!a ? 'Elige las fechas' : sinConteo ? 'Usar estas fechas' : `Ver ${n} ${n === 1 ? 'carrete' : 'carretes'}`}
         </button>
       </div>
     </div>

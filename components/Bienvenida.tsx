@@ -14,6 +14,9 @@ import {
   type Nivel,
 } from '../lib/capacidad';
 import PosterDecor from './poster/PosterDecor';
+import CalendarioNoches from './CalendarioNoches';
+import { etiquetaRango } from '../lib/rango-noches';
+import { fechaDeLaNoche } from '../lib/event-extraction';
 import dynamic from 'next/dynamic';
 import MovimientoOptIn from './MovimientoOptIn';
 import { ACERCAR_MS, ALEJARSE_MS, ESCALON_MS } from '../lib/vidrio-tiempos';
@@ -83,6 +86,7 @@ export default function Bienvenida({
   const [elegida, setElegida] = useState<string | null>(null);
   const [ticket, setTicket] = useState<string[] | null>(null);
   const [otras, setOtras] = useState(false);
+  const [calendario, setCalendario] = useState(false);
   const [fisica, setFisica] = useState<'cargando' | 'listo' | 'fallback'>('cargando');
   // Al cambiar de pregunta, los afiches nuevos llegan desde el fondo (CSS; con WebGL también su canto).
   const [llega, setLlega] = useState(false);
@@ -275,10 +279,11 @@ export default function Bienvenida({
         : f === 'finde'
           ? 'Este finde'
           : 'Más adelante';
+  const cuandoDe = (e: EstadoBienvenida) => (e.rango ? etiquetaRango(e.rango.desde, e.rango.hasta) : etiquetaFecha(e.fecha));
   const nombreLugar = (d: Donde) => (d.tipo === 'cerca' ? 'Cerca de ti' : d.tipo === 'region' ? 'Toda la región' : d.ciudad);
   /** Cierra con un estado explícito (no espera a que React aplique el último dispatch). */
   const cerrarCon = (estado: EstadoBienvenida, d: Donde) => {
-    setTicket([intencionPorSlug(estado.plan)?.label || 'Planes', nombreLugar(d), etiquetaFecha(estado.fecha)]);
+    setTicket([intencionPorSlug(estado.plan)?.label || 'Planes', nombreLugar(d), cuandoDe(estado)]);
     setFase('ticket');
     luego(t().ticket, () => salir(() => onTerminar(estado, d)));
   };
@@ -302,7 +307,7 @@ export default function Bienvenida({
       return;
     }
     const lugar = nombreLugar(d);
-    setTicket([intencionPorSlug(s.plan)?.label || 'Planes', lugar, etiquetaFecha(s.fecha)]);
+    setTicket([intencionPorSlug(s.plan)?.label || 'Planes', lugar, cuandoDe(s)]);
     setFase('ticket');
     luego(t().ticket, () => salir(() => onTerminar(s, d)));
   };
@@ -642,7 +647,7 @@ export default function Bienvenida({
               </div>
               <div className="bienvenida-cuando">
                 <span>
-                  Para <strong>{etiquetaFecha(s.fecha).toLowerCase()}</strong>
+                  Para <strong>{s.rango ? cuandoDe(s) : etiquetaFecha(s.fecha).toLowerCase()}</strong>
                 </span>
                 <span aria-hidden="true">·</span>
                 <button
@@ -661,14 +666,43 @@ export default function Bienvenida({
                         type="button"
                         className="bv-afiche bv-afiche-cuando"
                         style={{ ['--giro' as string]: `${GIROS[n]}deg` }}
-                        aria-pressed={s.fecha === v}
-                        onClick={() => dispatch({ tipo: 'cuando', fecha: v })}
+                        aria-pressed={s.fecha === v && !s.rango}
+                        onClick={() => {
+                          setCalendario(false);
+                          dispatch({ tipo: 'cuando', fecha: v });
+                        }}
                       >
                         <Capas />
                         <strong>{etiquetaFecha(v)}</strong>
                       </button>
                     ))}
+                    {/* Fechas concretas (un viaje, un finde largo): calendario táctil, sin teclado. */}
+                    <button
+                      type="button"
+                      className="bv-afiche bv-afiche-cuando"
+                      style={{ ['--giro' as string]: `${GIROS[4]}deg` }}
+                      aria-pressed={Boolean(s.rango)}
+                      aria-expanded={calendario}
+                      onClick={() => setCalendario((v) => !v)}
+                    >
+                      <Capas />
+                      <strong>📅 Elegir fechas</strong>
+                    </button>
                   </div>
+                )}
+                {s.cambiandoCuando && calendario && (
+                  <CalendarioNoches
+                    today={fechaDeLaNoche(new Date())}
+                    desde={s.rango?.desde ?? null}
+                    hasta={s.rango?.hasta ?? null}
+                    conteo={() => 0}
+                    sinConteo
+                    onElegir={(desde, hasta) => {
+                      setCalendario(false);
+                      dispatch({ tipo: 'rango', desde, hasta });
+                    }}
+                    onCerrar={() => setCalendario(false)}
+                  />
                 )}
               </div>
             </div>
