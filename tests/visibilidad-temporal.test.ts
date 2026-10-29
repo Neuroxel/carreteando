@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { visibleEnCartelera } from '../lib/temporal';
+import { sigueTrasCorte, visibleEnCartelera } from '../lib/temporal';
 import { cuantos, eventosLista, eventosRadar, lugaresLista, lugaresRadar, type Contexto } from '../lib/resultados';
 import type { Evento } from '../lib/types';
 import type { Lugar } from '../lib/venues';
@@ -35,4 +35,19 @@ test('lista, radar y conteos concuerdan para eventos que dejaron de mostrarse', 
   assert.equal(cuantos(c, f, { vista: 'mapa', ver: 'eventos', capa: 'hoy' }), 1);
   assert.deepEqual(lugaresLista(c, f).map((l) => l.slug), ['noche']);
   assert.deepEqual(lugaresRadar(c, f, 'hoy').map((l) => l.slug), ['noche']);
+});
+
+
+test('un cierre confirmado después de las 05 sigue en lista, mapa y conteos hasta terminar', () => {
+  const mk = (id: string, fin: string | null) => ({ id, nombre: id, fecha: '2026-10-28', hora: '23:00', fin, activo: true, ciudad: 'Valparaíso', lugar: id, categoria: 'otro', tipo: 'bar' }) as Evento;
+  const activos = [mk('hasta-6', '06:00'), mk('terminado', '05:15'), mk('sin-fin', null)];
+  const ahora = { fecha: '2026-10-29', minutos: 5 * 60 + 30 };
+  const c: Contexto = { todos: activos, lugares: [], today: '2026-10-29', ahora, lugarDe: (e) => e.lugar || null, sectorDe: () => null };
+  const f = { fecha: 'hoy' as const, ciudad: 'Valparaíso' };
+  assert.deepEqual(eventosLista(c, f).map((e) => e.id), ['hasta-6']);
+  assert.deepEqual(eventosRadar(c, f).map((e) => e.id), ['hasta-6']);
+  assert.equal(cuantos(c, f, { vista: 'lista', ver: 'eventos', capa: 'hoy' }), 1);
+  assert.equal(sigueTrasCorte(activos[0], { ...ahora, minutos: 6 * 60 }), false);
+  assert.equal(sigueTrasCorte({ ...activos[0], fecha: '2026-10-27' }, ahora), false);
+  assert.equal(sigueTrasCorte({ ...activos[0], hora: '02:00' }, ahora), false);
 });

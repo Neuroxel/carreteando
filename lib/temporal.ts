@@ -1,5 +1,5 @@
 import { minutosDelDia } from './occurrence';
-import { CORTE_NOCHE_HORAS } from './event-extraction';
+import { addDays, CORTE_NOCHE_HORAS } from './event-extraction';
 
 /**
  * Estado temporal de un evento, sin inventar duraciones:
@@ -39,6 +39,13 @@ const MIN_DIA = 24 * 60;
 function minutosRelativos(fecha: string, minutos: number, hoy: string) {
   const dias = Math.round((Date.parse(`${fecha}T00:00:00Z`) - Date.parse(`${hoy}T00:00:00Z`)) / 86_400_000);
   return dias * MIN_DIA + minutos;
+}
+
+/** Tras las 05:00 solo se conserva la noche anterior con cierre explícito aún futuro. */
+export function sigueTrasCorte(e: { fecha: string; hora?: string | null; fin?: string | null }, ahora: AhoraChile): boolean {
+  const inicio = minutosDelDia(e.hora), fin = minutosDelDia(e.fin);
+  return ahora.minutos >= CORTE_NOCHE_HORAS * 60 && e.fecha === addDays(ahora.fecha, -1)
+    && inicio !== null && fin !== null && fin < inicio && fin > ahora.minutos;
 }
 
 /** Política provisional de cartelera, no una afirmación de que el evento terminó. */
