@@ -210,3 +210,23 @@ test('61 cuentas con una vacía persistente: ciclo de 13 corridas, nadie queda f
   }
   assert.ok(peorHueco <= MAX_DIAS - 1, `hueco máximo entre lecturas ${peorHueco} días`);
 });
+
+test('backoff global: un único usuario vacío no se repite en corridas separadas por menos de 6 h', async () => {
+  const { seleccionarCuentas, cuentasCompletas, BACKOFF_REINTENTO_HORAS } = await import('../lib/instagram-incremental');
+  const row = { username: 'vacia', venue_id: 1, city: 'Valparaíso', last_checked_at: null as string | null, last_scraped_at: null as string | null, venues: { id: 1, name: 'Local vacía', city: 'Valparaíso', is_active: true, moderation_status: 'approved', instagram_url: 'https://instagram.com/vacia/' } };
+  const t0 = Date.UTC(2026, 9, 29, 12);
+  const corre = (h: number) => {
+    const t = new Date(t0 + h * 3_600_000);
+    const names = Object.keys(seleccionarCuentas([row], 5, { ahora: t }));
+    if (names.length) {
+      row.last_checked_at = t.toISOString();
+      if (cuentasCompletas(names, [], 3, 40).includes('vacia')) row.last_scraped_at = t.toISOString();
+    }
+    return names;
+  };
+  assert.deepEqual(corre(0), ['vacia'], 'primera vez: nunca revisada');
+  assert.deepEqual(corre(1), [], '1 h después: en backoff, aunque sobren plazas');
+  assert.deepEqual(corre(BACKOFF_REINTENTO_HORAS - 0.5), [], 'antes de 6 h tampoco');
+  assert.deepEqual(corre(BACKOFF_REINTENTO_HORAS + 0.5), ['vacia'], 'pasado el backoff vuelve (por rotación, nunca leída)');
+  assert.equal(row.last_scraped_at, null, 'nunca se finge una lectura');
+});

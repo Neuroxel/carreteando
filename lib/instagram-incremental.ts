@@ -81,7 +81,8 @@ export const CORRIDAS_POR_DIA = 1;
  * cuyo último intento no fue una lectura completa (last_checked_at posterior a
  * last_scraped_at) es "fallida": nunca entra por la rotación normal, sólo por la plaza
  * de reintento (a lo más `reintentos` por corrida), tras el backoff y sólo si su fallo
- * es reciente (≤ REINTENTO_MAX_DIAS desde su última lectura completa). Una cuenta que
+ * es reciente (≤ REINTENTO_MAX_DIAS desde su última lectura completa). El backoff es
+ * global: ninguna cuenta cuyo último intento falló vuelve antes de él. Una cuenta que
  * nunca entrega datos o lleva días fallando vuelve a la rotación común cuando le toca
  * por antigüedad, así no ocupa la plaza de reintento todos los días.
  */
@@ -111,8 +112,11 @@ export function seleccionarCuentas(rows: { username: string; venue_id: number | 
     fallo(r) && Boolean(r.last_scraped_at) && Date.parse(r.last_checked_at!) - Date.parse(r.last_scraped_at!) <= REINTENTO_MAX_DIAS * 86_400_000;
   const listaReintento = (r: (typeof rows)[number]) => reciente(r) && Date.parse(r.last_checked_at!) <= ahora - espera;
   const reintentar = ordered.filter((r) => r.username in validas && listaReintento(r)).slice(0, opciones.reintentos ?? REINTENTOS_POR_CORRIDA).map((r) => r.username);
-  // Rotación común: nunca una cuenta con fallo reciente (ésas sólo por la plaza de reintento).
-  const rotacion = ordered.filter((r) => r.username in validas && !reciente(r) && !reintentar.includes(r.username)).map((r) => r.username);
+  // Rotación común: nunca una cuenta con fallo reciente (ésas sólo por la plaza de reintento),
+  // y el backoff es global: ninguna cuenta cuyo último intento falló vuelve antes de `espera`,
+  // tampoco una nunca leída o con fallo antiguo, aunque sobren plazas.
+  const enBackoff = (r: (typeof rows)[number]) => fallo(r) && Date.parse(r.last_checked_at!) > ahora - espera;
+  const rotacion = ordered.filter((r) => r.username in validas && !reciente(r) && !enBackoff(r) && !reintentar.includes(r.username)).map((r) => r.username);
   const elegidas = [...reintentar, ...rotacion].slice(0, limite);
   const result: Record<string, { venue: string; city: string; identity: string }> = Object.create(null);
   for (const u of elegidas) result[u] = validas[u];
