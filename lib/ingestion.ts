@@ -39,14 +39,15 @@ export const ACTIVE_SOURCES = [
   'clubdvina',
 ] as const;
 export type RawPost = Record<string, unknown>;
-export function postOwner(item: RawPost): string | null {
+export type SourceMap = Record<string, { venue: string; city: string; identity: string }>;
+export function postOwner(item: RawPost, sources: SourceMap = SOURCES): string | null {
   const owner =
     item.owner && typeof item.owner === 'object' ? (item.owner as RawPost).username : null;
   const direct = typeof item.ownerUsername === 'string' ? item.ownerUsername : owner;
   if (typeof direct !== 'string') return null;
   const handle = direct.toLowerCase().replace(/^@/, '');
   if (typeof owner === 'string' && owner.toLowerCase().replace(/^@/, '') !== handle) return null;
-  return Object.hasOwn(SOURCES, handle) ? handle : null;
+  return Object.hasOwn(sources, handle) ? handle : null;
 }
 export function postCode(item: RawPost): string | null {
   if (typeof item.shortCode === 'string' && /^[\w-]{3,64}$/.test(item.shortCode))
@@ -69,11 +70,11 @@ export type Rejection =
   | 'classification_rejected'
   | 'campaign_suppressed'
   | 'location_ambiguous';
-export function classifyPost(item: RawPost, now = new Date()) {
+export function classifyPost(item: RawPost, now = new Date(), sources: SourceMap = SOURCES) {
   const reject = (reason: Rejection) => ({ reason, row: null }) as const;
-  const username = postOwner(item);
+  const username = postOwner(item, sources);
   if (!username) return reject('source_rejected');
-  const meta = SOURCES[username];
+  const meta = sources[username];
   const code = postCode(item);
   const caption = typeof item.caption === 'string' ? item.caption.trim() : '';
   if (!code || !caption || caption.length > 10000) return reject('malformed');
@@ -150,15 +151,15 @@ export function boundedResultsLimit(value: unknown): number {
   return Number.isFinite(n) && n >= 1 ? Math.min(5, Math.floor(n)) : 3;
 }
 
-export function classifySourceItem(item: RawPost, now = new Date()) {
+export function classifySourceItem(item: RawPost, now = new Date(), sources: SourceMap = SOURCES) {
   const published = parseTimestamp(
     item.timestamp ?? item.takenAt ?? item.takenAtIso ?? item.publishedAt,
   );
   const caption = typeof item.caption === 'string' ? item.caption : '';
   const segments = published ? splitDatedAgenda(caption, published.toISOString()) : [];
-  if (!segments.length) return [classifyPost(item, now)];
+  if (!segments.length) return [classifyPost(item, now, sources)];
   return segments.map((segment, index) => {
-    const decision = classifyPost({ ...item, caption: segment }, now);
+    const decision = classifyPost({ ...item, caption: segment }, now, sources);
     if (!decision.row) return decision;
     return {
       ...decision,

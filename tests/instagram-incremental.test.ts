@@ -43,3 +43,19 @@ test('rutas: la ingesta y el piloto usan la ventana incremental (no "14 days" fi
   assert.match(piloto, /entradaActor\(actor, cuentas, PILOT_LIMITS\.postsPerAccount, ventana\)/);
   assert.match(piloto, /marcasNuevas\(/);
 });
+
+test('selección: solo cuentas de locales aprobados y coincidencia de URL; rota y limita', async () => {
+  const { seleccionarCuentas } = await import('../lib/instagram-incremental');
+  const venue = { id: 1, name: 'Local Uno', city: 'Valparaíso', is_active: true, moderation_status: 'approved', instagram_url: 'https://www.instagram.com/localuno/' };
+  const first = { username: 'localuno', venue_id: 1, city: 'Valparaíso', last_scraped_at: null, venues: venue };
+  const later = { ...first, username: 'localdos', venue_id: 2, last_scraped_at: '2026-10-28T00:00:00Z', venues: { ...venue, id: 2, instagram_url: 'https://instagram.com/localdos/' } };
+  const wrong = { ...first, username: 'impostor' };
+  const inactive = { ...first, username: 'inactivo', venues: { ...venue, instagram_url: 'https://instagram.com/inactivo/', is_active: false } };
+  const sources = seleccionarCuentas([later, wrong, inactive, first], 1);
+  assert.deepEqual(Object.keys(sources), ['localuno']);
+  assert.deepEqual(sources.localuno, { venue: 'Local Uno', city: 'Valparaíso', identity: 'venue-1' });
+  const { postOwner, classifyPost } = await import('../lib/ingestion');
+  assert.equal(postOwner({ ownerUsername: 'impostor' }, sources), null);
+  assert.equal(postOwner({ ownerUsername: 'localuno' }, sources), 'localuno');
+  assert.equal(classifyPost({ ownerUsername: 'localuno', shortCode: 'abc123', timestamp: '2026-10-23T12:00:00Z', caption: 'Concierto 24/10/2026 21:00' }, ahora, sources).row?.moderation_status, 'pending');
+});

@@ -2,13 +2,12 @@ import { NextResponse } from 'next/server';
 import { refrescarPublico } from '../../../../lib/snapshot';
 import { getAdminDb } from '../../../../lib/server-db';
 import { presupuestoApify } from '../../../../lib/apify-budget';
-import { guardarMarcas, leerMarcas, marcasNuevas, ventanaActor } from '../../../../lib/instagram-incremental';
+import { guardarMarcas, leerMarcas, marcasNuevas, ventanaActor, seleccionarCuentas } from '../../../../lib/instagram-incremental';
 import { cronAutorizado } from '../../../../lib/cron-auth';
 import {
   boundedResultsLimit,
   classifyPost,
   classifySourceItem,
-  ACTIVE_SOURCES,
   dedupeCandidates,
   postCode,
   postOwner,
@@ -60,7 +59,7 @@ export async function GET(request: Request) {
   let datasetId: string | null = null;
   let providerCompleted = false;
   const metrics: Record<string, unknown> = {
-    accounts_scanned: paused ? 0 : ACTIVE_SOURCES.length,
+    accounts_scanned: 0,
     posts_found: 0,
     event_candidates: 0,
     events_saved: 0,
@@ -205,6 +204,19 @@ export async function GET(request: Request) {
       if (finished.error) throw new IngestionError('DB_FINISH');
       return reply({ success: true, run_id: runId, ...metrics });
     }
+    // La consulta falla cerrada: nunca sustituir el registro por cuentas supuestas.
+    const registro = await db.from('instagram_accounts')
+      .select('username,venue_id,city,last_scraped_at,venues(id,name,city,is_active,moderation_status,instagram_url)')
+      .eq('status', 'active').eq('kind', 'venue').order('last_scraped_at', { ascending: true, nullsFirst: true }).order('username').limit(1000);
+    if (registro.error) throw new IngestionError('DB_INSTAGRAM_ACCOUNTS');
+    const fuentes = seleccionarCuentas(registro.data || []);
+    const cuentas = Object.keys(fuentes);
+    metrics.accounts_scanned = cuentas.length;
+    if (!cuentas.length) {
+      const omitida = await db.from('ingestion_runs').update({ status: 'succeeded', completed_at: new Date().toISOString(), cost_usd: 0, metrics: { ...metrics, apify_skipped: 'NO_VERIFIED_ACCOUNTS' } }).eq('id', runId);
+      if (omitida.error) throw new IngestionError('DB_FINISH');
+      return reply({ success: true, run_id: runId, skipped: 'NO_VERIFIED_ACCOUNTS', ...metrics });
+    }
     // Presupuesto mensual: la base (y Apify, si responde) dicen cuánto queda.
     const presupuesto = await presupuestoApify(db, { token });
     metrics.apify_budget = presupuesto;
@@ -220,14 +232,14 @@ export async function GET(request: Request) {
       return reply({ success: true, run_id: runId, skipped: presupuesto.motivo, ...metrics });
     }
     // Incremental: la ventana sale de las marcas de agua por cuenta (con solape).
-    const marcas = await leerMarcas(db, ACTIVE_SOURCES);
-    const ventana = ventanaActor(ACTIVE_SOURCES, marcas, new Date());
+    const marcas = await leerMarcas(db, cuentas);
+    const ventana = ventanaActor(cuentas, marcas, new Date());
     metrics.instagram_window = ventana;
     const start = record(
       await apify(`acts/${actor}/runs?timeout=180&maxItems=${MAX_ITEMS}&maxTotalChargeUsd=${presupuesto.maxTotalChargeUsd}`, {
         method: 'POST',
         body: JSON.stringify({
-          directUrls: ACTIVE_SOURCES.map((h) => `https://www.instagram.com/${h}/`),
+          directUrls: cuentas.map((h) => `https://www.instagram.com/${h}/`),
           resultsType: 'posts',
           resultsLimit: limit,
           onlyPostsNewerThan: ventana,
@@ -277,7 +289,7 @@ export async function GET(request: Request) {
     metrics.source_counts = sourceCounts;
     for (const item of items) {
       const code = postCode(item);
-      const owner = postOwner(item);
+      const owner = postOwner(item, fuentes);
       if (!owner) {
         metrics.source_rejected = Number(metrics.source_rejected) + 1;
         outcomes.push({
@@ -295,7 +307,7 @@ export async function GET(request: Request) {
         metrics.already_processed = Number(metrics.already_processed) + 1;
       }
       sourceCounts[owner] = (sourceCounts[owner] || 0) + 1;
-      const decisions = classifySourceItem(item, now);
+      const decisions = classifySourceItem(item, now, fuentes);
       outcomes.push({ post_id: code, owner, reasons: decisions.map((d) => d.reason) });
       for (const decision of decisions) {
         if (decision.row) {
@@ -374,13 +386,16 @@ export async function GET(request: Request) {
       marcas,
       // Todo lo devuelto por el actor (no solo lo nuevo): así se detecta la saturación.
       posts: items.map((item) => ({
-        cuenta: postOwner(item) || '',
+        cuenta: postOwner(item, fuentes) || '',
         publicado: parseTimestamp(item.timestamp ?? item.takenAt ?? item.takenAtIso ?? item.publishedAt)?.toISOString() || null,
       })),
       porCuenta: limit,
       totalMax: MAX_ITEMS,
     });
     await guardarMarcas(db, avanzar).catch(() => undefined);
+    // La rotación también progresa cuando una cuenta no devuelve publicaciones.
+    const rotacion = await db.from('instagram_accounts').update({ last_scraped_at: now.toISOString() }).in('username', cuentas);
+    if (rotacion.error) console.warn('[ingestion] no se pudo actualizar la rotación');
     console.info('[ingestion]', JSON.stringify({ run_id: runId, ...metrics }));
     return reply({
       success: true,
