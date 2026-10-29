@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { refrescarPublico } from '../../../../lib/snapshot';
 import { getAdminDb } from '../../../../lib/server-db';
 import { presupuestoApify } from '../../../../lib/apify-budget';
-import { guardarMarcas, leerMarcas, marcasNuevas, ventanaActor, seleccionarCuentas, cuentasCompletas } from '../../../../lib/instagram-incremental';
+import { guardarMarcas, leerMarcas, marcasNuevas, ventanaActor, seleccionarCuentas, cuentasCompletas, coberturaRotacion, REINTENTADAS, VALIDAS } from '../../../../lib/instagram-incremental';
 import { cronAutorizado } from '../../../../lib/cron-auth';
 import {
   boundedResultsLimit,
@@ -208,6 +208,12 @@ export async function GET(request: Request) {
     const fuentes = seleccionarCuentas(registro.data || [], 5, { ahora: new Date() });
     const cuentas = Object.keys(fuentes);
     metrics.accounts_scanned = cuentas.length;
+    // Cobertura declarada, no prometida: ciclo de rotación frente a la ventana del actor.
+    metrics.instagram_cobertura = coberturaRotacion({
+      validas: (fuentes as unknown as Record<symbol, number>)[VALIDAS] ?? cuentas.length,
+      plazas: 5,
+      reintentos: (fuentes as unknown as Record<symbol, number>)[REINTENTADAS] ?? 0,
+    });
     if (!cuentas.length) {
       const omitida = await db.from('ingestion_runs').update({ status: 'succeeded', completed_at: new Date().toISOString(), cost_usd: 0, metrics: { ...metrics, apify_skipped: 'NO_VERIFIED_ACCOUNTS' } }).eq('id', runId);
       if (omitida.error) throw new IngestionError('DB_FINISH');

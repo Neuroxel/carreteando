@@ -64,15 +64,26 @@ export async function guardarMarcas(db: Db, nuevas: Map<string, string>, ahora =
     await db.from('instagram_accounts').update({ last_post_at, last_scraped_at: ahora.toISOString() }).eq('username', username);
 }
 
+/** Cuántas cuentas válidas había en la selección (propiedad no enumerable). */
+export const VALIDAS = Symbol('validas');
+/** Cuántas plazas de esta selección fueron reintentos (propiedad no enumerable). */
+export const REINTENTADAS = Symbol('reintentadas');
 /** Reintentos de cuentas que fallaron: a lo más `reintentos` plazas por corrida y sólo pasado el backoff. */
 export const REINTENTOS_POR_CORRIDA = 1;
 export const BACKOFF_REINTENTO_HORAS = 6;
+/** Sólo se reintenta un fallo reciente de una cuenta que ya tuvo una lectura completa. */
+export const REINTENTO_MAX_DIAS = 3;
+/** El cron de ingesta corre una vez al día (vercel.json: 0 18 * * *). */
+export const CORRIDAS_POR_DIA = 1;
 /**
  * Solo cuentas activas de recintos aprobados cuyo Instagram coincide con el registro.
  * Rotación: primero las nunca revisadas y luego la revisión más antigua. Una cuenta
  * cuyo último intento no fue una lectura completa (last_checked_at posterior a
- * last_scraped_at) puede tomar una plaza de reintento acotada tras el backoff; nunca
- * más de `reintentos` plazas, así una cuenta vacía o fallida no bloquea a las demás.
+ * last_scraped_at) es "fallida": nunca entra por la rotación normal, sólo por la plaza
+ * de reintento (a lo más `reintentos` por corrida), tras el backoff y sólo si su fallo
+ * es reciente (≤ REINTENTO_MAX_DIAS desde su última lectura completa). Una cuenta que
+ * nunca entrega datos o lleva días fallando vuelve a la rotación común cuando le toca
+ * por antigüedad, así no ocupa la plaza de reintento todos los días.
  */
 export function seleccionarCuentas(rows: { username: string; venue_id: number | null; city: string | null; last_checked_at: string | null; last_scraped_at?: string | null; venues: { id: number; name: string; city: string; is_active: boolean; moderation_status: string; instagram_url: string | null } | { id: number; name: string; city: string; is_active: boolean; moderation_status: string; instagram_url: string | null }[] | null }[], limite = 5, opciones: { ahora?: Date; reintentos?: number; backoffHoras?: number } = {}) {
   const validas: Record<string, { venue: string; city: string; identity: string }> = Object.create(null);
@@ -94,13 +105,40 @@ export function seleccionarCuentas(rows: { username: string; venue_id: number | 
   }
   const ahora = (opciones.ahora ?? new Date()).getTime();
   const espera = (opciones.backoffHoras ?? BACKOFF_REINTENTO_HORAS) * 3_600_000;
-  const fallida = (r: (typeof rows)[number]) =>
-    Boolean(r.last_checked_at) && (!r.last_scraped_at || r.last_scraped_at < r.last_checked_at!) && Date.parse(r.last_checked_at!) <= ahora - espera;
-  const reintentar = ordered.filter((r) => r.username in validas && fallida(r)).slice(0, opciones.reintentos ?? REINTENTOS_POR_CORRIDA).map((r) => r.username);
-  const elegidas = [...reintentar, ...ordered.map((r) => r.username).filter((u) => u in validas && !reintentar.includes(u))].slice(0, limite);
+  const fallo = (r: (typeof rows)[number]) => Boolean(r.last_checked_at) && (!r.last_scraped_at || r.last_scraped_at < r.last_checked_at!);
+  // Fallo reciente de una cuenta que sí se leyó antes: candidata a reintento, tras el backoff.
+  const reciente = (r: (typeof rows)[number]) =>
+    fallo(r) && Boolean(r.last_scraped_at) && Date.parse(r.last_checked_at!) - Date.parse(r.last_scraped_at!) <= REINTENTO_MAX_DIAS * 86_400_000;
+  const listaReintento = (r: (typeof rows)[number]) => reciente(r) && Date.parse(r.last_checked_at!) <= ahora - espera;
+  const reintentar = ordered.filter((r) => r.username in validas && listaReintento(r)).slice(0, opciones.reintentos ?? REINTENTOS_POR_CORRIDA).map((r) => r.username);
+  // Rotación común: nunca una cuenta con fallo reciente (ésas sólo por la plaza de reintento).
+  const rotacion = ordered.filter((r) => r.username in validas && !reciente(r) && !reintentar.includes(r.username)).map((r) => r.username);
+  const elegidas = [...reintentar, ...rotacion].slice(0, limite);
   const result: Record<string, { venue: string; city: string; identity: string }> = Object.create(null);
   for (const u of elegidas) result[u] = validas[u];
+  Object.defineProperty(result, VALIDAS, { value: Object.keys(validas).length, enumerable: false });
+  Object.defineProperty(result, REINTENTADAS, { value: reintentar.filter((u) => elegidas.includes(u)).length, enumerable: false });
   return result;
+}
+
+/**
+ * Cobertura honesta de la rotación: cuántos días tarda en volver a cada cuenta frente a
+ * la ventana del actor. No promete cobertura: si el ciclo no cabe en la ventana, lo dice
+ * (y cuántas plazas harían falta) para que operación decida presupuesto o plazas.
+ * Además, una cuenta que publica más que `porCuenta` posts en la ventana, o una corrida
+ * que llega a `totalMax`, queda saturada: no avanza su marca y se relee (sin perder posts
+ * nuevos, pero las más antiguas pueden quedar fuera de la ventana).
+ */
+export function coberturaRotacion(p: { validas: number; plazas: number; reintentos: number; corridasPorDia?: number; ventanaDias?: number }) {
+  const rotacion = Math.max(1, p.plazas - p.reintentos);
+  const corridasPorDia = p.corridasPorDia ?? CORRIDAS_POR_DIA;
+  const ventanaDias = p.ventanaDias ?? MAX_DIAS;
+  const cicloDias = Math.ceil(p.validas / rotacion) / corridasPorDia;
+  // Margen del solape: el ciclo debe caber con al menos SOLAPE_HORAS de holgura.
+  const suficiente = cicloDias * 24 + SOLAPE_HORAS <= ventanaDias * 24;
+  const diasUtiles = ventanaDias - SOLAPE_HORAS / 24;
+  const plazasNecesarias = Math.ceil(p.validas / Math.max(1, Math.floor(diasUtiles * corridasPorDia))) + p.reintentos;
+  return { validas: p.validas, plazas_rotacion: rotacion, ciclo_dias: cicloDias, ventana_dias: ventanaDias, suficiente, plazas_necesarias: plazasNecesarias };
 }
 
 /** Una cuenta solo se declara leída si hay evidencia identificable y no está saturada. */
