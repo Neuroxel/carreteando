@@ -14,9 +14,17 @@ import {
   type Nivel,
 } from '../lib/capacidad';
 import PosterDecor from './poster/PosterDecor';
+import dynamic from 'next/dynamic';
+import MovimientoOptIn from './MovimientoOptIn';
+import { ACERCAR_MS, ALEJARSE_MS, ESCALON_MS } from '../lib/vidrio-tiempos';
+
+// Three.js y cannon-es sólo se descargan si la bienvenida se abre (chunk aparte).
+const EscenaAfiches = dynamic(() => import('./EscenaAfiches'), { ssr: false });
+import { conectarSensor } from './poster/sensor';
 
 /** Tiempos (ms). Con movimiento reducido todo pasa a fundidos cortos. */
-export const TIEMPOS = { golpe: 170, giro: 720, ticket: 420, revelar: 680 } as const;
+/** `golpe`: la tarjeta elegida se aleja hacia el fondo y se desvanece antes del giro. */
+export const TIEMPOS = { golpe: ALEJARSE_MS, giro: 720, ticket: 420, revelar: 680 } as const;
 export const TIEMPOS_REDUCIDOS = { golpe: 0, giro: 120, ticket: 150, revelar: 150 } as const;
 const PRINCIPALES = ['Valparaíso', 'Viña del Mar', 'Quilpué', 'Villa Alemana', 'Concón'];
 const DESTACADAS: SlugIntencion[] = [
@@ -75,6 +83,9 @@ export default function Bienvenida({
   const [elegida, setElegida] = useState<string | null>(null);
   const [ticket, setTicket] = useState<string[] | null>(null);
   const [otras, setOtras] = useState(false);
+  const [fisica, setFisica] = useState<'cargando' | 'listo' | 'fallback'>('cargando');
+  // Al cambiar de pregunta, los afiches nuevos llegan desde el fondo (CSS; con WebGL también su canto).
+  const [llega, setLlega] = useState(false);
   const [avisoGps, setAvisoGps] = useState(false);
   const titulo = useRef<HTMLHeadingElement>(null);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -93,7 +104,7 @@ export default function Bienvenida({
       vivo = false;
     };
   }, []);
-  // Luz que sigue al puntero o, en teléfonos que lo dan sin pedir permiso, al giroscopio.
+  // Luz que sigue al puntero o, si la persona lo activó, al giroscopio.
   const moverLuz = (x: number, y: number) => {
     const el = raiz.current;
     if (!el) return;
@@ -101,20 +112,28 @@ export default function Bienvenida({
     el.style.setProperty('--luz-y', `${(y * 100).toFixed(1)}%`);
   };
   useEffect(() => {
+    // Inclinación del teléfono sólo si la persona la activó; mismo adaptador que la escena
+    // (con respaldo por acelerómetro) y sin recargar al activar o desactivar.
     if (nivel === 'baja') return;
-    const orientar = (e: DeviceOrientationEvent) => {
-      if (e.beta == null || e.gamma == null) return;
-      const gx = Math.max(-30, Math.min(30, e.gamma)) / 60 + 0.5;
-      const gy = Math.max(-30, Math.min(30, e.beta - 40)) / 60 + 0.5;
+    return conectarSensor((tilt) => {
+      if (!tilt) {
+        raiz.current?.style.removeProperty('--luz-x');
+        raiz.current?.style.removeProperty('--luz-y');
+        escena.current?.style.setProperty('--incl-x', '0deg');
+        escena.current?.style.setProperty('--incl-y', '0deg');
+        return;
+      }
+      const gx = tilt.x * 0.5 + 0.5;
+      const gy = tilt.y * 0.5 + 0.5;
       moverLuz(gx, gy);
       escena.current?.style.setProperty('--incl-y', `${((gx - 0.5) * 10).toFixed(2)}deg`);
       escena.current?.style.setProperty('--incl-x', `${((0.5 - gy) * 8).toFixed(2)}deg`);
-    };
-    window.addEventListener('deviceorientation', orientar);
-    return () => window.removeEventListener('deviceorientation', orientar);
+    });
   }, [nivel]);
   // Cada afiche se inclina hacia el dedo/puntero y deja ver su canto (solo nivel alto).
   const inclinarAfiche = (e: { target: EventTarget | null; clientX: number; clientY: number }) => {
+    // Con física real, el giro lo da el cuerpo rígido (EscenaAfiches), no el hover.
+    if (fisica === 'listo') return;
     if (nivel !== 'alta') return;
     const a = (e.target as HTMLElement | null)?.closest?.('.bv-afiche') as HTMLElement | null;
     if (!a) return;
@@ -148,6 +167,16 @@ export default function Bienvenida({
   useEffect(() => {
     if (fase === 'normal') titulo.current?.focus({ preventScroll: true });
   }, [s.paso, fase]);
+  // Cada cambio de pregunta (incluido Dónde→Qué) hace llegar los afiches nuevos en cascada.
+  const pasoPrevio = useRef(s.paso);
+  useEffect(() => {
+    if (pasoPrevio.current === s.paso) return;
+    pasoPrevio.current = s.paso;
+    if (reducido.current) return;
+    setLlega(true);
+    const id = setTimeout(() => setLlega(false), ACERCAR_MS + 12 * ESCALON_MS);
+    return () => clearTimeout(id);
+  }, [s.paso]);
 
   const salir = useCallback(
     (aplicar: () => void) => {
@@ -187,6 +216,12 @@ export default function Bienvenida({
     setFase('eligiendo');
     const { golpe, giro } = t();
     // Tras el golpe, la carta gira en 3D: al otro lado está ¿Dónde?.
+    // Camino Dónde→Qué: el lugar ya está; elegir qué termina el asistente.
+    if (s.orden === 'donde' && s.donde) {
+      const donde = s.donde;
+      luego(golpe, () => cerrarCon({ ...s, plan }, donde));
+      return;
+    }
     luego(golpe, () => {
       dispatch({ tipo: 'elegir', plan });
       setFase('girando');
@@ -194,6 +229,16 @@ export default function Bienvenida({
     luego(golpe + giro, () => {
       setFase('normal');
       setElegida(null);
+      ocupado.current = false;
+    });
+  };
+  const irDonde = () => {
+    if (ocupado.current) return;
+    ocupado.current = true;
+    dispatch({ tipo: 'irDonde' });
+    setFase('girando');
+    luego(t().giro, () => {
+      setFase('normal');
       ocupado.current = false;
     });
   };
@@ -230,11 +275,33 @@ export default function Bienvenida({
         : f === 'finde'
           ? 'Este finde'
           : 'Más adelante';
+  const nombreLugar = (d: Donde) => (d.tipo === 'cerca' ? 'Cerca de ti' : d.tipo === 'region' ? 'Toda la región' : d.ciudad);
+  /** Cierra con un estado explícito (no espera a que React aplique el último dispatch). */
+  const cerrarCon = (estado: EstadoBienvenida, d: Donde) => {
+    setTicket([intencionPorSlug(estado.plan)?.label || 'Planes', nombreLugar(d), etiquetaFecha(estado.fecha)]);
+    setFase('ticket');
+    luego(t().ticket, () => salir(() => onTerminar(estado, d)));
+  };
+  /** Dónde→Qué: "Ver todo aquí" cierra sin intención. */
+  const verTodoAqui = () => {
+    if (ocupado.current || !s.donde) return;
+    ocupado.current = true;
+    cerrarCon({ ...s, plan: null }, s.donde);
+  };
   const terminar = (d: Donde) => {
     if (ocupado.current && fase !== 'buscando') return;
     ocupado.current = true;
-    const lugar =
-      d.tipo === 'cerca' ? 'Cerca de ti' : d.tipo === 'region' ? 'Toda la región' : d.ciudad;
+    // Camino Dónde→Qué: el lugar se fija y la carta vuelve a "¿Qué?" (opcional).
+    if (s.orden === 'donde' && s.paso === 'donde') {
+      dispatch({ tipo: 'fijarDonde', donde: d });
+      setFase('girando');
+      luego(t().giro, () => {
+        setFase('normal');
+        ocupado.current = false;
+      });
+      return;
+    }
+    const lugar = nombreLugar(d);
     setTicket([intencionPorSlug(s.plan)?.label || 'Planes', lugar, etiquetaFecha(s.fecha)]);
     setFase('ticket');
     luego(t().ticket, () => salir(() => onTerminar(s, d)));
@@ -276,7 +343,7 @@ export default function Bienvenida({
   return (
     <div
       ref={raiz}
-      className={`bienvenida bv-fase-${fase}`}
+      className={`bienvenida bv-fase-${fase} bv-profundo ${fisica === 'listo' ? 'bv-fisica-on' : ''} ${llega ? 'bv-llega' : ''}`}
       data-nivel={nivel}
       role="dialog"
       aria-modal="true"
@@ -289,6 +356,8 @@ export default function Bienvenida({
       onPointerOut={soltarAfiche}
     >
       <PosterDecor variant="home" />
+      {/* Afiches con volumen y física real (WebGL): un solo canvas para todos. Sin WebGL, afiches planos. */}
+      {fisica !== 'fallback' && <EscenaAfiches raiz={raiz} onEstado={setFisica} />}
       {/* Flechas sueltas, como una constelación de afiche: decorativas, al fondo. */}
       <svg
         className="bv-flechas"
@@ -400,21 +469,47 @@ export default function Bienvenida({
               aria-hidden={s.paso !== 'que'}
               inert={s.paso !== 'que' ? true : undefined}
             >
+              {s.orden === 'donde' && s.donde ? (
+                <button type="button" className="bv-memoria" onClick={volver} aria-label={`${nombreLugar(s.donde)}: cambiar lugar`}>
+                  {nombreLugar(s.donde)} <span aria-hidden="true">✓</span>
+                  <span className="bv-memoria-cambiar">cambiar</span>
+                </button>
+              ) : (
+                // Dos comienzos igual de visibles: mismo tamaño, mismo peso.
+                <div className="bv-inicios" role="group" aria-label="Cómo quieres empezar">
+                  <button type="button" className="bv-inicio" aria-pressed="true">
+                    Sé qué quiero hacer
+                  </button>
+                  <button type="button" className="bv-inicio" aria-pressed="false" onClick={irDonde}>
+                    Sé dónde quiero ir
+                  </button>
+                </div>
+              )}
               <h1
                 id={s.paso === 'que' ? 'bienvenida-pregunta' : undefined}
                 ref={s.paso === 'que' ? titulo : undefined}
                 tabIndex={-1}
               >
-                ¿Qué quieres hacer?
+                {s.orden === 'donde' && s.donde ? '¿Y qué quieres hacer?' : '¿Qué quieres hacer?'}
               </h1>
-              <p className="bv-sub bv-tira">Dos toques y te mostramos dónde ir.</p>
+              {s.orden === 'donde' && s.donde ? (
+                <p className="bv-sub bv-tira">
+                  Opcional.{' '}
+                  <button type="button" className="bienvenida-link" onClick={verTodoAqui}>
+                    Ver todo en {nombreLugar(s.donde)} →
+                  </button>
+                </p>
+              ) : (
+                <p className="bv-sub bv-tira">Dos toques y te mostramos dónde ir.</p>
+              )}
               <div className="bv-muro">
                 {grandes.map((i, n) => (
                   <button
                     key={i.slug}
                     type="button"
+                    data-fisica=""
                     className={claseAfiche(i.slug)}
-                    style={{ ['--giro' as string]: `${GIROS[n % GIROS.length]}deg` }}
+                    style={{ ['--giro' as string]: `${GIROS[n % GIROS.length]}deg`, ['--i' as string]: n }}
                     onClick={() => elegir(i.slug)}
                     aria-pressed={elegida === i.slug}
                   >
@@ -435,8 +530,9 @@ export default function Bienvenida({
                     <button
                       key={i.slug}
                       type="button"
+                      data-fisica=""
                       className={`${claseAfiche(i.slug)} bv-afiche-chico`}
-                      style={{ ['--giro' as string]: `${GIROS[(n + 5) % GIROS.length]}deg` }}
+                      style={{ ['--giro' as string]: `${GIROS[(n + 5) % GIROS.length]}deg`, ['--i' as string]: grandes.length + n }}
                       onClick={() => elegir(i.slug)}
                       aria-pressed={elegida === i.slug}
                     >
@@ -458,10 +554,18 @@ export default function Bienvenida({
                 type="button"
                 className="bv-memoria"
                 onClick={volver}
-                aria-label={`${intencionPorSlug(s.plan)?.label}: cambiar`}
+                aria-label={s.plan ? `${intencionPorSlug(s.plan)?.label}: cambiar` : 'Elegir qué quieres hacer (opcional)'}
               >
-                {intencionPorSlug(s.plan)?.label} <span aria-hidden="true">✓</span>
-                <span className="bv-memoria-cambiar">cambiar</span>
+                {s.plan ? (
+                  <>
+                    {intencionPorSlug(s.plan)?.label} <span aria-hidden="true">✓</span>
+                    <span className="bv-memoria-cambiar">cambiar</span>
+                  </>
+                ) : (
+                  <>
+                    Todo tipo de plan <span className="bv-memoria-cambiar">elegir qué (opcional)</span>
+                  </>
+                )}
               </button>
               <h1
                 id={s.paso === 'donde' ? 'bienvenida-pregunta' : undefined}
@@ -473,8 +577,9 @@ export default function Bienvenida({
               <div className="bv-muro">
                 <button
                   type="button"
+                  data-fisica=""
                   className={`bv-afiche bv-ancho bv-cerca ${fase === 'buscando' ? 'bv-buscando' : ''}`}
-                  style={{ ['--giro' as string]: '-0.6deg' }}
+                  style={{ ['--giro' as string]: '-0.6deg', ['--i' as string]: 0 }}
                   onClick={cerca}
                 >
                   <Capas />
@@ -492,8 +597,9 @@ export default function Bienvenida({
                   <button
                     key={c}
                     type="button"
+                    data-fisica=""
                     className="bv-afiche bv-afiche-lugar"
-                    style={{ ['--giro' as string]: `${GIROS[(n + 2) % GIROS.length]}deg` }}
+                    style={{ ['--giro' as string]: `${GIROS[(n + 2) % GIROS.length]}deg`, ['--i' as string]: n + 1 }}
                     onClick={() => terminar({ tipo: 'comuna', ciudad: c })}
                   >
                     <Capas />
@@ -505,8 +611,9 @@ export default function Bienvenida({
                     <button
                       key={c}
                       type="button"
+                      data-fisica=""
                       className="bv-afiche bv-afiche-lugar"
-                      style={{ ['--giro' as string]: `${GIROS[(n + 4) % GIROS.length]}deg` }}
+                      style={{ ['--giro' as string]: `${GIROS[(n + 4) % GIROS.length]}deg`, ['--i' as string]: n + 1 + corredor.length }}
                       onClick={() => terminar({ tipo: 'comuna', ciudad: c })}
                     >
                       <Capas />
@@ -567,9 +674,12 @@ export default function Bienvenida({
             </div>
           </div>
         </div>
-        <button type="button" className="bienvenida-saltar" onClick={saltar}>
-          Ver todo
-        </button>
+        <div className="bv-pie">
+          <button type="button" className="bienvenida-saltar" onClick={saltar}>
+            Ver todo
+          </button>
+          <MovimientoOptIn />
+        </div>
       </div>
       {/* Luz: fugas y rayos que siguen al puntero/giroscopio (media y alta). */}
       <div className="bv-luz" aria-hidden="true" />

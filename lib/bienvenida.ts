@@ -10,13 +10,17 @@ export type Fecha = 'hoy' | 'manana' | 'finde' | 'futuro';
 export type Donde = { tipo: 'cerca' } | { tipo: 'region' } | { tipo: 'comuna'; ciudad: string };
 export interface EstadoBienvenida {
   paso: 'que' | 'donde';
+  /** Dos comienzos igual de visibles: "Sé qué quiero hacer" (Qué→Dónde) o "Sé dónde quiero ir" (Dónde→Qué opcional). */
+  orden: 'que' | 'donde';
+  /** En el camino Dónde→Qué, el lugar ya elegido. */
+  donde: Donde | null;
   plan: SlugIntencion | null;
   fecha: Fecha;
   cambiandoCuando: boolean;
   /** Una transición en curso: mientras dura, ninguna otra elección se ejecuta (doble toque). */
   bloqueado: boolean;
 }
-export const INICIO: EstadoBienvenida = { paso: 'que', plan: null, fecha: 'hoy', cambiandoCuando: false, bloqueado: false };
+export const INICIO: EstadoBienvenida = { paso: 'que', orden: 'que', donde: null, plan: null, fecha: 'hoy', cambiandoCuando: false, bloqueado: false };
 
 export type Accion =
   | { tipo: 'tocar'; plan: SlugIntencion }
@@ -25,7 +29,11 @@ export type Accion =
   | { tipo: 'desbloquear' }
   | { tipo: 'cambiarCuando' }
   | { tipo: 'cuando'; fecha: Fecha }
-  | { tipo: 'volver' };
+  | { tipo: 'volver' }
+  /** Empezar por el lugar: se salta "¿Qué?" sin elegir intención (queda opcional). */
+  | { tipo: 'irDonde' }
+  /** Camino Dónde→Qué: fija el lugar y pasa a "¿Qué?" (opcional). */
+  | { tipo: 'fijarDonde'; donde: Donde };
 export function avanzar(s: EstadoBienvenida, a: Accion): EstadoBienvenida {
   switch (a.tipo) {
     case 'tocar':
@@ -41,8 +49,15 @@ export function avanzar(s: EstadoBienvenida, a: Accion): EstadoBienvenida {
       return { ...s, cambiandoCuando: !s.cambiandoCuando };
     case 'cuando':
       return { ...s, fecha: a.fecha, cambiandoCuando: false };
+    case 'irDonde':
+      return s.bloqueado || s.paso !== 'que' ? s : { ...s, plan: null, donde: null, orden: 'donde', paso: 'donde', cambiandoCuando: false };
+    case 'fijarDonde':
+      return s.orden !== 'donde' ? s : { ...s, donde: a.donde, paso: 'que', cambiandoCuando: false, bloqueado: false };
     case 'volver':
-      return s.bloqueado ? s : { ...s, paso: 'que', cambiandoCuando: false };
+      // Desde "¿Dónde?" se vuelve al comienzo (Qué primero); en Dónde→Qué, "cambiar" vuelve a "¿Dónde?".
+      if (s.bloqueado) return s;
+      if (s.orden === 'donde' && s.paso === 'que') return { ...s, paso: 'donde', donde: null, cambiandoCuando: false };
+      return { ...s, paso: 'que', orden: 'que', donde: null, cambiandoCuando: false };
   }
 }
 
