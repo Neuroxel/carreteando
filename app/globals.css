@@ -2301,33 +2301,22 @@ html.bv-revela main > section { animation:bv-acerca .68s cubic-bezier(.2,.7,.2,1
   .bv-muro.bv-muro-chico > .bv-afiche .bv-ilustracion { width:clamp(34px, 10vw, 48px); }
 }
 
-/* ===== Vidrio violeta (referencia del dueño) =====
-   El canvas WebGL va detrás del muro; la tarjeta principal deja ver el vidrio
-   y mantiene su texto DOM nítido encima. Sin WebGL: vidrio CSS estático. */
-.bv-vidrio-lienzo { position:fixed; inset:0; width:100%; height:100%; z-index:0; pointer-events:none; }
-.bv-vidrio { --vidrio-texto:#f6f1ff; color:var(--vidrio-texto); border-radius:26px; }
-.bv-vidrio .bv-canto, .bv-vidrio .bv-cinta { display:none; }
-.bv-vidrio strong, .bv-vidrio small { color:var(--vidrio-texto); text-shadow:0 1px 10px rgba(30,8,80,.65); }
-.bv-vidrio .bv-ilustracion, .bv-vidrio .bv-picto { color:var(--vidrio-texto); }
-/* Con WebGL listo, el papel se vuelve transparente: el vidrio lo dibuja Three.js. */
-.bv-vidrio.bv-vidrio-listo .bv-papel { background:transparent !important; box-shadow:none; clip-path:none; }
-/* Sin WebGL (o cargando): vidrio CSS con bisel claro. Nunca deja la tarjeta vacía. */
-.bv-vidrio.bv-vidrio-fallback .bv-papel, .bv-vidrio.bv-vidrio-cargando .bv-papel {
-  clip-path:none; border-radius:26px;
-  background:
-    radial-gradient(120% 90% at 18% 10%, rgba(255,255,255,.28), transparent 42%),
-    radial-gradient(90% 120% at 85% 110%, rgba(255,79,216,.35), transparent 55%),
-    linear-gradient(150deg, #6d4bd8 0%, #3a1f8f 55%, #1f1150 100%) !important;
-  box-shadow:inset 0 0 0 1.5px rgba(238,230,255,.75), inset 0 0 0 5px rgba(160,130,255,.25), inset 0 -10px 24px rgba(10,0,40,.55), 0 18px 40px -16px rgba(124,77,255,.7);
+/* ===== Afiches con volumen y física real (EscenaAfiches) =====
+   Un canvas WebGL detrás del muro dibuja el canto y la sombra de cada afiche; el
+   afiche DOM (texto nítido, área táctil) gira con el mismo cuerpo rígido. */
+.bv-escena-lienzo { position:fixed; inset:0; width:100%; height:100%; z-index:0; pointer-events:none; }
+.bv-fisica-on .bv-afiche[data-fisica],
+.bv-fisica-on .bv-afiche[data-fisica]:hover,
+.bv-fisica-on .bv-afiche[data-fisica]:active {
+  transform:rotate(var(--giro)) perspective(1400px) rotateX(var(--fx, 0rad)) rotateY(var(--fy, 0rad)) rotateZ(var(--fz, 0rad));
+  transition:none; will-change:transform;
 }
-.bv-vidrio.bv-elegido { background:transparent; }
-.bv-vidrio.bv-elegido::after { display:none; }
 
 /* Dos comienzos igual de visibles. */
 .bv-inicios { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-.bv-inicio { min-height:48px; border-radius:14px; border:1.5px solid rgba(238,230,255,.55); background:rgba(40,20,110,.55); color:#f6f1ff; font:inherit; font-weight:700; font-size:15px; cursor:pointer; padding:8px 10px; }
-.bv-inicio[aria-pressed="true"] { background:linear-gradient(150deg, #7b5cff, #4a2bb8); border-color:#eee6ff; box-shadow:inset 0 1px 0 rgba(255,255,255,.45), 0 8px 20px -10px rgba(124,77,255,.8); }
-.bv-inicio:focus-visible { outline:2px solid #eee6ff; outline-offset:3px; }
+.bv-inicio { min-height:48px; border-radius:3px; border:1.5px solid rgba(239,227,211,.6); background:rgba(19,19,29,.55); color:var(--crema, #EFE3D3); font-family:var(--f-maquina, monospace); font-weight:700; font-size:14px; letter-spacing:.02em; text-transform:uppercase; cursor:pointer; padding:8px 10px; }
+.bv-inicio[aria-pressed="true"] { background:var(--crema, #EFE3D3); color:var(--tinta, #13131D); border-color:var(--crema, #EFE3D3); box-shadow:4px 4px 0 var(--accent); }
+.bv-inicio:focus-visible { outline:3px solid var(--accent); outline-offset:3px; }
 .bv-pie { display:flex; flex-wrap:wrap; gap:8px 18px; align-items:center; justify-content:center; }
 .footer-movimiento { background:none; border:0; padding:0; color:inherit; opacity:.8; font:inherit; font-size:13px; text-decoration:underline; text-underline-offset:3px; cursor:pointer; min-height:44px; }
 
@@ -2337,3 +2326,26 @@ html.bv-revela main > section { animation:bv-acerca .68s cubic-bezier(.2,.7,.2,1
   .bv-elegido { animation:bv-alejarse .62s cubic-bezier(.45,0,.25,1) both !important; }
   .bv-se-va { transition:opacity .4s ease, transform .5s cubic-bezier(.45,0,.25,1); transform:rotate(var(--giro)) perspective(900px) translate3d(0, 0, -160px) scale(.9); }
 }
+
+/* Cambio de pregunta con profundidad (sin movimiento reducido): en vez de girar la
+   carta, la pregunta anterior se va al fondo y los afiches nuevos llegan desde el
+   fondo en cascada. Con movimiento reducido rige el fundido corto de siempre. */
+@media (prefers-reduced-motion: no-preference) {
+  .bv-profundo .bv-carta, .bv-profundo .bv-carta.bv-girada { transform:none; transition:none; }
+  .bv-profundo .bv-dorso { transform:none; }
+  .bv-profundo .bv-cara { backface-visibility:visible; -webkit-backface-visibility:visible; }
+  .bv-profundo .bv-carta:not(.bv-girada) .bv-dorso,
+  .bv-profundo .bv-carta.bv-girada .bv-frente { opacity:0; visibility:hidden; transition:none; }
+  /* Lo elegido ya se alejó antes del cambio: la pregunta anterior se oculta al instante (nunca dos caras superpuestas). */
+  .bv-profundo.bv-fase-girando .bv-escena { animation:none; }
+  @keyframes bv-acercar {
+    from { opacity:0; transform:rotate(var(--giro)) perspective(900px) translate3d(0, 24px, -380px) scale(.7); }
+    to { opacity:1; transform:rotate(var(--giro)) perspective(1400px); }
+  }
+  .bv-llega .bv-carta:not(.bv-girada) .bv-frente .bv-afiche,
+  .bv-llega .bv-carta.bv-girada .bv-dorso .bv-afiche {
+    animation:bv-acercar .64s cubic-bezier(.2,.8,.2,1) both; animation-delay:calc(var(--i, 0) * 55ms);
+  }
+}
+/* Dónde→Qué: "Ver todo en {lugar}" va sobre la tira de papel: tinta, no crema. */
+.bv-tira .bienvenida-link { color:var(--tinta, #13131D); font-weight:700; text-decoration-color:var(--accent); text-decoration-thickness:2px; }

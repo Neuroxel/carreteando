@@ -159,7 +159,7 @@ test('3D: carta de dos caras (¿Qué? / ¿Dónde?), cara oculta inerte, giro y a
   // Three.js (autorizado por el dueño el 25-oct) sólo en su propio chunk: nunca importado estático por la bienvenida.
   assert.doesNotMatch(src('package.json'), /framer-motion/);
   assert.doesNotMatch(b, /from 'three'|from 'cannon-es'/);
-  assert.match(b, /dynamic\(\(\) => import\('\.\/VidrioCanvas'\), \{ ssr: false \}\)/);
+  assert.match(b, /dynamic\(\(\) => import\('\.\/EscenaAfiches'\), \{ ssr: false \}\)/);
   const css = src('app/globals.css');
   const bloque = css.slice(css.indexOf('Bienvenida 3D'));
   assert.match(bloque, /\.bv-escena \{[^}]*perspective:1400px/);
@@ -220,7 +220,7 @@ test('bienvenida: dos comienzos igual de visibles; Dónde→Qué fija el lugar y
   assert.equal(avanzar(INICIO, { tipo: 'fijarDonde', donde: { tipo: 'region' } }), INICIO);
 });
 test('vidrio: fallback sin WebGL, pérdida de contexto, reduced-motion y pausa al ocultar; navegación con su propio temporizador', () => {
-  const v = src('components/VidrioCanvas.tsx');
+  const v = src('components/EscenaAfiches.tsx');
   assert.match(v, /prefers-reduced-motion: reduce\)'\)\.matches\) return onEstado\('fallback'\)/);
   assert.match(v, /webglcontextlost/);
   assert.match(v, /document\.hidden/);
@@ -228,4 +228,29 @@ test('vidrio: fallback sin WebGL, pérdida de contexto, reduced-motion y pausa a
   const b = src('components/Bienvenida.tsx');
   assert.match(b, /golpe: ALEJARSE_MS/);
   assert.match(b, /luego\(golpe, \(\) => \{/, 'el paso siguiente lo dispara un temporizador, no el fin de la animación');
+});
+
+test('afiches con física: todas las intenciones y lugares, un solo canvas, DOM sincronizado y tope pequeño', async () => {
+  const b = src('components/Bienvenida.tsx');
+  // Intenciones grandes y chicas, "Cerca de mí", comunas principales y "otras comunas".
+  assert.equal((b.match(/data-fisica=""/g) || []).length, 5);
+  const e = src('components/EscenaAfiches.tsx');
+  assert.equal((e.match(/new THREE\.WebGLRenderer/g) || []).length, 1, 'un solo contexto WebGL');
+  assert.match(e, /querySelectorAll<HTMLElement>\('\[data-fisica\]'\)/);
+  assert.match(e, /--fx/);
+  const { GIRO_MAX_AFICHE } = await import('../lib/vidrio-tiempos');
+  assert.ok(GIRO_MAX_AFICHE <= 0.35, 'el área táctil casi no se mueve');
+  const css = src('app/globals.css');
+  assert.match(css, /\.bv-fisica-on \.bv-afiche\[data-fisica\][\s\S]*?rotateX\(var\(--fx, 0rad\)\) rotateY\(var\(--fy, 0rad\)\)/);
+});
+test('transición: lo elegido se aleja y los afiches siguientes llegan en cascada; reduced-motion conserva el fundido', () => {
+  const css = src('app/globals.css');
+  const prof = css.slice(css.lastIndexOf('@media (prefers-reduced-motion: no-preference)'));
+  assert.match(prof, /@keyframes bv-acercar/);
+  assert.match(prof, /animation-delay:calc\(var\(--i, 0\) \* 55ms\)/);
+  const b = src('components/Bienvenida.tsx');
+  assert.match(b, /if \(reducido\.current\) return;\s*setLlega\(true\)/);
+});
+test('Dónde→Qué: "Ver todo en {lugar}" es legible sobre la tira (tinta, no crema)', () => {
+  assert.match(src('app/globals.css'), /\.bv-tira \.bienvenida-link \{ color:var\(--tinta, #13131D\)/);
 });

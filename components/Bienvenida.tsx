@@ -16,10 +16,10 @@ import {
 import PosterDecor from './poster/PosterDecor';
 import dynamic from 'next/dynamic';
 import MovimientoOptIn from './MovimientoOptIn';
-import { ALEJARSE_MS } from '../lib/vidrio-tiempos';
+import { ACERCAR_MS, ALEJARSE_MS, ESCALON_MS } from '../lib/vidrio-tiempos';
 
 // Three.js y cannon-es sólo se descargan si la bienvenida se abre (chunk aparte).
-const VidrioCanvas = dynamic(() => import('./VidrioCanvas'), { ssr: false });
+const EscenaAfiches = dynamic(() => import('./EscenaAfiches'), { ssr: false });
 import { EVENTO_MOVIMIENTO, movimientoPermitido } from './poster/sensor';
 
 /** Tiempos (ms). Con movimiento reducido todo pasa a fundidos cortos. */
@@ -83,8 +83,9 @@ export default function Bienvenida({
   const [elegida, setElegida] = useState<string | null>(null);
   const [ticket, setTicket] = useState<string[] | null>(null);
   const [otras, setOtras] = useState(false);
-  const principal = useRef<HTMLButtonElement>(null);
-  const [vidrio3d, setVidrio3d] = useState<'cargando' | 'listo' | 'fallback'>('cargando');
+  const [fisica, setFisica] = useState<'cargando' | 'listo' | 'fallback'>('cargando');
+  // Al cambiar de pregunta, los afiches nuevos llegan desde el fondo (CSS; con WebGL también su canto).
+  const [llega, setLlega] = useState(false);
   const [avisoGps, setAvisoGps] = useState(false);
   const titulo = useRef<HTMLHeadingElement>(null);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -139,6 +140,8 @@ export default function Bienvenida({
   }, [nivel]);
   // Cada afiche se inclina hacia el dedo/puntero y deja ver su canto (solo nivel alto).
   const inclinarAfiche = (e: { target: EventTarget | null; clientX: number; clientY: number }) => {
+    // Con física real, el giro lo da el cuerpo rígido (EscenaAfiches), no el hover.
+    if (fisica === 'listo') return;
     if (nivel !== 'alta') return;
     const a = (e.target as HTMLElement | null)?.closest?.('.bv-afiche') as HTMLElement | null;
     if (!a) return;
@@ -172,6 +175,16 @@ export default function Bienvenida({
   useEffect(() => {
     if (fase === 'normal') titulo.current?.focus({ preventScroll: true });
   }, [s.paso, fase]);
+  // Cada cambio de pregunta (incluido Dónde→Qué) hace llegar los afiches nuevos en cascada.
+  const pasoPrevio = useRef(s.paso);
+  useEffect(() => {
+    if (pasoPrevio.current === s.paso) return;
+    pasoPrevio.current = s.paso;
+    if (reducido.current) return;
+    setLlega(true);
+    const id = setTimeout(() => setLlega(false), ACERCAR_MS + 12 * ESCALON_MS);
+    return () => clearTimeout(id);
+  }, [s.paso]);
 
   const salir = useCallback(
     (aplicar: () => void) => {
@@ -338,7 +351,7 @@ export default function Bienvenida({
   return (
     <div
       ref={raiz}
-      className={`bienvenida bv-fase-${fase}`}
+      className={`bienvenida bv-fase-${fase} bv-profundo ${fisica === 'listo' ? 'bv-fisica-on' : ''} ${llega ? 'bv-llega' : ''}`}
       data-nivel={nivel}
       role="dialog"
       aria-modal="true"
@@ -351,8 +364,8 @@ export default function Bienvenida({
       onPointerOut={soltarAfiche}
     >
       <PosterDecor variant="home" />
-      {/* Vidrio violeta real (WebGL) detrás de la tarjeta principal; sin WebGL queda el vidrio CSS. */}
-      {vidrio3d !== 'fallback' && <VidrioCanvas objetivo={principal} alejar={elegida !== null} onEstado={setVidrio3d} />}
+      {/* Afiches con volumen y física real (WebGL): un solo canvas para todos. Sin WebGL, afiches planos. */}
+      {fisica !== 'fallback' && <EscenaAfiches raiz={raiz} onEstado={setFisica} />}
       {/* Flechas sueltas, como una constelación de afiche: decorativas, al fondo. */}
       <svg
         className="bv-flechas"
@@ -501,10 +514,10 @@ export default function Bienvenida({
                 {grandes.map((i, n) => (
                   <button
                     key={i.slug}
-                    ref={n === 0 ? principal : undefined}
                     type="button"
-                    className={`${claseAfiche(i.slug)} ${n === 0 ? `bv-vidrio bv-vidrio-${vidrio3d}` : ''}`}
-                    style={{ ['--giro' as string]: `${GIROS[n % GIROS.length]}deg` }}
+                    data-fisica=""
+                    className={claseAfiche(i.slug)}
+                    style={{ ['--giro' as string]: `${GIROS[n % GIROS.length]}deg`, ['--i' as string]: n }}
                     onClick={() => elegir(i.slug)}
                     aria-pressed={elegida === i.slug}
                   >
@@ -525,8 +538,9 @@ export default function Bienvenida({
                     <button
                       key={i.slug}
                       type="button"
+                      data-fisica=""
                       className={`${claseAfiche(i.slug)} bv-afiche-chico`}
-                      style={{ ['--giro' as string]: `${GIROS[(n + 5) % GIROS.length]}deg` }}
+                      style={{ ['--giro' as string]: `${GIROS[(n + 5) % GIROS.length]}deg`, ['--i' as string]: grandes.length + n }}
                       onClick={() => elegir(i.slug)}
                       aria-pressed={elegida === i.slug}
                     >
@@ -571,8 +585,9 @@ export default function Bienvenida({
               <div className="bv-muro">
                 <button
                   type="button"
+                  data-fisica=""
                   className={`bv-afiche bv-ancho bv-cerca ${fase === 'buscando' ? 'bv-buscando' : ''}`}
-                  style={{ ['--giro' as string]: '-0.6deg' }}
+                  style={{ ['--giro' as string]: '-0.6deg', ['--i' as string]: 0 }}
                   onClick={cerca}
                 >
                   <Capas />
@@ -590,8 +605,9 @@ export default function Bienvenida({
                   <button
                     key={c}
                     type="button"
+                    data-fisica=""
                     className="bv-afiche bv-afiche-lugar"
-                    style={{ ['--giro' as string]: `${GIROS[(n + 2) % GIROS.length]}deg` }}
+                    style={{ ['--giro' as string]: `${GIROS[(n + 2) % GIROS.length]}deg`, ['--i' as string]: n + 1 }}
                     onClick={() => terminar({ tipo: 'comuna', ciudad: c })}
                   >
                     <Capas />
@@ -603,8 +619,9 @@ export default function Bienvenida({
                     <button
                       key={c}
                       type="button"
+                      data-fisica=""
                       className="bv-afiche bv-afiche-lugar"
-                      style={{ ['--giro' as string]: `${GIROS[(n + 4) % GIROS.length]}deg` }}
+                      style={{ ['--giro' as string]: `${GIROS[(n + 4) % GIROS.length]}deg`, ['--i' as string]: n + 1 + corredor.length }}
                       onClick={() => terminar({ tipo: 'comuna', ciudad: c })}
                     >
                       <Capas />

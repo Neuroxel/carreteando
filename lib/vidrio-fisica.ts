@@ -107,7 +107,8 @@ export function sentir(v: Vidrio, previo: { x: number; y: number }, actual: { x:
  * tope de giro. Devuelve los ángulos a aplicar a la malla (incluida la
  * inclinación directa del sensor, como la demo tras sincronizar).
  */
-export function avanzarVidrio(C: Cannon, v: Vidrio, dt: number, t: number, sensor: { x: number; y: number } | null, ambienteOn = true) {
+/** `giroMax`: tope propio por tarjeta (afiches DOM usan uno menor para no mover el área táctil). */
+export function avanzarVidrio(C: Cannon, v: Vidrio, dt: number, t: number, sensor: { x: number; y: number } | null, ambienteOn = true, giroMax: number = FISICA.giroMax) {
   if (ambienteOn) ambiente(v, t);
   const e = new C.Vec3();
   v.cuerpo.quaternion.toEuler(e);
@@ -116,12 +117,12 @@ export function avanzarVidrio(C: Cannon, v: Vidrio, dt: number, t: number, senso
   v.cuerpo.torque.z += -e.z * FISICA.resorte;
   v.mundo.step(FISICA.paso, dt, FISICA.subpasos);
   v.cuerpo.quaternion.toEuler(e);
-  const tope = (a: number) => Math.max(-FISICA.giroMax, Math.min(FISICA.giroMax, a));
-  if (Math.abs(e.x) > FISICA.giroMax || Math.abs(e.y) > FISICA.giroMax) {
+  const tope = (a: number) => Math.max(-giroMax, Math.min(giroMax, a));
+  if (Math.abs(e.x) > giroMax || Math.abs(e.y) > giroMax) {
     v.cuerpo.quaternion.setFromEuler(tope(e.x), tope(e.y), tope(e.z));
     // Al tocar el tope se pierde la velocidad hacia afuera: sin rebote violento.
-    if (Math.abs(e.x) > FISICA.giroMax) v.cuerpo.angularVelocity.x *= -0.2;
-    if (Math.abs(e.y) > FISICA.giroMax) v.cuerpo.angularVelocity.y *= -0.2;
+    if (Math.abs(e.x) > giroMax) v.cuerpo.angularVelocity.x *= -0.2;
+    if (Math.abs(e.y) > giroMax) v.cuerpo.angularVelocity.y *= -0.2;
     v.cuerpo.quaternion.toEuler(e);
   }
   const s = sensor ?? { x: 0, y: 0 };
