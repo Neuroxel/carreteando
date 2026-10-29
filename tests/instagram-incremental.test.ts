@@ -59,3 +59,19 @@ test('selección: solo cuentas de locales aprobados y coincidencia de URL; rota 
   assert.equal(postOwner({ ownerUsername: 'localuno' }, sources), 'localuno');
   assert.equal(classifyPost({ ownerUsername: 'localuno', shortCode: 'abc123', timestamp: '2026-10-23T12:00:00Z', caption: 'Concierto 24/10/2026 21:00' }, ahora, sources).row?.moderation_status, 'pending');
 });
+
+
+test('registro conserva claves históricas y unifica alias del mismo local', async () => {
+  const { seleccionarCuentas } = await import('../lib/instagram-incremental');
+  const { classifyPost } = await import('../lib/ingestion');
+  const venue = { id: 7, name: 'El Huevo', city: 'Valparaíso', is_active: true, moderation_status: 'approved', instagram_url: 'https://instagram.com/el.huevo/' };
+  const row = { username: 'el.huevo', venue_id: 7, city: 'Valparaíso', last_scraped_at: null, venues: venue };
+  const sources = seleccionarCuentas([row]);
+  const post = { ownerUsername: 'el.huevo', shortCode: 'abc123', timestamp: '2026-10-23T12:00:00Z', caption: 'Concierto 24/10/2026 21:00' };
+  assert.equal(classifyPost(post, ahora, sources).row?.event_key, classifyPost(post, ahora).row?.event_key);
+  const alias = seleccionarCuentas([{ ...row, username: 'otro.alias', venues: { ...venue, instagram_url: 'https://instagram.com/otro.alias/' } }]);
+  assert.equal(alias['otro.alias'].identity, 'el-huevo');
+  assert.equal(classifyPost({ ...post, ownerUsername: 'otro.alias', shortCode: 'def456' }, ahora, alias).row?.event_key, classifyPost(post, ahora).row?.event_key);
+  const equivocado = seleccionarCuentas([{ ...row, venues: { ...venue, name: 'Otro local' } }]);
+  assert.equal(Object.keys(equivocado).length, 0);
+});

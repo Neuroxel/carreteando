@@ -1,3 +1,6 @@
+import { normalizeText } from './event-extraction';
+import { SOURCES } from './ingestion';
+
 /**
  * Instagram incremental de verdad: cada cuenta tiene su marca de agua
  * (instagram_accounts.last_post_at, la publicación más nueva ya procesada).
@@ -71,7 +74,14 @@ export function seleccionarCuentas(rows: { username: string; venue_id: number | 
     let url: URL;
     try { url = new URL(v.instagram_url || ''); } catch { continue; }
     if (!['instagram.com', 'www.instagram.com'].includes(url.hostname.toLowerCase()) || url.pathname.replace(/^\/+|\/+$/g, '').toLowerCase() !== row.username) continue;
-    result[row.username] = { venue: v.name, city: v.city, identity: `venue-${v.id}` };
+    // Conserva las identidades históricas, también para alias nuevos del mismo local.
+    const sameVenue = (source: { venue: string; city: string }) =>
+      normalizeText(source.venue) === normalizeText(v.name) && normalizeText(source.city) === normalizeText(v.city);
+    const historicAccount = Object.hasOwn(SOURCES, row.username) ? SOURCES[row.username] : null;
+    if (historicAccount && !sameVenue(historicAccount)) continue;
+    const identities = [...new Set(Object.values(SOURCES).filter(sameVenue).map((source) => source.identity))];
+    if (identities.length > 1) continue;
+    result[row.username] = { venue: v.name, city: v.city, identity: identities[0] || `venue-${v.id}` };
     if (Object.keys(result).length >= limite) break;
   }
   return result;
