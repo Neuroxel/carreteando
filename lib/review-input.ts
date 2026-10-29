@@ -46,6 +46,10 @@ export function reviewInput(
       error instanceof ValidationError ? error.message : undefined,
     );
   }
+  const finValue = form.get('fin');
+  const fin = finValue === null ? undefined : String(finValue).trim();
+  if (fin && (!/^([01]\d|2[0-3]):[0-5]\d$/.test(fin) || !v.hora || fin === v.hora))
+    throw new ReviewInputError('invalid-fields', 'La hora de término requiere una hora de inicio distinta y una fuente verificable.');
   return {
       note,
       fields: {
@@ -53,6 +57,7 @@ export function reviewInput(
         description: v.descripcion,
         date_text: v.fecha,
         event_time: v.hora,
+        event_end_time: fin === undefined ? undefined : fin || null,
         venue: v.lugar,
         city: v.ciudad,
         address: v.direccion,

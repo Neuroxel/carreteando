@@ -7,7 +7,7 @@ export type EventsResult =
   | { status: 'ok'; events: Evento[]; checkedAt: string }
   | { status: 'error'; events: []; checkedAt: string };
 const COLUMNS =
-  'instagram_id,title,description,date_text,location,image_url,instagram_url,username,scraped_at,source,is_active,moderation_status,source_published_at,last_verified_at,city,venue,address,event_time,price_clp,price_text,category,organizer_verified,event_type,source_id,independent_sources';
+  'instagram_id,title,description,date_text,location,image_url,instagram_url,username,scraped_at,source,is_active,moderation_status,source_published_at,last_verified_at,city,venue,address,event_time,event_end_time,price_clp,price_text,category,organizer_verified,event_type,source_id,independent_sources';
 /**
  * Lecturas públicas cacheadas en el servidor (5 minutos, etiqueta
  * 'public-snapshot'). La ingesta y la moderación invalidan la etiqueta, así que

@@ -47,6 +47,9 @@ export function dbRowToEvento(row: EventRow): Evento | null {
         ? row.event_time
         : null
       : extractEventTime(description),
+    fin: typeof row.event_end_time === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(row.event_end_time)
+      ? row.event_end_time
+      : null,
     lugar: str(row.venue),
     direccion: str(row.address),
     ciudad: str(row.city) || inferCity(str(row.location) || ''),

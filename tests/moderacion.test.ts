@@ -129,3 +129,14 @@ test('el aporte del público conserva sus reglas estrictas', async () => {
     'el público pudo aportar sin contar de qué se trata',
   );
 });
+
+
+test('fin verificado se valida, permite madrugada y conserva llamadas antiguas', () => {
+  const input = { ...FILA_ADAPTADOR, hora: '22:00' };
+  assert.equal(reviewInput('event', 'approve', 0, formulario({ ...input, fin: '03:00' })).fields.event_end_time, '03:00');
+  assert.equal(reviewInput('event', 'approve', 0, formulario({ ...input, fin: '' })).fields.event_end_time, null);
+  assert.equal(reviewInput('event', 'approve', 0, formulario(input)).fields.event_end_time, undefined);
+  for (const cambios of [{ fin: '25:00' }, { fin: '22:00' }, { fin: '03:00', hora: '' }]) {
+    assert.throws(() => reviewInput('event', 'approve', 0, formulario({ ...input, ...cambios })), ReviewInputError);
+  }
+});
