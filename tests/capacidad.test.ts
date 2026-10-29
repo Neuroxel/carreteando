@@ -38,7 +38,7 @@ test('en "baja" y con movimiento reducido no se agrega ningún efecto; la funci�
   assert.match(bloque, /\.bv-luz \{[^}]*pointer-events:none/);
   for (const kf of bloque.match(/@keyframes [\w-]+ \{[\s\S]*?\}\s*\}/g) || []) assert.doesNotMatch(kf, /width|height|top:|left:|blur|filter/);
   const b = src('components/Bienvenida.tsx');
-  assert.equal((b.match(/<Capas \/>/g) || []).length, 6, 'cada tipo de afiche tiene canto y papel');
+  assert.equal((b.match(/<Capas \/>/g) || []).length, 7, 'cada tipo de afiche (incluido "Elegir fechas") tiene canto y papel');
   assert.match(b, /data-nivel=\{nivel\}/);
   assert.match(b, /useState<Nivel>\('baja'\)/, 'arranca sin efectos hasta saber qué aguanta');
 });

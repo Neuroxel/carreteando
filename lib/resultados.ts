@@ -61,7 +61,7 @@ export function lugaresLista(c: Contexto, f: FiltrosEvento) {
 
 /** Radar · Carretes hoy: eventos de hoy (noche hasta las 05:00) que no terminaron. */
 export const eventosRadar = (c: Contexto, f: FiltrosEvento) =>
-  enZona(c, f, filterEvents(c.todos, { ...f, fecha: 'hoy' }, c.today, c.ahora)).filter((e) => visibleEnCartelera(e, c.ahora));
+  enZona(c, f, filterEvents(c.todos, { ...f, fecha: 'hoy', desde: null, hasta: null }, c.today, c.ahora)).filter((e) => visibleEnCartelera(e, c.ahora));
 
 /** Radar: lugares a dibujar. "Carretes hoy": solo los que tienen evento hoy. */
 export function lugaresRadar(c: Contexto, f: FiltrosEvento, capa: Modo['capa']) {
