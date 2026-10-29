@@ -211,6 +211,8 @@ export function filterEvents(
         !dentroDelPresupuesto(e, filters.precio)
       )
         return false;
+      // Rango de noches: manda sobre las pestañas de fecha (un evento que sigue tras el corte cuenta como hoy).
+      if (filters.desde && filters.hasta) return fechaFiltro >= filters.desde && fechaFiltro <= filters.hasta;
       if (filters.fecha === 'hoy' && fechaFiltro !== today) return false;
       // Carlos: primero hoy, y en una segunda pestaña mañana.
       if (filters.fecha === 'manana' && fechaFiltro !== addDays(today, 1)) return false;
@@ -234,15 +236,36 @@ export function filterEvents(
  * pero el teléfono ya marca otro día: se dice "Esta noche" y el día siguiente
  * va con su nombre, nunca "Mañana" (que confunde a las 02:00).
  */
+/**
+ * Etiqueta de fecha en lenguaje de calendario (día civil de Chile), sin romper la
+ * agrupación nocturna: `today` es la fecha de la noche (corte 05:00). En la madrugada
+ * la noche en curso sigue siendo "Esta noche", el día civil que ya empezó es "Hoy" y
+ * el siguiente es "Mañana" (a la 01:00 del 29, un evento del 29 a las 18:00 es "Hoy").
+ */
 export function eventDateLabel(date: string, today = getChileTodayStr(), madrugada = false): string {
   if (date === today) return madrugada ? 'Esta noche' : 'Hoy';
-  if (date === addDays(today, 1) && !madrugada) return 'Mañana';
+  const civil = madrugada ? addDays(today, 1) : today;
+  if (date === civil) return 'Hoy';
+  if (date === addDays(civil, 1)) return 'Mañana';
   return new Intl.DateTimeFormat('es-CL', {
     day: 'numeric',
     month: 'short',
     weekday: 'short',
     timeZone: 'UTC',
   }).format(new Date(`${date}T12:00:00Z`));
+}
+
+/**
+ * Orden de funciones: fecha de la noche y luego hora dentro de esa noche (las 00:30
+ * van después de las 23:00). Una función sin hora va al final de su día: nunca se
+ * inventa una hora para ordenarla.
+ */
+export function porFechaYHora<T extends { fecha: string; hora?: string | null; nombre?: string }>(a: T, b: T) {
+  const enNoche = (h?: string | null) => {
+    const m = h && /^([01]\d|2[0-3]):[0-5]\d$/.test(h) ? Number(h.slice(0, 2)) * 60 + Number(h.slice(3)) : null;
+    return m === null ? Number.POSITIVE_INFINITY : m < 5 * 60 ? m + 24 * 60 : m;
+  };
+  return a.fecha.localeCompare(b.fecha) || enNoche(a.hora) - enNoche(b.hora) || (a.nombre || '').localeCompare(b.nombre || '', 'es');
 }
 
 // A correct list can still read as one venue's microsite. Keep the chronological

@@ -4,7 +4,8 @@ import { notFound } from 'next/navigation';
 import { getPublicVenue } from '../../../lib/server-venues';
 import { getPublicEvents } from '../../../lib/server-events';
 import { fechaDeLaNoche } from '../../../lib/event-extraction';
-import { eventDateLabel } from '../../../lib/events';
+import { eventDateLabel, porFechaYHora } from '../../../lib/events';
+import { ahoraEnChile, esMadrugada } from '../../../lib/temporal';
 import { FUENTES_LUGAR, NIVEL_PRECIO, fechaCorta, zonaSlug } from '../../../lib/venues';
 import ShareButton from '../../../components/ShareButton';
 import LiveReport from '../../../components/LiveReport';
@@ -43,7 +44,8 @@ export default async function VenueDetail({ params }: Props) {
   if (!l) notFound();
   const [events, enVivo] = await Promise.all([getPublicEvents(), liveFor('venue', l.slug)]);
   const today = fechaDeLaNoche(new Date());
-  const agenda = events.events.filter((e) => e.lugar === l.nombre && e.fecha >= today);
+  const agenda = events.events.filter((e) => e.lugar === l.nombre && e.fecha >= today).sort(porFechaYHora);
+  const madrugada = esMadrugada(ahoraEnChile(new Date()));
   const maps = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
     [l.nombre, l.direccion, l.ciudad, 'Chile'].filter(Boolean).join(', '),
   )}`;
@@ -194,7 +196,7 @@ export default async function VenueDetail({ params }: Props) {
           {agenda.map((e) => (
             <li key={e.id}>
               <Link href={`/evento/${encodeURIComponent(e.id)}`}>
-                <strong>{eventDateLabel(e.fecha, today)}</strong>
+                <strong>{eventDateLabel(e.fecha, today, madrugada)}</strong>
                 <span>{e.hora ? `${e.hora} h` : 'Hora por confirmar'}</span>
                 {e.nombre}
               </Link>

@@ -112,6 +112,12 @@ export interface FiltrosEvento {
   /** Presupuesto: 'gratis', o un tope en CLP ('5000', '10000', '15000'). 'pago' queda por enlaces viejos. */
   precio?: 'gratis' | 'pago' | 'todos' | '5000' | '10000' | '15000';
   fecha?: 'hoy' | 'manana' | 'finde' | 'futuro' | 'semana' | 'todos';
+  /**
+   * Rango de noches, inclusivo (YYYY-MM-DD, fecha de la noche: corte 05:00 Chile).
+   * Si viene, manda sobre `fecha`. Un show del sábado a la 01:00 es de la noche del viernes.
+   */
+  desde?: string | null;
+  hasta?: string | null;
   escena?: string;
   /** Sector o barrio verificado dentro de la comuna elegida (slug de lib/territorios). */
   zona?: string | null;

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getPublicEvent } from '../../../lib/server-events';
 import { eventDateLabel } from '../../../lib/events';
+import { ahoraEnChile, esMadrugada } from '../../../lib/temporal';
 import { fechaDeLaNoche } from '../../../lib/event-extraction';
 import { breadcrumbJsonLd, eventJsonLd, safeJsonLd } from '../../../lib/event-seo';
 import EventImage from '../../../components/EventImage';
@@ -49,6 +50,7 @@ export default async function Detail({ params }: Props) {
   const e = r.events[0];
   if (!e) notFound();
   const today = fechaDeLaNoche(r.checkedAt);
+  const madrugada = esMadrugada(ahoraEnChile(new Date(r.checkedAt)));
   // Reporting how a night is going only makes sense on the night itself.
   const enVivo = e.fecha === today ? await liveFor('event', e.id) : null;
   const category =
@@ -82,7 +84,7 @@ export default async function Detail({ params }: Props) {
               <dt>CUÁNDO</dt>
               <dd>
                 <time dateTime={e.fecha}>
-                  {eventDateLabel(e.fecha, today)} · {e.fecha.split('-').reverse().join('/')}
+                  {eventDateLabel(e.fecha, today, madrugada)} · {e.fecha.split('-').reverse().join('/')}
                 </time>
                 <small>{e.hora ? `${e.hora} h · hora de Chile` : 'Hora por confirmar'}</small>
               </dd>
@@ -115,7 +117,7 @@ export default async function Detail({ params }: Props) {
             <ShareButton
               id={e.id}
               title={e.nombre}
-              details={`${eventDateLabel(e.fecha, today)} · ${e.hora ? `${e.hora} h` : 'Hora por confirmar'} · ${e.lugar || e.ciudad}`}
+              details={`${eventDateLabel(e.fecha, today, madrugada)} · ${e.hora ? `${e.hora} h` : 'Hora por confirmar'} · ${e.lugar || e.ciudad}`}
             />
             {maps && (
               <a

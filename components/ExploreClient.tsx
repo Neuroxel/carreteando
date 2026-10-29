@@ -3,7 +3,9 @@ import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import { diversifyByVenue, sugerenciasPara, filterEvents, nocheAntes, ordenarPorPrecio } from '../lib/events';
 import { addDays, fechaDeLaNoche } from '../lib/event-extraction';
-import { parseFilters } from '../lib/filters';
+import CalendarioNoches from './CalendarioNoches';
+import { etiquetaRango } from '../lib/rango-noches';
+import { fechaAUrl, parseFilters } from '../lib/filters';
 import { CIUDADES, type Evento, type FiltrosEvento } from '../lib/types';
 import { ESCENAS } from '../lib/escenas';
 import { type Lugar, buscarLugares, buscarZonas, zonaSlug } from '../lib/venues';
@@ -86,6 +88,9 @@ const conZona = (prev: FiltrosEvento, cambio: Partial<FiltrosEvento>): FiltrosEv
   ...prev,
   ...cambio,
   ...(cambio.ciudad !== undefined && cambio.ciudad !== prev.ciudad && cambio.zona === undefined ? { zona: null } : {}),
+  // Una pestaña de fecha (Hoy, Mañana…) suelta el rango; un rango deja las pestañas en "Más adelante".
+  ...(cambio.fecha !== undefined && cambio.desde === undefined ? { desde: null, hasta: null } : {}),
+  ...(cambio.desde ? { fecha: 'futuro' as const } : {}),
   // Elegir una comuna apaga "Cerca de mí": la selección manual manda.
   ...(cambio.ciudad !== undefined && cambio.ciudad !== 'todos' ? { cerca: false } : {}),
 });
@@ -97,7 +102,7 @@ function aUrl(e: Estado, path: string, defecto: string) {
   const p = new URLSearchParams();
   const f = e.filtros;
   if (f.busqueda) p.set('q', f.busqueda);
-  if (f.fecha && f.fecha !== defecto) p.set('fecha', f.fecha);
+  fechaAUrl(p, f, defecto);
   for (const k of ['ciudad', 'escena', 'precio', 'tipo', 'categoria'] as const) {
     const v = f[k];
     if (v && v !== 'todos') p.set(k, v);
@@ -421,10 +426,9 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
     timeZone: 'America/Santiago',
   }).format(new Date(`${today}T15:00:00Z`));
 
-  // Filtros secundarios (escena, presupuesto, orden, qué mostrar). Lista/Mapa y la ubicación van fuera.
+  // Filtros secundarios (presupuesto, orden, qué mostrar, qué mostrar). Lista/Mapa y la ubicación van fuera.
   // Filtros secundarios activos, uno por cada cosa que cambia el resultado.
   const filtrosActivos = [
-    filtros.escena && filtros.escena !== 'todos',
     filtros.precio && filtros.precio !== 'todos',
     orden !== 'recomendados',
     ver === 'eventos',
@@ -458,6 +462,7 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
 
   // Bienvenida: pantalla aparte, una vez por sesión y solo en una entrada limpia a "/".
   const [bienvenida, setBienvenida] = useState(false);
+  const [calAbierto, setCalAbierto] = useState(false);
   useEffect(() => {
     if (!home) return;
     // ?elegir=1 la abre a pedido (QA, demos) aunque ya se haya visto; se consume sin recargar.
@@ -486,20 +491,7 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
   }, []);
   const intencionesConOferta = INTENCIONES.filter((i) => n({ plan: i.slug, fecha: 'futuro', ciudad: 'todos', cerca: false, zona: null }) > 0).map((i) => i.slug);
   const filtrosUI = (
-        <details className="discovery-options"><summary>Filtros{filtrosActivos > 0 ? ` (${filtrosActivos})` : ''}</summary>
-        {escenasVisibles.length > 0 && (
-          <div className="escenas" aria-label="Escenas">
-            {escenasVisibles.map((x) => {
-              const activa = filtros.escena === x.slug;
-              return (
-                <a key={x.slug} {...enlace({ escena: activa ? 'todos' : x.slug })} className={`chip ${activa ? 'selected' : ''}`} aria-current={activa ? 'true' : undefined}>
-                  {/* Activa: tocarla quita el filtro, así que no muestra un número que no se cumpliría. */}
-                  {x.label} {activa ? <span className="chip-n" aria-label={`Quitar filtro ${x.label}`}>✕</span> : <span className="chip-n">{x.n}</span>}
-                </a>
-              );
-            })}
-          </div>
-        )}
+        <details className="discovery-options"><summary>Más filtros{filtrosActivos > 0 ? ` (${filtrosActivos})` : ''}<span className="mas-filtros-que"> · escena, presupuesto, orden</span></summary>
         <div className="presupuesto" role="group" aria-label="Presupuesto por entrada">
           <span className="presupuesto-label">Presupuesto</span>
           {(
@@ -736,13 +728,74 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
               ['finde', 'Este finde', n({ fecha: 'finde' })],
               ['futuro', 'Más adelante', n({ fecha: 'futuro' })],
             ] as const
-          ).map(([v, label, n]) => (
-            <a key={v} {...enlace({ fecha: v })} className={filtros.fecha === v ? 'selected' : ''} aria-current={filtros.fecha === v ? 'true' : undefined}>
-              {label}
-              {n > 0 && <span>{n}</span>}
-            </a>
-          ))}
+          ).map(([v, label, n]) => {
+            const activa = filtros.fecha === v && !filtros.desde;
+            return (
+              <a key={v} {...enlace({ fecha: v })} className={activa ? 'selected' : ''} aria-current={activa ? 'true' : undefined}>
+                {label}
+                {n > 0 && <span>{n}</span>}
+              </a>
+            );
+          })}
+          <button
+            type="button"
+            className={`date-tab-cal ${filtros.desde ? 'selected' : ''}`}
+            aria-expanded={calAbierto}
+            aria-current={filtros.desde ? 'true' : undefined}
+            onClick={() => setCalAbierto((v) => !v)}
+          >
+            <span aria-hidden="true">📅</span> {filtros.desde && filtros.hasta ? etiquetaRango(filtros.desde, filtros.hasta) : 'Fechas'}
+          </button>
         </div>
+        )}
+        {calAbierto && vista !== 'mapa' && ver !== 'lugares' && (
+          <CalendarioNoches
+            today={today}
+            desde={filtros.desde ?? null}
+            hasta={filtros.hasta ?? null}
+            conteo={(d, h) => n({ desde: d, hasta: h })}
+            onElegir={(d, h) => {
+              ir({ desde: d, hasta: h });
+              setCalAbierto(false);
+            }}
+            onCerrar={() => setCalAbierto(false)}
+          />
+        )}
+        {vista === 'lista' && ver !== 'lugares' && (
+          <>
+        {escenasVisibles.length > 0 && (
+          <div className="escenas escenas-visibles" role="group" aria-label="Qué tipo de carrete">
+            {escenasVisibles.map((x) => {
+              const activa = filtros.escena === x.slug;
+              return (
+                <a key={x.slug} {...enlace({ escena: activa ? 'todos' : x.slug })} className={`chip ${activa ? 'selected' : ''}`} aria-current={activa ? 'true' : undefined}>
+                  {/* Activa: tocarla quita el filtro, así que no muestra un número que no se cumpliría. */}
+                  {x.label} {activa ? <span className="chip-n" aria-label={`Quitar filtro ${x.label}`}>✕</span> : <span className="chip-n">{x.n}</span>}
+                </a>
+              );
+            })}
+          </div>
+        )}
+          </>
+        )}
+        {vista === 'lista' && filtrosActivos > 0 && (
+          <div className="filtros-activos" aria-label="Filtros activos">
+            {filtros.precio && filtros.precio !== 'todos' && filtros.precio !== 'pago' && (
+              <a className="chip selected" {...enlace({ precio: 'todos' })}>
+                {filtros.precio === 'gratis' ? 'Gratis' : `Hasta $${Number(filtros.precio).toLocaleString('es-CL')}`} <span className="chip-n" aria-label="Quitar">✕</span>
+              </a>
+            )}
+            {orden !== 'recomendados' && (
+              <a className="chip selected" {...enlace({ orden: 'recomendados' })}>
+                Más barato <span className="chip-n" aria-label="Quitar">✕</span>
+              </a>
+            )}
+            {ver === 'eventos' && (
+              <a className="chip selected" {...enlace({ ver: 'todo' })}>
+                Solo eventos <span className="chip-n" aria-label="Quitar">✕</span>
+              </a>
+            )}
+          </div>
         )}
         <div className="vista-barra">
           <div className="segmented segmented-vista" role="group" aria-label="Cómo mostrarlo">
@@ -859,7 +912,9 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
               <div>
                 <p className="eyebrow">{filtros.ciudad === 'todos' ? 'VALPO Y ALREDEDORES' : filtros.ciudad}</p>
                 <h2>
-                  {filtros.fecha === 'hoy'
+                  {filtros.desde && filtros.hasta
+                    ? etiquetaRango(filtros.desde, filtros.hasta)
+                    : filtros.fecha === 'hoy'
                     ? madrugada
                       ? 'Carretes esta noche'
                       : 'Carretes hoy'
