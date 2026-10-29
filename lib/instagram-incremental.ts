@@ -65,9 +65,9 @@ export async function guardarMarcas(db: Db, nuevas: Map<string, string>, ahora =
 }
 
 /** Solo cuentas activas de recintos aprobados cuyo Instagram coincide con el registro. */
-export function seleccionarCuentas(rows: { username: string; venue_id: number | null; city: string | null; last_scraped_at: string | null; venues: { id: number; name: string; city: string; is_active: boolean; moderation_status: string; instagram_url: string | null } | { id: number; name: string; city: string; is_active: boolean; moderation_status: string; instagram_url: string | null }[] | null }[], limite = 4) {
+export function seleccionarCuentas(rows: { username: string; venue_id: number | null; city: string | null; last_checked_at: string | null; venues: { id: number; name: string; city: string; is_active: boolean; moderation_status: string; instagram_url: string | null } | { id: number; name: string; city: string; is_active: boolean; moderation_status: string; instagram_url: string | null }[] | null }[], limite = 5) {
   const result: Record<string, { venue: string; city: string; identity: string }> = Object.create(null);
-  const ordered = [...rows].sort((a, b) => (a.last_scraped_at || '').localeCompare(b.last_scraped_at || '') || a.username.localeCompare(b.username));
+  const ordered = [...rows].sort((a, b) => (a.last_checked_at || '').localeCompare(b.last_checked_at || '') || a.username.localeCompare(b.username));
   for (const row of ordered) {
     const v = Array.isArray(row.venues) ? (row.venues.length === 1 ? row.venues[0] : null) : row.venues;
     if (!v || !v.is_active || v.moderation_status !== 'approved' || !row.venue_id || row.venue_id !== v.id || !/^[a-z0-9._]{1,30}$/.test(row.username) || !v.name || !v.city || (row.city && row.city !== v.city)) continue;
@@ -85,4 +85,13 @@ export function seleccionarCuentas(rows: { username: string; venue_id: number | 
     if (Object.keys(result).length >= limite) break;
   }
   return result;
+}
+
+/** Una cuenta solo se declara leída si hay evidencia identificable y no está saturada. */
+export function cuentasCompletas(cuentas: string[], posts: { cuenta: string | null; publicado: string | null; error: boolean }[], porCuenta: number, totalMax: number) {
+  if (posts.length >= totalMax || posts.some(p => !p.cuenta || p.error)) return [];
+  return cuentas.filter(cuenta => {
+    const grupo = posts.filter(p => p.cuenta === cuenta);
+    return grupo.length > 0 && grupo.length < porCuenta && grupo.every(p => p.publicado && Number.isFinite(Date.parse(p.publicado)));
+  });
 }

@@ -135,3 +135,9 @@ test('Apify: la contabilidad suma ingesta y piloto del mes UTC; sin costo cuenta
   const r = await presupuestoApify(rota, { ahora, env: {} });
   assert.equal(!r.correr && r.motivo, 'APIFY_BUDGET_UNKNOWN');
 });
+
+test('Apify: consumo remoto desconocido impide correr', async () => {
+  const { db } = baseMemoria({ ingestion_runs: [], instagram_pilot_runs: [] });
+  const decision = await presupuestoApify(db, { token: 't', env: {}, fetcher: async () => new Response('', { status: 503 }) });
+  assert.equal(!decision.correr && decision.motivo, 'APIFY_BUDGET_UNKNOWN');
+});

@@ -95,7 +95,7 @@ export async function consumoApify(token: string, fetcher: typeof fetch = fetch)
 
 /**
  * Decide si se puede iniciar una corrida ahora. La base es obligatoria; el
- * consumo de Apify, si responde, solo puede subir la cifra (cubre corridas
+ * consumo de Apify es obligatorio y solo puede subir la cifra (cubre corridas
  * lanzadas fuera de esta app con el mismo token).
  */
 export async function presupuestoApify(
@@ -110,6 +110,7 @@ export async function presupuestoApify(
     return decidirCorrida({ gastadoMes: null, corridasHoy: 0, limites });
   }
   const apify = opciones.token ? await consumoApify(opciones.token, opciones.fetcher) : null;
-  const gastadoMes = Math.max(registro.gastadoMes, apify ?? 0);
+  if (apify === null) return decidirCorrida({ gastadoMes: null, corridasHoy: registro.corridasHoy, limites });
+  const gastadoMes = Math.max(registro.gastadoMes, apify);
   return decidirCorrida({ gastadoMes, corridasHoy: registro.corridasHoy, limites, topePedido: opciones.topePedido });
 }
