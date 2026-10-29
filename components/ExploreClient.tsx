@@ -11,7 +11,7 @@ import { puntosDeMapa } from '../lib/map';
 import { indiceDeLugares } from '../lib/venue-match';
 import type { PublicSnapshot } from '../lib/snapshot';
 import { rememberEmptySearch, trackLater } from '../lib/metrics';
-import { ORDEN_TEMPORAL, ahoraEnChile, esMadrugada, estadoTemporal, nombreDia, porEstadoTemporal, visibleEnCartelera } from '../lib/temporal';
+import { ORDEN_TEMPORAL, ahoraEnChile, esMadrugada, estadoTemporal, nombreDia, porEstadoTemporal, sigueTrasCorte, visibleEnCartelera } from '../lib/temporal';
 import { PRECISION_ZONA_M, fixUtil, RADIOS_KM, CLAVE_GPS_NEGADO_VIEJA, ubicarEnDosFases, type EstadoGps, type Fix, leerCapa, porCercania, textoDistancia, type Capa, type Posicion } from '../lib/radar';
 import EventCard from './EventCard';
 import VenueCard from './VenueCard';
@@ -332,16 +332,16 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
     const hoyPorLugar = new Map<string, string>();
     for (const e of todos) {
       const slug = lugarDe(e);
-      if (!slug || e.fecha < today) continue;
+      if (!slug || (e.fecha < today && !sigueTrasCorte(e, ahoraCL))) continue;
       conteoLugar.set(slug, (conteoLugar.get(slug) || 0) + 1);
-      if (e.fecha === today && !hoyPorLugar.has(slug)) hoyPorLugar.set(slug, e.nombre);
+      if ((e.fecha === today || sigueTrasCorte(e, ahoraCL)) && !hoyPorLugar.has(slug)) hoyPorLugar.set(slug, e.nombre);
     }
     const lugaresZona = (filtros.ciudad === 'todos' ? snap.venues : snap.venues.filter((l) => l.ciudad === filtros.ciudad))
       .filter((l) => !filtros.zona || sectorDeLugar(l.slug) === filtros.zona)
       .slice()
       .sort((a, b) => (conteoLugar.get(b.nombre) || 0) - (conteoLugar.get(a.nombre) || 0));
     const porCiudad = new Map<string, number>();
-    for (const e of todos) if (e.fecha >= today) porCiudad.set(e.ciudad, (porCiudad.get(e.ciudad) || 0) + 1);
+    for (const e of todos) if (e.fecha >= today || sigueTrasCorte(e, ahoraCL)) porCiudad.set(e.ciudad, (porCiudad.get(e.ciudad) || 0) + 1);
     // Una comuna con buenos lugares y sin eventos hoy sigue siendo un lugar donde salir.
     const lugaresPorCiudad = new Map<string, number>();
     for (const l of snap.venues) lugaresPorCiudad.set(l.ciudad, (lugaresPorCiudad.get(l.ciudad) || 0) + 1);
@@ -354,7 +354,7 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
       lugaresPorCiudad,
       ciudadesConOferta: CIUDADES.filter((c) => peso(c) > 0).sort((a, b) => peso(b) - peso(a)),
 
-      busquedaEventos: filtros.busqueda ? filterEvents(todos, { fecha: 'futuro', busqueda: filtros.busqueda }, today).filter((e) => visibleEnCartelera(e, ahoraCL)).length : 0,
+      busquedaEventos: filtros.busqueda ? filterEvents(todos, { fecha: 'futuro', busqueda: filtros.busqueda }, today, ahoraCL).filter((e) => visibleEnCartelera(e, ahoraCL)).length : 0,
       lugaresHallados: filtros.busqueda ? buscarLugares(snap.venues, filtros.busqueda) : [],
       zonasHalladas: filtros.busqueda ? buscarZonas(snap.venues, filtros.busqueda) : [],
       sugerencias: sugerenciasPara(todos, filtros, today),
@@ -365,7 +365,7 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
               .map((t) => ({
                 t,
                 lugares: snap.venues.filter((l) => sectorDeLugar(l.slug) === t.slug).length,
-                eventos: todos.filter((e) => e.fecha >= today && e.ciudad === filtros.ciudad && sectorDeLugar(lugarDe(e)) === t.slug).length,
+                eventos: todos.filter((e) => (e.fecha >= today || sigueTrasCorte(e, ahoraCL)) && e.ciudad === filtros.ciudad && sectorDeLugar(lugarDe(e)) === t.slug).length,
               }))
               .filter((z) => z.lugares > 0)
               .sort((a, b) => b.eventos - a.eventos || a.t.nombre.localeCompare(b.t.nombre, 'es'))
@@ -393,8 +393,8 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
   );
   const lugaresMapa = useMemo(() => (vista === 'mapa' ? lugaresRadar(ctx, filtros, capa) : []), [vista, ctx, filtros, capa]);
   const puntos = useMemo(
-    () => (vista === 'mapa' ? puntosDeMapa(lugaresMapa, eventosHoy, today, {}, lugarDe) : []),
-    [vista, lugaresMapa, eventosHoy, today, lugarDe],
+    () => (vista === 'mapa' ? puntosDeMapa(lugaresMapa, eventosHoy, today, {}, lugarDe, ahoraCL) : []),
+    [vista, lugaresMapa, eventosHoy, today, lugarDe, ahoraCL],
   );
   // Cercanía: primero lo que todavía no empieza, después lo ya iniciado y al final
   // los lugares sin evento hoy; dentro de cada grupo, por distancia.
@@ -412,7 +412,7 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
       .sort((a, b) => a.orden - b.orden || a.km - b.km)
       .slice(0, 6);
   }, [yo, puntos, today, ahoraCL, cercaDeMi, radio]);
-  const vigentes = todos.filter((e) => e.fecha >= today).length;
+  const vigentes = todos.filter((e) => e.fecha >= today || sigueTrasCorte(e, ahoraCL)).length;
   const viejo = ahora - Date.parse(snap.generatedAt) > VIEJO_MS;
   const dateLabel = new Intl.DateTimeFormat('es-CL', {
     weekday: 'long',

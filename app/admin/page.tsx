@@ -18,6 +18,7 @@ function Fields({ row }: { row: Row }) {
     ['nombre', 'Nombre', 'title'],
     ['fecha', 'Fecha', 'date_text'],
     ['hora', 'Hora (vacía si desconocida)', 'event_time'],
+    ['fin', 'Hora de término verificada (vacía si desconocida)', 'event_end_time'],
     ['lugar', 'Recinto', 'venue'],
     ['direccion', 'Dirección', 'address'],
     ['precio', 'Precio CLP (vacío si desconocido)', 'price_clp'],
@@ -37,7 +38,7 @@ function Fields({ row }: { row: Row }) {
             type={
               name === 'fecha'
                 ? 'date'
-                : name === 'hora'
+                : name === 'hora' || name === 'fin'
                   ? 'time'
                   : name === 'precio'
                     ? 'number'

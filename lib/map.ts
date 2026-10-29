@@ -1,3 +1,4 @@
+import { sigueTrasCorte, type AhoraChile } from './temporal';
 import type { Evento } from './types';
 import type { Lugar } from './venues';
 export type EstadoPunto = 'lugar' | 'evento' | 'fonda' | 'vivo';
@@ -30,6 +31,7 @@ export function puntosDeMapa(
   vivos: Record<string, string> = {},
   /** Lugar de cada evento (slug). Sin él, nombre exacto como antes. */
   lugarDe?: (e: Evento) => string | null,
+  ahora?: AhoraChile,
 ): PuntoMapa[] {
   const porLugar = new Map<string, Evento[]>();
   for (const evento of eventos) {
@@ -46,7 +48,7 @@ export function puntosDeMapa(
     const suyos = (porLugar.get(lugarDe ? lugar.slug : normalizar(lugar.nombre)) || []).sort((a, b) =>
       a.fecha.localeCompare(b.fecha),
     );
-    const estaNoche = suyos.filter((e) => e.fecha === hoy);
+    const estaNoche = suyos.filter((e) => e.fecha === hoy || (ahora && sigueTrasCorte(e, ahora)));
     const vivo = vivos[lugar.slug] || null;
     const hayFonda = estaNoche.some((e) => e.tipo === 'fonda');
     const estado: EstadoPunto = vivo

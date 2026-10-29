@@ -129,3 +129,30 @@ test('el aporte del público conserva sus reglas estrictas', async () => {
     'el público pudo aportar sin contar de qué se trata',
   );
 });
+
+
+test('fin verificado se valida, permite madrugada y conserva llamadas antiguas', () => {
+  const input = { ...FILA_ADAPTADOR, hora: '22:00' };
+  assert.equal(reviewInput('event', 'approve', 0, formulario({ ...input, fin: '03:00' })).fields.event_end_time, '03:00');
+  assert.equal(reviewInput('event', 'approve', 0, formulario({ ...input, fin: '' })).fields.event_end_time, null);
+  assert.equal(reviewInput('event', 'approve', 0, formulario(input)).fields.event_end_time, undefined);
+  for (const cambios of [{ fin: '25:00' }, { fin: '22:00' }, { fin: '03:00', hora: '' }]) {
+    assert.throws(() => reviewInput('event', 'approve', 0, formulario({ ...input, ...cambios })), ReviewInputError);
+  }
+});
+
+test('revisión: misma guarda que review_item — noche vigente antes de las 05:00 y anoche con fin verificado aún futuro', async () => {
+  const { fechaMinimaRevision } = await import('../lib/review-input');
+  const chile = (iso: string) => new Date(`${iso}-03:00`);
+  // 02:00 del jueves 29: la noche del 28 es la vigente.
+  assert.equal(fechaMinimaRevision({ fecha: '2026-10-28', hora: '23:00' }, chile('2026-10-29T02:00:00')), '2026-10-28');
+  // 05:30: anoche sólo con fin verificado todavía futuro.
+  assert.equal(fechaMinimaRevision({ fecha: '2026-10-28', hora: '23:00', fin: '06:00' }, chile('2026-10-29T05:30:00')), '2026-10-28');
+  assert.equal(fechaMinimaRevision({ fecha: '2026-10-28', hora: '23:00', fin: '05:15' }, chile('2026-10-29T05:30:00')), '2026-10-29');
+  assert.equal(fechaMinimaRevision({ fecha: '2026-10-28', hora: '23:00' }, chile('2026-10-29T05:30:00')), '2026-10-29');
+  assert.equal(fechaMinimaRevision({ fecha: '2026-10-27', hora: '23:00', fin: '06:00' }, chile('2026-10-29T05:30:00')), '2026-10-29');
+  assert.equal(fechaMinimaRevision({ fecha: '2026-10-28', hora: '23:00', fin: '06:00' }, chile('2026-10-29T06:30:00')), '2026-10-29');
+  // Los envíos públicos no cambian: siguen desde hoy calendario.
+  const { validateSubmission } = await import('../lib/submission-validation');
+  assert.throws(() => validateSubmission({ fecha: '2026-10-28' }, chile('2026-10-29T02:00:00')), /La fecha debe ser válida/);
+});
