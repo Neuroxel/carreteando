@@ -1,6 +1,8 @@
 import { ValidationError, validateSubmission } from './submission-validation';
 import { eventKey } from './event-identity';
 import { safeImageUrl } from './safety';
+import { addDays, fechaDeLaNoche } from './event-extraction';
+import { ahoraEnChile, sigueTrasCorte } from './temporal';
 export const REVIEW_KINDS = ['event', 'inbox'];
 export const REVIEW_ACTIONS = ['approve', 'save', 'reject', 'withdraw', 'resolve'];
 // A failed review must say which half failed. Reporting every cause as "invalid"
@@ -35,9 +37,11 @@ export function reviewInput(
     const raw = Object.fromEntries(form.entries()) as Record<string, unknown>;
     // Moderar no es aportar: el organizador y la descripción son deseables, no
     // requisitos. Lo que sí sigue siendo obligatorio es dónde, cuándo y la fuente.
-    v = validateSubmission({ ...raw, precio: raw.precio === '' ? null : Number(raw.precio) }, new Date(), {
+    const ahora = new Date();
+    v = validateSubmission({ ...raw, precio: raw.precio === '' ? null : Number(raw.precio) }, ahora, {
       organizadorMin: 0,
       descripcionMin: 0,
+      fechaMinima: fechaMinimaRevision(raw, ahora),
     });
   } catch (error) {
     // Un rechazo que no dice qué campo revisar es indistinguible de un producto roto.
@@ -46,6 +50,10 @@ export function reviewInput(
       error instanceof ValidationError ? error.message : undefined,
     );
   }
+  const finValue = form.get('fin');
+  const fin = finValue === null ? undefined : String(finValue).trim();
+  if (fin && (!/^([01]\d|2[0-3]):[0-5]\d$/.test(fin) || !v.hora || fin === v.hora))
+    throw new ReviewInputError('invalid-fields', 'La hora de término requiere una hora de inicio distinta y una fuente verificable.');
   return {
       note,
       fields: {
@@ -53,6 +61,7 @@ export function reviewInput(
         description: v.descripcion,
         date_text: v.fecha,
         event_time: v.hora,
+        event_end_time: fin === undefined ? undefined : fin || null,
         venue: v.lugar,
         city: v.ciudad,
         address: v.direccion,
@@ -71,4 +80,18 @@ export function reviewInput(
         event_key: eventKey(`${v.lugar} ${v.ciudad}`, v.fecha, v.nombre),
       },
   };
+}
+
+/**
+ * Misma regla que la guarda de review_item (DB): se revisa desde la fecha de la
+ * noche (corte 05:00) y, después del corte, también la noche anterior si su fin
+ * verificado todavía no llega.
+ */
+export function fechaMinimaRevision(raw: Record<string, unknown>, ahora: Date) {
+  const noche = fechaDeLaNoche(ahora);
+  const anterior = addDays(noche, -1);
+  const fecha = typeof raw.fecha === 'string' ? raw.fecha : '';
+  const hora = typeof raw.hora === 'string' ? raw.hora.trim() : '';
+  const fin = typeof raw.fin === 'string' ? raw.fin.trim() : '';
+  return fecha === anterior && sigueTrasCorte({ fecha, hora, fin }, ahoraEnChile(ahora)) ? anterior : noche;
 }

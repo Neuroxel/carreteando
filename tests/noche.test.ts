@@ -42,12 +42,12 @@ test('la lectura pública pide desde la fecha de la noche', async (t) => {
   t.mock.timers.enable({ apis: ['Date'], now: chile('2026-10-18T01:15:00').getTime() });
   try {
     await readEvents();
-    assert.match(decodeURIComponent(pedidas[0]), /date_text=gte\.2026-10-17/);
+    assert.match(decodeURIComponent(pedidas[0]), /date_text\.gte\.2026-10-17/);
     // Con la clave del servidor, los filtros públicos siguen explícitos en la consulta.
     process.env.SUPABASE_SECRET_KEY = 'sb_secret_test';
     await readEvents();
     const q = new URL(pedidas[1]).searchParams;
-    assert.deepEqual([q.get('is_active'), q.get('moderation_status'), q.get('date_text')], ['eq.true', 'eq.approved', 'gte.2026-10-17']);
+    assert.deepEqual([q.get('is_active'), q.get('moderation_status'), q.get('or')], ['eq.true', 'eq.approved', '(date_text.gte.2026-10-17,and(date_text.eq.2026-10-16,event_end_time.not.is.null))']);
   } finally {
     t.mock.timers.reset();
     delete process.env.SUPABASE_SECRET_KEY;

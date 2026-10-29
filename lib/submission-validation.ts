@@ -29,6 +29,8 @@ function url(body: Record<string, unknown>, key: string, required = false): stri
 export interface SubmissionRules {
   organizadorMin?: number;
   descripcionMin?: number;
+  /** Fecha mínima aceptada (por defecto, hoy calendario). La revisión usa la fecha de la noche. */
+  fechaMinima?: string;
 }
 export function validateSubmission(
   value: unknown,
@@ -43,7 +45,7 @@ export function validateSubmission(
   if (text(b, 'website', 1000)) throw new ValidationError('No se pudo recibir el evento.');
   const fecha = text(b, 'fecha', 10, 10),
     today = toChileDateString(now);
-  if (!validIsoDate(fecha) || fecha < today || fecha > addDays(today, 180))
+  if (!validIsoDate(fecha) || fecha < (rules.fechaMinima ?? today) || fecha > addDays(today, 180))
     throw new ValidationError('La fecha debe ser válida, desde hoy hasta los próximos 180 días.');
   const hora = text(b, 'hora', 5);
   if (hora && !/^([01]\d|2[0-3]):[0-5]\d$/.test(hora)) throw new ValidationError('Revisa la hora.');

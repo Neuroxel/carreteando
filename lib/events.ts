@@ -14,6 +14,7 @@ import {
 import { safeImageUrl, safeWebUrl } from './safety';
 import { inferTipo } from './event-types';
 import { enEscena } from './escenas';
+import { sigueTrasCorte, type AhoraChile } from './temporal';
 export type EventRow = Record<string, unknown>;
 const str = (v: unknown): string | null => (typeof v === 'string' && v.trim() ? v.trim() : null);
 export function dbRowToEvento(row: EventRow): Evento | null {
@@ -47,6 +48,9 @@ export function dbRowToEvento(row: EventRow): Evento | null {
         ? row.event_time
         : null
       : extractEventTime(description),
+    fin: typeof row.event_end_time === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(row.event_end_time)
+      ? row.event_end_time
+      : null,
     lugar: str(row.venue),
     direccion: str(row.address),
     ciudad: str(row.city) || inferCity(str(row.location) || ''),
@@ -188,10 +192,13 @@ export function filterEvents(
   events: Evento[],
   filters: FiltrosEvento,
   today = getChileTodayStr(),
+  ahora?: AhoraChile,
 ): Evento[] {
   return events
     .filter((e) => {
-      if (!e.activo || !validIsoDate(e.fecha) || e.fecha < today) return false;
+      const enCurso = ahora ? sigueTrasCorte(e, ahora) : false;
+      const fechaFiltro = enCurso ? today : e.fecha;
+      if (!e.activo || !validIsoDate(e.fecha) || (e.fecha < today && !enCurso)) return false;
       if (filters.busqueda && !coincideBusqueda(e, filters.busqueda)) return false;
       if (filters.categoria && filters.categoria !== 'todos' && filters.categoria !== e.categoria)
         return false;
@@ -204,14 +211,14 @@ export function filterEvents(
         !dentroDelPresupuesto(e, filters.precio)
       )
         return false;
-      if (filters.fecha === 'hoy' && e.fecha !== today) return false;
+      if (filters.fecha === 'hoy' && fechaFiltro !== today) return false;
       // Carlos: primero hoy, y en una segunda pestaña mañana.
-      if (filters.fecha === 'manana' && e.fecha !== addDays(today, 1)) return false;
-      if (filters.fecha === 'semana' && e.fecha > addDays(today, 7)) return false;
+      if (filters.fecha === 'manana' && fechaFiltro !== addDays(today, 1)) return false;
+      if (filters.fecha === 'semana' && fechaFiltro > addDays(today, 7)) return false;
       if (filters.fecha === 'finde') {
         const dow = new Date(`${today}T12:00:00Z`).getUTCDay();
         const friday = addDays(today, dow === 0 ? -2 : dow === 6 ? -1 : 5 - dow);
-        if (e.fecha < friday || e.fecha > addDays(friday, 2)) return false;
+        if (fechaFiltro < friday || fechaFiltro > addDays(friday, 2)) return false;
       }
       return true;
     })

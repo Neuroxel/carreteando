@@ -94,11 +94,7 @@ export async function GET(request: Request) {
   try {
     // Expiry is also enforced on every public read and by RLS; cleanup does not reactivate anything.
     // La noche de ayer sigue vigente hasta las 05:00 de Chile.
-    const expire = await db
-      .from('events')
-      .update({ is_active: false })
-      .eq('is_active', true)
-      .lt('date_text', fechaDeLaNoche(new Date()));
+    const expire = await db.rpc('expire_stale_active_events');
     // Vencer es limpieza: la lectura pública y RLS ya esconden lo pasado. Si falla,
     // la ingesta sigue (antes abortaba la corrida entera y el cooldown de 3 h
     // bloqueaba la siguiente) y queda el mensaje de Postgres para diagnosticar.
