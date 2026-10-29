@@ -135,3 +135,22 @@ test('Apify: la contabilidad suma ingesta y piloto del mes UTC; sin costo cuenta
   const r = await presupuestoApify(rota, { ahora, env: {} });
   assert.equal(!r.correr && r.motivo, 'APIFY_BUDGET_UNKNOWN');
 });
+
+test('Apify: consumo remoto desconocido impide correr', async () => {
+  const { db } = baseMemoria({ ingestion_runs: [], instagram_pilot_runs: [] });
+  const decision = await presupuestoApify(db, { token: 't', env: {}, fetcher: async () => new Response('', { status: 503 }) });
+  assert.equal(!decision.correr && decision.motivo, 'APIFY_BUDGET_UNKNOWN');
+});
+
+test('Apify: límite autorizado es máximo incluso si entorno lo eleva', () => {
+  assert.equal(limitesApify({ APIFY_MONTHLY_HARD_USD: '9' }).hard, 3);
+  assert.equal(limitesApify({ APIFY_MONTHLY_HARD_USD: '1' }).hard, 1);
+});
+
+test('Apify: null, cadena vacía y tipos inválidos no son gasto cero', async () => {
+  const { db } = baseMemoria({ ingestion_runs: [], instagram_pilot_runs: [] });
+  for (const raw of [null, '', '  ', false, [], {}]) {
+    const decision = await presupuestoApify(db, { token: 't', env: {}, fetcher: async () => new Response(JSON.stringify({ data: { current: { monthlyUsageUsd: raw } } })) });
+    assert.equal(!decision.correr && decision.motivo, 'APIFY_BUDGET_UNKNOWN');
+  }
+});

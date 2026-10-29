@@ -130,8 +130,9 @@ test('provider outage records failed run without leaking response or claiming sc
       const headers = { 'content-type': 'application/json' };
       if (url.includes('claim_ingestion_run'))
         return new Response(JSON.stringify('test-run'), { headers });
-      // El presupuesto consulta el consumo del mes antes de iniciar; caído, no inventa cero ni bloquea.
-      if (url === 'https://api.apify.com/v2/users/me/limits') return new Response('', { status: 503 });
+      if (url.includes('/instagram_accounts') && url.includes('venues')) return new Response(JSON.stringify([{ username: 'localuno', venue_id: 1, city: 'Valparaíso', last_checked_at: null, venues: { id: 1, name: 'Local Uno', city: 'Valparaíso', is_active: true, moderation_status: 'approved', instagram_url: 'https://instagram.com/localuno/' } }]), { headers });
+      // El proveedor responde al presupuesto antes de fallar al iniciar el actor.
+      if (url === 'https://api.apify.com/v2/users/me/limits') return new Response(JSON.stringify({ data: { current: { monthlyUsageUsd: 0 } } }), { headers });
       if (url.startsWith('https://api.apify.com/')) {
         providerCalls++;
         return new Response('token=SECRET_SHOULD_NOT_LEAK', { status: 503 });
@@ -176,6 +177,7 @@ test('sin margen en el mes, la ingesta omite Apify con APIFY_MONTHLY_BUDGET y no
       const url = String(input);
       const headers = { 'content-type': 'application/json' };
       if (url.includes('claim_ingestion_run')) return new Response(JSON.stringify('test-run'), { headers });
+      if (url.includes('/instagram_accounts') && url.includes('venues')) return new Response(JSON.stringify([{ username: 'localuno', venue_id: 1, city: 'Valparaíso', last_checked_at: null, venues: { id: 1, name: 'Local Uno', city: 'Valparaíso', is_active: true, moderation_status: 'approved', instagram_url: 'https://instagram.com/localuno/' } }]), { headers });
       if (url === 'https://api.apify.com/v2/users/me/limits')
         return new Response(JSON.stringify({ data: { current: { monthlyUsageUsd: 2.97 } } }), { headers });
       if (url.startsWith('https://api.apify.com/')) {

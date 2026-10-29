@@ -33,6 +33,7 @@ const CORTO: Record<Actor, string> = { 'apify~instagram-scraper': 'scraper', 'ap
  * Guarda evidencia privada (instagram_pilot_items) y cuentas citadas como
  * candidatas (instagram_accounts). No crea eventos: lo que trae es pista.
  */
+const pilotoSinReserva = () => true;
 export async function GET(request: Request) {
   const db = getAdminDb();
   const token = process.env.APIFY_API_TOKEN;
@@ -43,6 +44,8 @@ export async function GET(request: Request) {
   if (!cohorte || !(cohorte in PILOT_COHORTS)) return reply({ error: 'Cohorte inválida (A, B o BENCH).' }, 400);
   const actor = (url.searchParams.get('actor') || 'apify~instagram-scraper') as Actor;
   if (!ACTORES.includes(actor)) return reply({ error: 'Actor no permitido.' }, 400);
+  // El piloto no comparte reserva atómica con scrape; cerrarlo evita gasto concurrente.
+  if (pilotoSinReserva()) return reply({ error: 'PILOT_SHARED_RESERVATION_REQUIRED' }, 503);
   const marca = `${cohorte}-${CORTO[actor]}`;
   const cuentas: readonly string[] = PILOT_COHORTS[cohorte];
   const presupuesto = await presupuestoApify(db, { token, topePedido: TOPE_USD[cohorte] });

@@ -14,7 +14,7 @@ const numero = (v: string | undefined, def: number) => {
   return v !== undefined && v !== '' && Number.isFinite(n) && n >= 0 ? n : def;
 };
 export function limitesApify(env: Record<string, string | undefined> = process.env): LimitesApify {
-  const hard = numero(env.APIFY_MONTHLY_HARD_USD, 3);
+  const hard = Math.min(numero(env.APIFY_MONTHLY_HARD_USD, 3), 3);
   return {
     hard,
     soft: Math.min(numero(env.APIFY_MONTHLY_SOFT_USD, 2.5), hard),
@@ -86,7 +86,9 @@ export async function consumoApify(token: string, fetcher: typeof fetch = fetch)
       signal: AbortSignal.timeout(10000),
     });
     if (!r.ok) return null;
-    const usd = Number((await r.json())?.data?.current?.monthlyUsageUsd);
+    const raw = (await r.json())?.data?.current?.monthlyUsageUsd;
+    if ((typeof raw !== 'number' && typeof raw !== 'string') || (typeof raw === 'string' && !raw.trim())) return null;
+    const usd = Number(raw);
     return Number.isFinite(usd) && usd >= 0 ? usd : null;
   } catch {
     return null;
@@ -95,7 +97,7 @@ export async function consumoApify(token: string, fetcher: typeof fetch = fetch)
 
 /**
  * Decide si se puede iniciar una corrida ahora. La base es obligatoria; el
- * consumo de Apify, si responde, solo puede subir la cifra (cubre corridas
+ * consumo de Apify es obligatorio y solo puede subir la cifra (cubre corridas
  * lanzadas fuera de esta app con el mismo token).
  */
 export async function presupuestoApify(
@@ -110,6 +112,7 @@ export async function presupuestoApify(
     return decidirCorrida({ gastadoMes: null, corridasHoy: 0, limites });
   }
   const apify = opciones.token ? await consumoApify(opciones.token, opciones.fetcher) : null;
-  const gastadoMes = Math.max(registro.gastadoMes, apify ?? 0);
+  if (apify === null) return decidirCorrida({ gastadoMes: null, corridasHoy: registro.corridasHoy, limites });
+  const gastadoMes = Math.max(registro.gastadoMes, apify);
   return decidirCorrida({ gastadoMes, corridasHoy: registro.corridasHoy, limites, topePedido: opciones.topePedido });
 }
