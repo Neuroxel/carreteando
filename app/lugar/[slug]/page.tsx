@@ -5,7 +5,7 @@ import { getPublicVenue } from '../../../lib/server-venues';
 import { getPublicEvents } from '../../../lib/server-events';
 import { fechaDeLaNoche } from '../../../lib/event-extraction';
 import { eventDateLabel } from '../../../lib/events';
-import { FUENTES_LUGAR, NIVEL_PRECIO, fechaCorta, zonaSlug } from '../../../lib/venues';
+import { FUENTES_LUGAR, NIVEL_PRECIO, fechaCorta, zonaRuta } from '../../../lib/venues';
 import ShareButton from '../../../components/ShareButton';
 import LiveReport from '../../../components/LiveReport';
 import { liveFor } from '../../../lib/server-live';
@@ -61,7 +61,7 @@ export default async function VenueDetail({ params }: Props) {
         {l.zona && (
           <>
             {' · '}
-            <Link href={`/zonas/${zonaSlug(l.zona)}`}>{l.zona}</Link>
+            <Link href={`/zonas/${zonaRuta(l.zona, l.ciudad)}`}>{l.zona}</Link>
           </>
         )}
       </p>
@@ -242,7 +242,7 @@ export default async function VenueDetail({ params }: Props) {
           __html: safeJsonLd(
             breadcrumbJsonLd([
               { name: 'Inicio', path: '/' },
-              ...(l.zona ? [{ name: l.zona, path: `/zonas/${zonaSlug(l.zona)}` }] : []),
+              ...(l.zona ? [{ name: l.zona, path: `/zonas/${zonaRuta(l.zona, l.ciudad)}` }] : []),
               { name: l.nombre, path: `/lugar/${l.slug}` },
             ]),
           ),
