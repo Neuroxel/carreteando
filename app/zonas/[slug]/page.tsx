@@ -7,6 +7,7 @@ import { getPublicVenues } from '../../../lib/server-venues';
 import { getPublicEvents } from '../../../lib/server-events';
 import { fechaDeLaNoche } from '../../../lib/event-extraction';
 import { encontrarZona, zonaRuta } from '../../../lib/venues';
+import { eventosDeLugares, indiceDeLugares } from '../../../lib/venue-match';
 import { breadcrumbJsonLd, safeJsonLd } from '../../../lib/event-seo';
 /**
  * Una página de zona con uno o dos lugares es contenido delgado: existe para
@@ -42,12 +43,16 @@ export default async function Zone({ params }: Props) {
   if (!z) notFound();
   const rutaCanonica = zonaRuta(z.zona, z.ciudad);
   if (slug !== rutaCanonica) permanentRedirect(`/zonas/${rutaCanonica}`);
-  const events = await getPublicEvents();
+  const [events, venues] = await Promise.all([getPublicEvents(), getPublicVenues()]);
   const today = fechaDeLaNoche(new Date());
-  const nombres = new Set(z.lugares.map((l) => l.nombre));
-  const agenda = events.events.filter((e) => e.lugar && nombres.has(e.lugar));
+  const slugs = new Set(z.lugares.map((l) => l.slug));
+  const agenda = eventosDeLugares(events.events, venues.lugares, slugs);
+  const identificar = indiceDeLugares(venues.lugares);
   const conteo = new Map<string, number>();
-  for (const e of agenda) if (e.lugar) conteo.set(e.lugar, (conteo.get(e.lugar) || 0) + 1);
+  for (const e of agenda) {
+    const slug = identificar(e.lugar, e.ciudad);
+    if (slug) conteo.set(slug, (conteo.get(slug) || 0) + 1);
+  }
   return (
     <section className="container page-section">
       <Link className="back-link" href="/zonas">
@@ -78,7 +83,7 @@ export default async function Zone({ params }: Props) {
       </h2>
       <div className="venue-grid">
         {z.lugares.map((l) => (
-          <VenueCard key={l.slug} lugar={l} proximos={conteo.get(l.nombre) || 0} />
+          <VenueCard key={l.slug} lugar={l} proximos={conteo.get(l.slug) || 0} />
         ))}
       </div>
       <p className="trust-note">
