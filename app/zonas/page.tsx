@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { getPublicEvents } from '../../lib/server-events';
 import { getPublicVenues } from '../../lib/server-venues';
 import { ciudadEnFiltro, zonaRuta, zonasDe } from '../../lib/venues';
+import { eventosDeLugares } from '../../lib/venue-match';
 import { CIUDADES } from '../../lib/types';
 // Cacheada: se regenera como mucho cada 5 minutos o al cambiar los datos públicos.
 export const revalidate = 300;
@@ -14,8 +15,8 @@ export const metadata = {
 export default async function Zones() {
   const [result, venues] = await Promise.all([getPublicEvents(), getPublicVenues()]);
   const zonas = zonasDe(venues.lugares);
-  const eventosDe = (nombres: Set<string>) =>
-    result.events.filter((e) => e.lugar && nombres.has(e.lugar));
+  const eventosDe = (slugs: Set<string>) =>
+    eventosDeLugares(result.events, venues.lugares, slugs);
   return (
     <section className="container page-section">
       <p className="eyebrow">UN PLAN CERCA</p>
@@ -39,8 +40,8 @@ export default async function Zones() {
       </h2>
       <div className="zone-grid">
         {zonas.map((z) => {
-          const nombres = new Set(z.lugares.map((l) => l.nombre));
-          const eventos = eventosDe(nombres);
+          const slugs = new Set(z.lugares.map((l) => l.slug));
+          const eventos = eventosDe(slugs);
           return (
             <Link className="zone-card" key={zonaRuta(z.zona, z.ciudad)} href={`/zonas/${zonaRuta(z.zona, z.ciudad)}`}>
               <span className="eyebrow">{z.ciudad.toUpperCase()}</span>
