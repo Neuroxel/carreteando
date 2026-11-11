@@ -131,14 +131,17 @@ function coordenada(row: VenueRow) {
     ? { lat, lng, precision_mapa: precision }
     : { lat: null, lng: null, precision_mapa: null };
 }
+/** Preserve historical "Reñaca" display/filter values, but group its zones inside Viña's municipality. */
+export const comunaAdministrativa = (ciudad: string) => (ciudad === 'Reñaca' ? 'Viña del Mar' : ciudad);
 export function zonasDe(lugares: Lugar[]) {
   // A zone name is not globally unique. In particular, "Reñaca" can be used
   // by records catalogued under either Viña del Mar or Reñaca.
   const map = new Map<string, { zona: string; ciudad: string; lugares: Lugar[] }>();
   for (const l of lugares) {
     if (!l.zona) continue;
-    const key = JSON.stringify([l.ciudad, l.zona]);
-    const entry = map.get(key) || { zona: l.zona, ciudad: l.ciudad, lugares: [] };
+    const ciudad = comunaAdministrativa(l.ciudad);
+    const key = JSON.stringify([ciudad, l.zona]);
+    const entry = map.get(key) || { zona: l.zona, ciudad, lugares: [] };
     entry.lugares.push(l);
     map.set(key, entry);
   }
@@ -158,14 +161,13 @@ export function zonaSlug(zona: string) {
 }
 /** Stable, collision-free route identity for a zone within its catalogue city. */
 export function zonaRuta(zona: string, ciudad: string) {
-  return `${zonaSlug(ciudad)}--${zonaSlug(zona)}`;
+  return `${zonaSlug(comunaAdministrativa(ciudad))}--${zonaSlug(zona)}`;
 }
 /** Old unqualified links still resolve; prefer the city sharing the zone name. */
 export function encontrarZona(lugares: Lugar[], slug: string) {
   const zonas = zonasDe(lugares);
   return (
     zonas.find((z) => zonaRuta(z.zona, z.ciudad) === slug) ||
-    zonas.find((z) => zonaSlug(z.zona) === slug && zonaSlug(z.ciudad) === slug) ||
     zonas.find((z) => zonaSlug(z.zona) === slug) ||
     null
   );
