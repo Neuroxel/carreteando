@@ -1,12 +1,12 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 import VenueCard from '../../../components/VenueCard';
 import EventCard from '../../../components/EventCard';
 import { getPublicVenues } from '../../../lib/server-venues';
 import { getPublicEvents } from '../../../lib/server-events';
 import { fechaDeLaNoche } from '../../../lib/event-extraction';
-import { zonaSlug, zonasDe } from '../../../lib/venues';
+import { encontrarZona, zonaRuta } from '../../../lib/venues';
 import { breadcrumbJsonLd, safeJsonLd } from '../../../lib/event-seo';
 /**
  * Una página de zona con uno o dos lugares es contenido delgado: existe para
@@ -22,7 +22,7 @@ export async function generateStaticParams() {
 type Props = { params: Promise<{ slug: string }> };
 async function findZone(slug: string) {
   const venues = await getPublicVenues();
-  return zonasDe(venues.lugares).find((z) => zonaSlug(z.zona) === slug) || null;
+  return encontrarZona(venues.lugares, slug);
 }
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
@@ -31,7 +31,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: `Salir en ${z.zona}, ${z.ciudad}`,
     description: `${z.lugares.length} lugares revisados en ${z.zona}: bares, clubes y salas en vivo, con direcciones y próximas fechas.`,
-    alternates: { canonical: `/zonas/${slug}` },
+    alternates: { canonical: `/zonas/${zonaRuta(z.zona, z.ciudad)}` },
     ...(z.lugares.length < MIN_LUGARES_INDEXABLE ? { robots: { index: false, follow: true } } : {}),
   };
 }
@@ -40,6 +40,8 @@ export default async function Zone({ params }: Props) {
   if (!/^[a-z0-9-]{1,80}$/.test(slug)) notFound();
   const z = await findZone(slug);
   if (!z) notFound();
+  const rutaCanonica = zonaRuta(z.zona, z.ciudad);
+  if (slug !== rutaCanonica) permanentRedirect(`/zonas/${rutaCanonica}`);
   const events = await getPublicEvents();
   const today = fechaDeLaNoche(new Date());
   const nombres = new Set(z.lugares.map((l) => l.nombre));
@@ -90,7 +92,7 @@ export default async function Zone({ params }: Props) {
             breadcrumbJsonLd([
               { name: 'Inicio', path: '/' },
               { name: 'Zonas', path: '/zonas' },
-              { name: z.zona, path: `/zonas/${slug}` },
+              { name: z.zona, path: `/zonas/${rutaCanonica}` }
             ]),
           ),
         }}
