@@ -1,36 +1,53 @@
-# Donde Salgo — recuperación de Supabase (11-nov-2026)
+# Donde Salgo — Supabase: base histórica recuperada (11-nov-2026)
 
-## Estado comprobado con conectores
+## Estado canónico verificado con conectores
 
-- **Proyecto nuevo**: `dondesalgo`, ref `iwyvvopyivycsvktuinh`; organización **Neuroxel**, `tlzusgrpufisdbaptgvr`; `sa-east-1`, PostgreSQL 17.11, `ACTIVE_HEALTHY`.
-- **Costo de creación**: Supabase confirmó **US$0/mes** en la organización Free antes de crear el proyecto. No se activaron servicios pagos.
-- **Esquema nuevo**: **0 tablas de aplicación** en `public` al verificar el 11-nov; **NO conectado** a la web y **NO restaurado**.
-- **Proyecto histórico identificado por la documentación**: `hgwljbtqdserkdhulbts`. La cuenta actualmente conectada a ChatGPT devuelve permiso denegado cuando se intenta leerlo, y lista 0 proyectos previos. **No implica eliminación**.
-- **Vercel accesible**: equipo `Neuroxel` → proyecto `carreteando` con dominio `dondesalgo.vercel.app`; producción señalada en deployment `dpl_5dCb18y4Tum7N6w1nUjp3ThhzmMM` (commit `02dc445d`, READY). Las variables de entorno para Supabase siguen configuradas. No se tocaron sus valores.
-- **Dominio personalizado**: `dondesalgo.cl` no aparece en los dominios consultados del proyecto `carreteando`. Hubo comprobaciones de GitHub para otro proyecto Vercel denominado `dondesalgo` bajo otra cuenta; **no asumir** que el Vercel accesible es el despliegue final del dominio .cl.
+**Hallazgo decisivo:** el usuario conectó un tercer espacio de Supabase llamado **Tpotp**, que contiene la base original de Donde Salgo. **No está perdida ni requiere reconstrucción**.
 
-## Decisión de seguridad y continuidad
+| Elemento | Valor / estado |
+|---|---|
+| Base histórica | `carretes`, project ref `hgwljbtqdserkdhulbts` |
+| Organización original | `tpotp's Org` (ID `ltbtwuswszvmjxztayle`) |
+| Conexión ChatGPT con acceso | `Tpotp` |
+| Región, motor | `sa-east-1`, PostgreSQL 17.6 |
+| Estado | `ACTIVE_HEALTHY`; acceso SQL de lectura CONFIRMADO |
+| Base nueva auxiliar | `dondesalgo`, `iwyvvopyivycsvktuinh`, organización `Neuroxel` (`tlzusgrpufisdbaptgvr`) |
+| Costo nueva base | `US$0/mes` confirmado al crear, Free; `ACTIVE_HEALTHY` y **0 tablas de app** |
+| Cutover | **NO realizado ni necesario**; no tocar secretos, variables, cron, DNS ni dominios |
 
-**Nueva base = recuperación aislada, NO reemplazo automático.** La instancia original puede seguir sirviendo la web. No cambiar variables de entorno, dominios, DNS, cron ni promover PR antes de conseguir:
+La confusión anterior fue **de organización y conexión**, no pérdida de datos. Las conexiones `Supabase` y `Neuroxel` ven solo la organización Neuroxel; `Tpotp` ve la organización distinta `tpotp's Org` y su proyecto `carretes`.
 
-1. Acceso de solo lectura a base histórica `hgwljbtqdserkdhulbts`, o un dump comprobable y autorizado; en su defecto, reconstrucción explícita y documentada con fuentes disponibles.
-2. Inventario exacto de migraciones `supabase/migrations/` con su orden, extensiones y dependencias; aplicación a una base vacía en entorno aislado; registro de migration history.
-3. Copia de **datos** (no solamente esquema): `venues`, `events`, `event_sources`, `ingestion_source_runs`, configuración de moderación/automatización, alias, fuentes, cuentas Instagram y decisiones históricas permitidas; excluir credenciales/sesiones privadas sin un plan de rotación.
-4. Control de identidad por slug/alias/dirección/comuna, RLS, funciones, secuencias, índices, políticas de publicación, zonas, mapas, dedupe y conteos por estado, con comparación entre origen y destino.
-5. Pruebas en preview con URL/anon key de nueva base SOLO para preview; secretos server-side en Vercel, nunca en Git ni chat. Quitar o redirigir cron hasta que haya validación para no crear eventos falsos ni notificaciones dobles.
-6. Reconciliación editorial con Gemini/Claude del 10–11 nov: nunca importar los 36/34 ni los 115 registros sin revisión de colisiones y fuente individual de evento.
-7. Swap controlado de variables de producción y rollback documentado, **solo después** de aprobar las pruebas y verificar el dominio que sirve la web real.
+### Inventario SQL de la base original, 11-nov-2026 (hora Chile)
 
-## Primer gate verificable
+Consultas de solo lectura en `carretes`; cifras reales SQL salvo donde se indique expresamente:
 
-**G0 — PROVISIONED = PASS**: proyecto Free creado y consultable, PostgreSQL saludable, 0 tablas de app.
+- **25 tablas públicas** con RLS activado.
+- **416 recintos totales**: 148 `is_active=true` y `moderation_status='approved'`; 103 con latitud y longitud (incluye filas no publicadas).
+- **712 eventos totales**: 82 activos, aprobados y con `date_text` ISO desde el 11-nov-2026 inclusive. **34** `pending` con `disposition='review'` (no publicados), además de históricos expirados.
+- Distribución de 148 recintos públicos: Valparaíso 68; Viña del Mar 35 + Reñaca 4; Quilpué 9; Concón 8; Quillota 6; Quintero 5; Limache 4; La Calera 3; Villa Alemana 3; Olmué 2; Puchuncaví 1.
+- Distribución de 82 eventos públicos futuros: Valparaíso 51; Viña del Mar 22; Quillota 4; Villa Alemana 4; Concón 1.
+- **56 fuentes registradas, 46 activas**; las 46 tienen `last_success_at` dentro de las últimas 48 h, pero esto solo certifica ejecución, no eventos nuevos.
+- **1.930 registros de ejecuciones**, 458 en los últimos siete días y 53 en las últimas 24 h. Agregados de los últimos 7 días: **0 `new_events`** y **44 `queued`** (sumas de runs; no asumir 44 eventos únicos). La fuente `portaldisc-region` tuvo 13 colas; `evently-region` 8; `comediaticket-region` 8; `ticketplus-region` 6.
+- Respaldos de reconciliación (entre otros): `backup_venues_valparaiso_20261012`, `backup_venues_valparaiso_queue_20261012b`, `backup_venues_vina_renaca_20261012`, `backup_events_review_20261012`, `backup_venues_ops_20261012`. También `review_audit`, `event_evidence`, `instagram_accounts`, `automation_decisions`.
+- `pg_cron` existe. No se han ejecutado DDL/DML ni migraciones desde esta revisión.
 
-**G1 — SCHEMA RESTORED = PENDING**: no asumir que una migración aislada reconstruye el esquema completo. El repo contiene migraciones incrementales que esperan estado previo.
+### Diagnóstico y próximos pasos (en orden)
 
-**G2 — DATA RECONCILED = PENDING**: no existe todavía un dump verificado de la base histórica accesible mediante la cuenta autorizada.
+1. **No migrar ni cambiar el sitio**. Mantener `carretes` como estado canónico y `dondesalgo` de Neuroxel como entorno auxiliar vacío. Decidir el destino del segundo proyecto más adelante para evitar cuotas innecesarias o costes de oportunidad.
+2. Verificar la conexión real del dominio `dondesalgo.cl` y los proyectos Vercel: Vercel `Neuroxel/carreteando` sí accesible, pero el proyecto `dondesalgo` de otro scope no lo era al revisar; no asumir que el primero administra `.cl`. Confirmar mediante configuración/DNS antes de cualquier cambio.
+3. Auditar por qué las fuentes informan éxito y candidatos pero `new_events_7d=0`; inspeccionar errores de parseo/deduplicación/moderación/cola sin cambiar reglas a ciegas. Diferenciar `queued` agregado de filas únicas.
+4. Reconciliar los hallazgos Gemini/Claude con 148 recintos públicos y 82 eventos próximos existentes; colisiones por comuna, venue y URL; incorporar solo fuentes individuales verificadas; revisar PR #60 antes de importar.
+5. Revisar la cola de 34 `pending/review`, las fechas de verificación y la salud de frescura. No publicar masivamente ni activar Apify sin presupuesto autorizado.
+6. Crear respaldo lógico (schema + data) autorizado y verificado **antes de** operaciones con riesgo. No copiar claves, tokens ni datos personales a Git.
 
-**G3 — PREVIEW VERIFIED = PENDING**; **G4 — PROD CUTOVER = BLOCKED**.
+## Gates
 
-## Prioridad inmediata
+- **H0 ORIGINAL SUPABASE FOUND = PASS**; **H1 READ-ONLY SQL ACCESS = PASS**; **H2 INVENTORY = PASS**.
+- **H3 INGESTION GAP EXPLAINED = OPEN**.
+- **H4 EDITORIAL RECONCILED = OPEN**.
+- **H5 PRODUCTION UPDATE = BLOCKED** hasta corroborar rutas y previsualización.
+- **NEW EMPTY PROJECT**: existe, aislado y **no es la fuente canónica**. Cualquier propuesta anterior de sustituir automáticamente la base queda revocada.
 
-Intentar recuperar acceso al proyecto histórico (cuenta/organización original o respaldo), preparar baseline reproducible desde repo y ejecutar pruebas contra la base aislada. Hasta G3, continuar la investigación y PR #60 con fuente fechada y sin afectar producción.
+## Vercel, última verificación
+
+Vercel equipo `Neuroxel`, proyecto `carreteando`, dominio `dondesalgo.vercel.app`, production deployment `dpl_5dCb18y4Tum7N6w1nUjp3ThhzmMM` (READY, commit `02dc445d`). El dominio personalizado `dondesalgo.cl` no figuró en los dominios consultados de ese proyecto, aunque GitHub informó checks del proyecto externo `dondesalgo`. No modificar configuración hasta aclarar el dueño del dominio.
