@@ -6,7 +6,7 @@ import { addDays, fechaDeLaNoche } from '../lib/event-extraction';
 import { parseFilters } from '../lib/filters';
 import { CIUDADES, type Evento, type FiltrosEvento } from '../lib/types';
 import { ESCENAS } from '../lib/escenas';
-import { type Lugar, buscarLugares, buscarZonas, zonaSlug } from '../lib/venues';
+import { type Lugar, buscarLugares, buscarZonas, zonaRuta } from '../lib/venues';
 import { puntosDeMapa } from '../lib/map';
 import { indiceDeLugares } from '../lib/venue-match';
 import type { PublicSnapshot } from '../lib/snapshot';
@@ -970,7 +970,7 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
             {derivados.zonasHalladas.length > 0 && (
               <div className="category-filters">
                 {derivados.zonasHalladas.map((z) => (
-                  <Link prefetch={false} key={z.zona} className="chip" href={`/zonas/${zonaSlug(z.zona)}`}>
+                  <Link prefetch={false} key={zonaRuta(z.zona, z.ciudad)} className="chip" href={`/zonas/${zonaRuta(z.zona, z.ciudad)}`}>
                     {z.zona} · {z.lugares.length}
                   </Link>
                 ))}

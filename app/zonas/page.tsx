@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { getPublicEvents } from '../../lib/server-events';
 import { getPublicVenues } from '../../lib/server-venues';
-import { zonaSlug, zonasDe } from '../../lib/venues';
+import { zonaRuta, zonasDe } from '../../lib/venues';
 import { CIUDADES } from '../../lib/types';
 // Cacheada: se regenera como mucho cada 5 minutos o al cambiar los datos públicos.
 export const revalidate = 300;
@@ -42,7 +42,7 @@ export default async function Zones() {
           const nombres = new Set(z.lugares.map((l) => l.nombre));
           const eventos = eventosDe(nombres);
           return (
-            <Link className="zone-card" key={z.zona} href={`/zonas/${zonaSlug(z.zona)}`}>
+            <Link className="zone-card" key={zonaRuta(z.zona, z.ciudad)} href={`/zonas/${zonaRuta(z.zona, z.ciudad)}`}>
               <span className="eyebrow">{z.ciudad.toUpperCase()}</span>
               <h3>{z.zona}</h3>
               <p className="zone-preview">

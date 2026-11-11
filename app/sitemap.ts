@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next';
 import { getPublicEvents } from '../lib/server-events';
 import { getPublicVenues } from '../lib/server-venues';
-import { zonaSlug, zonasDe } from '../lib/venues';
+import { zonaRuta, zonasDe } from '../lib/venues';
 import { SITE_URL } from '../lib/site';
 export const revalidate = 3600;
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -31,6 +31,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // Solo zonas con sustancia: las delgadas llevan noindex y no se anuncian.
     ...zonasDe(v.lugares)
       .filter((z) => z.lugares.length >= 3)
-      .map((z) => ({ url: `${SITE_URL}/zonas/${zonaSlug(z.zona)}` })),
+      .map((z) => ({ url: `${SITE_URL}/zonas/${zonaRuta(z.zona, z.ciudad)}` })),
   ];
 }
