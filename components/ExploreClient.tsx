@@ -6,7 +6,7 @@ import { addDays, fechaDeLaNoche } from '../lib/event-extraction';
 import { parseFilters } from '../lib/filters';
 import { CIUDADES, type Evento, type FiltrosEvento } from '../lib/types';
 import { ESCENAS } from '../lib/escenas';
-import { type Lugar, buscarLugares, buscarZonas, zonaRuta } from '../lib/venues';
+import { type Lugar, buscarLugares, buscarZonas, zonaRuta, ciudadEnFiltro } from '../lib/venues';
 import { puntosDeMapa } from '../lib/map';
 import { indiceDeLugares } from '../lib/venue-match';
 import type { PublicSnapshot } from '../lib/snapshot';
@@ -91,7 +91,7 @@ const conZona = (prev: FiltrosEvento, cambio: Partial<FiltrosEvento>): FiltrosEv
 });
 /** Lugares de la comuna y zona elegidas (para completar el asistente con lugares). */
 const lugaresBaseDe = (venues: Lugar[], f: FiltrosEvento) =>
-  venues.filter((l) => (!f.ciudad || f.ciudad === 'todos' || l.ciudad === f.ciudad) && (!f.zona || sectorDeLugar(l.slug) === f.zona));
+  venues.filter((l) => ciudadEnFiltro(l.ciudad, f.ciudad) && (!f.zona || sectorDeLugar(l.slug) === f.zona));
 /** URL limpia: solo lo que difiere del valor por defecto. */
 function aUrl(e: Estado, path: string, defecto: string) {
   const p = new URLSearchParams();
@@ -336,7 +336,7 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
       conteoLugar.set(slug, (conteoLugar.get(slug) || 0) + 1);
       if ((e.fecha === today || sigueTrasCorte(e, ahoraCL)) && !hoyPorLugar.has(slug)) hoyPorLugar.set(slug, e.nombre);
     }
-    const lugaresZona = (filtros.ciudad === 'todos' ? snap.venues : snap.venues.filter((l) => l.ciudad === filtros.ciudad))
+    const lugaresZona = (filtros.ciudad === 'todos' ? snap.venues : snap.venues.filter((l) => ciudadEnFiltro(l.ciudad, filtros.ciudad)))
       .filter((l) => !filtros.zona || sectorDeLugar(l.slug) === filtros.zona)
       .slice()
       .sort((a, b) => (conteoLugar.get(b.nombre) || 0) - (conteoLugar.get(a.nombre) || 0));
@@ -365,7 +365,7 @@ export default function ExploreClient({ snapshot, home = false }: { snapshot: Pu
               .map((t) => ({
                 t,
                 lugares: snap.venues.filter((l) => sectorDeLugar(l.slug) === t.slug).length,
-                eventos: todos.filter((e) => (e.fecha >= today || sigueTrasCorte(e, ahoraCL)) && e.ciudad === filtros.ciudad && sectorDeLugar(lugarDe(e)) === t.slug).length,
+                eventos: todos.filter((e) => (e.fecha >= today || sigueTrasCorte(e, ahoraCL)) && ciudadEnFiltro(e.ciudad, filtros.ciudad) && sectorDeLugar(lugarDe(e)) === t.slug).length,
               }))
               .filter((z) => z.lugares > 0)
               .sort((a, b) => b.eventos - a.eventos || a.t.nombre.localeCompare(b.t.nombre, 'es'))

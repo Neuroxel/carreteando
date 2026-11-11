@@ -6,7 +6,7 @@
  */
 import { filterEvents } from './events';
 import { lugarEnEscena } from './escenas';
-import { buscarLugares, type Lugar } from './venues';
+import { buscarLugares, ciudadEnFiltro, type Lugar } from './venues';
 import { visibleEnCartelera, type AhoraChile } from './temporal';
 import type { Evento, FiltrosEvento } from './types';
 import { intencionPorSlug } from './intenciones';
@@ -40,7 +40,7 @@ const lugarEnPlan = (f: FiltrosEvento, l: Lugar) => {
 };
 const lugaresBase = (c: Contexto, f: FiltrosEvento) =>
   c.lugares.filter(
-    (l) => (!f.ciudad || f.ciudad === 'todos' || l.ciudad === f.ciudad) && (!f.zona || c.sectorDe(l.slug) === f.zona),
+    (l) => ciudadEnFiltro(l.ciudad, f.ciudad) && (!f.zona || c.sectorDe(l.slug) === f.zona),
   );
 const escenaDe = (f: FiltrosEvento) => (f.escena && f.escena !== 'todos' ? f.escena : null);
 

@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { getPublicEvents } from '../../lib/server-events';
 import { getPublicVenues } from '../../lib/server-venues';
-import { zonaRuta, zonasDe } from '../../lib/venues';
+import { ciudadEnFiltro, zonaRuta, zonasDe } from '../../lib/venues';
 import { CIUDADES } from '../../lib/types';
 // Cacheada: se regenera como mucho cada 5 minutos o al cambiar los datos públicos.
 export const revalidate = 300;
@@ -65,9 +65,9 @@ export default async function Zones() {
         <span className="heading-period">.</span>
       </h2>
       <div className="zone-grid">
-        {CIUDADES.map((c) => {
-          const lugares = venues.lugares.filter((l) => l.ciudad === c);
-          const eventos = result.events.filter((e) => e.ciudad === c);
+        {CIUDADES.filter((c) => c !== 'Reñaca').map((c) => {
+          const lugares = venues.lugares.filter((l) => ciudadEnFiltro(l.ciudad, c));
+          const eventos = result.events.filter((e) => ciudadEnFiltro(e.ciudad, c));
           return (
             <Link className="zone-card" key={c} href={`/buscar?ciudad=${encodeURIComponent(c)}`}>
               <span className="eyebrow">V REGIÓN</span>

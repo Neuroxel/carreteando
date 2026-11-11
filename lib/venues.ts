@@ -133,6 +133,13 @@ function coordenada(row: VenueRow) {
 }
 /** Preserve historical "Reñaca" display/filter values, but group its zones inside Viña's municipality. */
 export const comunaAdministrativa = (ciudad: string) => (ciudad === 'Reñaca' ? 'Viña del Mar' : ciudad);
+/**
+ * Choosing the full Viña municipality also finds legacy rows catalogued as
+ * Reñaca. Choosing the Reñaca shortcut remains narrow for backward compatibility.
+ */
+export const ciudadEnFiltro = (registro: string, seleccion: string | null | undefined) =>
+  !seleccion || seleccion === 'todos' || registro === seleccion ||
+  (seleccion === 'Viña del Mar' && registro === 'Reñaca');
 export function zonasDe(lugares: Lugar[]) {
   // A zone name is not globally unique. In particular, "Reñaca" can be used
   // by records catalogued under either Viña del Mar or Reñaca.
