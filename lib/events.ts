@@ -1,4 +1,5 @@
 import { coincideTexto } from './busqueda';
+import { ciudadEnFiltro } from './venues';
 import { Categoria, CATEGORIAS, ConfianzaPublica, Evento, FiltrosEvento, TIPOS_EVENTO } from './types';
 import {
   addDays,
@@ -202,7 +203,7 @@ export function filterEvents(
       if (filters.busqueda && !coincideBusqueda(e, filters.busqueda)) return false;
       if (filters.categoria && filters.categoria !== 'todos' && filters.categoria !== e.categoria)
         return false;
-      if (filters.ciudad && filters.ciudad !== 'todos' && filters.ciudad !== e.ciudad) return false;
+      if (!ciudadEnFiltro(e.ciudad, filters.ciudad)) return false;
       if (filters.tipo && filters.tipo !== 'todos' && filters.tipo !== e.tipo) return false;
       if (filters.escena && filters.escena !== 'todos' && !enEscena(e, filters.escena)) return false;
       if (
@@ -285,7 +286,7 @@ export function esTemporadaDieciocho(today: string): boolean {
 export function sugerenciasPara(todos: Evento[], filtros: FiltrosEvento, today: string, cuantos = 3): Evento[] {
   const ciudad = filtros.ciudad && filtros.ciudad !== 'todos' ? filtros.ciudad : null;
   return todos
-    .filter((e) => e.activo && e.fecha >= today && (!ciudad || e.ciudad === ciudad))
+    .filter((e) => e.activo && e.fecha >= today && ciudadEnFiltro(e.ciudad, ciudad))
     .filter((e, i, all) => all.findIndex((o) => o.lugar === e.lugar && o.ciudad === e.ciudad) === i)
     .slice(0, cuantos);
 }
